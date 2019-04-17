@@ -1,0 +1,11 @@
+#
+# Docker compose file for TANGO database and database device server
+#
+# Defines:
+#   - tangodb: MariaDB database with TANGO schema
+#   - databaseds: TANGO database device server
+#
+# Requires:
+#   - None
+#
+version: '2'
