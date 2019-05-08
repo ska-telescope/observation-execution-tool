@@ -34,7 +34,7 @@ def test_get_start_telescope_command():
     assert not cmd.kwargs
 
 
-def test_get_stop_telescope_command():
+def test_get_telescope_standby_command():
     """
     Verify that an 'instruct telescope devices to stand by' Command is
     targeted and structured correctly.
