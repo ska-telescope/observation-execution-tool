@@ -206,11 +206,11 @@ class SKAMid:
         """
         observingtasks.telescope_start_up(self)
 
-    def stand_by(self):
+    def standby(self):
         """
         Instruct telescope hardware to power down to standby mode.
         """
-        observingtasks.telescope_stand_by(self)
+        observingtasks.telescope_standby(self)
 
 
 # this import needs to be here, at the end of the file, to work around a

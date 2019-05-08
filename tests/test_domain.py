@@ -383,5 +383,5 @@ def test_telescope_stand_by_calls_correct_observing_task():
     """
     telescope = SKAMid()
     with mock.patch('oet.domain.observingtasks') as mock_module:
-        telescope.stand_by()
-    mock_module.telescope_stand_by.assert_called_once_with(telescope)
+        telescope.standby()
+    mock_module.telescope_standby.assert_called_once_with(telescope)

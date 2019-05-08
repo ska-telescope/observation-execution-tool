@@ -104,7 +104,7 @@ def get_telescope_start_up_command(telescope: SKAMid) -> Command:
     return Command(central_node_fqdn, 'StartUpTelescope')
 
 
-def get_telescope_stand_by_command(telescope: SKAMid) -> Command:
+def get_telescope_standby_command(telescope: SKAMid) -> Command:
     """
     Return an OET Command that, when passed to a TangoExecutor, would call
     CentralNode.StandByTelescope().
@@ -225,12 +225,12 @@ def telescope_start_up(telescope: SKAMid):
     EXECUTOR.execute(command)
 
 
-def telescope_stand_by(telescope: SKAMid):
+def telescope_standby(telescope: SKAMid):
     """
     Instruct telescope devices to switch to STANDBY mode.
 
     :param telescope: the telescope to control
     :return:
     """
-    command = get_telescope_stand_by_command(telescope)
+    command = get_telescope_standby_command(telescope)
     EXECUTOR.execute(command)

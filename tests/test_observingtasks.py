@@ -40,7 +40,7 @@ def test_get_stop_telescope_command():
     targeted and structured correctly.
     """
     telescope = SKAMid()
-    cmd = observingtasks.get_telescope_stand_by_command(telescope)
+    cmd = observingtasks.get_telescope_standby_command(telescope)
     assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
     assert cmd.command_name == 'StandByTelescope'
     assert not cmd.args
@@ -281,6 +281,6 @@ def test_telescope_stand_by_calls_tango_executor(mock_execute_fn):
     Tango device once only.
     """
     telescope = SKAMid()
-    observingtasks.telescope_stand_by(telescope)
-    command = observingtasks.get_telescope_stand_by_command(telescope)
+    observingtasks.telescope_standby(telescope)
+    command = observingtasks.get_telescope_standby_command(telescope)
     mock_execute_fn.assert_called_once_with(command)
