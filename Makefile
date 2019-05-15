@@ -17,7 +17,9 @@ PROJECT = oet
 # include makefile to pick up the standard Make targets, e.g., 'make build'
 # build, 'make push' docker push procedure, etc. The other Make targets
 # ('make interactive', 'make test', etc.) are defined in this file.
-#
+# 
+
+
 include .make/Makefile.mk
 
 #
@@ -55,6 +57,10 @@ else
 	ifeq ($(UNAME_S),Linux)
 		DISPLAY ?= :0.0
 		NETWORK_MODE ?= host
+		# Uncomment the line below if using host as a  network mode doesn't work
+		# I found this was necessary on Ubuntu VM but not sure why 
+		NETWORK_MODE := tangonet
+
 		XAUTHORITY_MOUNT := /tmp/.X11-unix:/tmp/.X11-unix
 		XAUTHORITY ?= /hosthome/.Xauthority
 		# /bin/sh (=dash) does not evaluate 'docker network' conditionals correctly
@@ -79,7 +85,7 @@ TANGO_HOST := $(shell hostname):10000
 MYSQL_HOST := $(shell hostname):3306
 else
 # distinguish the bridge network from others by adding the project name
-NETWORK_MODE := $(NETWORK_MODE)-$(PROJECT)
+# NETWORK_MODE := $(NETWORK_MODE)-$(PROJECT)
 TANGO_HOST := $(CONTAINER_NAME_PREFIX)databaseds:10000
 MYSQL_HOST := $(CONTAINER_NAME_PREFIX)tangodb:3306
 endif
@@ -97,12 +103,12 @@ DOCKER_COMPOSE_ARGS := DISPLAY=$(DISPLAY) XAUTHORITY=$(XAUTHORITY) TANGO_HOST=$(
 .DEFAULT_GOAL := help
 
 #
-# defines a function to copy the ./test-harness directory into the container
-# and then runs the requested make target in the container. The container is:
+# defines a function to copy test-harness
+# and then runs the requestedtest-harness
 #
-#   1. attached to the network of the docker-compose test system
-#   2. uses a persistent volume to cache Python eggs and wheels so that fewer
-#      downloads are required
+#   1. attached to the networtest-harness
+#   2. uses a persistent volutest-harness
+#      downloads are requiredtest-harness
 #   3. uses a transient volume as a working directory, in which untarred files
 #      and test output can be written in the container and subsequently copied
 #      to the host
@@ -127,6 +133,17 @@ test: build up ## test the application
 	  $(MAKE) down; \
 	  exit $$status
 
+test-cli: build up ## test the cli interface by scripting
+	$(INIT_CACHE)
+	$(call make,test-cli); \
+	  status=$$?; \
+	  rm -fr build; \
+	  docker cp $(BUILD):/build .; \
+	  docker rm -f -v $(BUILD); \
+	  $(MAKE) down; \
+	  exit $$status
+
+
 pull:  ## download the application image
 	docker pull $(IMAGE_TO_TEST)
 
@@ -139,10 +156,16 @@ endif
 piplock: build  ## overwrite Pipfile.lock with the image version
 	docker run $(IMAGE_TO_TEST) cat /app/Pipfile.lock > $(CURDIR)/Pipfile.lock
 
+interactive-nosrc: up
+interactive-nosrc:  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
+	docker run --rm -it -p 3000:3000 --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) --network=$(NETWORK_MODE) \
+	  $(IMAGE_TO_TEST) /bin/bash
+
 interactive: up
 interactive:  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
 	docker run --rm -it -p 3000:3000 --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) --network=$(NETWORK_MODE) \
 	  -v $(CURDIR):/app $(IMAGE_TO_TEST) /bin/bash
+
 
 down:  ## stop develop/test environment and any interactive session
 	docker ps | grep $(CONTAINER_NAME_PREFIX)dev && docker stop $(PROJECT)-dev || true
