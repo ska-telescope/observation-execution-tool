@@ -39,10 +39,10 @@ expect {
     -ex "subarray = SubArray(1)\r\n\r\nIn \[3\]: " { }
 }                                                     
 # check we can create a resource allocation consisting of two dishes
-send -- "allocation = ResourceAllocation(dishes=\[Dish(1), Dish(2)\])\r"                                                                                                                                                                
+send -- "allocation = ResourceAllocation(dishes=\[Dish(1)\])\r"                                                                                                                                                                
 expect {
     timeout { send_user "Problem Creating Resource allocation"; exit 1 }
-    -ex "allocation = ResourceAllocation(dishes=\[Dish(1), Dish(2)\])\r\n\r\nIn \[4\]: " { }
+    -ex "allocation = ResourceAllocation(dishes=\[Dish(1)\])\r\n\r\nIn \[4\]: " { }
 }
 # Activate the telescope
 send -- "telescope.start_up()\r"
@@ -58,14 +58,16 @@ expect {
     -ex "In \[6\]: " { }
 }
 
-
+sleep 4
 
 # Allocate the dishes to the subarray - this should return  a reference to the 
-# dishes that have been allocated
+# dishes that have been allocated - at the moment only allocating dish 1 because
+# that saves having to manually tweak the number of devices from 1 to 4 
+# TODO: It should be possible to script setting the number of dishes above
 send -- "subarray.allocate(allocation)\r"
 expect {
     timeout { send_user "Problem Allocating Subarry "; exit 1 }
-    -ex "<ResourceAllocation(dishes=\[<Dish(1)>, <Dish(2)>\])>\r\n\r\nIn \[7\]: " { }
+    -ex "<ResourceAllocation(dishes=\[<Dish(1)>\])>\r\n\r\nIn \[7\]: " { }
 }
 
 sleep 2
@@ -78,21 +80,18 @@ expect {
 send -- "subarray_proxy.receptorIDList\r"
 expect {
     timeout { send_user "Problem Allocating Subarry "; exit 1 }
-    -ex "Out\[8\]: (1, 2)\r\n\r\nIn \[9]\: " { }
+    -ex "Out\[8\]: (1,)\r\n\r\nIn \[9]\: " { }
 }
-
-
-
 
 # Deallocate the dishes from the subarry - uses the subarray_proxy created
 # previously to check the subarray has actually been deallocated
 
-#Note: at present partial dellocations work in OET but don't seem to in TMC
+# Note: at present partial dellocations work in OET but don't seem to in TMC
 # so this does a full deallocation - when fixed we should test for this.
 send -- "subarray.deallocate()\r"
 expect {
     timeout { send_user "Problem Deallocating Subarry "; exit 1 }
-    -ex "Out\[9\]: <ResourceAllocation(dishes=\[<Dish(1)>, <Dish(2)>\])>\r\n\r\nIn \[10\]: " { }
+    -ex "Out\[9\]: <ResourceAllocation(dishes=\[<Dish(1)>\])>\r\n\r\nIn \[10\]: " { }
 }
 
 sleep 2
