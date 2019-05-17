@@ -55,6 +55,12 @@ Execute the test suite with:
 
   make test
 
+Test the cli interface with a samle set of tmc devices with:
+
+::
+
+  make test-cli
+
 Launch an interactive shell inside a container, with your workspace visible
 inside the container:
 
@@ -74,6 +80,8 @@ The following make targets are defined:
 | build           | Build a new application image                  |
 +-----------------+------------------------------------------------+
 | test            | Test the application image                     |
++-----------------+------------------------------------------------+
+| test-cli        | Test the command line interface via a script   |
 +-----------------+------------------------------------------------+
 | interactive     | Launch a minimal Tango system (including the   |
 |                 | device under development), mounting the source |
