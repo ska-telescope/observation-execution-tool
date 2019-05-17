@@ -1,0 +1,113 @@
+#!/usr/bin/expect -f
+
+
+set force_conservative 0  ;# set to 1 to force conservative mode even if
+			  ;# script wasn't run conservatively originally
+if {$force_conservative} {
+	set send_slow {1 .1}
+	proc send {ignore arg} {
+		sleep .1
+		exp_send -s -- $arg
+	}
+}
+
+
+set timeout 2
+spawn /venv/bin/itango3 --profile=ska --no-color-info --simple-prompt --no-banner
+match_max 100000
+
+# Allow sufficient time for intialisation of objects
+sleep 2
+
+# basic startup check
+expect {
+    timeout { send_user "Problem starting OET session"; exit 1 }
+    -ex "In \[1\]: " { }
+}
+
+# check we can create a telescope instance
+send -- "telescope = SKAMid()\r"
+expect {
+    timeout { send_user "Problem Creating SKAMid telescope"; exit 1 }
+    -ex "telescope = SKAMid()\r\n\r\nIn \[2\]: " { }
+}
+
+# check we can create a subarray instance
+send -- "subarray = SubArray(1)\r"
+expect {
+    timeout { send_user "Problem Creating Subarray"; exit 1 }
+    -ex "subarray = SubArray(1)\r\n\r\nIn \[3\]: " { }
+}                                                     
+# check we can create a resource allocation consisting of two dishes
+send -- "allocation = ResourceAllocation(dishes=\[Dish(1)\])\r"                                                                                                                                                                
+expect {
+    timeout { send_user "Problem Creating Resource allocation"; exit 1 }
+    -ex "allocation = ResourceAllocation(dishes=\[Dish(1)\])\r\n\r\nIn \[4\]: " { }
+}
+# Activate the telescope
+send -- "telescope.start_up()\r"
+expect {
+    timeout { send_user "Problem Starting Telescope"; exit 1 }
+    -ex "telescope.start_up()\r\n\r\nIn \[5\]: " { }
+}
+
+# remove any resources previously allocated
+send -- "subarray.deallocate()\r"
+expect {
+    timeout { send_user "Problem Clearing Subarry "; exit 1 }
+    -ex "In \[6\]: " { }
+}
+
+sleep 4
+
+# Allocate the dishes to the subarray - this should return  a reference to the 
+# dishes that have been allocated - at the moment only allocating dish 1 because
+# that saves having to manually tweak the number of devices from 1 to 4 
+# TODO: It should be possible to script setting the number of dishes above
+send -- "subarray.allocate(allocation)\r"
+expect {
+    timeout { send_user "Problem Allocating Subarry "; exit 1 }
+    -ex "<ResourceAllocation(dishes=\[<Dish(1)>\])>\r\n\r\nIn \[7\]: " { }
+}
+
+sleep 2
+
+send -- "subarray_proxy = DeviceProxy('ska_mid/tm_subarray_node/1')\r"
+expect {
+    timeout { send_user "Problem Allocating Subarry "; exit 1 }
+    -ex "In \[8\]: " { }
+}
+send -- "subarray_proxy.receptorIDList\r"
+expect {
+    timeout { send_user "Problem Allocating Subarry "; exit 1 }
+    -ex "Out\[8\]: (1,)\r\n\r\nIn \[9]\: " { }
+}
+
+# Deallocate the dishes from the subarry - uses the subarray_proxy created
+# previously to check the subarray has actually been deallocated
+
+# Note: at present partial dellocations work in OET but don't seem to in TMC
+# so this does a full deallocation - when fixed we should test for this.
+send -- "subarray.deallocate()\r"
+expect {
+    timeout { send_user "Problem Deallocating Subarry "; exit 1 }
+    -ex "Out\[9\]: <ResourceAllocation(dishes=\[<Dish(1)>\])>\r\n\r\nIn \[10\]: " { }
+}
+
+sleep 2
+
+send -- "subarray_proxy.receptorIDList\r"
+expect {
+    timeout { send_user "Problem Allocating Subarry "; exit 1 }
+    -ex "subarray_proxy.receptorIDList\r\n\r\nIn \[11\]: " { }
+}
+
+# Deactivate the telescope
+send -- "telescope.standby()\r"
+expect {
+    timeout { send_user "Problem Putting the telescope into standby"; exit 1 }
+    -ex "telescope.standby()\r\n\r\nIn \[12\]: " { }
+}
+
+send "exit\r\n"
+expect eof
