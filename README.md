@@ -22,7 +22,7 @@ Execute the test suite with:
 make test
 ```
 
-Test the cli interface with a samle set of tmc devices with:
+Test the cli interface with a sample set of tmc devices with:
 
 ```
 make test-cli
