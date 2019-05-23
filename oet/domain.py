@@ -5,16 +5,29 @@ concepts, allowing the telescope to be controlled using Python methods without
 knowledge of the Tango control system.
 """
 import collections
-
+from typing import Optional, List
 import operator
 
 
 class Dish:
     """
-    Represents an SKA MID dish.
+    Dish represents an SKA MID antenna. Dish instances are used as arguments
+    for resource allocation and resource deallocation commands.
+
+    Dishes have a positive numeric identifier, accessible as Dish.id, which
+    corresponds to the dish leaf node of the same ID registered in the Tango
+    database. Dishes with the same numeric ID are considered equal and
+    represent the same physical hardware.
     """
 
     def __init__(self, identifier: int):
+        """
+        Create a new Dish instance.
+
+        The Dish identifier must be specified as a positive number.
+
+        :param identifier: the numeric dish identifier
+        """
         # As a user-facing class, handle both strings and ints
         try:
             identifier = int(identifier)
@@ -38,10 +51,48 @@ class Dish:
 
 class ResourceAllocation:
     """
-    Represents a collection of resources that are, or can be, assigned to a sub-array.
+    The ResourceAllocation class represents a collection of resources that
+    are, or can be, assigned to a sub-array.
+
+    Resources can be assigned to a sub-array or unassigned and still belong
+    to a ResourceAllocation. Adding a resource to a ResourceAllocation makes
+    no statement on the allocation status of the added resource, and does
+    not change the allocation state of the resource being added. A
+    ResourceAllocation could contain a mixture of assigned and unassigned
+    resources; it is up to the code that operate on ResourceAllocations to
+    decide whether the ResourceAllocation is valid and if not, how to handle
+    the situation.
+
+    ResourceAllocations are considered equal if they hold the same set of
+    resources.
+
+    A ResourceAllocation comprises:
+
+    - a DishAllocation: the set of dishes in this allocation
+
+    ResourceAllocations can be added to one another, e.g.,
+
+        ra = ResourceAllocation(dishes=[Dish(1),Dish(2)])
+        ra += ResourceAllocation(dishes=[Dish(2),Dish(3)])
+
+    In the example above, after the inplace addition operation the
+    ResourceAllocation will hold dishes 1-3.
+
+    Similarly, ResourceAllocations can be subtracted from one another, e.g.,
+
+        ra = ResourceAllocation(dishes=[Dish(1),Dish(2)])
+        ra -= ResourceAllocation(dishes=[Dish(2)])
+
+    After inplace subtraction the ResourceAllocation will refer to dish 2.
     """
 
-    def __init__(self, dishes=None):
+    def __init__(self, dishes: Optional[List[Dish]] = None):
+        """
+        Create a new ResourceAllocation.
+
+        :param dishes: (optional) list of dishes to reference
+        :type dishes: [Dish, Dish, ...]
+        """
         self.dishes = DishAllocation(dishes=dishes)
 
     def __iadd__(self, other):
@@ -72,10 +123,50 @@ class ResourceAllocation:
 
 class DishAllocation(collections.MutableSet):
     """
-    Represents a collection of SKA MID dishes that are, or can be, assigned to a sub-array.
+    DishAllocation represents a collection of SKA MID antennas.
+
+    In more detail, DishAllocation holds a collection of Dishes, corresponding
+    to the physical antennas referenced by the DishAllocation.
+
+    The Dishes in a DishAllocation can be in an assigned or unassigned state.
+    Adding a Dish to a DishAllocation makes no statement on the sub-array
+    allocation status of the Dish, and does not change the allocation state.
+    A DishAllocation can contain a mixture of allocated and unallocated
+    dishes; it is up to the code that operates on DishAllocations to decide
+    whether the DishAllocation is valid and if not, how to handle the
+    situation.
+
+    Dishes can be added and removed from a DishAllocation using the add() and
+    remove() operations respectively, e.g.,
+
+      da = DishAllocation()
+      da.add(Dish(1))
+      da.add(Dish(2))
+      da.discard(Dish(2))
+
+    DishAllocations can be added to another DishAllocation, e.g.,
+
+      da = DishAllocation()
+      da += DishAllocation(dishes=[Dish(1), Dish(2)])
+
+    In the example above, the final dish allocation holds antennas #1 and #2.
+
+    Similarly, DishAllocations can be subtracted from each other, e.g.,
+
+      da = DishAllocation(dishes=[Dish(1), Dish(2)])
+      da -= DishAllocation(dishes=[Dish(1)])
+
+    The final state after the operation above is a DishAllocation holding
+    only antenna #2.
     """
 
-    def __init__(self, dishes=None):
+    def __init__(self, dishes: Optional[List[Dish]] = None):
+        """
+        Create a new DishAllocation containing the specified Dishes.
+
+        :param dishes: (optional) the Dishes to add to this allocation
+        :type: list of Dish objects
+        """
         if dishes is None:
             dishes = []
         self.dishes = set()
@@ -138,10 +229,22 @@ class DishAllocation(collections.MutableSet):
 
 class SubArray:
     """
-    Represents a sub-array.
+    SubArray represents an SKA telescope sub-array.
+
+    SubArrays have a positive numeric identifier, accessible as SubArray.id,
+    whicih corresponds to the SubArrayNode of the same ID. SubArray objects
+    with the same numeric ID are considered equal.
+
+    SubArrays are used to allocate and deallocate resources to and from a
+    telescope sub-array.
     """
 
     def __init__(self, identifier: int):
+        """
+        Create a new SubArray object.
+
+        :param identifier: the numeric sub-array ID
+        """
         # As a user-facing class, handle both strings and ints
         try:
             identifier = int(identifier)
@@ -164,11 +267,12 @@ class SubArray:
 
         :param resources: the resources to allocate
         :return: the successfully allocated resources.
+        :rtype: ResourceAllocation
         """
         allocated = observingtasks.allocate_resources(self, resources)
         return allocated
 
-    def deallocate(self, resources: ResourceAllocation = None) -> ResourceAllocation:
+    def deallocate(self, resources: Optional[ResourceAllocation] = None) -> ResourceAllocation:
         """
         Deallocate resources from a sub-array.
 
@@ -181,6 +285,7 @@ class SubArray:
 
         :param resources: the resources to release (optional)
         :return: the resources deallocated from the sub-array.
+        :rtype: ResourceAllocation
         """
         if resources is None:
             deallocated = observingtasks.deallocate_resources(self, release_all=True)
@@ -191,7 +296,9 @@ class SubArray:
 
 class SKAMid:
     """
-    Represents SKA Mid.
+    SKAMid represents the SKA Mid telescope.
+
+    Operations on an SKAMid object affect the whole telescope.
     """
 
     def __init__(self):
