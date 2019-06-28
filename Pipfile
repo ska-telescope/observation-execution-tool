@@ -3,6 +3,11 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[[source]]
+url = 'https://nexus.engageska-portugal.pt/repository/pypi/simple'
+verify_ssl = true
+name = 'nexus'
+
 [packages]
 # numpy and pytango versions must match those in the ska-python-builder image,
 # otherwise pytango will be recompiled.
@@ -13,7 +18,10 @@ pytango = "==9.2.5"
 # 'RUN ipython profile create' line from Dockerfile.
 itango = "*"
 # If you want to debug devices running in containers, add pydevd to the dependencies
-# pydevd = "*"
+pydevd = "*"
+
+#SKA Configuration Data Model (used for formatting API requests from OET to TMC)
+cdm-shared-library = "==0.1.1"
 
 [dev-packages]
 docutils = "*"

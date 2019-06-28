@@ -8,9 +8,12 @@ the API of the devices they are controlling.
 """
 import json
 from typing import Optional
+from cdm_lib.messages import AssignResources
+import cdm_lib.schemas
 
 from .command import Command, TangoExecutor
 from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid
+
 
 
 class TangoRegistry:  # pylint: disable=too-few-public-methods
@@ -87,9 +90,29 @@ def get_allocate_resources_arg(subarray: SubArray, resources: ResourceAllocation
     :param resources: the resources to allocate
     :return: JSON string
     """
-    dish_arg = get_dish_resource_dict(resources.dishes)
-    command_dict = dict(subarrayID=subarray.id, dish=dish_arg)
-    return json.dumps(command_dict)
+
+    # Principle is that the CDM library does the conversion work to generate the JSON
+    # and the OET doesn't need to know any more about the  JSON structure than is
+    # absolutely necessary.
+    #
+    # anything to be set in the message is exposed on the constructor of the CDM object
+    # as basic python types (so anyone else using the CDM isn't necessarily coupled to the
+    # OET domain objects.
+    #
+    # These observing task methods still do any conversion from the OET domain objects into
+    # the more general CDM types.
+
+    # TODO - move formatting into cdm_lib.schemas.Dish and tweak the AssignResources constructor
+    #        to take resource.dishes
+    receptor_id_list = ['{:0>4}'.format(dish.id) for dish in resources.dishes]
+    dish_arg = cdm_lib.schemas.Dish(receptor_id_list)
+
+    # Construct an AssignResources request object
+    assign_reources = AssignResources(subarray.id, dish_arg)
+
+    # At the moment the representation of the CDM object is its JSON - this may change
+    # as we introduce more complex objects and we may want to have a
+    return repr(assign_reources)
 
 
 def get_telescope_start_up_command(telescope: SKAMid) -> Command:
