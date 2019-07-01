@@ -7,8 +7,11 @@ This module is intended to be maintained by someone familiar with Tango and
 the API of the devices they are controlling.
 """
 import json
+
 from typing import Optional
 
+import ska.cdm as cdm
+import ska.cdm.messages.central_node.assign_resources as assign_resources
 from .command import Command, TangoExecutor
 from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid
 
@@ -63,16 +66,15 @@ def convert_assign_resources_response(response: str) -> ResourceAllocation:
     return ResourceAllocation(dishes=allocated_dishes)
 
 
-def get_dish_resource_dict(allocation: DishAllocation) -> dict:
+def get_dish_resource_list(allocation: DishAllocation) -> list:
     """
-    Convert a DishAllocation to a dict which, when converted to JSON, is
+    Convert a DishAllocation to a list which, when converted to JSON, is
     acceptable to a CentralNode AssignResources or ReleaseResources command.
 
     :param allocation: dish allocation to convert
-    :return: dict that can be converted to JSON
+    :return: list that can be converted to JSON
     """
-    receptor_id_list = ['{:0>4}'.format(dish.id) for dish in allocation]
-    return dict(receptorIDList=receptor_id_list)
+    return ['{:0>4}'.format(dish.id) for dish in allocation]
 
 
 def get_allocate_resources_arg(subarray: SubArray, resources: ResourceAllocation) -> str:
@@ -87,9 +89,10 @@ def get_allocate_resources_arg(subarray: SubArray, resources: ResourceAllocation
     :param resources: the resources to allocate
     :return: JSON string
     """
-    dish_arg = get_dish_resource_dict(resources.dishes)
-    command_dict = dict(subarrayID=subarray.id, dish=dish_arg)
-    return json.dumps(command_dict)
+    receptor_ids = get_dish_resource_list(resources.dishes)
+    dish_allocation = assign_resources.DishAllocation(receptor_ids=receptor_ids)
+    request = assign_resources.AssignResourcesRequest(subarray_id=subarray.id, dish_allocation=dish_allocation)
+    return cdm.CODEC.dumps(request)
 
 
 def get_telescope_start_up_command(telescope: SKAMid) -> Command:
@@ -146,7 +149,7 @@ def get_release_resources_arg(subarray: SubArray, release_all: bool,
     if release_all is True:
         command_dict['releaseALL'] = True
     else:
-        command_dict['dish'] = get_dish_resource_dict(resources.dishes)
+        command_dict['dish'] = get_dish_resource_list(resources.dishes)
     return json.dumps(command_dict)
 
 
