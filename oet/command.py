@@ -9,6 +9,7 @@ asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
 import tango
+import PyTango
 
 
 class Command:
@@ -93,6 +94,20 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         if len(command.args) > 1:
             param = command.args
         return proxy.command_inout(command.command_name, cmd_param=param)
+
+    def read(self, command: Command, attribute: attribute):
+        """
+        Execute a Command on a Tango device.
+
+        :param command: the command to execute
+        :return: the response, if any, returned by the Tango device
+        """
+        proxy = self._get_proxy(command.device)
+        attribute = None
+        read = proxy.read_attribute(
+            attribute, extract_as=PyTango.ExtractAs.List
+        )
+        return read.value # CONFIGURING STANDBY
 
     def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
         # It takes time to construct and connect a device proxy to the remote

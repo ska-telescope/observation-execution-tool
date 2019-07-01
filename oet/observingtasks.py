@@ -9,7 +9,7 @@ the API of the devices they are controlling.
 import json
 from typing import Optional
 
-from .command import Command, TangoExecutor
+from .command import Command, TangoExecutor, TangoAtrributeReader
 from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid
 
 

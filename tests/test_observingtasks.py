@@ -284,3 +284,20 @@ def test_telescope_stand_by_calls_tango_executor(mock_execute_fn):
     observingtasks.telescope_standby(telescope)
     command = observingtasks.get_telescope_standby_command(telescope)
     mock_execute_fn.assert_called_once_with(command)
+
+@patch.object(observingtasks.EXECUTOR, 'execute')
+@patch.object(observingtasks.EXECUTOR, 'reader')
+def test_subarray_configure_command(mock_execute_fn, mock_read_fn):
+    """
+    Verify that configuration command is changing obsState to CONFIGURING
+    """
+    mock_read_fn.return_value = 'CONFIGURING'
+    
+    """ mock_execute_fn.return_value = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
+
+    resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
+    subarray = SubArray(1)
+    allocated = subarray.allocate(resources)
+
+    assert resources == allocated """
+    
