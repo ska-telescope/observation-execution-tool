@@ -6,11 +6,12 @@ control system domain.
 This module is intended to be maintained by someone familiar with Tango and
 the API of the devices they are controlling.
 """
-import json
 from typing import Optional
-import ska.cdm as cdm
 
-from ska.cdm.messages import central_node
+import marshmallow
+import ska.cdm as cdm
+import ska.cdm.messages.central_node as central_node
+
 from .command import Command, TangoExecutor
 from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid
 
@@ -55,39 +56,24 @@ def convert_assign_resources_response(response: str) -> ResourceAllocation:
     :param response: the device response
     :return: the successfully allocated ResourceAllocation
     """
-    deserialised = json.loads(response)
     try:
-        allocated_dish_ids = deserialised['dish']['receptorIDList_success']
-    except KeyError:
+        unmarshalled = cdm.CODEC.loads(central_node.assign_resources.AssignResourcesResponse, response)
+    except marshmallow.ValidationError:
         allocated_dishes = []
     else:
-        allocated_dishes = [Dish(i) for i in allocated_dish_ids]
+        allocated_dishes = [Dish(i) for i in unmarshalled.dish.receptor_ids]
     return ResourceAllocation(dishes=allocated_dishes)
 
 
-def get_dish_resource_list(allocation: DishAllocation) -> list:
+def get_dish_resource_ids(allocation: DishAllocation) -> list:
     """
-    Convert a DishAllocation to a list which, when converted to JSON, is
-    acceptable to a CentralNode AssignResources or ReleaseResources command.
+    Convert a DishAllocation to a list of string receptor IDs suitable for
+    use in a CentralNode AssignResources or ReleaseResources command.
 
     :param allocation: dish allocation to convert
     :return: list that can be converted to JSON
     """
     return ['{:0>4}'.format(dish.id) for dish in allocation]
-
-
-def get_dish_resource_dict(allocation: DishAllocation) -> dict:
-    """
-    Convert a DishAllocation to a dict which, when converted to JSON, is
-    acceptable to a CentralNode AssignResources or ReleaseResources
-    command.
-
-    :param allocation: dish allocation to convert
-    :return: dict that can be converted to JSON
-    """
-
-    receptor_id_list = ['{:0>4}'.format(dish.id) for dish in allocation]
-    return dict(receptorIDList=receptor_id_list)
 
 
 def get_telescope_start_up_command(telescope: SKAMid) -> Command:
@@ -116,15 +102,14 @@ def get_telescope_standby_command(telescope: SKAMid) -> Command:
 
 def get_allocate_resources_arg(subarray: SubArray, resources: ResourceAllocation) -> str:
     """
-    Return an OET Command that, when passed to a TangoExecutor, would allocate
-    resources to a sub-array.
+    Return the JSON string that, when passed as argument to
+    CentralNode.AssignResources, would allocate resources to a sub-array.
 
     :param subarray: the sub-array to allocate resources to
     :param resources: the resources to allocate
-    :rtype: string  a prepared OET Command
+    :type: string argument for CentralNode.AssignResources
     """
-
-    receptor_ids = get_dish_resource_list(resources.dishes)
+    receptor_ids = get_dish_resource_ids(resources.dishes)
     dish_allocation = central_node.assign_resources.DishAllocation(receptor_ids=receptor_ids)
     request = central_node.assign_resources.AssignResourcesRequest(
         subarray_id=subarray.id,
@@ -165,17 +150,18 @@ def get_release_resources_arg(subarray: SubArray, release_all: bool,
             subarray_id=subarray.id,
             release_all=True
         )
-    else:
+        return cdm.CODEC.dumps(request)
 
-        receptor_ids = get_dish_resource_list(resources.dishes)
-        dish_allocation = central_node.assign_resources.DishAllocation(
-            receptor_ids=receptor_ids
-        )
+    # Not releasing all resources so must get args for specific resources to
+    # release
+    receptor_ids = get_dish_resource_ids(resources.dishes)
+    dish_allocation = central_node.assign_resources.DishAllocation(receptor_ids=receptor_ids)
 
-        request = central_node.release_resources.ReleaseResourcesRequest(
-            subarray_id=subarray.id,
-            dish_allocation=dish_allocation
-        )
+    request = central_node.release_resources.ReleaseResourcesRequest(
+        subarray_id=subarray.id,
+        dish_allocation=dish_allocation
+    )
+
     return cdm.CODEC.dumps(request)
 
 

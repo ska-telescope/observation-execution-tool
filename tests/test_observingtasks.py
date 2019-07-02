@@ -9,8 +9,6 @@ import pytest
 from oet import observingtasks
 from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMid
 
-
-
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
 
 # Messages used for comparason in tests
@@ -70,6 +68,15 @@ def json_is_equal(json_a, json_b):
     return json.loads(json_a) == json.loads(json_b)
 
 
+def test_get_dish_resource_ids():
+    """
+    Test that numeric Dish IDs are converted to correctly formatted string IDs
+    """
+    dish_allocation = DishAllocation(dishes=[Dish(1), Dish(2)])
+    expected = ["0001", "0002"]
+    assert observingtasks.get_dish_resource_ids(dish_allocation) == expected
+
+
 def test_allocate_resources_forms_correct_json():
     """
     Verify that domain objects are converted correctly to JSON arguments for a
@@ -86,7 +93,6 @@ def test_convert_assign_resources_response():
     Test that that CentralNode.AssignResources response is parsed and
     converted to domain objects correctly.
     """
-
     expected = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     assert observingtasks.convert_assign_resources_response(ASSIGN_RESOURCES_SUCCESS) == expected
 
