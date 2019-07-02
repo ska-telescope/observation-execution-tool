@@ -56,8 +56,9 @@ def convert_assign_resources_response(response: str) -> ResourceAllocation:
     :param response: the device response
     :return: the successfully allocated ResourceAllocation
     """
+    response_cls = central_node.AssignResourcesResponse
     try:
-        unmarshalled = cdm.CODEC.loads(central_node.assign_resources.AssignResourcesResponse, response)
+        unmarshalled = cdm.CODEC.loads(response_cls, response)
     except marshmallow.ValidationError:
         allocated_dishes = []
     else:
@@ -100,22 +101,21 @@ def get_telescope_standby_command(telescope: SKAMid) -> Command:
     return Command(central_node_fqdn, 'StandByTelescope')
 
 
-def get_allocate_resources_arg(subarray: SubArray, resources: ResourceAllocation) -> str:
+def get_allocate_resources_request(subarray: SubArray, resources: ResourceAllocation) \
+        -> central_node.AssignResourcesRequest:
     """
     Return the JSON string that, when passed as argument to
     CentralNode.AssignResources, would allocate resources to a sub-array.
 
     :param subarray: the sub-array to allocate resources to
     :param resources: the resources to allocate
-    :type: string argument for CentralNode.AssignResources
+    :return: CDM request for CentralNode.AssignResources
     """
     receptor_ids = get_dish_resource_ids(resources.dishes)
-    dish_allocation = central_node.assign_resources.DishAllocation(receptor_ids=receptor_ids)
-    request = central_node.assign_resources.AssignResourcesRequest(
-        subarray_id=subarray.id,
-        dish_allocation=dish_allocation
-    )
-    return cdm.CODEC.dumps(request)
+    dish_allocation = central_node.DishAllocation(receptor_ids=receptor_ids)
+    request = central_node.AssignResourcesRequest(subarray_id=subarray.id,
+                                                  dish_allocation=dish_allocation)
+    return request
 
 
 def get_allocate_resources_command(subarray: SubArray, resources: ResourceAllocation) -> Command:
@@ -128,12 +128,14 @@ def get_allocate_resources_command(subarray: SubArray, resources: ResourceAlloca
     :return:
     """
     central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
-    arg = get_allocate_resources_arg(subarray, resources)
-    return Command(central_node_fqdn, 'AssignResources', arg)
+    request = get_allocate_resources_request(subarray, resources)
+    request_json = cdm.CODEC.dumps(request)
+    return Command(central_node_fqdn, 'AssignResources', request_json)
 
 
-def get_release_resources_arg(subarray: SubArray, release_all: bool,
-                              resources: Optional[ResourceAllocation] = None) -> str:
+def get_release_resources_request(subarray: SubArray, release_all: bool,
+                                  resources: Optional[ResourceAllocation] = None) \
+        -> central_node.ReleaseResourcesRequest:
     """
     Return an argument for a CentralNode.ReleaseResources command.
 
@@ -142,27 +144,19 @@ def get_release_resources_arg(subarray: SubArray, release_all: bool,
         the resources specified in the resources argument
     :param resources: the set of resources to release. Only required if
         release_all is False
-    :return: the
+    :return: a CDM request object for CentralNode.ReleaseResources
     """
 
     if release_all is True:
-        request = central_node.release_resources.ReleaseResourcesRequest(
-            subarray_id=subarray.id,
-            release_all=True
-        )
-        return cdm.CODEC.dumps(request)
+        return central_node.ReleaseResourcesRequest(subarray_id=subarray.id, release_all=True)
 
     # Not releasing all resources so must get args for specific resources to
     # release
     receptor_ids = get_dish_resource_ids(resources.dishes)
     dish_allocation = central_node.assign_resources.DishAllocation(receptor_ids=receptor_ids)
 
-    request = central_node.release_resources.ReleaseResourcesRequest(
-        subarray_id=subarray.id,
-        dish_allocation=dish_allocation
-    )
-
-    return cdm.CODEC.dumps(request)
+    return central_node.ReleaseResourcesRequest(subarray_id=subarray.id,
+                                                dish_allocation=dish_allocation)
 
 
 def get_release_resources_command(subarray: SubArray,
@@ -177,11 +171,13 @@ def get_release_resources_command(subarray: SubArray,
         the resources specified in the resources argument
     :param resources: the set of resources to release. Only required if
         release_all is False
-    :return:
+    :return: OET Command to release sub-array resources
     """
     central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
-    arg = get_release_resources_arg(subarray, release_all=release_all, resources=resources)
-    return Command(central_node_fqdn, 'ReleaseResources', arg)
+    request_obj = get_release_resources_request(subarray, release_all=release_all,
+                                                resources=resources)
+    request_json = cdm.CODEC.dumps(request_obj)
+    return Command(central_node_fqdn, 'ReleaseResources', request_json)
 
 
 def allocate_resources(subarray: SubArray, resources: ResourceAllocation) -> ResourceAllocation:
