@@ -8,12 +8,11 @@ the API of the devices they are controlling.
 """
 import json
 from typing import Optional
-from cdm_lib.messages import AssignResources
-import cdm_lib.schemas
+import ska.cdm as cdm
 
+from ska.cdm.messages import central_node
 from .command import Command, TangoExecutor
 from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid
-
 
 
 class TangoRegistry:  # pylint: disable=too-few-public-methods
@@ -66,53 +65,29 @@ def convert_assign_resources_response(response: str) -> ResourceAllocation:
     return ResourceAllocation(dishes=allocated_dishes)
 
 
+def get_dish_resource_list(allocation: DishAllocation) -> list:
+    """
+    Convert a DishAllocation to a list which, when converted to JSON, is
+    acceptable to a CentralNode AssignResources or ReleaseResources command.
+
+    :param allocation: dish allocation to convert
+    :return: list that can be converted to JSON
+    """
+    return ['{:0>4}'.format(dish.id) for dish in allocation]
+
+
 def get_dish_resource_dict(allocation: DishAllocation) -> dict:
     """
     Convert a DishAllocation to a dict which, when converted to JSON, is
-    acceptable to a CentralNode AssignResources or ReleaseResources command.
+    acceptable to a CentralNode AssignResources or ReleaseResources
+    command.
 
     :param allocation: dish allocation to convert
     :return: dict that can be converted to JSON
     """
+
     receptor_id_list = ['{:0>4}'.format(dish.id) for dish in allocation]
     return dict(receptorIDList=receptor_id_list)
-
-
-def get_allocate_resources_arg(subarray: SubArray, resources: ResourceAllocation) -> str:
-    """
-    Construct the argument for a CentralNode.AssignResources command.
-
-    This function accepts OET domain objects and translates them to an
-    equivalent JSON string that can be input to a
-    CentralNode.AssignResources() call.
-
-    :param subarray: the sub-array to allocate resources to
-    :param resources: the resources to allocate
-    :return: JSON string
-    """
-
-    # Principle is that the CDM library does the conversion work to generate the JSON
-    # and the OET doesn't need to know any more about the  JSON structure than is
-    # absolutely necessary.
-    #
-    # anything to be set in the message is exposed on the constructor of the CDM object
-    # as basic python types (so anyone else using the CDM isn't necessarily coupled to the
-    # OET domain objects.
-    #
-    # These observing task methods still do any conversion from the OET domain objects into
-    # the more general CDM types.
-
-    # TODO - move formatting into cdm_lib.schemas.Dish and tweak the AssignResources constructor
-    #        to take resource.dishes
-    receptor_id_list = ['{:0>4}'.format(dish.id) for dish in resources.dishes]
-    dish_arg = cdm_lib.schemas.Dish(receptor_id_list)
-
-    # Construct an AssignResources request object
-    assign_reources = AssignResources(subarray.id, dish_arg)
-
-    # At the moment the representation of the CDM object is its JSON - this may change
-    # as we introduce more complex objects and we may want to have a
-    return repr(assign_reources)
 
 
 def get_telescope_start_up_command(telescope: SKAMid) -> Command:
@@ -139,14 +114,33 @@ def get_telescope_standby_command(telescope: SKAMid) -> Command:
     return Command(central_node_fqdn, 'StandByTelescope')
 
 
-def get_allocate_resources_command(subarray: SubArray, resources: ResourceAllocation) -> Command:
+def get_allocate_resources_arg(subarray: SubArray, resources: ResourceAllocation) -> str:
     """
     Return an OET Command that, when passed to a TangoExecutor, would allocate
     resources to a sub-array.
 
     :param subarray: the sub-array to allocate resources to
     :param resources: the resources to allocate
-    :return: a prepared OET Command
+    :rtype: string  a prepared OET Command
+    """
+
+    receptor_ids = get_dish_resource_list(resources.dishes)
+    dish_allocation = central_node.assign_resources.DishAllocation(receptor_ids=receptor_ids)
+    request = central_node.assign_resources.AssignResourcesRequest(
+        subarray_id=subarray.id,
+        dish_allocation=dish_allocation
+    )
+    return cdm.CODEC.dumps(request)
+
+
+def get_allocate_resources_command(subarray: SubArray, resources: ResourceAllocation) -> Command:
+    """
+    Return an OET Command that, when passed to a TangoExecutor, would allocate
+    resources from a sub-array.
+
+    :param subarray: the sub-array to control
+    :param resources: the set of resources to allocate
+    :return:
     """
     central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
     arg = get_allocate_resources_arg(subarray, resources)
@@ -165,12 +159,24 @@ def get_release_resources_arg(subarray: SubArray, release_all: bool,
         release_all is False
     :return: the
     """
-    command_dict = dict(subarrayID=subarray.id)
+
     if release_all is True:
-        command_dict['releaseALL'] = True
+        request = central_node.release_resources.ReleaseResourcesRequest(
+            subarray_id=subarray.id,
+            release_all=True
+        )
     else:
-        command_dict['dish'] = get_dish_resource_dict(resources.dishes)
-    return json.dumps(command_dict)
+
+        receptor_ids = get_dish_resource_list(resources.dishes)
+        dish_allocation = central_node.assign_resources.DishAllocation(
+            receptor_ids=receptor_ids
+        )
+
+        request = central_node.release_resources.ReleaseResourcesRequest(
+            subarray_id=subarray.id,
+            dish_allocation=dish_allocation
+        )
+    return cdm.CODEC.dumps(request)
 
 
 def get_release_resources_command(subarray: SubArray,

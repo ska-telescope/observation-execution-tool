@@ -1,12 +1,12 @@
 [[source]]
-url = "https://pypi.org/simple"
-verify_ssl = true
-name = "pypi"
-
-[[source]]
 url = 'https://nexus.engageska-portugal.pt/repository/pypi/simple'
 verify_ssl = true
 name = 'nexus'
+
+[[source]]
+url = 'https://pypi.python.org/simple'
+verify_ssl = true
+name = 'pypi'
 
 [packages]
 # numpy and pytango versions must match those in the ska-python-builder image,
@@ -21,7 +21,7 @@ itango = "*"
 pydevd = "*"
 
 #SKA Configuration Data Model (used for formatting API requests from OET to TMC)
-cdm-shared-library = "==0.1.1"
+cdm-shared-library = ">=0.1.9"
 
 [dev-packages]
 docutils = "*"
@@ -41,3 +41,6 @@ sphinxcontrib-websupport = "*"
 
 [requires]
 python_version = "3"
+
+[pipenv]
+allow_prereleases = true

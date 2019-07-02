@@ -9,7 +9,19 @@ import pytest
 from oet import observingtasks
 from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMid
 
+
+
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
+
+# Messages used for comparason in tests
+
+ASSIGN_RESOURCES_SUCCESS = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
+VALID_ALLOCATE_RESOURCES_REQUEST = '{"subarrayID": 1, "dish": {"receptorIDList": ["0001", "0002"]}}'
+MALFORMED_ASSIGN_RESOURCES_RESPONSE = '{"foo": "bar"}'
+
+VALID_RELEASE_RESOURCES_JSON = '{"subarrayID": 1, "dish": {"receptorIDList": ["0001", "0002"]}}'
+VALID_RELEASE_ALL_JSON = '{"subarrayID": 1, "releaseALL": true}'
+PARTIAL_ALLOCATION_JSON = '{"dish": {"receptorIDList_success": ["0001"]}}'
 
 
 def test_tango_registry_returns_correct_url_for_ska_mid():
@@ -65,9 +77,8 @@ def test_allocate_resources_forms_correct_json():
     """
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray = SubArray(1)
-    required_json = '{"subarrayID": 1, "dish": {"receptorIDList": ["0001", "0002"]}}'
-    j = observingtasks.get_allocate_resources_arg(subarray, resources)
-    assert json_is_equal(j, required_json)
+    request = observingtasks.get_allocate_resources_arg(subarray, resources)
+    assert json_is_equal(VALID_ALLOCATE_RESOURCES_REQUEST, request)
 
 
 def test_convert_assign_resources_response():
@@ -75,9 +86,9 @@ def test_convert_assign_resources_response():
     Test that that CentralNode.AssignResources response is parsed and
     converted to domain objects correctly.
     """
-    response = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
+
     expected = ResourceAllocation(dishes=[Dish(1), Dish(2)])
-    assert observingtasks.convert_assign_resources_response(response) == expected
+    assert observingtasks.convert_assign_resources_response(ASSIGN_RESOURCES_SUCCESS) == expected
 
 
 def test_convert_malformed_assign_resources_response():
@@ -85,9 +96,8 @@ def test_convert_malformed_assign_resources_response():
     Test that that a malformed CentralNode.AssignResources response is parsed
     and handled correctly.
     """
-    response = '{"foo": "bar"}'
     expected = ResourceAllocation()
-    assert observingtasks.convert_assign_resources_response(response) == expected
+    assert observingtasks.convert_assign_resources_response(MALFORMED_ASSIGN_RESOURCES_RESPONSE) == expected
 
 
 def test_allocate_resources_command():
@@ -111,9 +121,8 @@ def test_release_resources_forms_correct_json():
     """
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray = SubArray(1)
-    required_json = '{"subarrayID": 1, "dish": {"receptorIDList": ["0001", "0002"]}}'
-    j = observingtasks.get_release_resources_arg(subarray, release_all=False, resources=resources)
-    assert json_is_equal(j, required_json)
+    request = observingtasks.get_release_resources_arg(subarray, release_all=False, resources=resources)
+    assert json_is_equal(request, VALID_RELEASE_RESOURCES_JSON)
 
 
 def test_release_resources_forms_correct_json_for_release_all():
@@ -123,9 +132,8 @@ def test_release_resources_forms_correct_json_for_release_all():
     :return:
     """
     subarray = SubArray(1)
-    required_json = '{"subarrayID": 1, "releaseALL": true}'
     j = observingtasks.get_release_resources_arg(subarray, release_all=True)
-    assert json_is_equal(j, required_json)
+    assert json_is_equal(j, VALID_RELEASE_ALL_JSON)
 
 
 def test_release_resources_ignores_resources_when_release_all_is_specified():
@@ -136,9 +144,8 @@ def test_release_resources_ignores_resources_when_release_all_is_specified():
     """
     subarray = SubArray(1)
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
-    required_json = '{"subarrayID": 1, "releaseALL": true}'
     j = observingtasks.get_release_resources_arg(subarray, release_all=True, resources=resources)
-    assert json_is_equal(j, required_json)
+    assert json_is_equal(j, VALID_RELEASE_ALL_JSON)
 
 
 def test_release_resources_command():
@@ -163,7 +170,7 @@ def test_allocate_resources_successful_allocation(mock_execute_fn):
     Verify that domain objects representing the successfully allocated
     resources are returned from an allocate resources instruction.
     """
-    mock_execute_fn.return_value = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
+    mock_execute_fn.return_value = ASSIGN_RESOURCES_SUCCESS
 
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray = SubArray(1)
@@ -178,7 +185,7 @@ def test_allocate_resources_partial_allocation(mock_execute_fn):
     Verify that the response to an allocation request that was only part
     successful is processed correctly.
     """
-    mock_execute_fn.return_value = '{"dish": {"receptorIDList_success": ["0001"]}}'
+    mock_execute_fn.return_value = PARTIAL_ALLOCATION_JSON
 
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray = SubArray(1)
@@ -194,7 +201,7 @@ def test_subarray_state_is_updated_when_resources_are_allocated(mock_execute_fn)
     Verify that the SubArray resource allocation state is updated after
     resources are allocated to the sub-array.
     """
-    mock_execute_fn.return_value = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
+    mock_execute_fn.return_value = ASSIGN_RESOURCES_SUCCESS
 
     dish_allocation = DishAllocation(dishes=[Dish(1)])
     resources = ResourceAllocation(dishes=dish_allocation)
@@ -224,14 +231,18 @@ def test_deallocate_resources_enforces_boolean_release_all_argument():
     """
     subarray = SubArray(1)
     with pytest.raises(ValueError):
-        _ = observingtasks.deallocate_resources(subarray, release_all=1)
+        # noinspection PyTypeChecker
+        observingtasks.deallocate_resources(subarray, release_all=1)
 
-    dish_allocation = DishAllocation(dishes=[Dish(1)])
-    resources = ResourceAllocation(dishes=dish_allocation)
-    with pytest.raises(ValueError):
-        _ = observingtasks.deallocate_resources(
-            subarray, release_all=1, resources=resources
-        )
+        dish_allocation = DishAllocation(dishes=[Dish(1)])
+        # noinspection PyTypeChecker
+        resources = ResourceAllocation(dishes=dish_allocation)
+        with pytest.raises(ValueError):
+            # noinspection PyTypeChecker
+            observingtasks.deallocate_resources(
+                # noinspection PyTypeChecker
+                subarray, release_all=1, resources=resources
+            )
 
 
 @patch.object(observingtasks.EXECUTOR, 'execute')
