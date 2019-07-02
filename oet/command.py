@@ -95,7 +95,7 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
             param = command.args
         return proxy.command_inout(command.command_name, cmd_param=param)
 
-    def read(self, command: Command, attribute: attribute):
+    def read(self, command: Command):
         """
         Execute a Command on a Tango device.
 
@@ -103,11 +103,16 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         :return: the response, if any, returned by the Tango device
         """
         proxy = self._get_proxy(command.device)
-        attribute = None
-        read = proxy.read_attribute(
-            attribute, extract_as=PyTango.ExtractAs.List
-        )
-        return read.value # CONFIGURING STANDBY
+        return_str = ""
+        if len(command.args) == 1:
+            attribute = command.args[0]
+            read = proxy.read_attribute(
+                attribute, extract_as=PyTango.ExtractAs.List
+            )
+            return_str = read.value # RUNNING CONFIGURING STANDBY SCANNING
+        else:
+            return_str = "Must pass a argument to read attribute"
+        return return_str
 
     def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
         # It takes time to construct and connect a device proxy to the remote

@@ -293,6 +293,22 @@ class SubArray:
             deallocated = observingtasks.deallocate_resources(self, resources=resources)
         return deallocated
 
+    def configure(self, configure_json: str, attribute: str) -> str:
+        """
+        Allocate resources to a sub-array.
+
+        The resource allocation state of the sub-array object will be updated
+        to match the state of the sub-array after resource allocation.
+
+        :param resources: the resources to allocate
+        :return: the successfully allocated resources.
+        :rtype: ResourceAllocation
+        """
+        configured = observingtasks.configure(self, configure_json)
+        #print(f'Configured rsp: {configured}')
+        attribute_read = observingtasks.read_attribute(self, attribute)
+        return attribute_read
+
 
 class SKAMid:
     """

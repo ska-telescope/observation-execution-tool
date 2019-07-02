@@ -285,19 +285,19 @@ def test_telescope_stand_by_calls_tango_executor(mock_execute_fn):
     command = observingtasks.get_telescope_standby_command(telescope)
     mock_execute_fn.assert_called_once_with(command)
 
+
 @patch.object(observingtasks.EXECUTOR, 'execute')
-@patch.object(observingtasks.EXECUTOR, 'reader')
+@patch.object(observingtasks.EXECUTOR, 'read')
 def test_subarray_configure_command(mock_execute_fn, mock_read_fn):
     """
     Verify that configuration command is changing obsState to CONFIGURING
     """
+    configure_json = '{"pointing": {"target": {"system":"ICRS","name": "NGC6251","RA": 1.0,"dec": 1.0}},"dish": {"receiverBand": "1"}}'
+    attribute_read = 'obsState'
+    mock_execute_fn.return_value = 'Foo'
     mock_read_fn.return_value = 'CONFIGURING'
     
-    """ mock_execute_fn.return_value = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
-
-    resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray = SubArray(1)
-    allocated = subarray.allocate(resources)
+    configure_rsp = subarray.configure(configure_json, attribute_read)
 
-    assert resources == allocated """
-    
+    assert configure_rsp == 'Foo'

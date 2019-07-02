@@ -9,9 +9,8 @@ the API of the devices they are controlling.
 import json
 from typing import Optional
 
-from .command import Command, TangoExecutor, TangoAtrributeReader
+from .command import Command, TangoExecutor
 from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid
-
 
 class TangoRegistry:  # pylint: disable=too-few-public-methods
     """
@@ -43,7 +42,6 @@ TANGO_REGISTRY = TangoRegistry()
 # module attribute so that tests can mock the executor's 'execute()'
 # function.
 EXECUTOR = TangoExecutor()
-
 
 def convert_assign_resources_response(response: str) -> ResourceAllocation:
     """
@@ -211,7 +209,6 @@ def deallocate_resources(subarray: SubArray,
     subarray.resources -= released
     return released
 
-
 def telescope_start_up(telescope: SKAMid):
     """
     Start up the telescope.
@@ -234,3 +231,51 @@ def telescope_standby(telescope: SKAMid):
     """
     command = get_telescope_standby_command(telescope)
     EXECUTOR.execute(command)
+
+def get_configure_command(subarray: SubArray, configure_json: str) -> Command:
+    """
+    Return an OET Command that, when passed to a TangoExecutor, would configure a sub-array.
+
+    :param subarray: the sub-array to allocate resources to
+    :return: a prepared OET Command
+    """
+    central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
+    return Command(central_node_fqdn, 'Configure', configure_json)
+
+def configure(subarray: SubArray, configure_json: str) -> str:
+    """
+    Allocate resources to a sub-array.
+
+    :param subarray: the sub-array to control
+    :param configure_json: the json to configure the sub-array
+    :return: the reponse from sending the command to configure sub-array
+    """
+    command = get_configure_command(subarray, configure_json)
+    # requires variable annotations in Python > 3.5
+    # response: str = EXECUTOR.execute(command)
+    response = EXECUTOR.execute(command)
+    return response
+
+def get_read_command(subarray: SubArray, attribute: str) -> Command:
+    """
+    Return an OET Command that, when passed to a TangoExecutor, would configure a sub-array.
+
+    :param subarray: the sub-array to allocate resources to
+    :return: a prepared OET Command
+    """
+    central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
+    return Command(central_node_fqdn, '', attribute)
+
+def read_attribute(subarray: SubArray, attribute: str) -> str:
+    """
+    Allocate resources to a sub-array.
+
+    :param subarray: the sub-array to control
+    :param configure_json: the json to configure the sub-array
+    :return: the reponse from sending the command to configure sub-array
+    """
+    command = get_read_command(subarray, attribute)
+    # requires variable annotations in Python > 3.5
+    # response: str = EXECUTOR.execute(command)
+    response = EXECUTOR.read(command)
+    return response
