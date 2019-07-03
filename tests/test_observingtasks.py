@@ -11,6 +11,7 @@ from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMi
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
 
+COUNT = 0
 
 def test_tango_registry_returns_correct_url_for_ska_mid():
     """
@@ -358,18 +359,74 @@ def test_subarray_scan_command():
     assert len(cmd.args) == 1
     assert not cmd.kwargs
 
-#@patch.object(observingtasks.EXECUTOR, 'read')
-#@patch.object(observingtasks.EXECUTOR, 'execute')
-#def test_subarray_scan_change_ready_command(mock_execute_fn, mock_read_fn):
+def count_scan(_scan_duration: str, _attribute_read: str):
+    """
+    Replace function to test scan
+    """
+    global COUNT
+    if COUNT < 10:
+        COUNT += 1
+        return_str = 'SCANNING'
+    else:
+        return_str = 'READY'
+    return return_str
+
+@patch.object(observingtasks.EXECUTOR, 'read')
+@patch.object(observingtasks.EXECUTOR, 'execute')
+def test_subarray_scan_change_ready_command(mock_execute_fn, mock_read_fn):
     """
     Verify that scan command is changing obsState to SCANNING
     """
-    #scan_duration = '{"scanDuration": 10.0}'
-    #attribute_read = 'obsState'
-    #mock_execute_fn.return_value = 'Foo'
-    #mock_read_fn.return_value = 'SCANNING'
-    #subarray = SubArray(1)
-    #mock = Mock()
-    #scan_rsp = subarray.scan = mock.method.return_value = 'READY'
+    scan_duration = '{"scanDuration": 10.0}'
+    attribute_read = 'obsState'
+    mock_execute_fn.return_value = 'Foo'
 
-    #assert scan_rsp == 'READY'
+    mock_read_fn.return_value = 'SCANNING'
+    subarray = SubArray(1)
+    scan_rsp = subarray.scan(scan_duration, attribute_read)
+    assert scan_rsp == 'SCANNING'
+
+    with patch.object(SubArray, 'scan', side_effect=count_scan):
+        scan_rsp = subarray.scan(scan_duration, attribute_read)
+        while scan_rsp != 'READY':
+            scan_rsp = subarray.scan(scan_duration, attribute_read)
+    assert scan_rsp == 'READY'
+
+def count_configure(_configure_json: str, _attribute_read: str):
+    """
+    Replace function to test scan
+    """
+    global COUNT
+    if COUNT < 10:
+        COUNT += 1
+        return_str = 'CONFIGURING'
+    else:
+        return_str = 'READY'
+    return return_str
+
+@patch.object(observingtasks.EXECUTOR, 'read')
+@patch.object(observingtasks.EXECUTOR, 'execute')
+def test_subarray_configure_change_ready_command(mock_execute_fn, mock_read_fn):
+    """
+    Verify that scan command is changing obsState to SCANNING
+    """
+    configure_json = '{"pointing":{\
+        "target":{\
+        "system":"ICRS", \
+        "name": "NGC6251", \
+        "RA": 1.0, \
+        "dec": 1.0}}, \
+        "dish": { \
+        "receiverBand": "1"}}'
+    attribute_read = 'obsState'
+    mock_execute_fn.return_value = 'Foo'
+    mock_read_fn.return_value = 'CONFIGURING'
+    subarray = SubArray(1)
+    configure_rsp = subarray.configure(configure_json, attribute_read)
+    assert configure_rsp == 'CONFIGURING'
+
+    with patch.object(SubArray, 'configure', side_effect=count_configure):
+        configure_rsp = subarray.configure(configure_json, attribute_read)
+        while configure_rsp != 'READY':
+            configure_rsp = subarray.configure(configure_json, attribute_read)
+    assert configure_rsp == 'READY'
