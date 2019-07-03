@@ -279,3 +279,27 @@ def read_attribute(subarray: SubArray, attribute: str) -> str:
     # response: str = EXECUTOR.execute(command)
     response = EXECUTOR.read(command)
     return response
+
+def get_scan_command(subarray: SubArray, configure_json: str) -> Command:
+    """
+    Return an OET Command that, when passed to a TangoExecutor, would configure a sub-array.
+
+    :param subarray: the sub-array to allocate resources to
+    :return: a prepared OET Command
+    """
+    central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
+    return Command(central_node_fqdn, 'Scan', configure_json)
+
+def scan(subarray: SubArray, scan_duration: str) -> str:
+    """
+    Allocate resources to a sub-array.
+
+    :param subarray: the sub-array to control
+    :param scan_duration: the json that defines the scan time to the sub-array
+    :return: the reponse from sending the command to configure sub-array
+    """
+    command = get_scan_command(subarray, scan_duration)
+    # requires variable annotations in Python > 3.5
+    # response: str = EXECUTOR.execute(command)
+    response = EXECUTOR.execute(command)
+    return response

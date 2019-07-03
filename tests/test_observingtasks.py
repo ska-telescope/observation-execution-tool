@@ -2,7 +2,7 @@
 Unit tests for the oet.observingtasks module
 """
 import json
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import pytest
 
@@ -286,18 +286,90 @@ def test_telescope_stand_by_calls_tango_executor(mock_execute_fn):
     mock_execute_fn.assert_called_once_with(command)
 
 
-@patch.object(observingtasks.EXECUTOR, 'execute')
 @patch.object(observingtasks.EXECUTOR, 'read')
-def test_subarray_configure_command(mock_execute_fn, mock_read_fn):
+@patch.object(observingtasks.EXECUTOR, 'execute')
+def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
     """
     Verify that configuration command is changing obsState to CONFIGURING
     """
-    configure_json = '{"pointing": {"target": {"system":"ICRS","name": "NGC6251","RA": 1.0,"dec": 1.0}},"dish": {"receiverBand": "1"}}'
+    configure_json = '{"pointing":{\
+        "target":{\
+        "system":"ICRS", \
+        "name": "NGC6251", \
+        "RA": 1.0, \
+        "dec": 1.0}}, \
+        "dish": { \
+        "receiverBand": "1"}}'
     attribute_read = 'obsState'
     mock_execute_fn.return_value = 'Foo'
     mock_read_fn.return_value = 'CONFIGURING'
-    
     subarray = SubArray(1)
     configure_rsp = subarray.configure(configure_json, attribute_read)
 
-    assert configure_rsp == 'Foo'
+    assert configure_rsp == 'CONFIGURING'
+
+
+def test_subarray_configure_command():
+    """
+    Verify that a command to configure sub-array is targeted and
+    structured correctly.
+    """
+    configure_json = '{"pointing":{\
+        "target":{\
+        "system":"ICRS", \
+        "name": "NGC6251", \
+        "RA": 1.0, \
+        "dec": 1.0}}, \
+        "dish": { \
+        "receiverBand": "1"}}'
+    subarray = SubArray(1)
+    cmd = observingtasks.get_configure_command(subarray, configure_json)
+    assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
+    assert cmd.command_name == 'Configure'
+    assert len(cmd.args) == 1
+    assert not cmd.kwargs
+
+
+@patch.object(observingtasks.EXECUTOR, 'read')
+@patch.object(observingtasks.EXECUTOR, 'execute')
+def test_subarray_scan_successful_command(mock_execute_fn, mock_read_fn):
+    """
+    Verify that scan command is changing obsState to SCANNING
+    """
+    scan_duration = '{"scanDuration": 10.0}'
+    attribute_read = 'obsState'
+    mock_execute_fn.return_value = 'Foo'
+    mock_read_fn.return_value = 'SCANNING'
+    subarray = SubArray(1)
+    scan_rsp = subarray.scan(scan_duration, attribute_read)
+
+    assert scan_rsp == 'SCANNING'
+
+def test_subarray_scan_command():
+    """
+    Verify that a command to scan sub-array is targeted and
+    structured correctly.
+    """
+    scan_duration = '{"scanDuration": 10.0}'
+    subarray = SubArray(1)
+    cmd = observingtasks.get_scan_command(subarray, scan_duration)
+    assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
+    assert cmd.command_name == 'Scan'
+    assert len(cmd.args) == 1
+    assert not cmd.kwargs
+
+#@patch.object(observingtasks.EXECUTOR, 'read')
+#@patch.object(observingtasks.EXECUTOR, 'execute')
+#def test_subarray_scan_change_ready_command(mock_execute_fn, mock_read_fn):
+    """
+    Verify that scan command is changing obsState to SCANNING
+    """
+    #scan_duration = '{"scanDuration": 10.0}'
+    #attribute_read = 'obsState'
+    #mock_execute_fn.return_value = 'Foo'
+    #mock_read_fn.return_value = 'SCANNING'
+    #subarray = SubArray(1)
+    #mock = Mock()
+    #scan_rsp = subarray.scan = mock.method.return_value = 'READY'
+
+    #assert scan_rsp == 'READY'
