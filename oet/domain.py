@@ -7,6 +7,7 @@ knowledge of the Tango control system.
 import collections
 from typing import Optional, List
 import operator
+from astropy.time import Time
 
 
 class Dish:
@@ -294,6 +295,8 @@ class SubArray:
             deallocated = observingtasks.deallocate_resources(self, resources=resources)
         return deallocated
 
+    def scan(self, scan_duration: astropy.time) -> str:
+        return "CONFIGURING"
 
 class SKAMid:
     """
