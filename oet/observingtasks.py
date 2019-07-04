@@ -245,3 +245,27 @@ def telescope_standby(telescope: SKAMid):
     """
     command = get_telescope_standby_command(telescope)
     EXECUTOR.execute(command)
+
+
+def get_scan_command(subarray: SubArray, configure_json: str) -> Command:
+    """
+    Return an OET Command that, when passed to a TangoExecutor, would start a scan.
+    :param subarray: the sub-array to start the scan to
+    :return: a prepared OET Command
+    """
+    central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
+    return Command(central_node_fqdn, 'Scan', configure_json)  # change the configure json
+
+
+def scan(subarray: SubArray, scan_duration: str) -> str:
+    """
+    Start a scan.
+    :param subarray: the sub-array to control
+    :param scan_duration: the json that defines the scan time to the sub-array
+    :return: the reponse from sending the command to configure sub-array
+    """
+    command = get_scan_command(subarray, scan_duration)
+    # requires variable annotations in Python > 3.5
+    # response: str = EXECUTOR.execute(command)
+    response = EXECUTOR.execute(command)
+    return response
