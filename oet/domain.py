@@ -295,7 +295,14 @@ class SubArray:
         return deallocated
 
     def scan(self, scan_duration: str) -> str:
+        """
+        Start a scan using a Scan duration definied by the user.
 
+
+        :param scan_duration: the duration of the scan
+        :return: the result of the scan
+        :rtype: string
+        """
         observingtasks.scan(self, scan_duration)
         return "CONFIGURING"
 
