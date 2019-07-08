@@ -6,14 +6,15 @@ control system domain.
 This module is intended to be maintained by someone familiar with Tango and
 the API of the devices they are controlling.
 """
-from typing import Optional, Container
+from typing import Optional
 
 import marshmallow
 import ska.cdm as cdm
 import ska.cdm.messages.central_node as central_node
 
 from .command import Command, TangoExecutor
-from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid, DishConfiguration, PointingConfiguration, Configurations
+from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid, SubarrayConfiguration, ConfigureRequest, \
+    ConfigureRequestSchema
 
 
 class TangoRegistry:  # pylint: disable=too-few-public-methods
@@ -29,7 +30,7 @@ class TangoRegistry:  # pylint: disable=too-few-public-methods
     def __init__(self):
         self._fqdns = {
             SKAMid: 'ska_mid/tm_central/central_node',
-            SubArray: 'ska_mid/tm_central/central_node'
+            SubArray: 'ska_mid/tm_central/subarray_node'
         }
 
     def get_central_node(self, domain_object):
@@ -42,7 +43,8 @@ class TangoRegistry:  # pylint: disable=too-few-public-methods
         """
         Get the FQDN of the Subarray appropriate to the object.
         """
-        return self._fqdns[domain_object.__class__]
+        return '{}/{}'.format(self._fqdns[domain_object.__class__], domain_object.id)
+
 
 # Used as a singleton to look up Tango device FQDNs
 TANGO_REGISTRY = TangoRegistry()
@@ -52,14 +54,16 @@ TANGO_REGISTRY = TangoRegistry()
 # function.
 EXECUTOR = TangoExecutor()
 
+
 def get_read_command(subarray: SubArray, attribute: str) -> Command:
     """
     Return an OET Command that, when passed to a TangoExecutor, would configure a sub-array.
     :param subarray: the sub-array to allocate resources to
     :return: a prepared OET Command
     """
-    central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
-    return Command(central_node_fqdn, '', attribute)
+    device_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+    return Command(device_fqdn, '', attribute)
+
 
 def read_attribute(subarray: SubArray, attribute: str) -> str:
     """
@@ -73,6 +77,7 @@ def read_attribute(subarray: SubArray, attribute: str) -> str:
     # response: str = EXECUTOR.execute(command)
     response = EXECUTOR.read(command)
     return response
+
 
 def convert_assign_resources_response(response: str) -> ResourceAllocation:
     """
@@ -248,6 +253,7 @@ def deallocate_resources(subarray: SubArray,
     subarray.resources -= released
     return released
 
+
 """def get_configure_subarray_request(subarray: SubArray, config: Configurations) \
 
     request = ConfigureSubarrayRequest(subarray_id= subarray.id,ra= config.pointing.target.ra,\
@@ -256,27 +262,24 @@ def deallocate_resources(subarray: SubArray,
     return request"""
 
 
-def get_configure_subarray_command(subarray: SubArray, config:Configurations) -> Command:
-    """
-
-    :return:
-    """
-    subarray_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
-    #request = get_configure_subarray_request(subarray, config)
-    request_json = cdm.CODEC.dumps(config)
+def get_configure_subarray_command(subarray: SubArray, config: SubarrayConfiguration) -> Command:
+    subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+    request = ConfigureRequest(config.pointing, config.dish)
+    # To be replaced with CDM code
+    request_json = ConfigureRequestSchema().dumps(request)
     return Command(subarray_node_fqdn, 'Configure', request_json)
 
-def configure(subarray: SubArray, config:Configurations) :
-    """
 
-    """
+def configure(subarray: SubArray, config: SubarrayConfiguration):
     command = get_configure_subarray_command(subarray, config)
-    # requires variable annotations in Python > 3.5
-    # response: List[int] = EXECUTOR.execute(command)
     response = EXECUTOR.execute(command)
-    # configured = convert_configure_subarray_response(response)
 
-    return "CONFIGURING"
+    # TODO monitor SubArrayNode.obsState for CONFIGURING->READY transition
+    # while SubArrayNode.obsState != 'READY':
+    #     pass
+
+    return
+
 
 def telescope_start_up(telescope: SKAMid):
     """

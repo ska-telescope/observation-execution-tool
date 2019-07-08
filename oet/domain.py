@@ -6,10 +6,11 @@ knowledge of the Tango control system.
 """
 import collections
 from typing import Optional, List
+
+import marshmallow
 import operator
 from astropy.coordinates import SkyCoord
-import ska.cdm as cdm
-from marshmallow import Schema, fields, post_load, post_dump
+
 
 class Dish:
     """
@@ -229,26 +230,6 @@ class DishAllocation(collections.MutableSet):
         dishes_repr = repr(dishes_list)
         return '<DishAllocation(dishes={})>'.format(dishes_repr)
 
-class TargetSchema(Schema):
-    RA = fields.String()
-    dec= fields.String()
-    name = fields.String()
-    system = fields.String()
-
-
-class PointingConfigurationSchema(Schema):
-   pointing = fields.Nested(TargetSchema)
-
-class DishSchema(Schema):
-    receiver_band = fields.String()
-
-class ConfigurationsSchema(Schema):  # pylint: disable=too-few-public-methods
-    """
-    Marshmallow schema for the ConfigureSubArray class.
-    """
-    pointing = fields.Nested(PointingConfigurationSchema)
-    dish = fields.Nested(DishSchema)
-
 
 class SubArray:
     """
@@ -317,8 +298,8 @@ class SubArray:
         return deallocated
         return deallocated
 
-    def configure(self, subarray_node,json_config:str, attribute):
-       # schema_cls = Schema['Configurations']
+    def configure(self, subarray_node, json_config: str, attribute):
+        # schema_cls = Schema['Configurations']
         schema_obj = ConfigurationsSchema()
         cdm_config_obj = schema_obj.loads(json_config)
 
@@ -334,7 +315,6 @@ class SubArray:
         attribute_read = observingtasks.read_attribute(self, attribute)
 
         return attribute_read
-
 
 
 class SKAMid:
@@ -362,29 +342,82 @@ class SKAMid:
         """
         observingtasks.telescope_standby(self)
 
-class Target:
-    def __init__(self , ra, dec, system, name):
-        self.RA = ra
-        self.dec= dec
-        self.system=system
-        self.name=name
-        #skycoord_target = SkyCoord(ra, dec, system) # to check for units.If value is passed in radians , ra*u.degree needed
+
+class PointingConfiguration:
+    def __init__(self, target: SkyCoord):
+        self.target = target
 
 
-class PointingConfiguration :
-    def __init__(self, target:Target):
+class DishConfiguration:
+    def __init__(self, receiver_band: str):
+        self.receiver_band = receiver_band
 
-        self.target =target
 
-class DishConfiguration :
-    def __init__(self, receiver_band):
-        self.receiver_band= receiver_band
+class SubarrayConfiguration:
+    def __init__(self, pointing: PointingConfiguration, dish: DishConfiguration):
+        self.pointing = pointing
+        self.dish = dish
 
-class Configurations :
 
-    def __init__(self):
-        self.pointing = PointingConfiguration()
-        self.dish = DishConfiguration()
+# - CDM code lives here temporarily until AT2-196 is done --------------------
+
+
+class ConfigureRequest:
+    def __init__(self, pointing: PointingConfiguration, dish: DishConfiguration):
+        self.pointing = pointing
+        self.dish = dish
+
+
+class SkyCoordSchema(marshmallow.Schema):
+    ra = marshmallow.fields.Float(attribute='ra.rad')
+    dec = marshmallow.fields.Float(attribute='dec.rad')
+    frame = marshmallow.fields.String(attribute='frame.name')
+    name = marshmallow.fields.String(attribute='info.name')
+
+    @marshmallow.pre_dump
+    def convert_to_icrs(self, data, **_):
+        converted = data.transform_to('icrs')
+        converted.info.name = data.info.name
+        return converted
+
+    @marshmallow.post_load
+    def create_skycoord(self, data):
+        ra = data['ra']
+        dec = data['dec']
+        frame = data['frame']
+        name = data['name']
+        sky_coord = SkyCoord(ra=ra, dec=dec, frame=frame)
+        sky_coord.info.name = name
+        return sky_coord
+
+
+class PointingSchema(marshmallow.Schema):
+    target = marshmallow.fields.Nested(SkyCoordSchema)
+
+    @marshmallow.post_load
+    def create(self, data, **_):
+        target = data['target']
+        return PointingConfiguration(target)
+
+
+class DishConfigurationSchema(marshmallow.Schema):
+    receiver_band = marshmallow.fields.String(data_key='receiverBand', required=True)
+
+    @marshmallow.post_load
+    def create_dish_configuration(self, data, **_):
+        receiver_band = data['receiver_band']
+        return DishConfiguration(receiver_band)
+
+
+class ConfigureRequestSchema(marshmallow.Schema):
+    pointing = marshmallow.fields.Nested(PointingSchema)
+    dish = marshmallow.fields.Nested(DishConfigurationSchema)
+
+    @marshmallow.post_load
+    def create_configuration(self, data, **_):
+        pointing = data['pointing']
+        dish_configuration = data['dish']
+        return ConfigurationRequest(pointing, dish_configuration)
 
 
 # this import needs to be here, at the end of the file, to work around a
