@@ -256,6 +256,29 @@ def test_release_resources_successful_specified_deallocation(_):
     subarray.deallocate(resources)
     assert not subarray.resources.dishes
 
+@patch.object(observingtasks.EXECUTOR, 'read')
+@patch.object(observingtasks.EXECUTOR, 'execute')
+def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
+    """
+    Verify that configuration command is changing obsState to CONFIGURING
+    """
+    configure_json = '{"pointing":{\
+        "target":{\
+        "RA": "1.0", \
+        "dec": "2.0",\
+        "system":"ICRS", \
+        "name": "NGC6251" \
+        }}, \
+        "dish": { \
+        "receiver_band": "1"}}'
+    attribute_read = 'obsState'
+    mock_execute_fn.return_value = 'Foo'
+    mock_read_fn.return_value = 'CONFIGURING'
+    subarray = SubArray(1)
+    configure_rsp = subarray.configure(subarray,configure_json, attribute_read)
+
+    assert configure_rsp == 'CONFIGURING'
+
 
 @patch.object(observingtasks.EXECUTOR, 'execute')
 def test_telescope_start_up_calls_tango_executor(mock_execute_fn):

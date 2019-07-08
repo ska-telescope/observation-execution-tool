@@ -7,7 +7,9 @@ knowledge of the Tango control system.
 import collections
 from typing import Optional, List
 import operator
-
+from astropy.coordinates import SkyCoord
+import ska.cdm as cdm
+from marshmallow import Schema, fields, post_load, post_dump
 
 class Dish:
     """
@@ -227,6 +229,26 @@ class DishAllocation(collections.MutableSet):
         dishes_repr = repr(dishes_list)
         return '<DishAllocation(dishes={})>'.format(dishes_repr)
 
+class TargetSchema(Schema):
+    RA = fields.String()
+    dec= fields.String()
+    name = fields.String()
+    system = fields.String()
+
+
+class PointingConfigurationSchema(Schema):
+   pointing = fields.Nested(TargetSchema)
+
+class DishSchema(Schema):
+    receiver_band = fields.String()
+
+class ConfigurationsSchema(Schema):  # pylint: disable=too-few-public-methods
+    """
+    Marshmallow schema for the ConfigureSubArray class.
+    """
+    pointing = fields.Nested(PointingConfigurationSchema)
+    dish = fields.Nested(DishSchema)
+
 
 class SubArray:
     """
@@ -293,6 +315,26 @@ class SubArray:
         else:
             deallocated = observingtasks.deallocate_resources(self, resources=resources)
         return deallocated
+        return deallocated
+
+    def configure(self, subarray_node,json_config:str, attribute):
+       # schema_cls = Schema['Configurations']
+        schema_obj = ConfigurationsSchema()
+        cdm_config_obj = schema_obj.loads(json_config)
+
+        domain_configuration = Configurations()
+
+        target = Target(cdm_config_obj.pointing.target)
+        domain_configuration.pointing = PointingConfiguration(target)
+
+        domain_configuration.dish = DishConfiguration(cdm_config_obj.dish)
+
+        observingtasks.configure_subarray(self, subarray_node, domain_configuration)
+
+        attribute_read = observingtasks.read_attribute(self, attribute)
+
+        return attribute_read
+
 
 
 class SKAMid:
@@ -319,6 +361,30 @@ class SKAMid:
         Instruct telescope hardware to power down to standby mode.
         """
         observingtasks.telescope_standby(self)
+
+class Target:
+    def __init__(self , ra, dec, system, name):
+        self.RA = ra
+        self.dec= dec
+        self.system=system
+        self.name=name
+        #skycoord_target = SkyCoord(ra, dec, system) # to check for units.If value is passed in radians , ra*u.degree needed
+
+
+class PointingConfiguration :
+    def __init__(self, target:Target):
+
+        self.target =target
+
+class DishConfiguration :
+    def __init__(self, receiver_band):
+        self.receiver_band= receiver_band
+
+class Configurations :
+
+    def __init__(self):
+        self.pointing = PointingConfiguration()
+        self.dish = DishConfiguration()
 
 
 # this import needs to be here, at the end of the file, to work around a

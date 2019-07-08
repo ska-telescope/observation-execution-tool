@@ -2,13 +2,13 @@
 The command module contains code that encapsulates Tango device interactions
 (commands, attribute read/writes, etc.) and provides the means to execute
 them.
-
 The OET decouples functions from Tango devices so that the commands can be
 managed and executed by a proxy. This allows the proxy to execute commands
 asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
 import tango
+import PyTango
 
 
 class Command:
@@ -19,7 +19,6 @@ class Command:
     def __init__(self, device: str, command_name: str, *args, **kwargs):
         """
         Create a Tango command.
-
         :param device: the FQDN of the target Tango device
         :param command_name: the name of the command to execute
         :param args: unnamed arguments to be passed to the command
@@ -50,7 +49,6 @@ class Command:
 class TangoDeviceProxyFactory:  # pylint: disable=too-few-public-methods
     """
     A call to create Tango DeviceProxy clients.
-
     This class exists to allow unit tests to override the factory with an
     implementation that returns mock DeviceProxy instances.
     """
@@ -69,7 +67,6 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
     def __init__(self, proxy_factory=TangoDeviceProxyFactory()):
         """
         Create a new TangoExecutor.
-
         :param proxy_factory: a function or object which, when called, returns
             an object that conforms to the PyTango DeviceProxy interface.
         """
@@ -82,7 +79,6 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
     def execute(self, command: Command):
         """
         Execute a Command on a Tango device.
-
         :param command: the command to execute
         :return: the response, if any, returned by the Tango device
         """
@@ -93,6 +89,24 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         if len(command.args) > 1:
             param = command.args
         return proxy.command_inout(command.command_name, cmd_param=param)
+
+    def read(self, command: Command):
+        """
+        Execute a Command on a Tango device.
+        :param command: the command to execute
+        :return: the response, if any, returned by the Tango device
+        """
+        proxy = self._get_proxy(command.device)
+        return_str = ""
+        if len(command.args) == 1:
+            attribute = command.args[0]
+            read = proxy.read_attribute(
+                attribute, extract_as=PyTango.ExtractAs.List
+            )
+            return_str = read.value # RUNNING CONFIGURING STANDBY SCANNING
+        else:
+            return_str = "Must pass a argument to read attribute"
+        return return_str
 
     def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
         # It takes time to construct and connect a device proxy to the remote
