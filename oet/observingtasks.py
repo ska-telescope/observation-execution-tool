@@ -278,7 +278,7 @@ def configure(subarray: SubArray, config: SubarrayConfiguration):
     # while SubArrayNode.obsState != 'READY':
     #     pass
 
-    return
+    return "CONFIGURING"
 
 
 def telescope_start_up(telescope: SKAMid):

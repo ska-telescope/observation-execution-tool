@@ -6,11 +6,13 @@ from unittest.mock import patch
 import pytest
 import ska.cdm.messages.central_node as central_node
 
+from astropy.coordinates import SkyCoord
 from oet import observingtasks
+import oet.domain as domain
 from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMid
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
-
+SKA_SUB_ARRAY_NODE_FDQN='ska_mid/tm_central/subarray_node'
 # Messages used for comparison in tests
 CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
@@ -105,7 +107,7 @@ def test_allocate_resources_command():
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray = SubArray(1)
     cmd = observingtasks.get_allocate_resources_command(subarray, resources)
-    assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
+    assert cmd.device == SKA_SUB_ARRAY_NODE_FDQN
     assert cmd.command_name == 'AssignResources'
     assert len(cmd.args) == 1
     assert not cmd.kwargs
@@ -149,7 +151,7 @@ def test_release_resources_command():
     cmd = observingtasks.get_release_resources_command(
         subarray, release_all=False, resources=resources
     )
-    assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
+    assert cmd.device == SKA_SUB_ARRAY_NODE_FDQN
     assert cmd.command_name == 'ReleaseResources'
     assert len(cmd.args) == 1
     assert not cmd.kwargs
@@ -262,23 +264,25 @@ def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
     """
     Verify that configuration command is changing obsState to CONFIGURING
     """
-    configure_json = '{"pointing":{\
-        "target":{\
-        "RA": "1.0", \
-        "dec": "2.0",\
-        "system":"ICRS", \
-        "name": "NGC6251" \
-        }}, \
-        "dish": { \
-        "receiver_band": "1"}}'
+
+    # subarray = SubArray(1)
+    #configure_rsp = subarray.configure(subarray,configure_json, attribute_read)
+
+
     attribute_read = 'obsState'
     mock_execute_fn.return_value = 'Foo'
     mock_read_fn.return_value = 'CONFIGURING'
-    subarray = SubArray(1)
-    configure_rsp = subarray.configure(subarray,configure_json, attribute_read)
 
+    sky_coord = SkyCoord(ra=1, dec=3, unit='deg')
+    sky_coord.info.name = 'NGC123'
+
+    pointing_config = domain.PointingConfiguration(sky_coord)
+    dish_config = domain.DishConfiguration('5a')
+    subarray_config = domain.SubarrayConfiguration(pointing_config, dish_config)
+
+    subarray = domain.SubArray(1)
+    configure_rsp = subarray.configure(subarray_config, attribute_read)
     assert configure_rsp == 'CONFIGURING'
-
 
 @patch.object(observingtasks.EXECUTOR, 'execute')
 def test_telescope_start_up_calls_tango_executor(mock_execute_fn):
