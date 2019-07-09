@@ -12,7 +12,7 @@ import marshmallow
 import ska.cdm as cdm
 import ska.cdm.messages.central_node as central_node
 
-from .command import Command, TangoExecutor
+from .command import Command, TangoExecutor, Attribute
 from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid, SubarrayConfiguration, ConfigureRequest, \
     ConfigureRequestSchema
 
@@ -55,27 +55,29 @@ TANGO_REGISTRY = TangoRegistry()
 EXECUTOR = TangoExecutor()
 
 
-def get_read_command(subarray: SubArray, attribute: str) -> Command:
+def get_attribute(subarray: SubArray, attribute: str) -> Attribute:
     """
-    Return an OET Command that, when passed to a TangoExecutor, would configure a sub-array.
+    Return an Attribute that, when passed to a TangoExecutor, would read the
+    attribute value.
+
     :param subarray: the sub-array to allocate resources to
+    :param attribute: name of attribute
     :return: a prepared OET Command
     """
-    device_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
-    return Command(device_fqdn, '', attribute)
+    subarray_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+    return Attribute(subarray_fqdn, attribute)
 
 
 def read_attribute(subarray: SubArray, attribute: str) -> str:
     """
-    Allocate resources to a sub-array.
-    :param subarray: the sub-array to control
-    :param configure_json: the json to configure the sub-array
-    :return: the reponse from sending the command to configure sub-array
+    Read an attribute of a SubArrayNode device
+
+    :param subarray: the sub-array to query
+    :param attribute: attribute name
+    :return: the attribute value
     """
-    command = get_read_command(subarray, attribute)
-    # requires variable annotations in Python > 3.5
-    # response: str = EXECUTOR.execute(command)
-    response = EXECUTOR.read(command)
+    attribute = get_attribute(subarray, attribute)
+    response = EXECUTOR.read(attribute)
     return response
 
 
@@ -254,31 +256,25 @@ def deallocate_resources(subarray: SubArray,
     return released
 
 
-"""def get_configure_subarray_request(subarray: SubArray, config: Configurations) \
-
-    request = ConfigureSubarrayRequest(subarray_id= subarray.id,ra= config.pointing.target.ra,\
-                                       dec= config.pointing.target.dec, source_name= config.pointing.target.source_name, \
-                                       frame=config.pointing.target.frame):
-    return request"""
-
-
 def get_configure_subarray_command(subarray: SubArray, config: SubarrayConfiguration) -> Command:
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     request = ConfigureRequest(config.pointing, config.dish)
-    # To be replaced with CDM code
+    # TODO replace with CDM code
     request_json = ConfigureRequestSchema().dumps(request)
     return Command(subarray_node_fqdn, 'Configure', request_json)
 
 
+def read_subarray_obstate(subarray: SubArray):
+    return read_attribute(subarray, 'obsState')
+
+
 def configure(subarray: SubArray, config: SubarrayConfiguration):
     command = get_configure_subarray_command(subarray, config)
-    response = EXECUTOR.execute(command)
+    # Python convention is to label unused variables as _
+    _ = EXECUTOR.execute(command)
 
-    # TODO monitor SubArrayNode.obsState for CONFIGURING->READY transition
-    # while SubArrayNode.obsState != 'READY':
-    #     pass
-
-    return "CONFIGURING"
+    while read_subarray_obstate(subarray) != 'READY':
+        pass
 
 
 def telescope_start_up(telescope: SKAMid):

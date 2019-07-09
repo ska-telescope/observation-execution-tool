@@ -8,7 +8,30 @@ asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
 import tango
-import PyTango
+
+
+class Attribute:
+    """
+    An abstraction of a Tango attribute.
+    """
+
+    def __init__(self, device: str, name: str):
+        """
+        Create an Attribute instance.
+
+        :param device: the FQDN of the target Tango device
+        :param name: the name of the attribute to read
+        """
+        self.device = device
+        self.name = name
+
+    def __repr__(self):
+        return '<Attribute({!r}, {!r})>'.format(self.device, self.name)
+
+    def __eq__(self, other):
+        if not isinstance(other, Attribute):
+            return False
+        return self.device == other.device and self.name == other.name
 
 
 class Command:
@@ -67,6 +90,7 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
     def __init__(self, proxy_factory=TangoDeviceProxyFactory()):
         """
         Create a new TangoExecutor.
+
         :param proxy_factory: a function or object which, when called, returns
             an object that conforms to the PyTango DeviceProxy interface.
         """
@@ -79,6 +103,7 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
     def execute(self, command: Command):
         """
         Execute a Command on a Tango device.
+
         :param command: the command to execute
         :return: the response, if any, returned by the Tango device
         """
@@ -90,23 +115,16 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
             param = command.args
         return proxy.command_inout(command.command_name, cmd_param=param)
 
-    def read(self, command: Command):
+    def read(self, attribute: Attribute):
         """
-        Execute a Command on a Tango device.
-        :param command: the command to execute
-        :return: the response, if any, returned by the Tango device
+        Read an attribute on a Tango device.
+
+        :param attribute: the attribute to read
+        :return: the attribute value
         """
-        proxy = self._get_proxy(command.device)
-        return_str = ""
-        if len(command.args) == 1:
-            attribute = command.args[0]
-            read = proxy.read_attribute(
-                attribute, extract_as=PyTango.ExtractAs.List
-            )
-            return_str = read.value # RUNNING CONFIGURING STANDBY SCANNING
-        else:
-            return_str = "Must pass a argument to read attribute"
-        return return_str
+        proxy = self._get_proxy(attribute.device)
+        response = proxy.read_attribute(attribute.name, extract_as=tango.ExtractAs.List)
+        return response.value
 
     def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
         # It takes time to construct and connect a device proxy to the remote
