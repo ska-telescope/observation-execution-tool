@@ -22,12 +22,6 @@ Execute the test suite with:
 make test
 ```
 
-Test the cli interface with a sample set of tmc devices with:
-
-```
-make test-cli
-```
-
 Launch an interactive shell inside a container, with your workspace visible
 inside the container:
 

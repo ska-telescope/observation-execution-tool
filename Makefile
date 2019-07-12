@@ -133,15 +133,7 @@ test: build up ## test the application
 	  $(MAKE) down; \
 	  exit $$status
 
-test-cli: build up ## test the cli interface by scripting
-	$(INIT_CACHE)
-	$(call make,test-cli); \
-	  status=$$?; \
-	  rm -fr build; \
-	  docker cp $(BUILD):/build .; \
-	  docker rm -f -v $(BUILD); \
-	  $(MAKE) down; \
-	  exit $$status
+
 
 
 pull:  ## download the application image
