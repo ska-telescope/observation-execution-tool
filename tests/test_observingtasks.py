@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 import ska.cdm.messages.central_node as central_node
+import ska.cdm.messages.subarray_node as subarray_node
 from astropy.coordinates import SkyCoord
 
 import oet.command as command
@@ -274,9 +275,9 @@ def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
     sky_coord = SkyCoord(ra=1, dec=3, unit='deg')
     sky_coord.info.name = 'NGC123'
 
-    pointing_config = domain.PointingConfiguration(sky_coord)
-    dish_config = domain.DishConfiguration('5a')
-    subarray_config = domain.SubarrayConfiguration(pointing_config, dish_config)
+    pointing_config = subarray_node.PointingConfiguration(sky_coord)
+    dish_config = subarray_node.DishConfiguration('5a')
+    subarray_config = subarray_node.SubarrayConfiguration(pointing_config, dish_config)
 
     subarray = domain.SubArray(1)
     subarray.configure(subarray_config)

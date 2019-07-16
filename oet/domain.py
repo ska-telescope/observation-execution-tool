@@ -6,10 +6,8 @@ knowledge of the Tango control system.
 """
 import collections
 from typing import Optional, List
-
-import marshmallow
+import ska.cdm.messages.subarray_node as subarray_node
 import operator
-from astropy.coordinates import SkyCoord
 
 
 class Dish:
@@ -256,21 +254,6 @@ class SKAMid:
         observingtasks.telescope_standby(self)
 
 
-class PointingConfiguration:
-    def __init__(self, target: SkyCoord):
-        self.target = target
-
-
-class DishConfiguration:
-    def __init__(self, receiver_band: str):
-        self.receiver_band = receiver_band
-
-
-class SubarrayConfiguration:
-    def __init__(self, pointing: PointingConfiguration, dish: DishConfiguration):
-        self.pointing = pointing
-        self.dish = dish
-
 
 class SubArray:
     """
@@ -338,69 +321,8 @@ class SubArray:
             deallocated = observingtasks.deallocate_resources(self, resources=resources)
         return deallocated
 
-    def configure(self, configuration: SubarrayConfiguration):
+    def configure(self, configuration: subarray_node.SubarrayConfiguration):
         observingtasks.configure(self, configuration)
-
-
-# - CDM code lives here temporarily until AT2-196 is done --------------------
-
-
-class ConfigureRequest:
-    def __init__(self, pointing: PointingConfiguration, dish: DishConfiguration):
-        self.pointing = pointing
-        self.dish = dish
-
-
-class SkyCoordSchema(marshmallow.Schema):
-    ra = marshmallow.fields.Float(attribute='ra.rad')
-    dec = marshmallow.fields.Float(attribute='dec.rad')
-    frame = marshmallow.fields.String(attribute='frame.name')
-    name = marshmallow.fields.String(attribute='info.name')
-
-    @marshmallow.pre_dump
-    def convert_to_icrs(self, data, **_):
-        converted = data.transform_to('icrs')
-        converted.info.name = data.info.name
-        return converted
-
-    @marshmallow.post_load
-    def create_skycoord(self, data):
-        ra = data['ra']
-        dec = data['dec']
-        frame = data['frame']
-        name = data['name']
-        sky_coord = SkyCoord(ra=ra, dec=dec, frame=frame)
-        sky_coord.info.name = name
-        return sky_coord
-
-
-class PointingSchema(marshmallow.Schema):
-    target = marshmallow.fields.Nested(SkyCoordSchema)
-
-    @marshmallow.post_load
-    def create(self, data, **_):
-        target = data['target']
-        return PointingConfiguration(target)
-
-
-class DishConfigurationSchema(marshmallow.Schema):
-    receiver_band = marshmallow.fields.String(data_key='receiverBand', required=True)
-
-    @marshmallow.post_load
-    def create_dish_configuration(self, data, **_):
-        receiver_band = data['receiver_band']
-        return DishConfiguration(receiver_band)
-
-
-class ConfigureRequestSchema(marshmallow.Schema):
-    pointing = marshmallow.fields.Nested(PointingSchema)
-    dish = marshmallow.fields.Nested(DishConfigurationSchema)
-
-    @marshmallow.post_load
-    def create_configuration(self, data, **_):
-        pointing = data['pointing']
-        dish_configuration = data['dish']
-        return ConfigureRequest(pointing, dish_configuration)
 
 
 # this import needs to be here, at the end of the file, to work around a

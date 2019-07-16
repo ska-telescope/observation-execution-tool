@@ -11,10 +11,10 @@ from typing import Optional
 import marshmallow
 import ska.cdm as cdm
 import ska.cdm.messages.central_node as central_node
-
+import ska.cdm.messages.subarray_node as subarray_node
+import ska.cdm.schemas as ska_schemas
 from .command import Command, TangoExecutor, Attribute
-from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid, SubarrayConfiguration, ConfigureRequest, \
-    ConfigureRequestSchema
+from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid
 
 
 class TangoRegistry:  # pylint: disable=too-few-public-methods
@@ -256,11 +256,11 @@ def deallocate_resources(subarray: SubArray,
     return released
 
 
-def get_configure_subarray_command(subarray: SubArray, config: SubarrayConfiguration) -> Command:
+def get_configure_subarray_command(subarray: SubArray, config: subarray_node.SubarrayConfiguration) -> Command:
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
-    request = ConfigureRequest(config.pointing, config.dish)
-    # TODO replace with CDM code
-    request_json = ConfigureRequestSchema().dumps(request)
+    request = subarray_node.ConfigureRequest(config.pointing, config.dish)
+
+    request_json = ska_schemas.ConfigureRequestSchema().dumps(request)
     return Command(subarray_node_fqdn, 'Configure', request_json)
 
 
@@ -268,7 +268,7 @@ def read_subarray_obstate(subarray: SubArray):
     return read_attribute(subarray, 'obsState')
 
 
-def configure(subarray: SubArray, config: SubarrayConfiguration):
+def configure(subarray: SubArray, config: subarray_node.SubarrayConfiguration):
     command = get_configure_subarray_command(subarray, config)
     # Python convention is to label unused variables as _
     _ = EXECUTOR.execute(command)
