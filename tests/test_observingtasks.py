@@ -7,12 +7,14 @@ from unittest.mock import patch
 import pytest
 import ska.cdm.messages.central_node as central_node
 import ska.cdm.messages.subarray_node as subarray_node
-from astropy.coordinates import SkyCoord
-
+import ska.cdm as cdm
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
 from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMid
+from astropy.coordinates import SkyCoord
+
+from pprint import pprint
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
 SKA_SUB_ARRAY_NODE_FDQN = 'ska_mid/tm_central/subarray_node'
@@ -262,6 +264,23 @@ def test_release_resources_successful_specified_deallocation(_):
     subarray.deallocate(resources)
     assert not subarray.resources.dishes
 
+def test_configure_subarray_forms_correct_request(): # ASSERTION FAILS TODO Work in progress
+    """
+    Verify that domain objects are converted correctly to CDM objects for a
+    SubarrayNode.Configure() instruction.
+    """
+    subarray = SubArray(1)
+
+    coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
+    subarray_configuration = domain.SubArrayConfiguration(coord, '', '5a')
+    request = observingtasks.get_configure_subarray_request(subarray_configuration.pointing_config, subarray_configuration.dish_config)
+    #pprint(cdm.CODEC.dumps(request))
+    pointing_config = subarray_node.PointingConfiguration(subarray_node.Target(1, 1))
+    dish_config = subarray_node.DishConfiguration(receiver_band=subarray_node.ReceiverBand.BAND_5A)
+    expected =  subarray_node.ConfigureRequest(pointing_config, dish_config)
+    #pprint(cdm.CODEC.dumps(expected))
+
+    assert request == expected
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
@@ -272,15 +291,13 @@ def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
     # obsState will be CONFIGURING for the first three reads, then READY
     mock_read_fn.side_effect = ['CONFIGURING', 'CONFIGURING', 'CONFIGURING', 'READY']
 
-    sky_coord = SkyCoord(ra=1, dec=3, unit='deg')
-    sky_coord.info.name = 'NGC123'
 
-    pointing_config = subarray_node.PointingConfiguration(sky_coord)
-    dish_config = subarray_node.DishConfiguration('5a')
-    subarray_config = subarray_node.SubarrayConfiguration(pointing_config, dish_config)
+    coord = SkyCoord( ra = 1, dec = 2, frame = 'icrs', unit = 'deg')
 
+    subarray_configuration = domain.SubArrayConfiguration(coord, 'NGC123', '5a')
     subarray = domain.SubArray(1)
-    subarray.configure(subarray_config)
+    subarray.configure(subarray_configuration)
+
 
     # Configure command gets big and complicated. I'm not going to verify the call argument here.
     mock_execute_fn.assert_called_with(mock.ANY)

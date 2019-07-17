@@ -6,9 +6,8 @@ knowledge of the Tango control system.
 """
 import collections
 from typing import Optional, List
-import ska.cdm.messages.subarray_node as subarray_node
 import operator
-
+from astropy.coordinates import SkyCoord
 
 class Dish:
     """
@@ -253,7 +252,45 @@ class SKAMid:
         """
         observingtasks.telescope_standby(self)
 
+class SubArrayConfiguration:
+    """
 
+    """
+
+    def __init__(self,  coord, name, receiver_band):
+        """
+
+        """
+
+        self.pointing_config = PointingConfiguration(coord,name)
+        self.dish_config = DishConfiguration(receiver_band)
+
+
+
+class PointingConfiguration:  # pylint: disable=too-few-public-methods
+    """
+    PointingConfiguration specifies where the subarray receptors are going to
+    point.
+    """
+
+    def __init__(self, coord, name):
+        self.coord = coord
+        self.name = name
+
+
+class DishConfiguration:  # pylint: disable=too-few-public-methods
+    """
+    DishConfiguration specifies how SKA MID dishes in a sub-array should be
+    configured. At the moment, this is limited to setting the receiver band.
+    """
+
+    def __init__(self, receiver_band):
+        self.receiver_band = receiver_band
+
+    def __eq__(self, other):
+        if not isinstance(other, DishConfiguration):
+            return False
+        return self.receiver_band == other.receiver_band
 
 class SubArray:
     """
@@ -321,8 +358,8 @@ class SubArray:
             deallocated = observingtasks.deallocate_resources(self, resources=resources)
         return deallocated
 
-    def configure(self, configuration: subarray_node.SubarrayConfiguration):
-        observingtasks.configure(self, configuration)
+    def configure(self, subarray_config:SubArrayConfiguration):
+        observingtasks.configure(self, subarray_config)
 
 
 # this import needs to be here, at the end of the file, to work around a

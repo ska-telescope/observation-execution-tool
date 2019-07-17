@@ -3,7 +3,30 @@ Unit tests for the oet.command module.
 """
 from unittest.mock import patch, Mock
 
-from oet.command import Command, TangoExecutor, TangoDeviceProxyFactory
+from oet.command import Attribute, Command, TangoExecutor, TangoDeviceProxyFactory
+
+def test_attribute_repr():
+    """
+    Verify that the repr string for an Attribute  is correctly
+    formatted
+    """
+    attr = Attribute('device', 'name')
+    assert repr(attr) == '<Attribute(\'device\', \'name\')>'
+
+def test_attribute_eq():
+    """
+    Verify that Attribute equals
+    """
+    attr1 = Attribute('device', 'read')
+    attr2 = Attribute('device', 'read')
+    assert attr1 == attr2
+
+def test_tango_executor_calls_arg_attribute_correctly():
+    """
+    Check that the TangoExecutor correctly invokes device server attribute that
+    require a scalar argument.
+    """
+
 
 
 def test_command_repr():
