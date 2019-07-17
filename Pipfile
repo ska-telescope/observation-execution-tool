@@ -21,7 +21,7 @@ itango = "*"
 pydevd = "*"
 
 #SKA Configuration Data Model (used for formatting API requests from OET to TMC)
-cdm-shared-library = ">=0.1.14"
+cdm-shared-library = ">=0.1.17"
 
 [dev-packages]
 docutils = "*"

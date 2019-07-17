@@ -269,16 +269,15 @@ def test_configure_subarray_forms_correct_request(): # ASSERTION FAILS TODO Work
     Verify that domain objects are converted correctly to CDM objects for a
     SubarrayNode.Configure() instruction.
     """
-    subarray = SubArray(1)
 
     coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
     subarray_configuration = domain.SubArrayConfiguration(coord, '', '5a')
-    request = observingtasks.get_configure_subarray_request(subarray_configuration.pointing_config, subarray_configuration.dish_config)
-    #pprint(cdm.CODEC.dumps(request))
+    request = observingtasks.get_configure_subarray_request(subarray_configuration.pointing_config,\
+                                                            subarray_configuration.dish_config)
+
     pointing_config = subarray_node.PointingConfiguration(subarray_node.Target(1, 1))
     dish_config = subarray_node.DishConfiguration(receiver_band=subarray_node.ReceiverBand.BAND_5A)
     expected =  subarray_node.ConfigureRequest(pointing_config, dish_config)
-    #pprint(cdm.CODEC.dumps(expected))
 
     assert request == expected
 
@@ -291,13 +290,11 @@ def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
     # obsState will be CONFIGURING for the first three reads, then READY
     mock_read_fn.side_effect = ['CONFIGURING', 'CONFIGURING', 'CONFIGURING', 'READY']
 
-
     coord = SkyCoord( ra = 1, dec = 2, frame = 'icrs', unit = 'deg')
 
     subarray_configuration = domain.SubArrayConfiguration(coord, 'NGC123', '5a')
     subarray = domain.SubArray(1)
     subarray.configure(subarray_configuration)
-
 
     # Configure command gets big and complicated. I'm not going to verify the call argument here.
     mock_execute_fn.assert_called_with(mock.ANY)

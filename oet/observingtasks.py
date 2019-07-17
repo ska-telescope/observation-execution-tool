@@ -260,8 +260,9 @@ def get_configure_subarray_request(pointing_config,dish_config) \
     """
 
     """
-    #cdm_target = subarray_node
-    cdm_pointing_config = subarray_node.PointingConfiguration(pointing_config)
+    cdm_target = subarray_node.Target(pointing_config.coord.ra.value, pointing_config.coord.dec.value, \
+                                      frame=pointing_config.coord.frame.name, unit=pointing_config.coord.ra.unit.name)
+    cdm_pointing_config = subarray_node.PointingConfiguration(cdm_target)
     cdm_receiver_band = subarray_node.ReceiverBand(dish_config.receiver_band)
     cdm_dish_config = subarray_node.DishConfiguration(cdm_receiver_band)
     return subarray_node.ConfigureRequest(cdm_pointing_config, cdm_dish_config)
@@ -279,6 +280,12 @@ def read_subarray_obstate(subarray: SubArray):
 
 
 def configure(subarray: SubArray, subarray_config: SubArrayConfiguration):
+    """
+    configure command called from domain class to configure subarray
+    :param subarray:
+    :param subarray_config:
+    :return:
+    """
     command = get_configure_subarray_command(subarray, subarray_config)
     # Python convention is to label unused variables as _
     _ = EXECUTOR.execute(command)

@@ -254,13 +254,11 @@ class SKAMid:
 
 class SubArrayConfiguration:
     """
+    SubarrayConfiguration encapsultales PointingCOnfiguration and DishConfiguration
 
     """
 
     def __init__(self,  coord, name, receiver_band):
-        """
-
-        """
 
         self.pointing_config = PointingConfiguration(coord,name)
         self.dish_config = DishConfiguration(receiver_band)
