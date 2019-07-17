@@ -3,6 +3,7 @@ Unit tests for the oet.observingtasks module
 """
 import unittest.mock as mock
 from unittest.mock import patch
+from datetime import datetime
 
 import pytest
 import ska.cdm.messages.central_node as central_node
@@ -21,7 +22,7 @@ SKA_SUB_ARRAY_NODE_FDQN = 'ska_mid/tm_central/subarray_node'
 CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
 CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_success": ["0001"]}}'
-
+VALID_ASSIGN_STARTSCAN_REQUEST = '{"scan_duration": 10.0}'
 
 def test_tango_registry_returns_correct_url_for_ska_mid():
     """
@@ -263,33 +264,82 @@ def test_release_resources_successful_specified_deallocation(_):
     assert not subarray.resources.dishes
 
 
-@mock.patch.object(observingtasks.EXECUTOR, 'read')
-@mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
+# @mock.patch.object(observingtasks.EXECUTOR, 'read')
+# @mock.patch.object(observingtasks.EXECUTOR, 'execute')
+# def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
+#     """
+#     Verify that configuration command is changing obsState to CONFIGURING
+#     """
+#     # obsState will be CONFIGURING for the first three reads, then READY
+#     mock_read_fn.side_effect = ['CONFIGURING', 'CONFIGURING', 'CONFIGURING', 'READY']
+#
+#     sky_coord = SkyCoord(ra=1, dec=3, unit='deg')
+#     sky_coord.info.name = 'NGC123'
+#
+#     pointing_config = subarray_node.PointingConfiguration(sky_coord)
+#     dish_config = subarray_node.DishConfiguration('5a')
+#     subarray_config = subarray_node.SubarrayConfiguration(pointing_config, dish_config)
+#
+#     subarray = domain.SubArray(1)
+#     subarray.configure(subarray_config)
+#
+#     # Configure command gets big and complicated. I'm not going to verify the call argument here.
+#     mock_execute_fn.assert_called_with(mock.ANY)
+#
+#     expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_FDQN + '/1', 'obsState')
+#     mock_read_fn.assert_called_with(expected_attr)
+#
+#     # task should keep reading obsState until device is READY
+#     assert mock_read_fn.call_count == 4
+
+def test_start_scan_forms_correct_command():
     """
-    Verify that configuration command is changing obsState to CONFIGURING
+    Tests if get_scan_command generates correct command
+    :return:
     """
-    # obsState will be CONFIGURING for the first three reads, then READY
-    mock_read_fn.side_effect = ['CONFIGURING', 'CONFIGURING', 'CONFIGURING', 'READY']
 
-    sky_coord = SkyCoord(ra=1, dec=3, unit='deg')
-    sky_coord.info.name = 'NGC123'
+    #creating 10s timedelta
+    first_date = '2019-01-01 08:00:00.000000'
+    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
 
-    pointing_config = subarray_node.PointingConfiguration(sky_coord)
-    dish_config = subarray_node.DishConfiguration('5a')
-    subarray_config = subarray_node.SubarrayConfiguration(pointing_config, dish_config)
+    second_date = '2019-01-01 08:00:10.000000'
+    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
 
-    subarray = domain.SubArray(1)
-    subarray.configure(subarray_config)
+    t_to_scan = second_date_obj - first_date_obj
 
-    # Configure command gets big and complicated. I'm not going to verify the call argument here.
-    mock_execute_fn.assert_called_with(mock.ANY)
+    sub_array = SubArray(1)
+    #sub_array.scan(t_to_scan)
 
-    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_FDQN + '/1', 'obsState')
-    mock_read_fn.assert_called_with(expected_attr)
+    generated = observingtasks.get_scan_command(sub_array, VALID_ASSIGN_STARTSCAN_REQUEST)
 
-    # task should keep reading obsState until device is READY
-    assert mock_read_fn.call_count == 4
+    assert generated.args[0] == VALID_ASSIGN_STARTSCAN_REQUEST
+    assert generated.command_name == 'Scan'
+
+@mock.patch.object(observingtasks.EXECUTOR, 'scan')
+def test_start_scan_sends_command(mock_execute_fn, mock_read_fn):
+    """
+    Tests if scan sends correct command
+    :return:
+    """
+
+    #creating 10s timedelta
+
+    mock_execute_fn.return_value = "scan"
+
+    first_date = '2019-01-01 08:00:00.000000'
+    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
+
+    second_date = '2019-01-01 08:00:10.000000'
+    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
+
+    t_to_scan = second_date_obj - first_date_obj
+
+    mock_read_fn.assert_called_with("scan")
+
+    sub_array = SubArray(1)
+    sub_array.scan(t_to_scan)
+
+    assert 1==1
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')

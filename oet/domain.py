@@ -321,17 +321,15 @@ class SubArray:
             deallocated = observingtasks.deallocate_resources(self, resources=resources)
         return deallocated
 
-    def scan(self, scan_duration: str) -> str:
+    def scan(self, scan_duration: str):
         """
         Start a scan using a Scan duration definied by the user.
 
-
         :param scan_duration: the duration of the scan
         :return: the result of the scan
-        :rtype: string
+        :rtype:
         """
         observingtasks.scan(self, scan_duration)
-        return "CONFIGURING"
 
 class SKAMid:
     """
@@ -357,7 +355,7 @@ class SKAMid:
         Instruct telescope hardware to power down to standby mode.
         """
         observingtasks.telescope_standby(self)
-    def configure(self, configuration: subarray_node.SubarrayConfiguration):
+    def configure(self, configuration):
         observingtasks.configure(self, configuration)
 
 

@@ -256,7 +256,7 @@ def deallocate_resources(subarray: SubArray,
     return released
 
 
-def get_configure_subarray_command(subarray: SubArray, config: subarray_node.SubarrayConfiguration) -> Command:
+def get_configure_subarray_command(subarray: SubArray, config) -> Command:
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     request = subarray_node.ConfigureRequest(config.pointing, config.dish)
 
@@ -268,7 +268,7 @@ def read_subarray_obstate(subarray: SubArray):
     return read_attribute(subarray, 'obsState')
 
 
-def configure(subarray: SubArray, config: subarray_node.SubarrayConfiguration):
+def configure(subarray: SubArray, config):
     command = get_configure_subarray_command(subarray, config)
     # Python convention is to label unused variables as _
     _ = EXECUTOR.execute(command)
