@@ -11,8 +11,9 @@ from typing import Optional
 import marshmallow
 import ska.cdm as cdm
 import ska.cdm.messages.central_node as central_node
-
-from .command import Command, TangoExecutor
+import ska.cdm.messages.subarray_node as subarray_node
+import ska.cdm.schemas as ska_schemas
+from .command import Command, TangoExecutor, Attribute
 from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid
 
 
@@ -29,7 +30,7 @@ class TangoRegistry:  # pylint: disable=too-few-public-methods
     def __init__(self):
         self._fqdns = {
             SKAMid: 'ska_mid/tm_central/central_node',
-            SubArray: 'ska_mid/tm_central/central_node'
+            SubArray: 'ska_mid/tm_central/subarray_node'
         }
 
     def get_central_node(self, domain_object):
@@ -37,6 +38,12 @@ class TangoRegistry:  # pylint: disable=too-few-public-methods
         Get the FQDN of the CentralNode appropriate to the object.
         """
         return self._fqdns[domain_object.__class__]
+
+    def get_subarray_node(self, domain_object):
+        """
+        Get the FQDN of the Subarray appropriate to the object.
+        """
+        return '{}/{}'.format(self._fqdns[domain_object.__class__], domain_object.id)
 
 
 # Used as a singleton to look up Tango device FQDNs
@@ -46,6 +53,32 @@ TANGO_REGISTRY = TangoRegistry()
 # module attribute so that tests can mock the executor's 'execute()'
 # function.
 EXECUTOR = TangoExecutor()
+
+
+def get_attribute(subarray: SubArray, attribute: str) -> Attribute:
+    """
+    Return an Attribute that, when passed to a TangoExecutor, would read the
+    attribute value.
+
+    :param subarray: the sub-array to allocate resources to
+    :param attribute: name of attribute
+    :return: a prepared OET Command
+    """
+    subarray_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+    return Attribute(subarray_fqdn, attribute)
+
+
+def read_attribute(subarray: SubArray, attribute: str) -> str:
+    """
+    Read an attribute of a SubArrayNode device
+
+    :param subarray: the sub-array to query
+    :param attribute: attribute name
+    :return: the attribute value
+    """
+    attribute = get_attribute(subarray, attribute)
+    response = EXECUTOR.read(attribute)
+    return response
 
 
 def convert_assign_resources_response(response: str) -> ResourceAllocation:
@@ -221,6 +254,27 @@ def deallocate_resources(subarray: SubArray,
     released = ResourceAllocation(dishes=resources.dishes)
     subarray.resources -= released
     return released
+
+
+def get_configure_subarray_command(subarray: SubArray, config: subarray_node.SubarrayConfiguration) -> Command:
+    subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+    request = subarray_node.ConfigureRequest(config.pointing, config.dish)
+
+    request_json = ska_schemas.ConfigureRequestSchema().dumps(request)
+    return Command(subarray_node_fqdn, 'Configure', request_json)
+
+
+def read_subarray_obstate(subarray: SubArray):
+    return read_attribute(subarray, 'obsState')
+
+
+def configure(subarray: SubArray, config: subarray_node.SubarrayConfiguration):
+    command = get_configure_subarray_command(subarray, config)
+    # Python convention is to label unused variables as _
+    _ = EXECUTOR.execute(command)
+
+    while read_subarray_obstate(subarray) != 'READY':
+        pass
 
 
 def telescope_start_up(telescope: SKAMid):

@@ -6,6 +6,7 @@ knowledge of the Tango control system.
 """
 import collections
 from typing import Optional, List
+import ska.cdm.messages.subarray_node as subarray_node
 import operator
 
 
@@ -228,6 +229,32 @@ class DishAllocation(collections.MutableSet):
         return '<DishAllocation(dishes={})>'.format(dishes_repr)
 
 
+class SKAMid:
+    """
+    SKAMid represents the SKA Mid telescope.
+    Operations on an SKAMid object affect the whole telescope.
+    """
+
+    def __init__(self):
+        pass
+
+    def __repr__(self):
+        return '<SKAMid>'
+
+    def start_up(self):
+        """
+        Power up all telescope devices.
+        """
+        observingtasks.telescope_start_up(self)
+
+    def standby(self):
+        """
+        Instruct telescope hardware to power down to standby mode.
+        """
+        observingtasks.telescope_standby(self)
+
+
+
 class SubArray:
     """
     SubArray represents an SKA telescope sub-array.
@@ -330,6 +357,8 @@ class SKAMid:
         Instruct telescope hardware to power down to standby mode.
         """
         observingtasks.telescope_standby(self)
+    def configure(self, configuration: subarray_node.SubarrayConfiguration):
+        observingtasks.configure(self, configuration)
 
 
 # this import needs to be here, at the end of the file, to work around a
@@ -337,4 +366,4 @@ class SKAMid:
 # registration and a command executor (to allow simulation at the observing
 # task level) then this module will depend on the executor module, not on
 # the observing tasks directly.
-from . import observingtasks  # pylint: disable=wrong-import-position
+from . import observingtasks # pylint: disable=wrong-import-position

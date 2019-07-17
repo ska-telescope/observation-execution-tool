@@ -1,15 +1,21 @@
 """
 Unit tests for the oet.observingtasks module
 """
+import unittest.mock as mock
 from unittest.mock import patch
 
 import pytest
 import ska.cdm.messages.central_node as central_node
+import ska.cdm.messages.subarray_node as subarray_node
+from astropy.coordinates import SkyCoord
 
-from oet import observingtasks
+import oet.command as command
+import oet.domain as domain
+import oet.observingtasks as observingtasks
 from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMid
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
+SKA_SUB_ARRAY_NODE_FDQN = 'ska_mid/tm_central/subarray_node'
 
 # Messages used for comparison in tests
 CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
@@ -105,7 +111,7 @@ def test_allocate_resources_command():
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray = SubArray(1)
     cmd = observingtasks.get_allocate_resources_command(subarray, resources)
-    assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
+    assert cmd.device == SKA_SUB_ARRAY_NODE_FDQN
     assert cmd.command_name == 'AssignResources'
     assert len(cmd.args) == 1
     assert not cmd.kwargs
@@ -149,13 +155,13 @@ def test_release_resources_command():
     cmd = observingtasks.get_release_resources_command(
         subarray, release_all=False, resources=resources
     )
-    assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
+    assert cmd.device == SKA_SUB_ARRAY_NODE_FDQN
     assert cmd.command_name == 'ReleaseResources'
     assert len(cmd.args) == 1
     assert not cmd.kwargs
 
 
-@patch.object(observingtasks.EXECUTOR, 'execute')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_allocate_resources_successful_allocation(mock_execute_fn):
     """
     Verify that domain objects representing the successfully allocated
@@ -170,7 +176,7 @@ def test_allocate_resources_successful_allocation(mock_execute_fn):
     assert resources == allocated
 
 
-@patch.object(observingtasks.EXECUTOR, 'execute')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_allocate_resources_partial_allocation(mock_execute_fn):
     """
     Verify that the response to an allocation request that was only part
@@ -186,7 +192,7 @@ def test_allocate_resources_partial_allocation(mock_execute_fn):
     assert Dish(2) not in allocated.dishes
 
 
-@patch.object(observingtasks.EXECUTOR, 'execute')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_subarray_state_is_updated_when_resources_are_allocated(mock_execute_fn):
     """
     Verify that the SubArray resource allocation state is updated after
@@ -229,7 +235,7 @@ def test_deallocate_resources_enforces_boolean_release_all_argument():
         _ = observingtasks.deallocate_resources(subarray, release_all=1, resources=resources)
 
 
-@patch.object(observingtasks.EXECUTOR, 'execute')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_release_resources_successful_default_deallocation(_):
     """
     Verify that the ResourceAllocation state of a SubArray object is emptied
@@ -243,7 +249,7 @@ def test_release_resources_successful_default_deallocation(_):
     assert not subarray.resources.dishes
 
 
-@patch.object(observingtasks.EXECUTOR, 'execute')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_release_resources_successful_specified_deallocation(_):
     """
     Verify that the ResourceAllocation state of a SubArray object is updated
@@ -257,7 +263,36 @@ def test_release_resources_successful_specified_deallocation(_):
     assert not subarray.resources.dishes
 
 
-@patch.object(observingtasks.EXECUTOR, 'execute')
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
+    """
+    Verify that configuration command is changing obsState to CONFIGURING
+    """
+    # obsState will be CONFIGURING for the first three reads, then READY
+    mock_read_fn.side_effect = ['CONFIGURING', 'CONFIGURING', 'CONFIGURING', 'READY']
+
+    sky_coord = SkyCoord(ra=1, dec=3, unit='deg')
+    sky_coord.info.name = 'NGC123'
+
+    pointing_config = subarray_node.PointingConfiguration(sky_coord)
+    dish_config = subarray_node.DishConfiguration('5a')
+    subarray_config = subarray_node.SubarrayConfiguration(pointing_config, dish_config)
+
+    subarray = domain.SubArray(1)
+    subarray.configure(subarray_config)
+
+    # Configure command gets big and complicated. I'm not going to verify the call argument here.
+    mock_execute_fn.assert_called_with(mock.ANY)
+
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_FDQN + '/1', 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+
+    # task should keep reading obsState until device is READY
+    assert mock_read_fn.call_count == 4
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_telescope_start_up_calls_tango_executor(mock_execute_fn):
     """
     Test that the 'start telescope devices' command calls the target Tango
@@ -269,7 +304,7 @@ def test_telescope_start_up_calls_tango_executor(mock_execute_fn):
     mock_execute_fn.assert_called_once_with(command)
 
 
-@patch.object(observingtasks.EXECUTOR, 'execute')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_telescope_stand_by_calls_tango_executor(mock_execute_fn):
     """
     Test that the 'telescope devices to standby' command calls the target

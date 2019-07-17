@@ -2,13 +2,36 @@
 The command module contains code that encapsulates Tango device interactions
 (commands, attribute read/writes, etc.) and provides the means to execute
 them.
-
 The OET decouples functions from Tango devices so that the commands can be
 managed and executed by a proxy. This allows the proxy to execute commands
 asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
 import tango
+
+
+class Attribute:
+    """
+    An abstraction of a Tango attribute.
+    """
+
+    def __init__(self, device: str, name: str):
+        """
+        Create an Attribute instance.
+
+        :param device: the FQDN of the target Tango device
+        :param name: the name of the attribute to read
+        """
+        self.device = device
+        self.name = name
+
+    def __repr__(self):
+        return '<Attribute({!r}, {!r})>'.format(self.device, self.name)
+
+    def __eq__(self, other):
+        if not isinstance(other, Attribute):
+            return False
+        return self.device == other.device and self.name == other.name
 
 
 class Command:
@@ -19,7 +42,6 @@ class Command:
     def __init__(self, device: str, command_name: str, *args, **kwargs):
         """
         Create a Tango command.
-
         :param device: the FQDN of the target Tango device
         :param command_name: the name of the command to execute
         :param args: unnamed arguments to be passed to the command
@@ -50,7 +72,6 @@ class Command:
 class TangoDeviceProxyFactory:  # pylint: disable=too-few-public-methods
     """
     A call to create Tango DeviceProxy clients.
-
     This class exists to allow unit tests to override the factory with an
     implementation that returns mock DeviceProxy instances.
     """
@@ -93,6 +114,17 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         if len(command.args) > 1:
             param = command.args
         return proxy.command_inout(command.command_name, cmd_param=param)
+
+    def read(self, attribute: Attribute):
+        """
+        Read an attribute on a Tango device.
+
+        :param attribute: the attribute to read
+        :return: the attribute value
+        """
+        proxy = self._get_proxy(attribute.device)
+        response = proxy.read_attribute(attribute.name, extract_as=tango.ExtractAs.List)
+        return response.value
 
     def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
         # It takes time to construct and connect a device proxy to the remote
