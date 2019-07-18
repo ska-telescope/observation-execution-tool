@@ -6,7 +6,7 @@ knowledge of the Tango control system.
 """
 import collections
 from typing import Optional, List
-import ska.cdm.messages.subarray_node as subarray_node
+from datetime import timedelta
 import operator
 
 
@@ -229,32 +229,6 @@ class DishAllocation(collections.MutableSet):
         return '<DishAllocation(dishes={})>'.format(dishes_repr)
 
 
-class SKAMid:
-    """
-    SKAMid represents the SKA Mid telescope.
-    Operations on an SKAMid object affect the whole telescope.
-    """
-
-    def __init__(self):
-        pass
-
-    def __repr__(self):
-        return '<SKAMid>'
-
-    def start_up(self):
-        """
-        Power up all telescope devices.
-        """
-        observingtasks.telescope_start_up(self)
-
-    def standby(self):
-        """
-        Instruct telescope hardware to power down to standby mode.
-        """
-        observingtasks.telescope_standby(self)
-
-
-
 class SubArray:
     """
     SubArray represents an SKA telescope sub-array.
@@ -321,20 +295,20 @@ class SubArray:
             deallocated = observingtasks.deallocate_resources(self, resources=resources)
         return deallocated
 
-    def scan(self, scan_duration: str):
+    def scan(self, scan_duration: timedelta):
         """
         Start a scan using a Scan duration definied by the user.
 
-        :param scan_duration: the duration of the scan
+        :param scan_duration: timestamp the duration of the scan
         :return: the result of the scan
         :rtype:
         """
-        observingtasks.scan(self, scan_duration)
+        rsp = observingtasks.scan(self, scan_duration)
+        return rsp
 
 class SKAMid:
     """
     SKAMid represents the SKA Mid telescope.
-
     Operations on an SKAMid object affect the whole telescope.
     """
 
@@ -355,6 +329,7 @@ class SKAMid:
         Instruct telescope hardware to power down to standby mode.
         """
         observingtasks.telescope_standby(self)
+
     def configure(self, configuration):
         observingtasks.configure(self, configuration)
 

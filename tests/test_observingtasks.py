@@ -2,16 +2,14 @@
 Unit tests for the oet.observingtasks module
 """
 import unittest.mock as mock
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 from datetime import datetime
 
 import pytest
 import ska.cdm.messages.central_node as central_node
 import ska.cdm.messages.subarray_node as subarray_node
-from astropy.coordinates import SkyCoord
+import ska.cdm as cdm
 
-import oet.command as command
-import oet.domain as domain
 import oet.observingtasks as observingtasks
 from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMid
 
@@ -264,33 +262,26 @@ def test_release_resources_successful_specified_deallocation(_):
     assert not subarray.resources.dishes
 
 
-# @mock.patch.object(observingtasks.EXECUTOR, 'read')
-# @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-# def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
-#     """
-#     Verify that configuration command is changing obsState to CONFIGURING
-#     """
-#     # obsState will be CONFIGURING for the first three reads, then READY
-#     mock_read_fn.side_effect = ['CONFIGURING', 'CONFIGURING', 'CONFIGURING', 'READY']
-#
-#     sky_coord = SkyCoord(ra=1, dec=3, unit='deg')
-#     sky_coord.info.name = 'NGC123'
-#
-#     pointing_config = subarray_node.PointingConfiguration(sky_coord)
-#     dish_config = subarray_node.DishConfiguration('5a')
-#     subarray_config = subarray_node.SubarrayConfiguration(pointing_config, dish_config)
-#
-#     subarray = domain.SubArray(1)
-#     subarray.configure(subarray_config)
-#
-#     # Configure command gets big and complicated. I'm not going to verify the call argument here.
-#     mock_execute_fn.assert_called_with(mock.ANY)
-#
-#     expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_FDQN + '/1', 'obsState')
-#     mock_read_fn.assert_called_with(expected_attr)
-#
-#     # task should keep reading obsState until device is READY
-#     assert mock_read_fn.call_count == 4
+def test_start_scan_cmd_library():
+    """
+    Tests if if CDM library creates a proper json file
+    :return:
+    """
+
+    #creating 10s timedelta
+    first_date = '2019-01-01 08:00:00.000000'
+    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
+    second_date = '2019-01-01 08:00:10.000000'
+    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
+    t_to_scan = second_date_obj - first_date_obj
+
+    scan_request = subarray_node.ScanRequest(t_to_scan)
+    scan_json = cdm.schemas.ScanRequestSchema()
+
+    result = scan_json.dumps(scan_request)
+
+    assert result == VALID_ASSIGN_STARTSCAN_REQUEST
+
 
 def test_start_scan_forms_correct_command():
     """
@@ -298,38 +289,31 @@ def test_start_scan_forms_correct_command():
     :return:
     """
 
-    #creating 10s timedelta
-    first_date = '2019-01-01 08:00:00.000000'
-    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
-
-    second_date = '2019-01-01 08:00:10.000000'
-    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
-
-    t_to_scan = second_date_obj - first_date_obj
-
     sub_array = SubArray(1)
-    #sub_array.scan(t_to_scan)
-
     generated = observingtasks.get_scan_command(sub_array, VALID_ASSIGN_STARTSCAN_REQUEST)
 
     assert generated.args[0] == VALID_ASSIGN_STARTSCAN_REQUEST
     assert generated.command_name == 'Scan'
 
-@patch.object(observingtasks.EXECUTOR, 'scan')
-def test_start_scan_sends_command(mock_scan_fn):
+
+@patch.object(observingtasks.EXECUTOR, 'execute')
+def test_start_scan_sends_command(mock_execute_fn):
     """
-    Tests if scan sends correct command
+    Tests if scan sends correct command using mock
     :return:
     """
 
-    #creating 10s timedelta
-
-    mock_scan_fn.return_value = 'scan'
-
+    mock_execute_fn.return_value = 'scan'
+    # creating 10s timedelta
+    first_date = '2019-01-01 08:00:00.000000'
+    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
+    second_date = '2019-01-01 08:00:10.000000'
+    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
+    t_to_scan = second_date_obj - first_date_obj
     sub_array = SubArray(1)
-    scan_rtn = sub_array.scan(VALID_ASSIGN_STARTSCAN_REQUEST)
+    scan_rtn = sub_array.scan(t_to_scan)
 
-    assert scan_rtn=='scan'
+    assert scan_rtn == 'scan'
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')

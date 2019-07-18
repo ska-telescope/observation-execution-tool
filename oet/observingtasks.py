@@ -7,7 +7,7 @@ This module is intended to be maintained by someone familiar with Tango and
 the API of the devices they are controlling.
 """
 from typing import Optional
-
+from datetime import timedelta
 import marshmallow
 import ska.cdm as cdm
 import ska.cdm.messages.central_node as central_node
@@ -15,6 +15,7 @@ import ska.cdm.messages.subarray_node as subarray_node
 import ska.cdm.schemas as ska_schemas
 from .command import Command, TangoExecutor, Attribute
 from .domain import Dish, SubArray, ResourceAllocation, DishAllocation, SKAMid
+
 
 
 class TangoRegistry:  # pylint: disable=too-few-public-methods
@@ -301,25 +302,31 @@ def telescope_standby(telescope: SKAMid):
     EXECUTOR.execute(command)
 
 
-def get_scan_command(subarray: SubArray, configure_json: str) -> Command:
+def get_scan_command(subarray: SubArray, scan_json: str) -> Command:
     """
     Return an OET Command that, when passed to a TangoExecutor, would start a scan.
     :param subarray: the sub-array to start the scan to
+    :param scan_json: json that contains scan information
     :return: a prepared OET Command
     """
     central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
-    return Command(central_node_fqdn, 'Scan', configure_json)  # change the configure json
+    return Command(central_node_fqdn, 'Scan', scan_json)
 
 
-def scan(subarray: SubArray, scan_duration: str) -> str:
+def scan(subarray: SubArray, scan_duration: timedelta) -> str:
     """
-    Start a scan.
+    Convert the request in a JSON using CDM library, get the scan command
+    and execute the command received
     :param subarray: the sub-array to control
-    :param scan_duration: the json that defines the scan time to the sub-array
+    :param scan_duration: the timedelta that defines the scan time to the sub-array
     :return: the reponse from sending the command to configure sub-array
     """
-    command = get_scan_command(subarray, scan_duration)
-    # requires variable annotations in Python > 3.5
-    # response: str = EXECUTOR.execute(command)
+
+    scan_request = subarray_node.ScanRequest(scan_duration)
+    scan_json = cdm.schemas.ScanRequestSchema()
+    result = scan_json.dumps(scan_request)
+
+    command = get_scan_command(subarray, result)
+
     response = EXECUTOR.execute(command)
     return response
