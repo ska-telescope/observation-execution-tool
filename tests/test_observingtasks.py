@@ -2,7 +2,7 @@
 Unit tests for the oet.observingtasks module
 """
 import unittest.mock as mock
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from datetime import datetime
 
 import pytest
@@ -315,8 +315,8 @@ def test_start_scan_forms_correct_command():
     assert generated.args[0] == VALID_ASSIGN_STARTSCAN_REQUEST
     assert generated.command_name == 'Scan'
 
-@mock.patch.object(observingtasks.EXECUTOR, 'scan')
-def test_start_scan_sends_command(mock_execute_fn, mock_read_fn):
+@patch.object(observingtasks.EXECUTOR, 'scan')
+def test_start_scan_sends_command(mock_scan_fn):
     """
     Tests if scan sends correct command
     :return:
@@ -324,22 +324,12 @@ def test_start_scan_sends_command(mock_execute_fn, mock_read_fn):
 
     #creating 10s timedelta
 
-    mock_execute_fn.return_value = "scan"
-
-    first_date = '2019-01-01 08:00:00.000000'
-    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
-
-    second_date = '2019-01-01 08:00:10.000000'
-    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
-
-    t_to_scan = second_date_obj - first_date_obj
-
-    mock_read_fn.assert_called_with("scan")
+    mock_scan_fn.return_value = 'scan'
 
     sub_array = SubArray(1)
-    sub_array.scan(t_to_scan)
+    scan_rtn = sub_array.scan(VALID_ASSIGN_STARTSCAN_REQUEST)
 
-    assert 1==1
+    assert scan_rtn=='scan'
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
