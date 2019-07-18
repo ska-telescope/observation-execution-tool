@@ -7,7 +7,7 @@ knowledge of the Tango control system.
 import collections
 from typing import Optional, List
 import operator
-from astropy.coordinates import SkyCoord
+
 
 class Dish:
     """
@@ -252,17 +252,17 @@ class SKAMid:
         """
         observingtasks.telescope_standby(self)
 
+
 class SubArrayConfiguration:
     """
-    SubarrayConfiguration encapsultales PointingCOnfiguration and DishConfiguration
+    SubarrayConfiguration encapsulates PointingConfiguration and DishConfiguration
 
     """
 
     def __init__(self,  coord, name, receiver_band):
 
-        self.pointing_config = PointingConfiguration(coord,name)
+        self.pointing_config = PointingConfiguration(coord, name)
         self.dish_config = DishConfiguration(receiver_band)
-
 
 
 class PointingConfiguration:  # pylint: disable=too-few-public-methods
@@ -283,12 +283,18 @@ class DishConfiguration:  # pylint: disable=too-few-public-methods
     """
 
     def __init__(self, receiver_band):
+        """"Check if received band is in the list of valid receiver bands.
+            TODO valid receiver band values need to be in some config file
+        """
+        if str(receiver_band).upper() not in ['1', '2', '5A', '5B']:
+            raise ValueError('Invalid receiver band')
         self.receiver_band = receiver_band
 
     def __eq__(self, other):
         if not isinstance(other, DishConfiguration):
             return False
         return self.receiver_band == other.receiver_band
+
 
 class SubArray:
     """
@@ -357,6 +363,11 @@ class SubArray:
         return deallocated
 
     def configure(self, subarray_config:SubArrayConfiguration):
+        """
+        Configure subarray from the configuration parameters
+        :param subarray_config:
+        :return:
+        """
         observingtasks.configure(self, subarray_config)
 
 

@@ -7,14 +7,11 @@ from unittest.mock import patch
 import pytest
 import ska.cdm.messages.central_node as central_node
 import ska.cdm.messages.subarray_node as subarray_node
-import ska.cdm as cdm
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
 from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMid
 from astropy.coordinates import SkyCoord
-
-from pprint import pprint
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
 SKA_SUB_ARRAY_NODE_FDQN = 'ska_mid/tm_central/subarray_node'
@@ -264,7 +261,7 @@ def test_release_resources_successful_specified_deallocation(_):
     subarray.deallocate(resources)
     assert not subarray.resources.dishes
 
-def test_configure_subarray_forms_correct_request(): 
+def test_configure_subarray_forms_correct_request():
     """
     Verify that domain objects are converted correctly to CDM objects for a
     SubarrayNode.Configure() instruction.

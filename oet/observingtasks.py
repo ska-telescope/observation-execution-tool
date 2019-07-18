@@ -258,7 +258,8 @@ def deallocate_resources(subarray: SubArray,
 def get_configure_subarray_request(pointing_config,dish_config) \
         -> subarray_node.ConfigureRequest:
     """
-
+    Return the JSON string that, when passed as argument to
+    Subarray.Configure, would configure sub-array.
     """
     cdm_target = subarray_node.Target(pointing_config.coord.ra.value, pointing_config.coord.dec.value, \
                                       frame=pointing_config.coord.frame.name, unit=pointing_config.coord.ra.unit.name)
@@ -268,6 +269,12 @@ def get_configure_subarray_request(pointing_config,dish_config) \
     return subarray_node.ConfigureRequest(cdm_pointing_config, cdm_dish_config)
 
 def get_configure_subarray_command(subarray: SubArray, subarray_config: SubArrayConfiguration) -> Command:
+    """
+    Return an OET Command that, when passed to a TangoExecutor, would configure a sub-array.
+    :param subarray:
+    :param subarray_config:
+    :return: OET Command
+    """
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     request = get_configure_subarray_request(subarray_config.pointing_config, subarray_config.dish_config)
 
@@ -276,6 +283,11 @@ def get_configure_subarray_command(subarray: SubArray, subarray_config: SubArray
 
 
 def read_subarray_obstate(subarray: SubArray):
+    """
+    read the observation  state of subarray
+    :param subarray:
+    :return:
+    """
     return read_attribute(subarray, 'obsState')
 
 
