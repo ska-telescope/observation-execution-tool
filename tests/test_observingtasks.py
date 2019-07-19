@@ -2,16 +2,16 @@
 Unit tests for the oet.observingtasks module
 """
 import unittest.mock as mock
-from unittest.mock import patch
 
 import pytest
-import ska.cdm.messages.central_node as central_node
-import ska.cdm.messages.subarray_node as subarray_node
+import ska.cdm.messages.central_node as cn
+import ska.cdm.messages.subarray_node as sn
+from astropy.coordinates import SkyCoord
+
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
 from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMid
-from astropy.coordinates import SkyCoord
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
 SKA_SUB_ARRAY_NODE_FDQN = 'ska_mid/tm_central/subarray_node'
@@ -75,8 +75,8 @@ def test_allocate_resources_forms_correct_request():
     subarray = SubArray(1)
     request = observingtasks.get_allocate_resources_request(subarray, resources)
 
-    cdm_dish_allocation = central_node.DishAllocation(['0001', '0002'])
-    expected = central_node.AssignResourcesRequest(1, cdm_dish_allocation)
+    cdm_dish_allocation = cn.DishAllocation(['0001', '0002'])
+    expected = cn.AssignResourcesRequest(1, cdm_dish_allocation)
 
     assert request == expected
 
@@ -126,8 +126,8 @@ def test_release_resources_forms_correct_request():
     request = observingtasks.get_release_resources_request(subarray, release_all=False,
                                                            resources=resources)
 
-    cdm_dish_allocation = central_node.DishAllocation(receptor_ids=['0001', '0002'])
-    expected = central_node.ReleaseResourcesRequest(1, dish_allocation=cdm_dish_allocation)
+    cdm_dish_allocation = cn.DishAllocation(receptor_ids=['0001', '0002'])
+    expected = cn.ReleaseResourcesRequest(1, dish_allocation=cdm_dish_allocation)
 
     assert expected == request
 
@@ -140,7 +140,7 @@ def test_release_resources_forms_correct_request_for_release_all():
     """
     subarray = SubArray(1)
     request = observingtasks.get_release_resources_request(subarray, release_all=True)
-    expected = central_node.ReleaseResourcesRequest(1, release_all=True)
+    expected = cn.ReleaseResourcesRequest(1, release_all=True)
     assert request == expected
 
 
@@ -261,22 +261,24 @@ def test_release_resources_successful_specified_deallocation(_):
     subarray.deallocate(resources)
     assert not subarray.resources.dishes
 
+
 def test_configure_subarray_forms_correct_request():
     """
     Verify that domain objects are converted correctly to CDM objects for a
     SubarrayNode.Configure() instruction.
     """
-
     coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
-    subarray_configuration = domain.SubArrayConfiguration(coord, '', '5a')
-    request = observingtasks.get_configure_subarray_request(subarray_configuration.pointing_config,\
-                                                            subarray_configuration.dish_config)
+    pointing_config = domain.PointingConfiguration(coord, 'name')
+    dish_config = domain.DishConfiguration(receiver_band='5a')
+    request = observingtasks.get_configure_subarray_request(pointing_config,
+                                                            dish_config)
 
-    pointing_config = subarray_node.PointingConfiguration(subarray_node.Target(1, 1))
-    dish_config = subarray_node.DishConfiguration(receiver_band=subarray_node.ReceiverBand.BAND_5A)
-    expected =  subarray_node.ConfigureRequest(pointing_config, dish_config)
+    pointing_config = sn.PointingConfiguration(sn.Target(1, 1))
+    dish_config = sn.DishConfiguration(receiver_band=sn.ReceiverBand.BAND_5A)
+    expected = sn.ConfigureRequest(pointing_config, dish_config)
 
     assert request == expected
+
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
@@ -287,7 +289,7 @@ def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
     # obsState will be CONFIGURING for the first three reads, then READY
     mock_read_fn.side_effect = ['CONFIGURING', 'CONFIGURING', 'CONFIGURING', 'READY']
 
-    coord = SkyCoord( ra = 1, dec = 2, frame = 'icrs', unit = 'deg')
+    coord = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
 
     subarray_configuration = domain.SubArrayConfiguration(coord, 'NGC123', '5a')
     subarray = domain.SubArray(1)

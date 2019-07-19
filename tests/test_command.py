@@ -8,8 +8,7 @@ from oet.command import Attribute, Command, TangoExecutor, TangoDeviceProxyFacto
 
 def test_attribute_repr():
     """
-    Verify that the repr string for an Attribute  is correctly
-    formatted
+    Verify that the repr string for an Attribute is correctly formatted
     """
     attr = Attribute('device', 'name')
     assert repr(attr) == '<Attribute(\'device\', \'name\')>'
@@ -17,7 +16,8 @@ def test_attribute_repr():
 
 def test_attribute_eq():
     """
-    Verify that Attribute equals
+    Verify that Attributes pointing to the same Tango device attribute are
+    considered equal.
     """
     attr1 = Attribute('device', 'read')
     attr2 = Attribute('device', 'read')
@@ -26,7 +26,8 @@ def test_attribute_eq():
 
 def test_attribute_noteq():
     """
-    Verify that Attribute are not equal
+    Verify that Attributes pointing to different device attributes are not
+    equal
     """
     attr1 = Attribute('device', 'read')
     attr2 = Attribute('device', 'write')
@@ -143,6 +144,7 @@ def test_tango_device_proxy_creates_device_proxy_to_named_device():
         _ = TangoDeviceProxyFactory()('my device')
     mock_pytango.DeviceProxy.assert_called_once_with('my device')
 
+
 def test_tango_read_creates_proxy_to_specified_device():
     """
     Check that the TangoExecutor creates a proxy to the device specified in
@@ -168,4 +170,3 @@ def test_tango_read_only_creates_one_device_proxy_per_device():
         executor.read(attr)
 
     mock_call.assert_called_once_with('device')
-

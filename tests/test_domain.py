@@ -4,11 +4,11 @@ Unit tests for the oet.domain module.
 import unittest.mock as mock
 
 import pytest
+from astropy.coordinates import SkyCoord
 
-from oet.domain import Dish, DishAllocation, ResourceAllocation, SubArray, SKAMid,\
+from oet.domain import Dish, DishAllocation, ResourceAllocation, SubArray, SKAMid, \
     DishConfiguration, PointingConfiguration, SubArrayConfiguration
 
-from astropy.coordinates import SkyCoord
 
 def test_dish_constructor_accepts_int():
     """
@@ -378,7 +378,7 @@ def test_subarrayconfiguration_constructor_accepts_skycoord_name():
     assert subarray_configuration.pointing_config.coord.dec.value == 2
     assert subarray_configuration.pointing_config.coord.frame.name == 'icrs'
     assert subarray_configuration.pointing_config.coord.ra.unit.name == 'deg'
-    assert subarray_configuration.pointing_config.name =='name'
+    assert subarray_configuration.pointing_config.name == 'name'
     assert subarray_configuration.dish_config.receiver_band == '5a'
 
 
@@ -392,17 +392,29 @@ def test_pointingconfiguration_constructor_accepts_skycoord_name():
     assert pointing_configuration.coord.ra.value == 1
     assert pointing_configuration.coord.dec.value == 2
     assert pointing_configuration.coord.frame.name == 'icrs'
-    assert pointing_configuration.name =='name'
+    assert pointing_configuration.name == 'name'
 
 
 def test_dishconfiguration_constructor_accepts_str():
     """
-    DishConfiguration should accept str and int (union).
-    :return:
+    Verify that DishConfiguration constructor accepts a string receiver band
+    argument.
     """
-    #TODO modify this test to include receiver bands as a union of str and int
+    dish_config = DishConfiguration('1')
+    assert dish_config.receiver_band == '1'
     dish_config = DishConfiguration('5a')
     assert dish_config.receiver_band == '5a'
+
+
+def test_dishconfiguration_constructor_accept_int():
+    """
+    Verify that DishConfiguration accepts an integer receiver argument for
+    bands 1 and 2.
+    """
+    dish_config = DishConfiguration(receiver_band=1)
+    assert dish_config.receiver_band == '1'
+    dish_config = DishConfiguration(receiver_band=2)
+    assert dish_config.receiver_band == '2'
 
 
 def test_dishconfiguration_constructor_accepts_valid_values_only():
@@ -413,7 +425,11 @@ def test_dishconfiguration_constructor_accepts_valid_values_only():
     :return:
     """
     with pytest.raises(ValueError):
-        _ = DishConfiguration('3')
+        _ = DishConfiguration(receiver_band='3')
+    with pytest.raises(ValueError):
+        _ = DishConfiguration(receiver_band=3)
+    with pytest.raises(ValueError):
+        _ = DishConfiguration(receiver_band=5)
     with pytest.raises(ValueError):
         _ = SubArray('6a')
 
@@ -423,9 +439,9 @@ def test_dish_configuration_eq():
     Verify that DishConfiguration objects are considered equal when:
       - they use the same receiver band
     """
-    config_1 = DishConfiguration('1')
-    config_2 = DishConfiguration('1')
-    config_3 = DishConfiguration('5a')
+    config_1 = DishConfiguration(receiver_band='1')
+    config_2 = DishConfiguration(receiver_band='1')
+    config_3 = DishConfiguration(receiver_band='5a')
     assert config_1 == config_2
     assert config_1 != config_3
 
@@ -436,10 +452,8 @@ def test_dish_configuration_is_not_equal_to_other_objects():
     non-DishConfiguration objects.
     :return:
     """
-    config_1 = DishConfiguration('5a')
-    coord = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
-    assert config_1 != coord
-    assert config_1 != object
+    config_1 = DishConfiguration(receiver_band='5a')
+    assert config_1 != object()
 
 
 def test_telescope_start_up_calls_correct_observing_task():

@@ -6,7 +6,12 @@ knowledge of the Tango control system.
 """
 import collections
 from typing import Optional, List
+
 import operator
+from astropy.coordinates import SkyCoord
+
+__all__ = ['Dish', 'DishAllocation', 'DishConfiguration', 'PointingConfiguration',
+           'ResourceAllocation', 'SKAMid', 'SubArray', 'SubArrayConfiguration']
 
 
 class Dish:
@@ -253,14 +258,19 @@ class SKAMid:
         observingtasks.telescope_standby(self)
 
 
-class SubArrayConfiguration:
+class SubArrayConfiguration:  # pylint: disable=too-few-public-methods
     """
     SubarrayConfiguration encapsulates PointingConfiguration and DishConfiguration
-
     """
 
-    def __init__(self,  coord, name, receiver_band):
+    def __init__(self, coord, name, receiver_band):
+        """
+        Create a new SubArrayConfiguration
 
+        :param coord: pointing configuration for the sub
+        :param name:
+        :param receiver_band:
+        """
         self.pointing_config = PointingConfiguration(coord, name)
         self.dish_config = DishConfiguration(receiver_band)
 
@@ -271,7 +281,13 @@ class PointingConfiguration:  # pylint: disable=too-few-public-methods
     point.
     """
 
-    def __init__(self, coord, name):
+    def __init__(self, coord: SkyCoord, name: str = ''):
+        """
+        Create a new PointingConfiguration.
+
+        :param coord: the sub-array pointing target
+        :param name: the name of the pointing target
+        """
         self.coord = coord
         self.name = name
 
@@ -283,12 +299,10 @@ class DishConfiguration:  # pylint: disable=too-few-public-methods
     """
 
     def __init__(self, receiver_band):
-        """"Check if received band is in the list of valid receiver bands.
-            TODO valid receiver band values need to be in some config file
-        """
-        if str(receiver_band).upper() not in ['1', '2', '5A', '5B']:
-            raise ValueError('Invalid receiver band')
-        self.receiver_band = receiver_band
+        rx_str = str(receiver_band).lower()
+        if rx_str not in ['1', '2', '5a', '5b']:
+            raise ValueError('Invalid receiver band: {}'.format(receiver_band))
+        self.receiver_band = rx_str
 
     def __eq__(self, other):
         if not isinstance(other, DishConfiguration):
@@ -362,7 +376,7 @@ class SubArray:
             deallocated = observingtasks.deallocate_resources(self, resources=resources)
         return deallocated
 
-    def configure(self, subarray_config:SubArrayConfiguration):
+    def configure(self, subarray_config: SubArrayConfiguration):
         """
         Configure subarray from the configuration parameters
         :param subarray_config:
@@ -376,4 +390,4 @@ class SubArray:
 # registration and a command executor (to allow simulation at the observing
 # task level) then this module will depend on the executor module, not on
 # the observing tasks directly.
-from . import observingtasks # pylint: disable=wrong-import-position
+from . import observingtasks  # pylint: disable=wrong-import-position
