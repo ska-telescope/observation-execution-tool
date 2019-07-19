@@ -8,7 +8,7 @@ with open('README.md') as readme_file:
 
 setup(
     name='observation-execution-tool',
-    version='0.1.0',
+    version='0.1.1',
     description="",
     long_description=readme + '\n\n',
     author="Your Name",
@@ -33,7 +33,7 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
-    install_requires=['pytango', 'cdm-shared-library'],  # FIXME: add your package's dependencies to this list
+    install_requires=['pytango', 'cdm-shared-library'],
     setup_requires=[
         # dependency for `python setup.py test`
         'pytest-runner',
