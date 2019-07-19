@@ -164,7 +164,6 @@ class DishAllocation(collections.MutableSet):
         """
         Create a new DishAllocation containing the specified Dishes.
 
-        :rtype: object
         :param dishes: (optional) the Dishes to add to this allocation
         :type: list of Dish objects
         """
