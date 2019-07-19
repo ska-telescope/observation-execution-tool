@@ -33,7 +33,7 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
-    install_requires=['pytango'],  # FIXME: add your package's dependencies to this list
+    install_requires=['pytango', 'cdm-shared-library'],  # FIXME: add your package's dependencies to this list
     setup_requires=[
         # dependency for `python setup.py test`
         'pytest-runner',
