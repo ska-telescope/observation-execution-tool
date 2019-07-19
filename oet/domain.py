@@ -6,8 +6,13 @@ knowledge of the Tango control system.
 """
 import collections
 from typing import Optional, List
+
 from datetime import timedelta
 import operator
+from astropy.coordinates import SkyCoord
+
+__all__ = ['Dish', 'DishAllocation', 'DishConfiguration', 'PointingConfiguration',
+           'ResourceAllocation', 'SKAMid', 'SubArray', 'SubArrayConfiguration']
 
 
 class Dish:
@@ -165,7 +170,6 @@ class DishAllocation(collections.MutableSet):
         """
         Create a new DishAllocation containing the specified Dishes.
 
-        :rtype: object
         :param dishes: (optional) the Dishes to add to this allocation
         :type: list of Dish objects
         """
@@ -227,6 +231,83 @@ class DishAllocation(collections.MutableSet):
         dishes_list = sorted(self.dishes, key=operator.attrgetter('id'))
         dishes_repr = repr(dishes_list)
         return '<DishAllocation(dishes={})>'.format(dishes_repr)
+
+
+class SKAMid:
+    """
+    SKAMid represents the SKA Mid telescope.
+    Operations on an SKAMid object affect the whole telescope.
+    """
+
+    def __init__(self):
+        pass
+
+    def __repr__(self):
+        return '<SKAMid>'
+
+    def start_up(self):
+        """
+        Power up all telescope devices.
+        """
+        observingtasks.telescope_start_up(self)
+
+    def standby(self):
+        """
+        Instruct telescope hardware to power down to standby mode.
+        """
+        observingtasks.telescope_standby(self)
+
+
+class SubArrayConfiguration:  # pylint: disable=too-few-public-methods
+    """
+    SubarrayConfiguration encapsulates PointingConfiguration and DishConfiguration
+    """
+
+    def __init__(self, coord, name, receiver_band):
+        """
+        Create a new SubArrayConfiguration
+
+        :param coord: pointing configuration for the sub
+        :param name:
+        :param receiver_band:
+        """
+        self.pointing_config = PointingConfiguration(coord, name)
+        self.dish_config = DishConfiguration(receiver_band)
+
+
+class PointingConfiguration:  # pylint: disable=too-few-public-methods
+    """
+    PointingConfiguration specifies where the subarray receptors are going to
+    point.
+    """
+
+    def __init__(self, coord: SkyCoord, name: str = ''):
+        """
+        Create a new PointingConfiguration.
+
+        :param coord: the sub-array pointing target
+        :param name: the name of the pointing target
+        """
+        self.coord = coord
+        self.name = name
+
+
+class DishConfiguration:  # pylint: disable=too-few-public-methods
+    """
+    DishConfiguration specifies how SKA MID dishes in a sub-array should be
+    configured. At the moment, this is limited to setting the receiver band.
+    """
+
+    def __init__(self, receiver_band):
+        rx_str = str(receiver_band).lower()
+        if rx_str not in ['1', '2', '5a', '5b']:
+            raise ValueError('Invalid receiver band: {}'.format(receiver_band))
+        self.receiver_band = rx_str
+
+    def __eq__(self, other):
+        if not isinstance(other, DishConfiguration):
+            return False
+        return self.receiver_band == other.receiver_band
 
 
 class SubArray:
@@ -295,9 +376,17 @@ class SubArray:
             deallocated = observingtasks.deallocate_resources(self, resources=resources)
         return deallocated
 
+    def configure(self, subarray_config: SubArrayConfiguration):
+        """
+        Configure subarray from the configuration parameters
+        :param subarray_config:
+        :return:
+        """
+        observingtasks.configure(self, subarray_config)
+
     def scan(self, scan_duration: timedelta):
         """
-        Start a scan using a Scan duration definied by the user.
+        Start a scan using a Scan duration defined by the user.
 
         :param scan_duration: timestamp the duration of the scan
         :return: the result of the scan
@@ -306,37 +395,9 @@ class SubArray:
         rsp = observingtasks.scan(self, scan_duration)
         return rsp
 
-class SKAMid:
-    """
-    SKAMid represents the SKA Mid telescope.
-    Operations on an SKAMid object affect the whole telescope.
-    """
-
-    def __init__(self):
-        pass
-
-    def __repr__(self):
-        return '<SKAMid>'
-
-    def start_up(self):
-        """
-        Power up all telescope devices.
-        """
-        observingtasks.telescope_start_up(self)
-
-    def standby(self):
-        """
-        Instruct telescope hardware to power down to standby mode.
-        """
-        observingtasks.telescope_standby(self)
-
-    def configure(self, configuration):
-        observingtasks.configure(self, configuration)
-
-
 # this import needs to be here, at the end of the file, to work around a
 # circular import. This is just a temporary measure; if we introduce command
 # registration and a command executor (to allow simulation at the observing
 # task level) then this module will depend on the executor module, not on
 # the observing tasks directly.
-from . import observingtasks # pylint: disable=wrong-import-position
+from . import observingtasks  # pylint: disable=wrong-import-position

@@ -6,10 +6,12 @@ from unittest.mock import patch
 from datetime import datetime
 
 import pytest
-import ska.cdm.messages.central_node as central_node
-import ska.cdm.messages.subarray_node as subarray_node
-import ska.cdm as cdm
+import ska.cdm.messages.central_node as cn
+import ska.cdm.messages.subarray_node as sn
+from astropy.coordinates import SkyCoord
 
+import oet.command as command
+import oet.domain as domain
 import oet.observingtasks as observingtasks
 from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMid
 
@@ -21,6 +23,7 @@ CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["00
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
 CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_success": ["0001"]}}'
 VALID_ASSIGN_STARTSCAN_REQUEST = '{"scan_duration": 10.0}'
+
 
 def test_tango_registry_returns_correct_url_for_ska_mid():
     """
@@ -75,8 +78,8 @@ def test_allocate_resources_forms_correct_request():
     subarray = SubArray(1)
     request = observingtasks.get_allocate_resources_request(subarray, resources)
 
-    cdm_dish_allocation = central_node.DishAllocation(['0001', '0002'])
-    expected = central_node.AssignResourcesRequest(1, cdm_dish_allocation)
+    cdm_dish_allocation = cn.DishAllocation(['0001', '0002'])
+    expected = cn.AssignResourcesRequest(1, cdm_dish_allocation)
 
     assert request == expected
 
@@ -126,8 +129,8 @@ def test_release_resources_forms_correct_request():
     request = observingtasks.get_release_resources_request(subarray, release_all=False,
                                                            resources=resources)
 
-    cdm_dish_allocation = central_node.DishAllocation(receptor_ids=['0001', '0002'])
-    expected = central_node.ReleaseResourcesRequest(1, dish_allocation=cdm_dish_allocation)
+    cdm_dish_allocation = cn.DishAllocation(receptor_ids=['0001', '0002'])
+    expected = cn.ReleaseResourcesRequest(1, dish_allocation=cdm_dish_allocation)
 
     assert expected == request
 
@@ -140,7 +143,7 @@ def test_release_resources_forms_correct_request_for_release_all():
     """
     subarray = SubArray(1)
     request = observingtasks.get_release_resources_request(subarray, release_all=True)
-    expected = central_node.ReleaseResourcesRequest(1, release_all=True)
+    expected = cn.ReleaseResourcesRequest(1, release_all=True)
     assert request == expected
 
 
@@ -262,58 +265,47 @@ def test_release_resources_successful_specified_deallocation(_):
     assert not subarray.resources.dishes
 
 
-def test_start_scan_cmd_library():
+def test_configure_subarray_forms_correct_request():
     """
-    Tests if if CDM library creates a proper json file
-    :return:
+    Verify that domain objects are converted correctly to CDM objects for a
+    SubarrayNode.Configure() instruction.
     """
+    coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
+    pointing_config = domain.PointingConfiguration(coord, 'name')
+    dish_config = domain.DishConfiguration(receiver_band='5a')
+    request = observingtasks.get_configure_subarray_request(pointing_config,
+                                                            dish_config)
 
-    #creating 10s timedelta
-    first_date = '2019-01-01 08:00:00.000000'
-    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
-    second_date = '2019-01-01 08:00:10.000000'
-    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
-    t_to_scan = second_date_obj - first_date_obj
+    pointing_config = sn.PointingConfiguration(sn.Target(1, 1))
+    dish_config = sn.DishConfiguration(receiver_band=sn.ReceiverBand.BAND_5A)
+    expected = sn.ConfigureRequest(pointing_config, dish_config)
 
-    scan_request = subarray_node.ScanRequest(t_to_scan)
-    scan_json = cdm.schemas.ScanRequestSchema()
-
-    result = scan_json.dumps(scan_request)
-
-    assert result == VALID_ASSIGN_STARTSCAN_REQUEST
+    assert request == expected
 
 
-def test_start_scan_forms_correct_command():
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
     """
-    Tests if get_scan_command generates correct command
-    :return:
+    Verify that configuration command is changing obsState to CONFIGURING
     """
+    # obsState will be CONFIGURING for the first three reads, then READY
+    mock_read_fn.side_effect = ['CONFIGURING', 'CONFIGURING', 'CONFIGURING', 'READY']
 
-    sub_array = SubArray(1)
-    generated = observingtasks.get_scan_command(sub_array, VALID_ASSIGN_STARTSCAN_REQUEST)
+    coord = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
 
-    assert generated.args[0] == VALID_ASSIGN_STARTSCAN_REQUEST
-    assert generated.command_name == 'Scan'
+    subarray_configuration = domain.SubArrayConfiguration(coord, 'NGC123', '5a')
+    subarray = domain.SubArray(1)
+    subarray.configure(subarray_configuration)
 
+    # Configure command gets big and complicated. I'm not going to verify the call argument here.
+    mock_execute_fn.assert_called_with(mock.ANY)
 
-@patch.object(observingtasks.EXECUTOR, 'execute')
-def test_start_scan_sends_command(mock_execute_fn):
-    """
-    Tests if scan sends correct command using mock
-    :return:
-    """
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_FDQN + '/1', 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
 
-    mock_execute_fn.return_value = 'scan'
-    # creating 10s timedelta
-    first_date = '2019-01-01 08:00:00.000000'
-    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
-    second_date = '2019-01-01 08:00:10.000000'
-    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
-    t_to_scan = second_date_obj - first_date_obj
-    sub_array = SubArray(1)
-    scan_rtn = sub_array.scan(t_to_scan)
-
-    assert scan_rtn == 'scan'
+    # task should keep reading obsState until device is READY
+    assert mock_read_fn.call_count == 4
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
@@ -338,3 +330,53 @@ def test_telescope_stand_by_calls_tango_executor(mock_execute_fn):
     observingtasks.telescope_standby(telescope)
     command = observingtasks.get_telescope_standby_command(telescope)
     mock_execute_fn.assert_called_once_with(command)
+
+
+def test_start_scan_cmd_library():
+    """
+    Tests if if CDM library creates a proper json file
+    """
+
+    # creating 10s timedelta
+    first_date = '2019-01-01 08:00:00.000000'
+    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
+    second_date = '2019-01-01 08:00:10.000000'
+    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
+    t_to_scan = second_date_obj - first_date_obj
+
+    scan_request = sn.ScanRequest(t_to_scan)
+    scan_json = cdm.schemas.ScanRequestSchema()
+
+    result = scan_json.dumps(scan_request)
+
+    assert result == VALID_ASSIGN_STARTSCAN_REQUEST
+
+
+def test_start_scan_forms_correct_command():
+    """
+    Tests if get_scan_command generates correct command
+    :return:
+    """
+    sub_array = SubArray(1)
+    generated = observingtasks.get_scan_command(sub_array, VALID_ASSIGN_STARTSCAN_REQUEST)
+
+    assert generated.args[0] == VALID_ASSIGN_STARTSCAN_REQUEST
+    assert generated.command_name == 'Scan'
+
+
+@patch.object(observingtasks.EXECUTOR, 'execute')
+def test_start_scan_sends_command(mock_execute_fn):
+    """
+    Tests if scan sends correct command using mock
+    """
+    mock_execute_fn.return_value = 'scan'
+    # creating 10s timedelta
+    first_date = '2019-01-01 08:00:00.000000'
+    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
+    second_date = '2019-01-01 08:00:10.000000'
+    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
+    t_to_scan = second_date_obj - first_date_obj
+    sub_array = SubArray(1)
+    scan_rtn = sub_array.scan(t_to_scan)
+
+    assert scan_rtn == 'scan'
