@@ -6,8 +6,9 @@ control system domain.
 This module is intended to be maintained by someone familiar with Tango and
 the API of the devices they are controlling.
 """
+import datetime
 from typing import Optional
-from datetime import timedelta
+
 import marshmallow
 import ska.cdm as cdm
 import ska.cdm.messages.central_node as cn
@@ -349,31 +350,44 @@ def telescope_standby(telescope: domain.SKAMid):
     EXECUTOR.execute(command)
 
 
-def get_scan_command(subarray: domain.SubArray, scan_json: str) -> Command:
+def get_scan_request(scan_duration: float) -> sn.ScanRequest:
     """
-    Return an OET Command that, when passed to a TangoExecutor, would start a scan.
-    :param subarray: the sub-array to start the scan to
-    :param scan_json: json that contains scan information
-    :return: a prepared OET Command
+    Return a ScanRequest that would execute a scan for the requested number
+    of seconds.
+
+    :param scan_duration: scan duration in seconds
+    :return: ScanRequest CDM object
     """
-    central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
-    return Command(central_node_fqdn, 'Scan', scan_json)
+    duration = datetime.timedelta(seconds=scan_duration)
+    return sn.ScanRequest(scan_duration=duration)
 
 
-def scan(subarray: domain.SubArray, scan_duration: timedelta) -> str:
+def get_scan_command(subarray: domain.SubArray, scan_duration: float) -> Command:
     """
-    Convert the request in a JSON using CDM library, get the scan command
-    and execute the command received
+    Return an OET Command that, when passed to a TangoExecutor, would start a
+    scan.
+
     :param subarray: the sub-array to control
-    :param scan_duration: the timedelta that defines the scan time to the sub-array
-    :return: the reponse from sending the command to configure sub-array
+    :param scan_duration: the scan duration in seconds
+    :return: OET command ready to start a scan
     """
+    subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+    request = get_scan_request(scan_duration)
+    request_json = cdm.CODEC.dumps(request)
+    return Command(subarray_node_fqdn, 'Scan', request_json)
 
-    scan_request = sn.ScanRequest(scan_duration)
-    scan_json = cdm.schemas.ScanRequestSchema()
-    result = scan_json.dumps(scan_request)
 
-    command = get_scan_command(subarray, result)
+def scan(subarray: domain.SubArray, scan_duration: float):
+    """
+    Execute a scan for n seconds.
 
-    response = EXECUTOR.execute(command)
-    return response
+    :param subarray: the sub-array to control
+    :param scan_duration: the scan duration, in seconds
+    :return: the response from sending the command to configure sub-array
+    """
+    command = get_scan_command(subarray, scan_duration)
+    _ = EXECUTOR.execute(command)
+
+    #  wait for the sub-array obsState to transition from SCANNING to READY
+    while read_subarray_obstate(subarray) != 'READY':
+        pass

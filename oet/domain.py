@@ -7,7 +7,6 @@ knowledge of the Tango control system.
 import collections
 from typing import Optional, List
 
-from datetime import timedelta
 import operator
 from astropy.coordinates import SkyCoord
 
@@ -378,22 +377,20 @@ class SubArray:
 
     def configure(self, subarray_config: SubArrayConfiguration):
         """
-        Configure subarray from the configuration parameters
-        :param subarray_config:
-        :return:
+        Configure subarray using the given sub-array configuration.
+
+        :param subarray_config: the sub-array configuration to set
         """
         observingtasks.configure(self, subarray_config)
 
-    def scan(self, scan_duration: timedelta):
+    def scan(self, scan_duration: float):
         """
-        Start a scan using a Scan duration defined by the user.
+        Start a scan using a scan duration defined by the user.
 
-        :param scan_duration: timestamp the duration of the scan
-        :return: the result of the scan
-        :rtype:
+        :param scan_duration: scan duration in seconds
         """
-        rsp = observingtasks.scan(self, scan_duration)
-        return rsp
+        observingtasks.scan(self, scan_duration)
+
 
 # this import needs to be here, at the end of the file, to work around a
 # circular import. This is just a temporary measure; if we introduce command

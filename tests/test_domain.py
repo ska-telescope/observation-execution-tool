@@ -476,3 +476,27 @@ def test_telescope_stand_by_calls_correct_observing_task():
     with mock.patch('oet.domain.observingtasks') as mock_module:
         telescope.standby()
     mock_module.telescope_standby.assert_called_once_with(telescope)
+
+
+def test_configure_calls_correct_observing_task():
+    """
+    Convirm that the 'subarray configure' command calls the correct observing
+    task exactly once.
+    """
+    subarray = SubArray(1)
+    coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
+    config = SubArrayConfiguration(coord=coord, name='NGC123', receiver_band='5a')
+    with mock.patch('oet.domain.observingtasks') as mock_module:
+        subarray.configure(config)
+    mock_module.configure.assert_called_once_with(subarray, config)
+
+
+def test_scan_calls_correct_observing_task():
+    """
+    Convirm that the 'subarray scan' command calls the correct observing task
+    exactly once.
+    """
+    subarray = SubArray(1)
+    with mock.patch('oet.domain.observingtasks') as mock_module:
+        subarray.scan(3.21)
+    mock_module.scan.assert_called_once_with(subarray, 3.21)

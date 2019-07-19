@@ -1,9 +1,8 @@
 """
 Unit tests for the oet.observingtasks module
 """
+import datetime
 import unittest.mock as mock
-from unittest.mock import patch
-from datetime import datetime
 
 import pytest
 import ska.cdm.messages.central_node as cn
@@ -22,7 +21,7 @@ SKA_SUB_ARRAY_NODE_FDQN = 'ska_mid/tm_central/subarray_node'
 CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
 CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_success": ["0001"]}}'
-VALID_ASSIGN_STARTSCAN_REQUEST = '{"scan_duration": 10.0}'
+VALID_ASSIGN_STARTSCAN_REQUEST = '{"scan_duration": 3.21}'
 
 
 def test_tango_registry_returns_correct_url_for_ska_mid():
@@ -285,15 +284,15 @@ def test_configure_subarray_forms_correct_request():
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_subarray_configure_successful_command(mock_execute_fn, mock_read_fn):
+def test_subarray_configure_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn):
     """
-    Verify that configuration command is changing obsState to CONFIGURING
+    Verify that the SubArray.configure command waits for the device obsstate
+    to transition back to READY before returning.
     """
     # obsState will be CONFIGURING for the first three reads, then READY
     mock_read_fn.side_effect = ['CONFIGURING', 'CONFIGURING', 'CONFIGURING', 'READY']
 
     coord = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
-
     subarray_configuration = domain.SubArrayConfiguration(coord, 'NGC123', '5a')
     subarray = domain.SubArray(1)
     subarray.configure(subarray_configuration)
@@ -332,51 +331,42 @@ def test_telescope_stand_by_calls_tango_executor(mock_execute_fn):
     mock_execute_fn.assert_called_once_with(command)
 
 
-def test_start_scan_cmd_library():
+def test_scan_forms_correct_command():
     """
-    Tests if if CDM library creates a proper json file
+    Tests if get_scan_command generates correct Command
     """
-
-    # creating 10s timedelta
-    first_date = '2019-01-01 08:00:00.000000'
-    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
-    second_date = '2019-01-01 08:00:10.000000'
-    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
-    t_to_scan = second_date_obj - first_date_obj
-
-    scan_request = sn.ScanRequest(t_to_scan)
-    scan_json = cdm.schemas.ScanRequestSchema()
-
-    result = scan_json.dumps(scan_request)
-
-    assert result == VALID_ASSIGN_STARTSCAN_REQUEST
-
-
-def test_start_scan_forms_correct_command():
-    """
-    Tests if get_scan_command generates correct command
-    :return:
-    """
-    sub_array = SubArray(1)
-    generated = observingtasks.get_scan_command(sub_array, VALID_ASSIGN_STARTSCAN_REQUEST)
-
-    assert generated.args[0] == VALID_ASSIGN_STARTSCAN_REQUEST
+    sub_array = SubArray(4)
+    generated = observingtasks.get_scan_command(sub_array, 3.21)
+    assert generated.device == SKA_SUB_ARRAY_NODE_FDQN + '/4'
     assert generated.command_name == 'Scan'
+    assert generated.args[0] == VALID_ASSIGN_STARTSCAN_REQUEST
 
 
-@patch.object(observingtasks.EXECUTOR, 'execute')
-def test_start_scan_sends_command(mock_execute_fn):
+def test_get_scan_request_populates_cdm_object_correctly():
     """
-    Tests if scan sends correct command using mock
+    Verify that a ScanRequest is populated correctly
     """
-    mock_execute_fn.return_value = 'scan'
-    # creating 10s timedelta
-    first_date = '2019-01-01 08:00:00.000000'
-    first_date_obj = datetime.strptime(first_date, '%Y-%m-%d %H:%M:%S.%f')
-    second_date = '2019-01-01 08:00:10.000000'
-    second_date_obj = datetime.strptime(second_date, '%Y-%m-%d %H:%M:%S.%f')
-    t_to_scan = second_date_obj - first_date_obj
-    sub_array = SubArray(1)
-    scan_rtn = sub_array.scan(t_to_scan)
+    request = observingtasks.get_scan_request(3.21)
+    assert request.scan_duration == datetime.timedelta(seconds=3.21)
 
-    assert scan_rtn == 'scan'
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn):
+    """
+    Verify that the SubArray.configure command waits for the device obsstate
+    to transition back to READY before returning.
+    """
+    # obsState will be SCANNING for the first three reads, then READY
+    mock_read_fn.side_effect = ['SCANNING', 'SCANNING', 'SCANNING', 'READY']
+
+    subarray = domain.SubArray(1)
+    subarray.scan(3)
+
+    mock_execute_fn.assert_called_with(mock.ANY)
+
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_FDQN + '/1', 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+
+    # task should keep reading obsState until device is READY
+    assert mock_read_fn.call_count == 4

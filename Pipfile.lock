@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e97d3f210d3343edddf48015cf0adf1eed3d926732069ce0eec60acee7709962"
+            "sha256": "39cc6c858117af0150374a5717990a30c9a97a696d3f4cb55ac9077608f1b2e8"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -9,13 +9,13 @@
         },
         "sources": [
             {
-                "name": "nexus",
-                "url": "https://nexus.engageska-portugal.pt/repository/pypi/simple",
+                "name": "pypi",
+                "url": "https://pypi.python.org/simple",
                 "verify_ssl": true
             },
             {
-                "name": "pypi",
-                "url": "https://pypi.python.org/simple",
+                "name": "nexus",
+                "url": "https://nexus.engageska-portugal.pt/repository/pypi/simple",
                 "verify_ssl": true
             }
         ]
@@ -51,11 +51,11 @@
         },
         "cdm-shared-library": {
             "hashes": [
-                "sha256:6a4d9488218a9fb51c76c8d8d123e273483e9d769b04a9fede627d1fc114615f",
-                "sha256:6ffe07662195102fcbb1b9a6ecd38306adc41a59b6652b7af40d8393850081b9"
+                "sha256:5fa34a767c076342d11301067cc696ed914abd34c2003c33d6f1234cff55c500",
+                "sha256:d33124f3a0f4b10f8b2b54f266fb95c6fc46efadcf3f8fcc693521092563918f"
             ],
             "index": "nexus",
-            "version": "==0.1.18+dev.2aab869b"
+            "version": "==0.1.19"
         },
         "decorator": {
             "hashes": [
@@ -169,23 +169,6 @@
                 "sha256:d7cc528d76e76342423ca640335bd3633420dc1366f258cb31d05e865ef5ca1f"
             ],
             "version": "==0.6.0"
-        },
-        "pydevd": {
-            "hashes": [
-                "sha256:0a37a92513b418abbf19243f0fb9ab9f92a5c51d030bca1d5d0d0ad0b6a072ec",
-                "sha256:21c543a68c4079526a822de58c53d4ca0630953d8312a63d96c96bdb9c0626a0",
-                "sha256:23136ac43d2d3d30b83af90707d96f2d8004968071490f62b1ae82481c0f3bfb",
-                "sha256:4613f8a8f46f548d3c2c00c7597a5d12481aa2aa04ae0364ce401a10b1ff0da7",
-                "sha256:6cb5438c58488a47735ac800af81a4ec67ce93dbb88bc8f98eb62efcb1b197f9",
-                "sha256:a133b04b2371ed56f7486c71acb16fe78a8cb1ef29a5280a5455451c083c3f48",
-                "sha256:a2f8b645484f3de9f1ae5bc625ddb6f22fb199a74a86a57478f76642c2dbbd72",
-                "sha256:ac9d72c30c772ef1e3b86b89e29d5368a59eeb09598c9b96069479af43ae7cc2",
-                "sha256:cfdee260fd800fc85e8970add2332f716ef6ee5fd0cf6181bf3752eff5e6df85",
-                "sha256:f8d7475058eb810480e2ce3582540b88db68f9e17479f507155875723d031187",
-                "sha256:f9c5591296748ecdf0d7ccfb52a8c0f533dae07182d0ec37d29f7eab0fda0119"
-            ],
-            "index": "nexus",
-            "version": "==1.6.1"
         },
         "pygments": {
             "hashes": [
