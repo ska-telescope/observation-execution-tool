@@ -1,4 +1,4 @@
-#
+#NAM
 #   Copyright 2015  Xebia Nederland B.V.
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
@@ -54,15 +54,23 @@ post-push:
 
 docker-build: .release
 	docker build $(DOCKER_BUILD_ARGS) -t $(IMAGE):$(VERSION) $(DOCKER_BUILD_CONTEXT) -f $(DOCKER_FILE_PATH) --build-arg DOCKER_REGISTRY_HOST=$(DOCKER_REGISTRY_HOST) --build-arg DOCKER_REGISTRY_USER=$(DOCKER_REGISTRY_USER)
+
+	# Whenever we build oet we also need to rebuild the oet-ssh image to pick up any changes
+	docker build $(DOCKER_BUILD_ARGS) -t $(IMAGE)-ssh:$(VERSION) $(DOCKER_BUILD_CONTEXT) -f $(DOCKER_FILE_PATH) --build-arg DOCKER_REGISTRY_HOST=$(DOCKER_REGISTRY_HOST) --build-arg DOCKER_REGISTRY_USER=$(DOCKER_REGISTRY_USER)
+
 	@DOCKER_MAJOR=$(shell docker -v | sed -e 's/.*version //' -e 's/,.*//' | cut -d\. -f1) ; \
 	DOCKER_MINOR=$(shell docker -v | sed -e 's/.*version //' -e 's/,.*//' | cut -d\. -f2) ; \
 	if [ $$DOCKER_MAJOR -eq 1 ] && [ $$DOCKER_MINOR -lt 10 ] ; then \
 		echo docker tag -f $(IMAGE):$(VERSION) $(IMAGE):latest ;\
+		echo docker tag -f $(IMAGE)-ssh:$(VERSION) $(IMAGE)-ssh:latest ;\
 		docker tag -f $(IMAGE):$(VERSION) $(IMAGE):latest ;\
 	else \
 		echo docker tag $(IMAGE):$(VERSION) $(IMAGE):latest ;\
+		echo docker tag $(IMAGE)-ssh:$(VERSION) $(IMAGE)-ssh:latest ;\
 		docker tag $(IMAGE):$(VERSION) $(IMAGE):latest ; \
 	fi
+
+
 
 .release:
 	@echo "release=0.0.0" > .release
@@ -77,6 +85,7 @@ push: pre-push do-push post-push  ## push the image to the Docker registry
 do-push:
 #	docker push $(IMAGE):$(VERSION)
 	docker push $(IMAGE):latest
+	docker push $(IMAGE)-ssh:latest
 
 snapshot: build push
 
