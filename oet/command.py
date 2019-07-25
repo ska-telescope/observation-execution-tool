@@ -7,6 +7,7 @@ managed and executed by a proxy. This allows the proxy to execute commands
 asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
+import itertools
 import tango
 
 
@@ -133,3 +134,26 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
             proxy = self._proxy_factory(device_name)
             self._device_proxies[device_name] = proxy
         return self._device_proxies[device_name]
+
+
+class ScanIdGenerator:  # pylint: disable=too-few-public-methods
+    """
+    ScanIDGenerator is an abstraction of a service that will generate scan
+    IDs as unique integers. Expect scan UID generation to be a database
+    operation or similar in the production implementation.
+    """
+
+    def __init__(self, start=1):
+        self._counter = itertools.count(start=start, step=1)
+
+    def next(self):
+        """
+        Get the next scan ID.
+
+        :return: integer scan ID
+        """
+        return next(self._counter)
+
+
+# hold scan ID generator at the module level
+SCAN_ID_GENERATOR = ScanIdGenerator()

@@ -15,7 +15,7 @@ import ska.cdm.messages.central_node as cn
 import ska.cdm.messages.subarray_node as sn
 
 from . import domain
-from .command import Command, TangoExecutor, Attribute
+from .command import Command, TangoExecutor, Attribute, SCAN_ID_GENERATOR
 
 
 class TangoRegistry:  # pylint: disable=too-few-public-methods
@@ -267,12 +267,14 @@ def deallocate_resources(subarray: domain.SubArray,
     return released
 
 
-def get_configure_subarray_request(pointing_config: domain.PointingConfiguration,
+def get_configure_subarray_request(scan_id: int,
+                                   pointing_config: domain.PointingConfiguration,
                                    dish_config: domain.DishConfiguration) -> sn.ConfigureRequest:
     """
     Return the JSON string that, when passed as an argument to
     SubarrayNode.Configure, would configure the sub-array.
 
+    :param scan_id: integer scan ID
     :param pointing_config: desired sub-array pointing configuration
     :param dish_config: desired sub-array dish configuration
     :return: a CDM request object for SubArrayNode.Configure
@@ -287,7 +289,7 @@ def get_configure_subarray_request(pointing_config: domain.PointingConfiguration
     cdm_receiver_band = sn.ReceiverBand(dish_config.receiver_band)
     cdm_dish_config = sn.DishConfiguration(receiver_band=cdm_receiver_band)
 
-    return sn.ConfigureRequest(cdm_pointing_config, cdm_dish_config)
+    return sn.ConfigureRequest(scan_id, cdm_pointing_config, cdm_dish_config)
 
 
 def get_configure_subarray_command(subarray: domain.SubArray,
@@ -299,8 +301,10 @@ def get_configure_subarray_command(subarray: domain.SubArray,
     :param subarray_config: the sub-array configuration to set
     :return: OET Command to configure the sub-array as requested
     """
+    scan_id = SCAN_ID_GENERATOR.next()
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
-    request = get_configure_subarray_request(subarray_config.pointing_config,
+    request = get_configure_subarray_request(scan_id,
+                                             subarray_config.pointing_config,
                                              subarray_config.dish_config)
     request_json = cdm.CODEC.dumps(request)
     return Command(subarray_node_fqdn, 'Configure', request_json)

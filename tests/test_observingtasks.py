@@ -269,15 +269,17 @@ def test_configure_subarray_forms_correct_request():
     Verify that domain objects are converted correctly to CDM objects for a
     SubarrayNode.Configure() instruction.
     """
+    scan_id = 12345
     coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
     pointing_config = domain.PointingConfiguration(coord, 'name')
     dish_config = domain.DishConfiguration(receiver_band='5a')
-    request = observingtasks.get_configure_subarray_request(pointing_config,
+    request = observingtasks.get_configure_subarray_request(scan_id,
+                                                            pointing_config,
                                                             dish_config)
 
     pointing_config = sn.PointingConfiguration(sn.Target(1, 1))
     dish_config = sn.DishConfiguration(receiver_band=sn.ReceiverBand.BAND_5A)
-    expected = sn.ConfigureRequest(pointing_config, dish_config)
+    expected = sn.ConfigureRequest(scan_id, pointing_config, dish_config)
 
     assert request == expected
 
