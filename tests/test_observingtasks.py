@@ -15,7 +15,7 @@ import oet.observingtasks as observingtasks
 from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMid
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
-SKA_SUB_ARRAY_NODE_FDQN = 'ska_mid/tm_central/subarray_node'
+SKA_SUB_ARRAY_NODE_1_FDQN = 'ska_mid/tm_subarray_node/1'
 
 # Messages used for comparison in tests
 CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
@@ -112,7 +112,7 @@ def test_allocate_resources_command():
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray = SubArray(1)
     cmd = observingtasks.get_allocate_resources_command(subarray, resources)
-    assert cmd.device == SKA_SUB_ARRAY_NODE_FDQN
+    assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
     assert cmd.command_name == 'AssignResources'
     assert len(cmd.args) == 1
     assert not cmd.kwargs
@@ -156,7 +156,7 @@ def test_release_resources_command():
     cmd = observingtasks.get_release_resources_command(
         subarray, release_all=False, resources=resources
     )
-    assert cmd.device == SKA_SUB_ARRAY_NODE_FDQN
+    assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
     assert cmd.command_name == 'ReleaseResources'
     assert len(cmd.args) == 1
     assert not cmd.kwargs
@@ -300,7 +300,7 @@ def test_subarray_configure_returns_when_obsstate_is_ready(mock_execute_fn, mock
     # Configure command gets big and complicated. I'm not going to verify the call argument here.
     mock_execute_fn.assert_called_with(mock.ANY)
 
-    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_FDQN + '/1', 'obsState')
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
     mock_read_fn.assert_called_with(expected_attr)
 
     # task should keep reading obsState until device is READY
@@ -335,9 +335,9 @@ def test_scan_forms_correct_command():
     """
     Tests if get_scan_command generates correct Command
     """
-    sub_array = SubArray(4)
+    sub_array = SubArray(1)
     generated = observingtasks.get_scan_command(sub_array, 3.21)
-    assert generated.device == SKA_SUB_ARRAY_NODE_FDQN + '/4'
+    assert generated.device == SKA_SUB_ARRAY_NODE_1_FDQN
     assert generated.command_name == 'Scan'
     assert generated.args[0] == VALID_ASSIGN_STARTSCAN_REQUEST
 
@@ -365,7 +365,7 @@ def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read
 
     mock_execute_fn.assert_called_with(mock.ANY)
 
-    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_FDQN + '/1', 'obsState')
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
     mock_read_fn.assert_called_with(expected_attr)
 
     # task should keep reading obsState until device is READY

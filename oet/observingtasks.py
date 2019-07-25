@@ -31,14 +31,20 @@ class TangoRegistry:  # pylint: disable=too-few-public-methods
     def __init__(self):
         self._fqdns = {
             domain.SKAMid: 'ska_mid/tm_central/central_node',
-            domain.SubArray: 'ska_mid/tm_central/subarray_node'
+            domain.SubArray: 'ska_mid/tm_subarray_node'
         }
 
     def get_central_node(self, domain_object):
         """
         Get the FQDN of the CentralNode appropriate to the object.
         """
-        return self._fqdns[domain_object.__class__]
+        # TODO we need a way to distinguish between SKA MID and SKA LOW
+        # sub-arrays. We might need a SubArray factory function in the global
+        # namespace that sets a SubArray attribute or returns a specific
+        # SubArray subclass depending on whether SKAMid or SKALow is set. Or
+        # we could set SubArray as a class on the telescope, e.g.,
+        # sa = SKAMid.Subarray(1).
+        return self._fqdns[domain.SKAMid]
 
     def get_subarray_node(self, domain_object):
         """
