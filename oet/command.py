@@ -7,8 +7,12 @@ managed and executed by a proxy. This allows the proxy to execute commands
 asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
+import logging
+
 import itertools
 import tango
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Attribute:
@@ -114,6 +118,7 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
             param = command.args[0]
         if len(command.args) > 1:
             param = command.args
+        LOGGER.info('Executing command: {!r}'.format(command))
         return proxy.command_inout(command.command_name, cmd_param=param)
 
     def read(self, attribute: Attribute):
@@ -124,8 +129,9 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         :return: the attribute value
         """
         proxy = self._get_proxy(attribute.device)
-        response = proxy.read_attribute(attribute.name, extract_as=tango.ExtractAs.List)
-        return response.value
+        LOGGER.debug('Reading attribute: {attr.device}.{attr.name}'.format(attr=attribute))
+        response = getattr(proxy, attribute.name)
+        return response
 
     def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
         # It takes time to construct and connect a device proxy to the remote

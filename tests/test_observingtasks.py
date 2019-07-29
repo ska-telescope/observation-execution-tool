@@ -2,6 +2,7 @@
 Unit tests for the oet.observingtasks module
 """
 import datetime
+import enum
 import unittest.mock as mock
 
 import pytest
@@ -22,6 +23,16 @@ CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["00
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
 CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_success": ["0001"]}}'
 VALID_ASSIGN_STARTSCAN_REQUEST = '{"scan_duration": 3.21}'
+
+
+class ObsState(enum.Enum):
+    IDLE = 0
+    CONFIGURING = 1
+    READY = 2
+    SCANNING = 3
+    PAUSED = 4
+    ABORTED = 5
+    FAULT = 6
 
 
 def test_tango_registry_returns_correct_url_for_ska_mid():
@@ -277,7 +288,7 @@ def test_configure_subarray_forms_correct_request():
                                                             pointing_config,
                                                             dish_config)
 
-    pointing_config = sn.PointingConfiguration(sn.Target(1, 1))
+    pointing_config = sn.PointingConfiguration(sn.Target(1, 1, name='name', unit='rad'))
     dish_config = sn.DishConfiguration(receiver_band=sn.ReceiverBand.BAND_5A)
     expected = sn.ConfigureRequest(scan_id, pointing_config, dish_config)
 
@@ -292,7 +303,9 @@ def test_subarray_configure_returns_when_obsstate_is_ready(mock_execute_fn, mock
     to transition back to READY before returning.
     """
     # obsState will be CONFIGURING for the first three reads, then READY
-    mock_read_fn.side_effect = ['CONFIGURING', 'CONFIGURING', 'CONFIGURING', 'READY']
+    mock_read_fn.side_effect = [
+        ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.READY
+    ]
 
     coord = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
     subarray_configuration = domain.SubArrayConfiguration(coord, 'NGC123', '5a')
@@ -360,7 +373,9 @@ def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read
     to transition back to READY before returning.
     """
     # obsState will be SCANNING for the first three reads, then READY
-    mock_read_fn.side_effect = ['SCANNING', 'SCANNING', 'SCANNING', 'READY']
+    mock_read_fn.side_effect = [
+        ObsState.SCANNING, ObsState.SCANNING, ObsState.SCANNING, ObsState.READY
+    ]
 
     subarray = domain.SubArray(1)
     subarray.scan(3)

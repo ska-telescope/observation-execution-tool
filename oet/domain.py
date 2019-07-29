@@ -290,6 +290,12 @@ class PointingConfiguration:  # pylint: disable=too-few-public-methods
         self.coord = coord
         self.name = name
 
+    def __eq__(self, other):
+        if not isinstance(other, PointingConfiguration):
+            return False
+        return self.coord == other.coord \
+               and self.name == other.name
+
 
 class DishConfiguration:  # pylint: disable=too-few-public-methods
     """

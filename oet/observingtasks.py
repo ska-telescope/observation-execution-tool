@@ -7,6 +7,7 @@ This module is intended to be maintained by someone familiar with Tango and
 the API of the devices they are controlling.
 """
 import datetime
+import logging
 from typing import Optional
 
 import marshmallow
@@ -16,6 +17,8 @@ import ska.cdm.messages.subarray_node as sn
 
 from . import domain
 from .command import Command, TangoExecutor, Attribute, SCAN_ID_GENERATOR
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TangoRegistry:  # pylint: disable=too-few-public-methods
@@ -75,7 +78,7 @@ def get_attribute(subarray: domain.SubArray, attribute: str) -> Attribute:
     return Attribute(subarray_fqdn, attribute)
 
 
-def read_attribute(subarray: domain.SubArray, attribute: str) -> str:
+def read_attribute(subarray: domain.SubArray, attribute: str) -> object:
     """
     Read an attribute of a SubArrayNode device
 
@@ -282,6 +285,7 @@ def get_configure_subarray_request(scan_id: int,
     coord = pointing_config.coord
     cdm_target = sn.Target(coord.ra.value,
                            coord.dec.value,
+                           name=pointing_config.name,
                            frame=coord.frame.name,
                            unit=coord.ra.unit.name)
     cdm_pointing_config = sn.PointingConfiguration(cdm_target)
@@ -310,14 +314,15 @@ def get_configure_subarray_command(subarray: domain.SubArray,
     return Command(subarray_node_fqdn, 'Configure', request_json)
 
 
-def read_subarray_obstate(subarray: domain.SubArray):
+def read_subarray_obstate(subarray: domain.SubArray) -> str:
     """
     Read the value of obsState on a TMC SubArrayNode device.
 
     :param subarray: the SubArray to query
     :return: value of obsState
     """
-    return read_attribute(subarray, 'obsState')
+    obsstate_enum = read_attribute(subarray, 'obsState')
+    return obsstate_enum.name
 
 
 def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfiguration):
@@ -332,6 +337,7 @@ def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfigu
     # Python convention is to label unused variables as _
     _ = EXECUTOR.execute(command)
 
+    LOGGER.info('Waiting for sub-array {} to become READY'.format(subarray.id))
     while read_subarray_obstate(subarray) != 'READY':
         pass
 
