@@ -6,7 +6,12 @@ knowledge of the Tango control system.
 """
 import collections
 from typing import Optional, List
+
 import operator
+from astropy.coordinates import SkyCoord
+
+__all__ = ['Dish', 'DishAllocation', 'DishConfiguration', 'PointingConfiguration',
+           'ResourceAllocation', 'SKAMid', 'SubArray', 'SubArrayConfiguration']
 
 
 class Dish:
@@ -164,7 +169,6 @@ class DishAllocation(collections.MutableSet):
         """
         Create a new DishAllocation containing the specified Dishes.
 
-        :rtype: object
         :param dishes: (optional) the Dishes to add to this allocation
         :type: list of Dish objects
         """
@@ -226,6 +230,91 @@ class DishAllocation(collections.MutableSet):
         dishes_list = sorted(self.dishes, key=operator.attrgetter('id'))
         dishes_repr = repr(dishes_list)
         return '<DishAllocation(dishes={})>'.format(dishes_repr)
+
+
+class SKAMid:
+    """
+    SKAMid represents the SKA Mid telescope.
+    Operations on an SKAMid object affect the whole telescope.
+    """
+
+    def __init__(self):
+        pass
+
+    def __repr__(self):
+        return '<SKAMid>'
+
+    def start_up(self):
+        """
+        Power up all telescope devices.
+        """
+        observingtasks.telescope_start_up(self)
+
+    def standby(self):
+        """
+        Instruct telescope hardware to power down to standby mode.
+        """
+        observingtasks.telescope_standby(self)
+
+
+class SubArrayConfiguration:  # pylint: disable=too-few-public-methods
+    """
+    SubarrayConfiguration encapsulates PointingConfiguration and DishConfiguration
+    """
+
+    def __init__(self, coord, name, receiver_band):
+        """
+        Create a new SubArrayConfiguration
+
+        :param coord: pointing configuration for the sub
+        :param name:
+        :param receiver_band:
+        """
+        self.pointing_config = PointingConfiguration(coord, name)
+        self.dish_config = DishConfiguration(receiver_band)
+
+
+class PointingConfiguration:  # pylint: disable=too-few-public-methods
+    """
+    PointingConfiguration specifies where the subarray receptors are going to
+    point.
+    """
+
+    def __init__(self, coord: SkyCoord, name: str = ''):
+        """
+        Create a new PointingConfiguration.
+
+        :param coord: the sub-array pointing target
+        :param name: the name of the pointing target
+        """
+        self.coord = coord
+        self.name = name
+
+    def __eq__(self, other):
+        if not isinstance(other, PointingConfiguration):
+            return False
+        return self.coord.ra == other.coord.ra \
+               and self.coord.dec == other.coord.dec \
+               and self.coord.frame.name == other.coord.frame.name \
+               and self.name == other.name
+
+
+class DishConfiguration:  # pylint: disable=too-few-public-methods
+    """
+    DishConfiguration specifies how SKA MID dishes in a sub-array should be
+    configured. At the moment, this is limited to setting the receiver band.
+    """
+
+    def __init__(self, receiver_band):
+        rx_str = str(receiver_band).lower()
+        if rx_str not in ['1', '2', '5a', '5b']:
+            raise ValueError('Invalid receiver band: {}'.format(receiver_band))
+        self.receiver_band = rx_str
+
+    def __eq__(self, other):
+        if not isinstance(other, DishConfiguration):
+            return False
+        return self.receiver_band == other.receiver_band
 
 
 class SubArray:
@@ -294,31 +383,31 @@ class SubArray:
             deallocated = observingtasks.deallocate_resources(self, resources=resources)
         return deallocated
 
-
-class SKAMid:
-    """
-    SKAMid represents the SKA Mid telescope.
-
-    Operations on an SKAMid object affect the whole telescope.
-    """
-
-    def __init__(self):
-        pass
-
-    def __repr__(self):
-        return '<SKAMid>'
-
-    def start_up(self):
+    def configure(self, subarray_config: SubArrayConfiguration):
         """
-        Power up all telescope devices.
-        """
-        observingtasks.telescope_start_up(self)
+        Configure subarray using the given sub-array configuration.
 
-    def standby(self):
+        :param subarray_config: the sub-array configuration to set
         """
-        Instruct telescope hardware to power down to standby mode.
+        observingtasks.configure(self, subarray_config)
+
+    def configure_from_file(self, cdm_file: str):
         """
-        observingtasks.telescope_standby(self)
+        Configure a sub-array using an exported Configuration Data Model
+        located on disk.
+
+        :param cdm_file: path of the exported CDM
+        :return:
+        """
+        observingtasks.configure_from_file(self, cdm_file)
+
+    def scan(self, scan_duration: float):
+        """
+        Start a scan using a scan duration defined by the user.
+
+        :param scan_duration: scan duration in seconds
+        """
+        observingtasks.scan(self, scan_duration)
 
 
 # this import needs to be here, at the end of the file, to work around a

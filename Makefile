@@ -148,16 +148,10 @@ endif
 piplock: build  ## overwrite Pipfile.lock with the image version
 	docker run $(IMAGE_TO_TEST) cat /app/Pipfile.lock > $(CURDIR)/Pipfile.lock
 
-interactive-nosrc: up
-interactive-nosrc:  ## start an interactive session using the project image
-	docker run --rm -it -p 3000:3000 --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) --network=$(NETWORK_MODE) \
-	  $(IMAGE_TO_TEST) /bin/bash
-
 interactive: up
 interactive:  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
 	docker run --rm -it -p 3000:3000 --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) --network=$(NETWORK_MODE) \
 	  -v $(CURDIR):/app $(IMAGE_TO_TEST) /bin/bash
-
 
 down:  ## stop develop/test environment and any interactive session
 	docker ps | grep $(CONTAINER_NAME_PREFIX)dev && docker stop $(PROJECT)-dev || true

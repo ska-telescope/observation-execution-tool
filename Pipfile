@@ -1,12 +1,12 @@
 [[source]]
-url = 'https://nexus.engageska-portugal.pt/repository/pypi/simple'
-verify_ssl = true
-name = 'nexus'
-
-[[source]]
 url = 'https://pypi.python.org/simple'
 verify_ssl = true
 name = 'pypi'
+
+[[source]]
+url = 'https://nexus.engageska-portugal.pt/repository/pypi/simple'
+verify_ssl = true
+name = 'nexus'
 
 [packages]
 # numpy and pytango versions must match those in the ska-python-builder image,
@@ -17,11 +17,11 @@ pytango = "==9.2.5"
 # but it's not mandatory. If you remove itango, you should also remove the
 # 'RUN ipython profile create' line from Dockerfile.
 itango = "*"
-# If you want to debug devices running in containers, add pydevd to the dependencies
-pydevd = "*"
+## If you want to debug devices running in containers, add pydevd to the dependencies
+#pydevd = "*"
 
 #SKA Configuration Data Model (used for formatting API requests from OET to TMC)
-cdm-shared-library = ">=0.1.9"
+cdm-shared-library = {version="==0.1.21", index = "nexus"}
 
 [dev-packages]
 docutils = "*"

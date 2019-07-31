@@ -4,8 +4,10 @@ Unit tests for the oet.domain module.
 import unittest.mock as mock
 
 import pytest
+from astropy.coordinates import SkyCoord
 
-from oet.domain import Dish, DishAllocation, ResourceAllocation, SubArray, SKAMid
+from oet.domain import Dish, DishAllocation, ResourceAllocation, SubArray, SKAMid, \
+    DishConfiguration, PointingConfiguration, SubArrayConfiguration
 
 
 def test_dish_constructor_accepts_int():
@@ -365,6 +367,124 @@ def test_skamid_repr():
     assert repr(telescope) == '<SKAMid>'
 
 
+def test_subarrayconfiguration_constructor_accepts_skycoord_name():
+    """
+    Verify subarrayconfiguration constructor accepts the correct parameters
+    :return:
+    """
+    coord = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
+    subarray_configuration = SubArrayConfiguration(coord, 'name', '5a')
+    assert subarray_configuration.pointing_config.coord.ra.value == 1
+    assert subarray_configuration.pointing_config.coord.dec.value == 2
+    assert subarray_configuration.pointing_config.coord.frame.name == 'icrs'
+    assert subarray_configuration.pointing_config.coord.ra.unit.name == 'deg'
+    assert subarray_configuration.pointing_config.name == 'name'
+    assert subarray_configuration.dish_config.receiver_band == '5a'
+
+
+def test_pointingconfiguration_constructor_accepts_skycoord_name():
+    """
+    Verify that the PointingConfiguration constructor accepts the correct parameters
+    """
+    coord = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
+    pointing_configuration = PointingConfiguration(coord, 'name')
+    assert pointing_configuration.coord.ra.value == 1
+    assert pointing_configuration.coord.dec.value == 2
+    assert pointing_configuration.coord.frame.name == 'icrs'
+    assert pointing_configuration.name == 'name'
+
+
+def test_pointingconfiguration_equals():
+    """
+    Verify that a PointingConfiguration is equal to another
+    PointingConfiguration when:
+
+    - coordinates are the same
+    - source name is the same
+    """
+    coord1 = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
+    coord2 = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
+    config1 = PointingConfiguration(coord1, 'name')
+    config2 = PointingConfiguration(coord2, 'name')
+    assert config1 == config2
+
+    assert config1 != PointingConfiguration(coord1, 'foo')
+    coord3 = SkyCoord(ra=2, dec=2, frame='icrs', unit='deg')
+    assert config1 != PointingConfiguration(coord3, 'name')
+
+
+def test_pointing_configuration_eq_with_other_objects():
+    """
+    Verify that a PointingConfiguration is considered unequal to
+    non-PointingConfiguration objects.
+    """
+    coord = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
+    config = PointingConfiguration(coord, 'name')
+    assert config != 1
+    assert config != object()
+
+
+def test_dishconfiguration_constructor_accepts_str():
+    """
+    Verify that DishConfiguration constructor accepts a string receiver band
+    argument.
+    """
+    dish_config = DishConfiguration('1')
+    assert dish_config.receiver_band == '1'
+    dish_config = DishConfiguration('5a')
+    assert dish_config.receiver_band == '5a'
+
+
+def test_dishconfiguration_constructor_accept_int():
+    """
+    Verify that DishConfiguration accepts an integer receiver argument for
+    bands 1 and 2.
+    """
+    dish_config = DishConfiguration(receiver_band=1)
+    assert dish_config.receiver_band == '1'
+    dish_config = DishConfiguration(receiver_band=2)
+    assert dish_config.receiver_band == '2'
+
+
+def test_dishconfiguration_constructor_accepts_valid_values_only():
+    """
+    Verify if dishconfiguration constructor accepts only valid receiver band values
+    and raises error for invalid ones
+    Valid receiver bands are '1', '2', '5A', '5B'
+    :return:
+    """
+    with pytest.raises(ValueError):
+        _ = DishConfiguration(receiver_band='3')
+    with pytest.raises(ValueError):
+        _ = DishConfiguration(receiver_band=3)
+    with pytest.raises(ValueError):
+        _ = DishConfiguration(receiver_band=5)
+    with pytest.raises(ValueError):
+        _ = SubArray('6a')
+
+
+def test_dish_configuration_eq():
+    """
+    Verify that DishConfiguration objects are considered equal when:
+      - they use the same receiver band
+    """
+    config_1 = DishConfiguration(receiver_band='1')
+    config_2 = DishConfiguration(receiver_band='1')
+    config_3 = DishConfiguration(receiver_band='5a')
+    assert config_1 == config_2
+    assert config_1 != config_3
+
+
+def test_dish_configuration_is_not_equal_to_other_objects():
+    """
+    Verify that DishConfiguration is considered unequal to
+    non-DishConfiguration objects.
+    :return:
+    """
+    config_1 = DishConfiguration(receiver_band='5a')
+    assert config_1 != object()
+
+
 def test_telescope_start_up_calls_correct_observing_task():
     """
     Confirm that the 'start telescope devices' command calls the correct
@@ -385,3 +505,38 @@ def test_telescope_stand_by_calls_correct_observing_task():
     with mock.patch('oet.domain.observingtasks') as mock_module:
         telescope.standby()
     mock_module.telescope_standby.assert_called_once_with(telescope)
+
+
+def test_configure_calls_correct_observing_task():
+    """
+    Convirm that the 'subarray configure' command calls the correct observing
+    task exactly once.
+    """
+    subarray = SubArray(1)
+    coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
+    config = SubArrayConfiguration(coord=coord, name='NGC123', receiver_band='5a')
+    with mock.patch('oet.domain.observingtasks') as mock_module:
+        subarray.configure(config)
+    mock_module.configure.assert_called_once_with(subarray, config)
+
+
+def test_configure_from_file_calls_correct_observing_task():
+    """
+    Convirm that the 'configure a subarray from exported CDM' command calls
+    the correct observing task exactly once.
+    """
+    subarray = SubArray(1)
+    with mock.patch('oet.domain.observingtasks') as mock_module:
+        subarray.configure_from_file('foo')
+    mock_module.configure_from_file.assert_called_once_with(subarray, 'foo')
+
+
+def test_scan_calls_correct_observing_task():
+    """
+    Convirm that the 'subarray scan' command calls the correct observing task
+    exactly once.
+    """
+    subarray = SubArray(1)
+    with mock.patch('oet.domain.observingtasks') as mock_module:
+        subarray.scan(3.21)
+    mock_module.scan.assert_called_once_with(subarray, 3.21)
