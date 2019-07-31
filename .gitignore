@@ -21,5 +21,5 @@ venv
 # ide
 .idea
 .eclipse
-
+.vscode
 .DS_Store
