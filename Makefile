@@ -133,9 +133,6 @@ test: build up ## test the application
 	  $(MAKE) down; \
 	  exit $$status
 
-
-
-
 pull:  ## download the application image
 	docker pull $(IMAGE_TO_TEST)
 
