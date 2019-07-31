@@ -11,6 +11,7 @@ import logging
 from typing import Optional
 
 import marshmallow
+import operator
 import ska.cdm as cdm
 import ska.cdm.messages.central_node as cn
 import ska.cdm.messages.subarray_node as sn
@@ -63,32 +64,6 @@ TANGO_REGISTRY = TangoRegistry()
 # module attribute so that tests can mock the executor's 'execute()'
 # function.
 EXECUTOR = TangoExecutor()
-
-
-def get_attribute(subarray: domain.SubArray, attribute: str) -> Attribute:
-    """
-    Return an Attribute that, when passed to a TangoExecutor, would read the
-    attribute value.
-
-    :param subarray: the sub-array to allocate resources to
-    :param attribute: name of attribute
-    :return: a prepared OET Command
-    """
-    subarray_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
-    return Attribute(subarray_fqdn, attribute)
-
-
-def read_attribute(subarray: domain.SubArray, attribute: str) -> object:
-    """
-    Read an attribute of a SubArrayNode device
-
-    :param subarray: the sub-array to query
-    :param attribute: attribute name
-    :return: the attribute value
-    """
-    attribute = get_attribute(subarray, attribute)
-    response = EXECUTOR.read(attribute)
-    return response
 
 
 def convert_assign_resources_response(response: str) -> domain.ResourceAllocation:
@@ -305,41 +280,102 @@ def get_configure_subarray_command(subarray: domain.SubArray,
     :param subarray_config: the sub-array configuration to set
     :return: OET Command to configure the sub-array as requested
     """
-    scan_id = SCAN_ID_GENERATOR.next()
+    scan_id = SCAN_ID_GENERATOR.value
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     request = get_configure_subarray_request(scan_id,
                                              subarray_config.pointing_config,
                                              subarray_config.dish_config)
     request_json = cdm.CODEC.dumps(request)
+
     return Command(subarray_node_fqdn, 'Configure', request_json)
 
 
-def read_subarray_obstate(subarray: domain.SubArray) -> str:
+def wait_for_value(attribute: Attribute, target_value, key=lambda _: _):
     """
-    Read the value of obsState on a TMC SubArrayNode device.
+    Block until a Tango device attribute has reached a target value.
 
-    :param subarray: the SubArray to query
-    :return: value of obsState
+    If defined, the optional 'key' function will be used to process the device
+    attribute value before comparison to the target value.
+
+    :param attribute: attribute to query
+    :param target_value: value to wait for
+    :param key: function to process each attribute value before comparison
+    :return:
     """
-    obsstate_enum = read_attribute(subarray, 'obsState')
-    return obsstate_enum.name
+    LOGGER.info('Waiting for %s to transition to %s', attribute.name, target_value)
+    while True:
+        response = EXECUTOR.read(attribute)
+        processed = key(response)
+        if processed == target_value:
+            break
+
+
+def execute_configure_command(command: Command):
+    """
+    Execute a prepared 'configure' Command and wait for the device obsState to
+    transition to READY.
+
+    This function contains the functionality common to configuring a sub-array
+    via the domain objects and via a CDM file. It assumes the command passed
+    as an argument is fully prepared and ready for execution, leaving this
+    function with responsibility to execute the command and wait for the
+    obsState to transition through the state model.
+
+    :param command: Command to execute
+    :return:
+    """
+    # Python convention is to label unused variables as _
+    _ = EXECUTOR.execute(command)
+
+    obsstate = Attribute(command.device, 'obsState')
+    # obsState is a Python Enum, so compare desired state against enum.name
+    name_getter = operator.attrgetter('name')
+
+    #  wait for the sub-array obsState to transition from CONFIGURING to READY
+    wait_for_value(obsstate, 'CONFIGURING', name_getter)
+    wait_for_value(obsstate, 'READY', name_getter)
 
 
 def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfiguration):
     """
-    configure command called from domain class to configure subarray
+    Configure a sub-array using the given domain SubArrayConfiguration.
 
-    :param subarray:
-    :param subarray_config:
+    This function blocks until the sub-array is configured and has an obsState
+    of READY.
+
+    :param subarray: the sub-array to configure
+    :param subarray_config: the sub-array configuration to set
     :return:
     """
     command = get_configure_subarray_command(subarray, subarray_config)
-    # Python convention is to label unused variables as _
-    _ = EXECUTOR.execute(command)
+    # the functionality common to executing SubArrayNode.Configure from a CDM
+    # file and from oet.domain configuration object is extracted to a shared
+    # function.
+    execute_configure_command(command)
 
-    LOGGER.info('Waiting for sub-array {} to become READY'.format(subarray.id))
-    while read_subarray_obstate(subarray) != 'READY':
-        pass
+
+def configure_from_file(subarray: domain.SubArray, request_path):
+    """
+    Load a CDM ConfigureRequest from disk and use it to perform sub-array
+    configuration.
+
+    This function blocks until the sub-array is configured and has an obsState
+    of READY.
+
+    :param subarray: the sub-array to configure
+    :param request_path: path to CDM file
+    :return:
+    """
+    request = cdm.CODEC.load_from_file(sn.ConfigureRequest, request_path)
+    # Update scan ID with current scan ID, leaving the rest of the configuration
+    # unchanged
+    request.scan_id = SCAN_ID_GENERATOR.value
+
+    subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+    request_json = cdm.CODEC.dumps(request)
+    command = Command(subarray_node_fqdn, 'Configure', request_json)
+
+    execute_configure_command(command)
 
 
 def telescope_start_up(telescope: domain.SKAMid):
@@ -404,6 +440,13 @@ def scan(subarray: domain.SubArray, scan_duration: float):
     command = get_scan_command(subarray, scan_duration)
     _ = EXECUTOR.execute(command)
 
+    obsstate = Attribute(command.device, 'obsState')
+    # obsState is a Python Enum, so compare desired state against enum.name
+    name_getter = operator.attrgetter('name')
+
     #  wait for the sub-array obsState to transition from SCANNING to READY
-    while read_subarray_obstate(subarray) != 'READY':
-        pass
+    wait_for_value(obsstate, 'SCANNING', name_getter)
+    wait_for_value(obsstate, 'READY', name_getter)
+
+    # increment scan ID
+    SCAN_ID_GENERATOR.next()

@@ -172,11 +172,22 @@ def test_tango_read_only_creates_one_device_proxy_per_device():
     mock_call.assert_called_once_with('device')
 
 
-def test_scan_id_generator_increments_correctly():
+def test_scan_id_generator_increments_on_next():
     """
     Confirm that the scan ID generator increments by one each call.
     """
     generator = ScanIdGenerator(start=5)
     expected = [5, 6, 7, 8, 9]
     actual = [generator.next() for _ in range(5)]
+    assert actual == expected
+
+
+def test_scan_id_generator_does_not_increment_when_reading_value():
+    """
+    Confirm that the scan ID generator does not increment the scan ID when
+    reading the current value.
+    """
+    generator = ScanIdGenerator(start=5)
+    expected = [5, 5, 5, 5, 5]
+    actual = [generator.value for _ in range(5)]
     assert actual == expected

@@ -118,7 +118,7 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
             param = command.args[0]
         if len(command.args) > 1:
             param = command.args
-        LOGGER.info('Executing command: {!r}'.format(command))
+        LOGGER.info('Executing command: %r', command)
         return proxy.command_inout(command.command_name, cmd_param=param)
 
     def read(self, attribute: Attribute):
@@ -129,7 +129,7 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         :return: the attribute value
         """
         proxy = self._get_proxy(attribute.device)
-        LOGGER.debug('Reading attribute: {attr.device}.{attr.name}'.format(attr=attribute))
+        LOGGER.debug('Reading attribute: %s/%s', attribute.device, attribute.name)
         response = getattr(proxy, attribute.name)
         return response
 
@@ -151,6 +151,7 @@ class ScanIdGenerator:  # pylint: disable=too-few-public-methods
 
     def __init__(self, start=1):
         self._counter = itertools.count(start=start, step=1)
+        self.value = start
 
     def next(self):
         """
@@ -158,7 +159,8 @@ class ScanIdGenerator:  # pylint: disable=too-few-public-methods
 
         :return: integer scan ID
         """
-        return next(self._counter)
+        self.value = next(self._counter)
+        return self.value
 
 
 # hold scan ID generator at the module level

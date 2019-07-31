@@ -6,6 +6,7 @@ import enum
 import unittest.mock as mock
 
 import pytest
+import ska.cdm as cdm
 import ska.cdm.messages.central_node as cn
 import ska.cdm.messages.subarray_node as sn
 from astropy.coordinates import SkyCoord
@@ -295,22 +296,31 @@ def test_configure_subarray_forms_correct_request():
     assert request == expected
 
 
+def test_configure_subarray_forms_correct_command():
+    subarray = SubArray(1)
+    coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
+    config = domain.SubArrayConfiguration(coord, 'name', receiver_band=1)
+    cmd = observingtasks.get_configure_subarray_command(subarray, config)
+
+    assert cmd.device == SKA_SUB_ARRAY_NODE_1_FDQN
+    assert cmd.command_name == 'Configure'
+    assert len(cmd.args) == 1
+
+
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_subarray_configure_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn):
+def test_execute_configure_command_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn):
     """
-    Verify that the SubArray.configure command waits for the device obsstate
-    to transition back to READY before returning.
+    Verify that execute_configure_command mmand for the device obsState to
+    transition back to READY before returning.
     """
     # obsState will be CONFIGURING for the first three reads, then READY
     mock_read_fn.side_effect = [
         ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.READY
     ]
 
-    coord = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
-    subarray_configuration = domain.SubArrayConfiguration(coord, 'NGC123', '5a')
-    subarray = domain.SubArray(1)
-    subarray.configure(subarray_configuration)
+    cmd = command.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Configure', 'configure JSON would go here')
+    observingtasks.execute_configure_command(cmd)
 
     # Configure command gets big and complicated. I'm not going to verify the call argument here.
     mock_execute_fn.assert_called_with(mock.ANY)
@@ -320,6 +330,22 @@ def test_subarray_configure_returns_when_obsstate_is_ready(mock_execute_fn, mock
 
     # task should keep reading obsState until device is READY
     assert mock_read_fn.call_count == 4
+
+
+@mock.patch.object(observingtasks, 'execute_configure_command')
+def test_configure(mock_execute_fn):
+    """
+    Verify that configure executes a command and waits for the device obsState
+    to transition back to READY before returning.
+    """
+    subarray = SubArray(1)
+    coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
+    config = domain.SubArrayConfiguration(coord, 'name', receiver_band=1)
+    observingtasks.configure(subarray, config)
+
+    # The code that executes configure Commands has its own tests. We only
+    # need to verify that the delegate function is called.
+    mock_execute_fn.assert_called_with(mock.ANY)
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')

@@ -384,8 +384,7 @@ def test_subarrayconfiguration_constructor_accepts_skycoord_name():
 
 def test_pointingconfiguration_constructor_accepts_skycoord_name():
     """
-    Verify pointingconfiguration constructor accepts the correct parameters
-    :return:
+    Verify that the PointingConfiguration constructor accepts the correct parameters
     """
     coord = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
     pointing_configuration = PointingConfiguration(coord, 'name')
@@ -393,6 +392,36 @@ def test_pointingconfiguration_constructor_accepts_skycoord_name():
     assert pointing_configuration.coord.dec.value == 2
     assert pointing_configuration.coord.frame.name == 'icrs'
     assert pointing_configuration.name == 'name'
+
+
+def test_pointingconfiguration_equals():
+    """
+    Verify that a PointingConfiguration is equal to another
+    PointingConfiguration when:
+
+    - coordinates are the same
+    - source name is the same
+    """
+    coord1 = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
+    coord2 = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
+    config1 = PointingConfiguration(coord1, 'name')
+    config2 = PointingConfiguration(coord2, 'name')
+    assert config1 == config2
+
+    assert config1 != PointingConfiguration(coord1, 'foo')
+    coord3 = SkyCoord(ra=2, dec=2, frame='icrs', unit='deg')
+    assert config1 != PointingConfiguration(coord3, 'name')
+
+
+def test_pointing_configuration_eq_with_other_objects():
+    """
+    Verify that a PointingConfiguration is considered unequal to
+    non-PointingConfiguration objects.
+    """
+    coord = SkyCoord(ra=1, dec=2, frame='icrs', unit='deg')
+    config = PointingConfiguration(coord, 'name')
+    assert config != 1
+    assert config != object()
 
 
 def test_dishconfiguration_constructor_accepts_str():
@@ -489,6 +518,17 @@ def test_configure_calls_correct_observing_task():
     with mock.patch('oet.domain.observingtasks') as mock_module:
         subarray.configure(config)
     mock_module.configure.assert_called_once_with(subarray, config)
+
+
+def test_configure_from_file_calls_correct_observing_task():
+    """
+    Convirm that the 'configure a subarray from exported CDM' command calls
+    the correct observing task exactly once.
+    """
+    subarray = SubArray(1)
+    with mock.patch('oet.domain.observingtasks') as mock_module:
+        subarray.configure_from_file('foo')
+    mock_module.configure_from_file.assert_called_once_with(subarray, 'foo')
 
 
 def test_scan_calls_correct_observing_task():

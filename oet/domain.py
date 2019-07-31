@@ -293,7 +293,9 @@ class PointingConfiguration:  # pylint: disable=too-few-public-methods
     def __eq__(self, other):
         if not isinstance(other, PointingConfiguration):
             return False
-        return self.coord == other.coord \
+        return self.coord.ra == other.coord.ra \
+               and self.coord.dec == other.coord.dec \
+               and self.coord.frame.name == other.coord.frame.name \
                and self.name == other.name
 
 
@@ -388,6 +390,16 @@ class SubArray:
         :param subarray_config: the sub-array configuration to set
         """
         observingtasks.configure(self, subarray_config)
+
+    def configure_from_file(self, cdm_file: str):
+        """
+        Configure a sub-array using an exported Configuration Data Model
+        located on disk.
+
+        :param cdm_file: path of the exported CDM
+        :return:
+        """
+        observingtasks.configure_from_file(self, cdm_file)
 
     def scan(self, scan_duration: float):
         """
