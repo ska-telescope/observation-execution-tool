@@ -314,6 +314,41 @@ class DishConfiguration:  # pylint: disable=too-few-public-methods
             return False
         return self.receiver_band == other.receiver_band
 
+class SDPConfiguration:  # pylint: disable=too-few-public-methods
+    """
+    SDPConfiguration specifies how SDP should be configured. At the moment
+    this includes the known configuration for an initial request, subsequent
+    scans only require the details of the new scans to be performed
+    """
+
+    def __init__(self, sb_id: str, sbi_id: str, workflow_id: str,
+                 workflow_type: str, version: str, target_id: int,
+                 num_stations: int, num_channels: int, num_polarisations: int,
+                 freq_start_hz: float, freq_end_hz: float, interval_ms: int):
+
+        """
+        :type sb_id: str
+        :type sbi_id: str
+
+        """
+        self.sb_id = sb_id
+        self.sbi_id = sbi_id
+        self.workflow_id = workflow_id
+        self.workflow_type = workflow_type
+        self.version = version
+        self.interval_ms = interval_ms
+        self.target_id = target_id
+        self.num_stations = num_stations
+        self.num_channels =num_channels
+        self.num_polarisations= num_polarisations
+        self.freq_start_hz = freq_start_hz
+        self.freq_end_hz = freq_end_hz
+
+    def __eq__(self, other):
+        if not isinstance(other, SDPConfiguration):
+            return False
+        return all(self[key] == other[key] for key in self.dir())
+
 
 class SubArray:
     """

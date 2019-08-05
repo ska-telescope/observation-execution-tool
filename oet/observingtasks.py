@@ -8,7 +8,7 @@ the API of the devices they are controlling.
 """
 import datetime
 import logging
-from typing import Optional
+from typing import Optional, Dict, List
 
 import marshmallow
 import ska.cdm as cdm
@@ -272,7 +272,8 @@ def deallocate_resources(subarray: domain.SubArray,
 
 def get_configure_subarray_request(scan_id: int,
                                    pointing_config: domain.PointingConfiguration,
-                                   dish_config: domain.DishConfiguration) -> sn.ConfigureRequest:
+                                   dish_config: domain.DishConfiguration,
+                                   sdp_config: domain.SDPConfiguration) -> sn.ConfigureRequest:
     """
     Return the JSON string that, when passed as an argument to
     SubarrayNode.Configure, would configure the sub-array.
@@ -293,7 +294,28 @@ def get_configure_subarray_request(scan_id: int,
     cdm_receiver_band = sn.ReceiverBand(dish_config.receiver_band)
     cdm_dish_config = sn.DishConfiguration(receiver_band=cdm_receiver_band)
 
-    return sn.ConfigureRequest(scan_id, cdm_pointing_config, cdm_dish_config)
+    # at present we are only expecting a single target so the list to SDP will only consist of one
+    # element
+
+    cdm_sdp_target = {str(sdp_config.target_id): cdm_target}
+    cdm_sdp_workflow = sn.SDPWorkflow(sdp_config.workflow_id,
+                                      sdp_config.workflow_type, sdp_config.version)
+    cdm_sdp_parameters = sn.SDPParameters(sdp_config.num_stations,
+                                          sdp_config.num_channels,
+                                          sdp_config.num_polarisations,
+                                          sdp_config.freq_start_hz,
+                                          sdp_config.freq_end_hz, cdm_sdp_target)
+
+    cdm_sdp_scan = sn.SDPScan(field_id=sdp_config.target_id, interval_ms=sdp_config.interval_ms)
+
+    cdm_sdp_processing_block = sn.ProcessingBlockConfiguration(
+        sdp_config.sb_id,
+        sdp_config.sbi_id, cdm_sdp_workflow, cdm_sdp_parameters,
+        {str(scan_id): cdm_sdp_scan})
+
+    cdm_sdp_config = sn.SDPConfiguration([cdm_sdp_processing_block])
+
+    return sn.ConfigureRequest(scan_id, cdm_pointing_config, cdm_dish_config, cdm_sdp_config)
 
 
 def get_configure_subarray_command(subarray: domain.SubArray,

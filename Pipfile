@@ -13,6 +13,7 @@ name = 'nexus'
 # otherwise pytango will be recompiled.
 numpy = "==1.15.4"
 pytango = "==9.2.5"
+coverage = "==4.5.4"
 # itango is added to make it easier to exercise the device in a CLI session,
 # but it's not mandatory. If you remove itango, you should also remove the
 # 'RUN ipython profile create' line from Dockerfile.
@@ -21,7 +22,7 @@ itango = "*"
 #pydevd = "*"
 
 #SKA Configuration Data Model (used for formatting API requests from OET to TMC)
-cdm-shared-library = {version="==0.1.21", index = "nexus"}
+cdm-shared-library = {version="==0.1.22", index = "nexus"}
 
 [dev-packages]
 docutils = "*"

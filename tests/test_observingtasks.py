@@ -281,16 +281,43 @@ def test_configure_subarray_forms_correct_request():
     SubarrayNode.Configure() instruction.
     """
     scan_id = 12345
+    sb_id = 'realtime-20190627-0001'
+    sbi_id = '20190627-0001'
+    target_id = 0
+
     coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
     pointing_config = domain.PointingConfiguration(coord, 'name')
     dish_config = domain.DishConfiguration(receiver_band='5a')
+    sdp_config = domain.SDPConfiguration(sb_id, sbi_id, target_id=target_id,
+                                         workflow_id="vis_ingest", workflow_type="realtime",
+                                         version="0.1.0", freq_start_hz=0.35e9, freq_end_hz=1.05e9,
+                                         interval_ms=1400, num_stations=4, num_channels=372,
+                                         num_polarisations=4
+                                         )
     request = observingtasks.get_configure_subarray_request(scan_id,
                                                             pointing_config,
-                                                            dish_config)
+                                                            dish_config, sdp_config)
 
-    pointing_config = sn.PointingConfiguration(sn.Target(1, 1, name='name', unit='rad'))
+    target = sn.Target(1, 1, name='name', unit='rad')
+    pointing_config = sn.PointingConfiguration(target)
     dish_config = sn.DishConfiguration(receiver_band=sn.ReceiverBand.BAND_5A)
-    expected = sn.ConfigureRequest(scan_id, pointing_config, dish_config)
+    workflow = sn.SDPWorkflow(workflow_id="vis_ingest", workflow_type="realtime", version="0.1.0")
+    parameters = sn.SDPParameters(num_stations=4, num_channels=372, num_polarisations=4,
+                                  freq_start_hz=0.35e9, freq_end_hz=1.05e9,
+                                  target_fields={str(target_id): target})
+    scan = sn.SDPScan(field_id=target_id, interval_ms=1400)
+    scan_list = {str(scan_id): scan}
+
+    cdm_sdp_processing_block = sn.ProcessingBlockConfiguration(sb_id=sb_id,
+                                                       sbi_id=sbi_id, workflow=workflow,
+                                                       parameters=parameters,
+                                                       scan_parameters=scan_list)
+    cdm_sdp_config = sn.SDPConfiguration([cdm_sdp_processing_block])
+
+    expected = sn.ConfigureRequest(scan_id, pointing_config, dish_config,  cdm_sdp_config)
+
+    print(request)
+    print(expected)
 
     assert request == expected
 
