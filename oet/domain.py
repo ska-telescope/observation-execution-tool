@@ -409,6 +409,13 @@ class SubArray:
         """
         observingtasks.scan(self, scan_duration)
 
+    def end_sb(self):
+        """
+        End Scheduling Block, marking the end of the active observing
+        sequence.
+        """
+        observingtasks.end_sb(self)
+
 
 # this import needs to be here, at the end of the file, to work around a
 # circular import. This is just a temporary measure; if we introduce command

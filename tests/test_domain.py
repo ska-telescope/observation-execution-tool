@@ -509,7 +509,7 @@ def test_telescope_stand_by_calls_correct_observing_task():
 
 def test_configure_calls_correct_observing_task():
     """
-    Convirm that the 'subarray configure' command calls the correct observing
+    confirm that the 'subarray configure' command calls the correct observing
     task exactly once.
     """
     subarray = SubArray(1)
@@ -522,7 +522,7 @@ def test_configure_calls_correct_observing_task():
 
 def test_configure_from_file_calls_correct_observing_task():
     """
-    Convirm that the 'configure a subarray from exported CDM' command calls
+    confirm that the 'configure a subarray from exported CDM' command calls
     the correct observing task exactly once.
     """
     subarray = SubArray(1)
@@ -533,10 +533,21 @@ def test_configure_from_file_calls_correct_observing_task():
 
 def test_scan_calls_correct_observing_task():
     """
-    Convirm that the 'subarray scan' command calls the correct observing task
+    confirm that the 'subarray scan' command calls the correct observing task
     exactly once.
     """
     subarray = SubArray(1)
     with mock.patch('oet.domain.observingtasks') as mock_module:
         subarray.scan(3.21)
     mock_module.scan.assert_called_once_with(subarray, 3.21)
+
+
+def test_end_sb_calls_correct_observing_task():
+    """
+    Confirm that the 'end SB' command calls the correct observing task exactly
+    once.
+    """
+    subarray = SubArray(1)
+    with mock.patch('oet.domain.observingtasks') as mock_module:
+        subarray.end_sb()
+    mock_module.end_sb.assert_called_once_with(subarray)

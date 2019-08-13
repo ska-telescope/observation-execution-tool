@@ -6,15 +6,15 @@ import enum
 import unittest.mock as mock
 
 import pytest
-import ska.cdm as cdm
-import ska.cdm.messages.central_node as cn
-import ska.cdm.messages.subarray_node as sn
+import ska.cdm.messages.central_node.assign_resources as cdm_assign
+import ska.cdm.messages.central_node.release_resources as cdm_release
+import ska.cdm.messages.subarray_node.configure as cdm_configure
 from astropy.coordinates import SkyCoord
 
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
-from oet.domain import Dish, ResourceAllocation, SubArray, DishAllocation, SKAMid
+from oet.domain import Dish, DishAllocation, ResourceAllocation, SKAMid, SubArray
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
 SKA_SUB_ARRAY_NODE_1_FDQN = 'ska_mid/tm_subarray_node/1'
@@ -27,6 +27,9 @@ VALID_ASSIGN_STARTSCAN_REQUEST = '{"scan_duration": 3.21}'
 
 
 class ObsState(enum.Enum):
+    """
+    Represent the ObsState Tango enumeration
+    """
     IDLE = 0
     CONFIGURING = 1
     READY = 2
@@ -89,8 +92,8 @@ def test_allocate_resources_forms_correct_request():
     subarray = SubArray(1)
     request = observingtasks.get_allocate_resources_request(subarray, resources)
 
-    cdm_dish_allocation = cn.DishAllocation(['0001', '0002'])
-    expected = cn.AssignResourcesRequest(1, cdm_dish_allocation)
+    cdm_dish_allocation = cdm_assign.DishAllocation(['0001', '0002'])
+    expected = cdm_assign.AssignResourcesRequest(1, cdm_dish_allocation)
 
     assert request == expected
 
@@ -140,8 +143,8 @@ def test_release_resources_forms_correct_request():
     request = observingtasks.get_release_resources_request(subarray, release_all=False,
                                                            resources=resources)
 
-    cdm_dish_allocation = cn.DishAllocation(receptor_ids=['0001', '0002'])
-    expected = cn.ReleaseResourcesRequest(1, dish_allocation=cdm_dish_allocation)
+    cdm_dish_allocation = cdm_release.DishAllocation(receptor_ids=['0001', '0002'])
+    expected = cdm_release.ReleaseResourcesRequest(1, dish_allocation=cdm_dish_allocation)
 
     assert expected == request
 
@@ -154,7 +157,7 @@ def test_release_resources_forms_correct_request_for_release_all():
     """
     subarray = SubArray(1)
     request = observingtasks.get_release_resources_request(subarray, release_all=True)
-    expected = cn.ReleaseResourcesRequest(1, release_all=True)
+    expected = cdm_release.ReleaseResourcesRequest(1, release_all=True)
     assert request == expected
 
 
@@ -289,14 +292,19 @@ def test_configure_subarray_forms_correct_request():
                                                             pointing_config,
                                                             dish_config)
 
-    pointing_config = sn.PointingConfiguration(sn.Target(1, 1, name='name', unit='rad'))
-    dish_config = sn.DishConfiguration(receiver_band=sn.ReceiverBand.BAND_5A)
-    expected = sn.ConfigureRequest(scan_id, pointing_config, dish_config)
+    pointing_config = cdm_configure.PointingConfiguration(
+        cdm_configure.Target(1, 1, name='name', unit='rad'))
+    dish_config = cdm_configure.DishConfiguration(receiver_band=cdm_configure.ReceiverBand.BAND_5A)
+    expected = cdm_configure.ConfigureRequest(scan_id, pointing_config, dish_config)
 
     assert request == expected
 
 
 def test_configure_subarray_forms_correct_command():
+    """
+    Verify that the configure_subarray task constructs the correct Command
+    object.
+    """
     subarray = SubArray(1)
     coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
     config = domain.SubArrayConfiguration(coord, 'name', receiver_band=1)
@@ -356,8 +364,8 @@ def test_telescope_start_up_calls_tango_executor(mock_execute_fn):
     """
     telescope = SKAMid()
     observingtasks.telescope_start_up(telescope)
-    command = observingtasks.get_telescope_start_up_command(telescope)
-    mock_execute_fn.assert_called_once_with(command)
+    cmd = observingtasks.get_telescope_start_up_command(telescope)
+    mock_execute_fn.assert_called_once_with(cmd)
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
@@ -368,8 +376,8 @@ def test_telescope_stand_by_calls_tango_executor(mock_execute_fn):
     """
     telescope = SKAMid()
     observingtasks.telescope_standby(telescope)
-    command = observingtasks.get_telescope_standby_command(telescope)
-    mock_execute_fn.assert_called_once_with(command)
+    cmd = observingtasks.get_telescope_standby_command(telescope)
+    mock_execute_fn.assert_called_once_with(cmd)
 
 
 def test_scan_forms_correct_command():
@@ -413,3 +421,26 @@ def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read
 
     # task should keep reading obsState until device is READY
     assert mock_read_fn.call_count == 4
+
+
+def test_get_end_sb_command():
+    """
+    Verify that a 'end SB' Command is targeted and structured correctly.
+    """
+    subarray = SubArray(1)
+    cmd = observingtasks.get_end_sb_command(subarray)
+    assert cmd.device == SKA_SUB_ARRAY_NODE_1_FDQN
+    assert cmd.command_name == 'EndSB'
+    assert not cmd.args
+    assert not cmd.kwargs
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_end_sb_calls_tango_executor(mock_execute_fn):
+    """
+    Test that the 'end SB' command calls the target Tango device once only.
+    """
+    subarray = SubArray(1)
+    observingtasks.end_sb(subarray)
+    cmd = observingtasks.get_end_sb_command(subarray)
+    mock_execute_fn.assert_called_once_with(cmd)

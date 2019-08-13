@@ -8,16 +8,18 @@ the API of the devices they are controlling.
 """
 import datetime
 import logging
+import operator
 from typing import Optional
 
 import marshmallow
-import operator
-import ska.cdm as cdm
-import ska.cdm.messages.central_node as cn
-import ska.cdm.messages.subarray_node as sn
+import ska.cdm.messages.central_node.assign_resources as cdm_assign
+import ska.cdm.messages.central_node.release_resources as cdm_release
+import ska.cdm.messages.subarray_node.configure as cdm_configure
+import ska.cdm.messages.subarray_node.scan as cdm_scan
+import ska.cdm.schemas as schemas
 
 from . import domain
-from .command import Command, TangoExecutor, Attribute, SCAN_ID_GENERATOR
+from .command import Attribute, Command, SCAN_ID_GENERATOR, TangoExecutor
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,7 +40,7 @@ class TangoRegistry:  # pylint: disable=too-few-public-methods
             domain.SubArray: 'ska_mid/tm_subarray_node'
         }
 
-    def get_central_node(self, domain_object):
+    def get_central_node(self, _):
         """
         Get the FQDN of the CentralNode appropriate to the object.
         """
@@ -74,9 +76,9 @@ def convert_assign_resources_response(response: str) -> domain.ResourceAllocatio
     :param response: the device response
     :return: the successfully allocated ResourceAllocation
     """
-    response_cls = cn.AssignResourcesResponse
+    response_cls = cdm_assign.AssignResourcesResponse
     try:
-        unmarshalled = cdm.CODEC.loads(response_cls, response)
+        unmarshalled = schemas.CODEC.loads(response_cls, response)
     except marshmallow.ValidationError:
         allocated_dishes = []
     else:
@@ -121,7 +123,7 @@ def get_telescope_standby_command(telescope: domain.SKAMid) -> Command:
 
 def get_allocate_resources_request(
         subarray: domain.SubArray,
-        resources: domain.ResourceAllocation) -> cn.AssignResourcesRequest:
+        resources: domain.ResourceAllocation) -> cdm_assign.AssignResourcesRequest:
     """
     Return the JSON string that, when passed as argument to
     CentralNode.AssignResources, would allocate resources to a sub-array.
@@ -131,9 +133,9 @@ def get_allocate_resources_request(
     :return: CDM request for CentralNode.AssignResources
     """
     receptor_ids = get_dish_resource_ids(resources.dishes)
-    dish_allocation = cn.DishAllocation(receptor_ids=receptor_ids)
-    request = cn.AssignResourcesRequest(subarray_id=subarray.id,
-                                        dish_allocation=dish_allocation)
+    dish_allocation = cdm_assign.DishAllocation(receptor_ids=receptor_ids)
+    request = cdm_assign.AssignResourcesRequest(subarray_id=subarray.id,
+                                                dish_allocation=dish_allocation)
     return request
 
 
@@ -149,14 +151,15 @@ def get_allocate_resources_command(subarray: domain.SubArray,
     """
     central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
     request = get_allocate_resources_request(subarray, resources)
-    request_json = cdm.CODEC.dumps(request)
+    request_json = schemas.CODEC.dumps(request)
     return Command(central_node_fqdn, 'AssignResources', request_json)
 
 
 def get_release_resources_request(
         subarray: domain.SubArray,
         release_all: bool,
-        resources: Optional[domain.ResourceAllocation] = None) -> cn.ReleaseResourcesRequest:
+        resources: Optional[domain.ResourceAllocation] = None
+) -> cdm_release.ReleaseResourcesRequest:
     """
     Return an argument for a CentralNode.ReleaseResources command.
 
@@ -169,15 +172,15 @@ def get_release_resources_request(
     """
 
     if release_all is True:
-        return cn.ReleaseResourcesRequest(subarray_id=subarray.id, release_all=True)
+        return cdm_release.ReleaseResourcesRequest(subarray_id=subarray.id, release_all=True)
 
     # Not releasing all resources so must get args for specific resources to
     # release
     receptor_ids = get_dish_resource_ids(resources.dishes)
-    dish_allocation = cn.assign_resources.DishAllocation(receptor_ids=receptor_ids)
+    dish_allocation = cdm_release.DishAllocation(receptor_ids=receptor_ids)
 
-    return cn.ReleaseResourcesRequest(subarray_id=subarray.id,
-                                      dish_allocation=dish_allocation)
+    return cdm_release.ReleaseResourcesRequest(subarray_id=subarray.id,
+                                               dish_allocation=dish_allocation)
 
 
 def get_release_resources_command(subarray: domain.SubArray,
@@ -197,7 +200,7 @@ def get_release_resources_command(subarray: domain.SubArray,
     central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
     request_obj = get_release_resources_request(subarray, release_all=release_all,
                                                 resources=resources)
-    request_json = cdm.CODEC.dumps(request_obj)
+    request_json = schemas.CODEC.dumps(request_obj)
     return Command(central_node_fqdn, 'ReleaseResources', request_json)
 
 
@@ -245,9 +248,10 @@ def deallocate_resources(subarray: domain.SubArray,
     return released
 
 
-def get_configure_subarray_request(scan_id: int,
-                                   pointing_config: domain.PointingConfiguration,
-                                   dish_config: domain.DishConfiguration) -> sn.ConfigureRequest:
+def get_configure_subarray_request(
+        scan_id: int,
+        pointing_config: domain.PointingConfiguration,
+        dish_config: domain.DishConfiguration) -> cdm_configure.ConfigureRequest:
     """
     Return the JSON string that, when passed as an argument to
     SubarrayNode.Configure, would configure the sub-array.
@@ -258,17 +262,17 @@ def get_configure_subarray_request(scan_id: int,
     :return: a CDM request object for SubArrayNode.Configure
     """
     coord = pointing_config.coord
-    cdm_target = sn.Target(coord.ra.value,
-                           coord.dec.value,
-                           name=pointing_config.name,
-                           frame=coord.frame.name,
-                           unit=coord.ra.unit.name)
-    cdm_pointing_config = sn.PointingConfiguration(cdm_target)
+    cdm_target = cdm_configure.Target(coord.ra.value,
+                                      coord.dec.value,
+                                      name=pointing_config.name,
+                                      frame=coord.frame.name,
+                                      unit=coord.ra.unit.name)
+    cdm_pointing_config = cdm_configure.PointingConfiguration(cdm_target)
 
-    cdm_receiver_band = sn.ReceiverBand(dish_config.receiver_band)
-    cdm_dish_config = sn.DishConfiguration(receiver_band=cdm_receiver_band)
+    cdm_receiver_band = cdm_configure.ReceiverBand(dish_config.receiver_band)
+    cdm_dish_config = cdm_configure.DishConfiguration(receiver_band=cdm_receiver_band)
 
-    return sn.ConfigureRequest(scan_id, cdm_pointing_config, cdm_dish_config)
+    return cdm_configure.ConfigureRequest(scan_id, cdm_pointing_config, cdm_dish_config)
 
 
 def get_configure_subarray_command(subarray: domain.SubArray,
@@ -285,7 +289,7 @@ def get_configure_subarray_command(subarray: domain.SubArray,
     request = get_configure_subarray_request(scan_id,
                                              subarray_config.pointing_config,
                                              subarray_config.dish_config)
-    request_json = cdm.CODEC.dumps(request)
+    request_json = schemas.CODEC.dumps(request)
 
     return Command(subarray_node_fqdn, 'Configure', request_json)
 
@@ -366,13 +370,13 @@ def configure_from_file(subarray: domain.SubArray, request_path):
     :param request_path: path to CDM file
     :return:
     """
-    request = cdm.CODEC.load_from_file(sn.ConfigureRequest, request_path)
+    request = schemas.CODEC.load_from_file(cdm_configure.ConfigureRequest, request_path)
     # Update scan ID with current scan ID, leaving the rest of the configuration
     # unchanged
     request.scan_id = SCAN_ID_GENERATOR.value
 
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
-    request_json = cdm.CODEC.dumps(request)
+    request_json = schemas.CODEC.dumps(request)
     command = Command(subarray_node_fqdn, 'Configure', request_json)
 
     execute_configure_command(command)
@@ -402,7 +406,7 @@ def telescope_standby(telescope: domain.SKAMid):
     EXECUTOR.execute(command)
 
 
-def get_scan_request(scan_duration: float) -> sn.ScanRequest:
+def get_scan_request(scan_duration: float) -> cdm_scan.ScanRequest:
     """
     Return a ScanRequest that would execute a scan for the requested number
     of seconds.
@@ -411,7 +415,7 @@ def get_scan_request(scan_duration: float) -> sn.ScanRequest:
     :return: ScanRequest CDM object
     """
     duration = datetime.timedelta(seconds=scan_duration)
-    return sn.ScanRequest(scan_duration=duration)
+    return cdm_scan.ScanRequest(scan_duration=duration)
 
 
 def get_scan_command(subarray: domain.SubArray, scan_duration: float) -> Command:
@@ -425,7 +429,7 @@ def get_scan_command(subarray: domain.SubArray, scan_duration: float) -> Command
     """
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     request = get_scan_request(scan_duration)
-    request_json = cdm.CODEC.dumps(request)
+    request_json = schemas.CODEC.dumps(request)
     return Command(subarray_node_fqdn, 'Scan', request_json)
 
 
@@ -450,3 +454,25 @@ def scan(subarray: domain.SubArray, scan_duration: float):
 
     # increment scan ID
     SCAN_ID_GENERATOR.next()
+
+
+def end_sb(subarray: domain.SubArray):
+    """
+    Send the 'end SB' command to the SubArrayNode, marking the end of the
+    current observation.
+    :param subarray: the subarray to command
+    """
+    command = get_end_sb_command(subarray)
+    EXECUTOR.execute(command)
+
+
+def get_end_sb_command(subarray: domain.SubArray) -> Command:
+    """
+    Return an OET Command that, when passed to a TangoExecutor, would call
+    SubArrayNode.EndSB().
+
+    :param subarray: the SubArray to control
+    :return: the OET Command
+    """
+    subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+    return Command(subarray_node_fqdn, 'EndSB')
