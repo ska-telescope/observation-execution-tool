@@ -463,7 +463,14 @@ def end_sb(subarray: domain.SubArray):
     :param subarray: the subarray to command
     """
     command = get_end_sb_command(subarray)
-    EXECUTOR.execute(command)
+    _ = EXECUTOR.execute(command)
+
+    obsstate = Attribute(command.device, 'obsState')
+    # obsState is a Python Enum, so compare desired state against enum.name
+    name_getter = operator.attrgetter('name')
+
+    #  wait for the sub-array obsState to transition from READY to IDLE
+    wait_for_value(obsstate, 'IDLE', name_getter)
 
 
 def get_end_sb_command(subarray: domain.SubArray) -> Command:
