@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "7a84985f7ae0e248462b4372f5c93c0e81f9101739753a841c885b9240aef070"
+            "sha256": "5d602e4af4f687a986490e6e6efd66b9e72ace6660c728b9cd99acd12e1a7aa8"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -51,11 +51,11 @@
         },
         "cdm-shared-library": {
             "hashes": [
-                "sha256:5cbb9a9d92465fe158795d1295bb6e85d67022d6c5289d33ede3955db5eb47a4",
-                "sha256:8cc1d55ff64cda9a77193a8f46d1b8acecd9b906a285cfe6544612679e780d2b"
+                "sha256:531cf525cad7225ed76f9dfb9ddc85defa0aa2b3e8ade820fb4be6604de33bb7",
+                "sha256:b0513799d7f9321be4e87324731dff6b5d59bd580623e99470b9b1a5870f77f5"
             ],
             "index": "nexus",
-            "version": "==0.1.27"
+            "version": "==0.1.28+dev.43a20e5a"
         },
         "decorator": {
             "hashes": [
