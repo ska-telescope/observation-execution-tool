@@ -78,5 +78,5 @@ push_SSH_image:
     - docker-executor
   stage: push_SSH_image
   script:
-    - cp .release ssh/.release
+    - make -C ssh build
     - make -C ssh push
