@@ -17,6 +17,7 @@ docs/_build
 docs/apidocs
 
 venv
+ssh/.release
 
 # ide
 .idea

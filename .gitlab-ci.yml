@@ -27,7 +27,7 @@ before_script:
 
 stages:
   - test
-
+  - oet_ssh
 
 test:
   tags:
@@ -59,3 +59,12 @@ pages:
     paths:
       - public
     expire_in: 30 days
+
+oet_ssh:
+  tags:
+    - docker-executor
+  stage: oet_ssh
+  script:
+    - cp .release ssh/.release
+    - make -C ssh build
+    - make -C ssh push
