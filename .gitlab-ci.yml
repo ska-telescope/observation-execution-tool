@@ -27,44 +27,47 @@ before_script:
 
 stages:
   - test
-  - oet_ssh
+  - pages
+  - push_OET_image
+  - push_SSH_image
 
 test:
   tags:
     - docker-executor
   stage: test
   script:
-    - make build
     - make test
-    - mv build public
-    - make push
   artifacts:
     paths:
-      - public
+      - build
+    expire_in: 7 days
 
 pages:
   tags:
     - docker-executor
-  stage: test
-
+  stage: pages
+  dependencies:
+    - test
   script:
-   - make build
-   - make test
-   - ls -la
-   - mkdir .public
-   - cp build/coverage.xml .public
-   - cp -r build/htmlcov/* .public
-   - mv .public public
+    - mkdir public
+    - cp build/coverage.xml public
+    - cp -r build/htmlcov/* public
   artifacts:
     paths:
       - public
-    expire_in: 30 days
+    expire_in: 7 days
 
-oet_ssh:
+push_OET_image:
   tags:
     - docker-executor
-  stage: oet_ssh
+  stage: push_OET_image
+  script:
+    - make push
+
+push_SSH_image:
+  tags:
+    - docker-executor
+  stage: push_SSH_image
   script:
     - cp .release ssh/.release
-    - make -C ssh build
     - make -C ssh push
