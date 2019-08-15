@@ -36,6 +36,7 @@ test:
     - docker-executor
   stage: test
   script:
+    - make build
     - make test
   artifacts:
     paths:
