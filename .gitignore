@@ -18,6 +18,7 @@ docs/apidocs
 
 venv
 ssh/.release
+setup.py-e
 
 # ide
 .idea
