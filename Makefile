@@ -160,6 +160,9 @@ endif
 help:  ## show this help.
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
+post-push:
+	@. $(RELEASE_SUPPORT) ; differsFromRelease || docker push $(IMAGE):$(VERSION) ;
+
 .PHONY: all test up down help
 
 # Creates Docker volume for use as a cache, if it doesn't exist already

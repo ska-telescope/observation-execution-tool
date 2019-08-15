@@ -30,6 +30,9 @@ include ../.make/Makefile.mk
 pre-build:
 	@cp ../.release .
 
+post-push:
+	@. $(RELEASE_SUPPORT) ; differsFromRelease || (cd ..; differsFromRelease) || docker push $(IMAGE):$(VERSION) ;
+
 help:  ## show this help.
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
