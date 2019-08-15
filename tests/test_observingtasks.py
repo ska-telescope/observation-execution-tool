@@ -437,10 +437,15 @@ def test_get_end_sb_command():
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_end_sb_calls_tango_executor(mock_execute_fn, _):
+def test_end_sb_calls_tango_executor(mock_execute_fn, mock_read_fn):
     """
     Test that the 'end SB' command calls the target Tango device once only.
     """
+    # prime the obsState transitions, otherwise it will never end.
+    mock_read_fn.side_effect = [
+        ObsState.READY, ObsState.READY, ObsState.READY, ObsState.IDLE
+    ]
+
     subarray = SubArray(1)
     observingtasks.end_sb(subarray)
     cmd = observingtasks.get_end_sb_command(subarray)
@@ -460,8 +465,9 @@ def test_end_sb_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
     ]
 
     subarray = domain.SubArray(1)
-    subarray.end_sb()
+    observingtasks.end_sb(subarray)
 
+    # command arg validation is the subject of another test
     mock_execute_fn.assert_called_with(mock.ANY)
 
     expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
