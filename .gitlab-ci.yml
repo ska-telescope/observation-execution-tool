@@ -26,17 +26,24 @@ before_script:
 # It is also specified that only the master branch will be subject of this job.
 
 stages:
+  - build
   - test
   - pages
   - push_OET_image
   - push_SSH_image
+
+build:
+  tags:
+    - docker-executor
+  stage: build
+  script:
+    - make build
 
 test:
   tags:
     - docker-executor
   stage: test
   script:
-    - make build
     - make test
   artifacts:
     paths:
@@ -44,6 +51,7 @@ test:
     expire_in: 7 days
 
 pages:
+  when: always
   tags:
     - docker-executor
   stage: pages
