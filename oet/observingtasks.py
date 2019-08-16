@@ -371,9 +371,10 @@ def configure_from_file(subarray: domain.SubArray, request_path):
     :return:
     """
     request = schemas.CODEC.load_from_file(cdm_configure.ConfigureRequest, request_path)
+
     # Update scan ID with current scan ID, leaving the rest of the configuration
     # unchanged
-    request.scan_id = SCAN_ID_GENERATOR.value
+    request = request.copy_with_scan_id(SCAN_ID_GENERATOR.value)
 
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     request_json = schemas.CODEC.dumps(request)

@@ -475,10 +475,3 @@ def test_end_sb_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
 
     # task should keep reading obsState until device is READY
     assert mock_read_fn.call_count == 4
-
-
-def test_configure_from_file_rewrites_all_scan_IDs():
-    """
-    Verify that configure_from_file rewrites all scan IDs.
-    """
-
