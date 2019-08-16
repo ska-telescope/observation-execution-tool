@@ -23,7 +23,7 @@ SKA_SUB_ARRAY_NODE_1_FDQN = 'ska_mid/tm_subarray_node/1'
 CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
 CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_success": ["0001"]}}'
-VALID_ASSIGN_STARTSCAN_REQUEST = '{"scan_duration": 3.21}'
+VALID_ASSIGN_STARTSCAN_REQUEST = '{"scanDuration": 3.21}'
 
 
 class ObsState(enum.Enum):
@@ -475,3 +475,10 @@ def test_end_sb_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
 
     # task should keep reading obsState until device is READY
     assert mock_read_fn.call_count == 4
+
+
+def test_configure_from_file_rewrites_all_scan_IDs():
+    """
+    Verify that configure_from_file rewrites all scan IDs.
+    """
+
