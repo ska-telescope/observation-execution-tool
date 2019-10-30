@@ -1,6 +1,8 @@
 Observation Execution Tool
 ==========================
 
+## Building steps
+
 This project contains the code for the Observation Execution Tool, the
 application which provides high-level scripting facilities and a high-level
 scripting UI for the SKA.
