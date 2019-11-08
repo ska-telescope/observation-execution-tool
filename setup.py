@@ -8,7 +8,7 @@ with open('README.md') as readme_file:
 
 setup(
     name='observation-execution-tool',
-    version="0.2.9",
+    version="0.2.10",
     description="",
     long_description=readme + '\n\n',
     author="Your Name",
