@@ -36,7 +36,7 @@ class StartProcessCommand:
 class ProcedureSummary:
     id: int
     script_uri: str
-    input_args: typing.Dict[str, domain.ProcedureInput]
+    script_args: typing.Dict[str, domain.ProcedureInput]
     state: domain.ProcedureState
 
 
@@ -57,7 +57,7 @@ class ScriptExecutionService:
         summary = ProcedureSummary(
             id=pid,
             script_uri=procedure.script_uri,
-            input_args=copy.deepcopy(procedure.args),
+            script_args=copy.deepcopy(procedure.script_args),
             state=procedure.state
         )
         return summary

@@ -36,7 +36,7 @@ class Procedure:
 
         self.id = None
         self.script_uri: str = script_uri
-        self.args: typing.Dict[str, ProcedureInput] = {'__init__': init_args}
+        self.script_args: typing.Dict[str, ProcedureInput] = {'init': init_args, 'run': ProcedureInput()}
         self.state = ProcedureState.READY
 
     def run(self, *args, **kwargs):
@@ -44,7 +44,7 @@ class Procedure:
             raise Exception(f'Invalidate procedure state for run: {self.state}')
 
         self.state = ProcedureState.RUNNING
-        self.args['run'] = ProcedureInput(*args, **kwargs)
+        self.script_args['run'] = ProcedureInput(*args, **kwargs)
 
 
 class ProcessManager:

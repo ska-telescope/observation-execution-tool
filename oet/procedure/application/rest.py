@@ -38,7 +38,7 @@ def create_procedure():
         flask.abort(400, description='Malformed script_uri')
     script_args = flask.request.json.get('script_args', {})
 
-    init_dict = script_args.get('__init__', {})
+    init_dict = script_args.get('init', {})
     init_args = init_dict.get('args', [])
     init_kwargs = init_dict.get('kwargs', {})
 
@@ -73,7 +73,7 @@ def update_procedure(procedure_id: int):
     # if 'state' in flask.request.json and not isinstance(flask.request.json, str):
     #     flask.abort(400)
     old_state = summary.state
-    new_state = domain.ProcedureState[flask.request.json.get('state', summary.state)]
+    new_state = domain.ProcedureState[flask.request.json.get('state', summary.state.name)]
     if old_state is domain.ProcedureState.READY and new_state is domain.ProcedureState.RUNNING:
         cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
         summary = service.start(cmd)
@@ -83,7 +83,7 @@ def update_procedure(procedure_id: int):
 
 def make_public_summary(procedure: application.ProcedureSummary):
     script_args = {method_name: {'args': method_args.args, 'kwargs': method_args.kwargs}
-                   for method_name, method_args in procedure.input_args.items()}
+                   for method_name, method_args in procedure.script_args.items()}
 
     return {
         'uri': flask.url_for('get_procedure', procedure_id=procedure.id, _external=True),
