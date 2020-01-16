@@ -1,3 +1,6 @@
+"""
+This module presents a REST interface to the script execution service.
+"""
 import flask
 
 from . import application

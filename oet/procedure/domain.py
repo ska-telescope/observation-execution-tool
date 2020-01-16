@@ -9,6 +9,11 @@ import enum
 
 
 class ProcedureState(enum.Enum):
+    """
+    Represents the script execution state.
+
+    Limited to either READY or RUNNING for this PI.
+    """
     READY = enum.auto()
     RUNNING = enum.auto()
 
