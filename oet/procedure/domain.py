@@ -4,8 +4,8 @@ execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
 import dataclasses
-import typing
 import enum
+import typing
 
 
 class ProcedureState(enum.Enum):
@@ -28,6 +28,18 @@ class ProcedureInput:
     def __init__(self, *args, **kwargs):
         self.args: tuple = args
         self.kwargs: dict = kwargs
+
+    def __eq__(self, other):
+        if not isinstance(other, ProcedureInput):
+            return False
+        if self.args == other.args and self.kwargs == other.kwargs:
+            return True
+        return False
+
+    def __repr__(self):
+        args = ', '.join((str(a) for a in self.args))
+        kwargs = ', '.join(['{!s}={!r}'.format(k, v) for k, v in self.kwargs.items()])
+        return '<ProcedureInput({})>'.format(', '.join((args, kwargs)))
 
 
 class Procedure:
@@ -65,18 +77,20 @@ class ProcessManager:
 
         self._procedure_factory = ProcedureFactory()
 
-    def create(self, script_uri: str, init_args: ProcedureInput) -> int:
-        procedure = self._procedure_factory.create(script_uri, *init_args.args, **init_args.kwargs)
-
+    def create(self, script_uri: str, *, init_args: ProcedureInput) -> int:
         if not self.procedures:
             pid = 1
         else:
             pid = max(self.procedures.keys()) + 1
 
+        procedure = self._procedure_factory.create(script_uri, *init_args.args, **init_args.kwargs)
+        procedure.id = pid
+
         self.procedures[pid] = procedure
+
         return pid
 
-    def run(self, process_id: int, run_args: ProcedureInput):
+    def run(self, process_id: int, *, run_args: ProcedureInput):
         if self.running:
             running_pid = self.running.id
             raise ValueError(f'Cannot start PID {process_id}: procedure {running_pid} is running')
@@ -86,6 +100,7 @@ class ProcessManager:
         except KeyError as e:
             raise ValueError(f'Process {process_id} not found') from e
 
+        self.running = procedure
         procedure.run(*run_args.args, **run_args.kwargs)
 
 

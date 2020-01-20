@@ -126,7 +126,7 @@ class ResourceAllocation:
         return '<ResourceAllocation(dishes={!r})>'.format(dishes_arg)
 
 
-class DishAllocation(collections.MutableSet):
+class DishAllocation(collections.abc.MutableSet):
     """
     DishAllocation represents a collection of SKA MID antennas.
 

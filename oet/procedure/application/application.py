@@ -80,7 +80,7 @@ class ScriptExecutionService:
         :param cmd: dataclass argument capturing the execution arguments
         :return:
         """
-        self._process_host.run(cmd.process_uid, cmd.run_args)
+        self._process_host.run(cmd.process_uid, run_args=cmd.run_args)
         return self._create_summary(cmd.process_uid)
 
     def summarise(self, pids: typing.Optional[typing.List[int]] = None) -> typing.List[ProcedureSummary]:
@@ -90,6 +90,6 @@ class ScriptExecutionService:
 
         missing_pids = {p for p in pids if p not in all_pids}
         if missing_pids:
-            raise KeyError(f'Process IDs not found: {missing_pids}')
+            raise ValueError(f'Process IDs not found: {missing_pids}')
 
         return [self._create_summary(pid) for pid in pids]

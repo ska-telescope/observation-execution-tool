@@ -6,7 +6,8 @@ import flask
 from . import application
 from .. import domain
 
-app = flask.Flask(__name__)
+api = flask.Blueprint('api', __name__)
+
 service = application.ScriptExecutionService()
 
 
@@ -19,25 +20,25 @@ def _get_summary_or_404(pid):
         return summaries[0]
 
 
-@app.route('/api/v1.0/procedures', methods=['GET'])
+@api.route('/procedures', methods=['GET'])
 def get_procedures():
     summaries = service.summarise()
     return flask.jsonify({'procedures': [make_public_summary(s) for s in summaries]})
 
 
-@app.route('/api/v1.0/procedures/<int:procedure_id>', methods=['GET'])
+@api.route('/procedures/<int:procedure_id>', methods=['GET'])
 def get_procedure(procedure_id: int):
     summary = _get_summary_or_404(procedure_id)
     return flask.jsonify({'procedure': make_public_summary(summary)})
 
 
-@app.route('/api/v1.0/procedures', methods=['POST'])
+@api.route('/procedures', methods=['POST'])
 def create_procedure():
     if not flask.request.json or not 'script_uri' in flask.request.json:
         flask.abort(400, description='script_uri missing')
     script_uri = flask.request.json['script_uri']
 
-    if 'script_args' in flask.request.json and not isinstance(flask.request.json, dict):
+    if 'script_args' in flask.request.json and not isinstance(flask.request.json['script_args'], dict):
         flask.abort(400, description='Malformed script_uri')
     script_args = flask.request.json.get('script_args', {})
 
@@ -52,7 +53,7 @@ def create_procedure():
     return flask.jsonify({'procedure': make_public_summary(summary)}), 201
 
 
-@app.route('/api/v1.0/procedures/<int:procedure_id>', methods=['PUT'])
+@api.route('/procedures/<int:procedure_id>', methods=['PUT'])
 def update_procedure(procedure_id: int):
     summary = _get_summary_or_404(procedure_id)
 
@@ -64,7 +65,7 @@ def update_procedure(procedure_id: int):
     # if 'running' in flask.request.json and type(flask.request.json['running']) is not bool:
     #     flask.abort(400)
 
-    if 'script_args' in flask.request.json and not isinstance(flask.request.json, dict):
+    if 'script_args' in flask.request.json and not isinstance(flask.request.json['script_args'], dict):
         flask.abort(400)
     script_args = flask.request.json.get('script_args', {})
 
@@ -89,22 +90,27 @@ def make_public_summary(procedure: application.ProcedureSummary):
                    for method_name, method_args in procedure.script_args.items()}
 
     return {
-        'uri': flask.url_for('get_procedure', procedure_id=procedure.id, _external=True),
+        'uri': flask.url_for('api.get_procedure', procedure_id=procedure.id, _external=True),
         'script_uri': procedure.script_uri,
         'script_args': script_args,
         'state': procedure.state.name
     }
 
 
-@app.errorhandler(404)
+@api.errorhandler(404)
 def resource_not_found(e):
     return flask.jsonify(error=str(e)), 404
 
 
-@app.errorhandler(400)
+@api.errorhandler(400)
 def bad_request(e):
     return flask.jsonify(error=str(e)), 400
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+def create_app(config_filename):
+    app = flask.Flask(__name__)
+    # TODO get application config working
+    # app.config.from_pyfile(config_filename)
+
+    app.register_blueprint(api, url_prefix='/api/v1.0')
+    return app
