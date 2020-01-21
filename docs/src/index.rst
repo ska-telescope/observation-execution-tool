@@ -23,6 +23,7 @@
   :caption: Package-name
   :hidden:
 
+  rest_api
   package/guide
 
 ==========================
