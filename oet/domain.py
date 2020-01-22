@@ -122,11 +122,11 @@ class ResourceAllocation:
         return self.dishes == other.dishes
 
     def __repr__(self):
-        dishes_arg = [d for d in self.dishes]
+        dishes_arg = list(self.dishes)
         return '<ResourceAllocation(dishes={!r})>'.format(dishes_arg)
 
 
-class DishAllocation(collections.MutableSet):
+class DishAllocation(collections.abc.MutableSet):
     """
     DishAllocation represents a collection of SKA MID antennas.
 
