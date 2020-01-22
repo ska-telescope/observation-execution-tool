@@ -13,6 +13,7 @@
   :caption: Home
   :hidden:
 
+  rest_api
 
 .. COMMUNITY SECTION ==================================================
 
@@ -94,6 +95,8 @@ The following make targets are defined:
 | down            | stop all containers launched by 'make up' and  |
 |                 | 'make interactive'                             |
 +-----------------+------------------------------------------------+
+| rest            | start the OET REST server                      |
++-----------------+------------------------------------------------+
 | help            | show a summary of the makefile targets above   |
 +-----------------+------------------------------------------------+
 
@@ -123,3 +126,8 @@ test-harness/Makefile in a temporary container. The Makefile example for
 this project runs 'python setup.py test' and copies the resulting output and
 test artefacts out of the container and into a 'build' directory, ready for
 inclusion in the CI server's downloadable artefacts.
+
+REST server
+-----------
+``make rest`` starts the OET REST server. Details of the REST API can be
+found in :doc:`rest_api`

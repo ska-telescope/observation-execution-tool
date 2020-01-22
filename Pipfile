@@ -22,6 +22,8 @@ itango = "*"
 
 #SKA Configuration Data Model (used for formatting API requests from OET to TMC)
 cdm-shared-library = { version=">=0.1.34", index="nexus"}
+flask = "*"
+requests = "*"
 
 [dev-packages]
 docutils = "*"
