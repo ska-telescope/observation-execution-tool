@@ -51,12 +51,22 @@ class Procedure:
     def __init__(self, script_uri: str, *args, **kwargs):
         init_args = ProcedureInput(*args, **kwargs)
 
-        self.id = None
+        self.id = None  # pylint:disable=invalid-name
         self.script_uri: str = script_uri
-        self.script_args: typing.Dict[str, ProcedureInput] = {'init': init_args, 'run': ProcedureInput()}
+        self.script_args: typing.Dict[str, ProcedureInput] = dict(init=init_args,
+                                                                  run=ProcedureInput())
         self.state = ProcedureState.READY
 
     def run(self, *args, **kwargs):
+        """
+        Start Procedure execution.
+
+        This calls the run() method of the target script with the (optional)
+        arguments supplied to this function.
+
+        :param args: positional arguments for run()
+        :param kwargs: kw/val arguments for run()
+        """
         if self.state is not ProcedureState.READY:
             raise Exception(f'Invalidate procedure state for run: {self.state}')
 
@@ -78,6 +88,14 @@ class ProcessManager:
         self._procedure_factory = ProcedureFactory()
 
     def create(self, script_uri: str, *, init_args: ProcedureInput) -> int:
+        """
+        Create a new Procedure that will, when executed, run the target Python
+        script.
+
+        :param script_uri: script URI, e.g. 'file://myscript.py'
+        :param init_args: script initialisation arguments
+        :return:
+        """
         if not self.procedures:
             pid = 1
         else:
@@ -91,14 +109,24 @@ class ProcessManager:
         return pid
 
     def run(self, process_id: int, *, run_args: ProcedureInput):
+        """
+        Run a prepared Procedure.
+
+        This starts execution of the script prepared by a previous create()
+        call.
+
+        :param process_id: ID of Procedure to execute
+        :param run_args: late-binding arguments to provide to the script
+        :return:
+        """
         if self.running:
             running_pid = self.running.id
             raise ValueError(f'Cannot start PID {process_id}: procedure {running_pid} is running')
 
         try:
             procedure = self.procedures[process_id]
-        except KeyError as e:
-            raise ValueError(f'Process {process_id} not found') from e
+        except KeyError as exc:
+            raise ValueError(f'Process {process_id} not found') from exc
 
         self.running = procedure
         procedure.run(*run_args.args, **run_args.kwargs)

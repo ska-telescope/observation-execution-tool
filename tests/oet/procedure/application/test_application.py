@@ -6,21 +6,21 @@ import unittest.mock as mock
 
 import pytest
 
-from oet.procedure.application.application import ScriptExecutionService, ProcedureSummary, PrepareProcessCommand, \
-    StartProcessCommand
+from oet.procedure.application.application import ScriptExecutionService, ProcedureSummary, \
+    PrepareProcessCommand, StartProcessCommand
 from oet.procedure.domain import Procedure, ProcedureInput, ProcedureState
 
 
-def create_empty_procedure_summary(id: int, script_uri: str):
+def create_empty_procedure_summary(procedure_id: int, script_uri: str):
     """
     Utility function to create a null procedure summary. The returned
     procedure defines zero script arguments.
 
-    :param id: procedure ID
+    :param procedure_id: procedure ID
     :param script_uri: path to script
     :return: corresponding ProcedureSummary object
     """
-    return ProcedureSummary(id=id,
+    return ProcedureSummary(id=procedure_id,
                             script_uri=script_uri,
                             script_args={'init': ProcedureInput(), 'run': ProcedureInput()},
                             state=ProcedureState.READY)
@@ -46,13 +46,14 @@ def test_ses_create_summary_returns_expected_object():
     """
     procedure = Procedure('file:///test.py', 1, 2, 3, kw1=4, kw2=5)
     procedures = {123: procedure}
-    expected = ProcedureSummary(id=123, script_uri=procedure.script_uri, script_args=procedure.script_args,
+    expected = ProcedureSummary(id=123, script_uri=procedure.script_uri,
+                                script_args=procedure.script_args,
                                 state=procedure.state)
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
         instance = mock_pm.return_value
         instance.procedures = procedures
         service = ScriptExecutionService()
-        summary = service._create_summary(123)
+        summary = service._create_summary(123)  # pylint: disable=protected-access
         assert summary == expected
 
 
@@ -65,15 +66,18 @@ def test_ses_prepare_calls_process_manager_method_and_returns_summary_for_create
     cmd = PrepareProcessCommand(script_uri=script_uri, init_args=ProcedureInput())
     procedure = Procedure(script_uri)
     procedures = {123: procedure}
-    expected = ProcedureSummary(id=123, script_uri=procedure.script_uri, script_args=procedure.script_args,
+    expected = ProcedureSummary(id=123, script_uri=procedure.script_uri,
+                                script_args=procedure.script_args,
                                 state=procedure.state)
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
-        # tell ProcessManager.create to return PID 123, which is subsequently used for lookup
+        # tell ProcessManager.create to return PID 123, which is subsequently
+        # used for lookup
         instance.create.return_value = 123
-        # the manager's procedures attribute holds created procedures and is used for retrieval
+        # the manager's procedures attribute holds created procedures and is
+        # used for retrieval
         instance.procedures = procedures
 
         service = ScriptExecutionService()
@@ -93,22 +97,26 @@ def test_ses_start_calls_process_manager_function_and_returns_summary():
     cmd = StartProcessCommand(process_uid=123, run_args=ProcedureInput())
     procedure = Procedure(script_uri)
     procedures = {123: procedure}
-    expected = ProcedureSummary(id=123, script_uri=procedure.script_uri, script_args=procedure.script_args,
+    expected = ProcedureSummary(id=123, script_uri=procedure.script_uri,
+                                script_args=procedure.script_args,
                                 state=procedure.state)
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
-        # the manager's procedures attribute holds created procedures and is used for retrieval
+        # the manager's procedures attribute holds created procedures and is
+        # used for retrieval
         instance.procedures = procedures
 
         service = ScriptExecutionService()
         returned = service.start(cmd)
 
-        # service should call run() and return the summary for the executed procedure
+        # service should call run() and return the summary for the executed
+        # procedure
         instance.run.assert_called_once_with(123, run_args=ProcedureInput())
         assert returned == expected
-        # we don't validate or modify procedure state, so this should still be READY rather than RUNNING
+        # we don't validate or modify procedure state, so this should still be
+        # READY rather than RUNNING
         assert returned.state == ProcedureState.READY
 
 
@@ -130,7 +138,8 @@ def test_ses_summarise_returns_summaries_for_requested_pids():
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
-        # the manager's procedures attribute holds created procedures and is used for retrieval
+        # the manager's procedures attribute holds created procedures and is
+        # used for retrieval
         instance.procedures = procedures
 
         service = ScriptExecutionService()
@@ -152,7 +161,8 @@ def test_ses_summarise_fails_when_invalid_pid_requested():
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
-        # the manager's procedures attribute holds created procedures and is used for retrieval
+        # the manager's procedures attribute holds created procedures and is
+        # used for retrieval
         instance.procedures = procedures
 
         service = ScriptExecutionService()
@@ -179,7 +189,8 @@ def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
-        # the manager's procedures attribute holds created procedures and is used for retrieval
+        # the manager's procedures attribute holds created procedures and is
+        # used for retrieval
         instance.procedures = procedures
 
         service = ScriptExecutionService()

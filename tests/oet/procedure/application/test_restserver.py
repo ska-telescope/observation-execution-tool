@@ -10,7 +10,8 @@ import pytest
 
 import oet.procedure.domain as domain
 from oet.procedure.application import restserver
-from oet.procedure.application.application import ProcedureSummary, PrepareProcessCommand, StartProcessCommand
+from oet.procedure.application.application import ProcedureSummary, PrepareProcessCommand, \
+    StartProcessCommand
 from oet.procedure.domain import ProcedureInput
 
 # Endpoint for the REST API
@@ -56,10 +57,10 @@ def assert_json_equal_to_procedure_summary(summary: ProcedureSummary, summary_js
     """
     assert summary_json['uri'] == f'http://localhost/{ENDPOINT}/{summary.id}'
     assert summary_json['script_uri'] == summary.script_uri
-    for k, v in summary_json['script_args'].items():
-        i: ProcedureInput = summary.script_args[k]
-        assert i.args == tuple(v['args'])
-        assert i.kwargs == v['kwargs']
+    for method_name, arg_dict in summary_json['script_args'].items():
+        i: ProcedureInput = summary.script_args[method_name]
+        assert i.args == tuple(arg_dict['args'])
+        assert i.kwargs == arg_dict['kwargs']
     assert summary_json['state'] == summary.state.name
 
 
@@ -69,7 +70,7 @@ def client():
     Test fixture that returns a Flask application instance
     """
     app = flask.Flask(__name__)
-    app.register_blueprint(restserver.api, url_prefix='')
+    app.register_blueprint(restserver.API, url_prefix='')
     app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
@@ -90,7 +91,7 @@ def test_get_procedures_returns_expected_summaries(client):
     """
     Test that listing procedure resources returns the expected JSON payload
     """
-    with mock.patch('oet.procedure.application.restserver.service.summarise',
+    with mock.patch('oet.procedure.application.restserver.SERVICE.summarise',
                     return_value=[CREATE_SUMMARY]):
         response = client.get(ENDPOINT)
         assert response.status_code == 200
@@ -105,7 +106,7 @@ def test_get_procedure_by_id(client):
     """
     Verify that getting a resource by ID returns the expected JSON payload
     """
-    with mock.patch('oet.procedure.application.restserver.service.summarise',
+    with mock.patch('oet.procedure.application.restserver.SERVICE.summarise',
                     return_value=[CREATE_SUMMARY]):
         response = client.get(f'{ENDPOINT}/{CREATE_SUMMARY.id}')
         assert response.status_code == HTTPStatus.OK
@@ -119,7 +120,7 @@ def test_get_procedure_gives_404_for_invalid_id(client):
     """
     Verify that requesting an invalid resource returns an error.
     """
-    with mock.patch('oet.procedure.application.restserver.service.summarise') as mock_summarise:
+    with mock.patch('oet.procedure.application.restserver.SERVICE.summarise') as mock_summarise:
         mock_summarise.side_effect = KeyError()
         response = client.get(f'{ENDPOINT}/1')
         assert response.status_code == HTTPStatus.NOT_FOUND
@@ -127,7 +128,7 @@ def test_get_procedure_gives_404_for_invalid_id(client):
 
 def test_successful_post_to_endpoint_returns_created_http_status(client):
     """
-    Verify that creating a new Procedure returns the CREATED HTTP status code.
+    Verify that creating a new Procedure returns the CREATED HTTP status code
     """
     response = client.post(ENDPOINT, json=CREATE_JSON)
     assert response.status_code == HTTPStatus.CREATED
@@ -139,7 +140,7 @@ def test_successful_post_to_endpoint_returns_summary_in_response(client):
     a summary of the created Procedure.
     """
 
-    with mock.patch('oet.procedure.application.restserver.service.prepare') as mock_prepare:
+    with mock.patch('oet.procedure.application.restserver.SERVICE.prepare') as mock_prepare:
         mock_prepare.return_value = CREATE_SUMMARY
         response = client.post(ENDPOINT, json=CREATE_JSON)
     response_json = response.get_json()
@@ -176,7 +177,7 @@ def test_post_to_endpoint_sends_init_arguments(client):
     """
     expected = PrepareProcessCommand(script_uri=CREATE_SUMMARY.script_uri,
                                      init_args=CREATE_SUMMARY.script_args['init'])
-    with mock.patch('oet.procedure.application.restserver.service.prepare') as mock_prepare:
+    with mock.patch('oet.procedure.application.restserver.SERVICE.prepare') as mock_prepare:
         mock_prepare.return_value = CREATE_SUMMARY
         client.post(ENDPOINT, json=CREATE_JSON)
         mock_prepare.assert_called_once_with(expected)
@@ -186,7 +187,7 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
     """
     Verify that PUT to a missing Procedure returns 404 NoFound
     """
-    with mock.patch('oet.procedure.application.restserver.service.summarise') as mock_summarise:
+    with mock.patch('oet.procedure.application.restserver.SERVICE.summarise') as mock_summarise:
         mock_summarise.side_effect = KeyError()
         response = client.put(f'{ENDPOINT}/123')
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -196,7 +197,7 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
     """
     Verify that a PUT request requires a JSON payload
     """
-    with mock.patch('oet.procedure.application.restserver.service.summarise',
+    with mock.patch('oet.procedure.application.restserver.SERVICE.summarise',
                     return_value=[CREATE_SUMMARY]):
         response = client.put(RUN_ENDPOINT)
     assert response.status_code == HTTPStatus.BAD_REQUEST
@@ -209,7 +210,7 @@ def test_put_procedure_calls_run_on_execution_service(client):
     """
     cmd = StartProcessCommand(process_uid=RUN_SUMMARY.id,
                               run_args=RUN_SUMMARY.script_args['run'])
-    with mock.patch('oet.procedure.application.restserver.service') as mock_service:
+    with mock.patch('oet.procedure.application.restserver.SERVICE') as mock_service:
         mock_service.summarise = mock.MagicMock(return_value=[CREATE_SUMMARY])
         mock_start = mock.MagicMock(return_value=RUN_SUMMARY)
         mock_service.start = mock_start
@@ -224,7 +225,7 @@ def test_put_procedure_does_not_start_a_procedure_unless_new_state_is_running(cl
     """
     json = copy.deepcopy(RUN_JSON)
     del json['state']
-    with mock.patch('oet.procedure.application.restserver.service') as mock_service:
+    with mock.patch('oet.procedure.application.restserver.SERVICE') as mock_service:
         mock_service.summarise = mock.MagicMock(return_value=[CREATE_SUMMARY])
         mock_start = mock.MagicMock(return_value=RUN_SUMMARY)
         mock_service.start = mock_start
@@ -239,7 +240,7 @@ def test_put_procedure_returns_procedure_summary(client):
     """
     json = copy.deepcopy(RUN_JSON)
     del json['state']
-    with mock.patch('oet.procedure.application.restserver.service') as mock_service:
+    with mock.patch('oet.procedure.application.restserver.SERVICE') as mock_service:
         mock_service.summarise = mock.MagicMock(return_value=[CREATE_SUMMARY])
         response = client.put(RUN_ENDPOINT, json=json)
 

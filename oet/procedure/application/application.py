@@ -1,12 +1,14 @@
 """
 The oet.procedure.application module holds classes and functionality that
-belong in the application layer of the OET.
+belong in the application layer of the OET. This layer holds the application
+interface, delegating to objects in the domain layer for business rules and
+actions.
 """
 import copy
 import dataclasses
 import typing
 
-from oet.procedure import domain
+from .. import domain
 
 
 @dataclasses.dataclass
@@ -34,7 +36,12 @@ class StartProcessCommand:
 
 @dataclasses.dataclass
 class ProcedureSummary:
-    id: int
+    """
+    ProcedureSummary is a brief representation of a runtime Procedure. It
+    captures essential information required to describe a Procedure and to
+    distinguish it from other Procedures.
+    """
+    id: int  # pylint: disable=invalid-name
     script_uri: str
     script_args: typing.Dict[str, domain.ProcedureInput]
     state: domain.ProcedureState
@@ -52,7 +59,13 @@ class ScriptExecutionService:
     def __init__(self):
         self._process_host = domain.ProcessManager()
 
-    def _create_summary(self, pid: int):
+    def _create_summary(self, pid: int) -> ProcedureSummary:
+        """
+        Return a ProcedureSummary for the Procedure with the given ID.
+
+        :param pid: Procedure ID to summarise
+        :return: ProcedureSummary
+        """
         procedure = self._process_host.procedures[pid]
         summary = ProcedureSummary(
             id=pid,
@@ -64,9 +77,11 @@ class ScriptExecutionService:
 
     def prepare(self, cmd: PrepareProcessCommand) -> ProcedureSummary:
         """
-        Load and prepare a Python script for execution, but do not commence execution.
+        Load and prepare a Python script for execution, but do not commence
+        execution.
 
-        :param cmd: dataclass argument capturing the script identity and load arguments
+        :param cmd: dataclass argument capturing the script identity and load
+            arguments
         :return:
         """
         pid = self._process_host.create(cmd.script_uri, init_args=cmd.init_args)
@@ -83,7 +98,18 @@ class ScriptExecutionService:
         self._process_host.run(cmd.process_uid, run_args=cmd.run_args)
         return self._create_summary(cmd.process_uid)
 
-    def summarise(self, pids: typing.Optional[typing.List[int]] = None) -> typing.List[ProcedureSummary]:
+    def summarise(self, pids: typing.Optional[typing.List[int]] = None) \
+            -> typing.List[ProcedureSummary]:
+        """
+        Return ProcedureSummary objects for Procedures with the requested IDs.
+
+        This method accepts an optional list of integers, representing the
+        Procedure IDs to summarise. If the pids is left undefined,
+        ProcedureSummary objects for all current Procedures will be returned.
+
+        :param pids: optional list of Procedure IDs to summarise.
+        :return: list of ProcedureSummary objects
+        """
         all_pids = self._process_host.procedures.keys()
         if not pids:
             pids = all_pids

@@ -27,9 +27,9 @@ def test_procedure_input_accepts_expected_constructor_values():
     Verify that ProcedureInput arguments are slurped into positional and
     keyword/value attributes.
     """
-    pi = ProcedureInput(1, 2, 3, a=1, b=2)
-    assert pi.args == (1, 2, 3)
-    assert pi.kwargs == dict(a=1, b=2)
+    procedure_input = ProcedureInput(1, 2, 3, a=1, b=2)
+    assert procedure_input.args == (1, 2, 3)
+    assert procedure_input.kwargs == dict(a=1, b=2)
 
 
 def test_procedure_input_eq_works_as_expected():
@@ -106,7 +106,7 @@ def test_no_procedures_stores_on_a_new_process_manager(manager):
     assert not manager.procedures
 
 
-def test_process_manager_create_sets_pid_of_new_procedure(manager, procedure):
+def test_process_manager_create_sets_pid_of_new_procedure(manager):
     """
     Verify that procedures are assigned IDs on process creation
     """

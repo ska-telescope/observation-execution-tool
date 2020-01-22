@@ -122,7 +122,7 @@ class ResourceAllocation:
         return self.dishes == other.dishes
 
     def __repr__(self):
-        dishes_arg = [d for d in self.dishes]
+        dishes_arg = list(self.dishes)
         return '<ResourceAllocation(dishes={!r})>'.format(dishes_arg)
 
 
