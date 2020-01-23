@@ -14,6 +14,7 @@
   :hidden:
 
   rest_api
+  rest_client
 
 .. COMMUNITY SECTION ==================================================
 
@@ -130,4 +131,6 @@ inclusion in the CI server's downloadable artefacts.
 REST server
 -----------
 ``make rest`` starts the OET REST server. Details of the REST API can be
-found in :doc:`rest_api`
+found in :doc:`rest_api`. Instructions on how to use the REST client docs
+can be found here: :doc:`rest_client`.
+
