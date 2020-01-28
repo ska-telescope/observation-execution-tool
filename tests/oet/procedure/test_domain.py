@@ -5,13 +5,21 @@ import pytest
 
 from oet.procedure.domain import Procedure, ProcedureState, ProcedureInput, ProcessManager
 
+@pytest.fixture
+def script_path(tmpdir):
+    """
+    Pytest fixture to return a path to an empty script file
+    """
+    script_path = tmpdir.join("script.py")
+    script_path.write("")
+    return script_path
 
 @pytest.fixture
-def procedure():
+def procedure(script_path):
     """
     Pytest fixture to return a prepared Procedure
     """
-    return Procedure('file://path/to/my/script.py', 1, 2, 3, kw1='a', kw2='b')
+    return Procedure(script_path, 1, 2, 3, kw1='a', kw2='b')
 
 
 @pytest.fixture
@@ -66,6 +74,27 @@ def test_procedure_run_sets_state_to_running(procedure):
     assert procedure.state == ProcedureState.RUNNING
 
 
+def test_procedure_run_executes_user_script(procedure):
+    """
+    Verify that user script executes when run() is called
+    """
+    pytest.fail()
+
+
+def test_procedure_run_executes_user_script_in_child_process(procedure):
+    """
+    Verify that user script executes in a separate (child) process when run() is called
+    """
+    pytest.fail()
+
+
+def test_runtime_arguments_are_passed_to_user_script(procedure):
+    """
+    Verify that arguments passed from procedure are accessible in the user script
+    """
+    pytest.fail()
+
+
 def test_procedure_run_raises_exception_on_a_running_procedure(procedure):
     """
     Verify that a RUNNING procedure can not be run again
@@ -81,6 +110,23 @@ def test_procedure_init_stores_initial_arguments(procedure):
     on the procedure instance.
     """
     assert procedure.script_args['init'] == ProcedureInput(1, 2, 3, kw1='a', kw2='b')
+
+
+def test_procedure_init_loads_requested_file():
+    """
+    Verify that the script file is loaded when a procedure is initialised.
+    """
+    pytest.fail()
+
+
+def test_procedure_init_raises_exception_on_script_file_not_found():
+    """
+    Verify that FileNotFoundError is raised if script file does not exist
+    """
+    script_uri = 'file://abcbs'
+
+    with pytest.raises(FileNotFoundError):
+        _ = Procedure(script_uri=script_uri)
 
 
 def test_procedure_run_stores_arguments(procedure):
@@ -106,54 +152,86 @@ def test_no_procedures_stores_on_a_new_process_manager(manager):
     assert not manager.procedures
 
 
-def test_process_manager_create_sets_pid_of_new_procedure(manager):
+def test_process_manager_create_sets_pid_of_new_procedure(manager, script_path):
     """
     Verify that procedures are assigned IDs on process creation
     """
-    pid = manager.create('file:///test.py', init_args=ProcedureInput())
+    pid = manager.create(script_path, init_args=ProcedureInput())
     created = manager.procedures[pid]
     assert created.id == pid
 
 
-def test_process_manager_create_adds_new_procedure(manager):
+def test_process_manager_create_adds_new_procedure(manager, script_path):
     """
     Verify that ProcessManager keeps references to the processes it creates
     """
     len_before = len(manager.procedures)
-    manager.create('file:///test.py', init_args=ProcedureInput())
+    manager.create(script_path, init_args=ProcedureInput())
     assert len(manager.procedures) == len_before + 1
 
 
-def test_process_manager_create_captures_initialisation_arguments(manager):
+def test_process_manager_create_captures_initialisation_arguments(manager, script_path):
     """
     Verify that ProcessManager passes through initialisation arguments to
     the procedures it creates
     """
     expected = ProcedureInput(1, 2, 3, a=4, b=5)
-    pid = manager.create('file:///test.py', init_args=expected)
+    pid = manager.create(script_path, init_args=expected)
     created = manager.procedures[pid]
     assert created.script_args['init'] == expected
 
 
-def test_process_manager_run_changes_state_of_procedure_to_running(manager):
+def test_process_manager_run_changes_state_of_procedure_to_running(manager, script_path):
     """
     Verify that procedure state changes when ProcessManager starts
     procedure execution
     """
-    pid = manager.create('file:///test.py', init_args=ProcedureInput())
+    pid = manager.create(script_path, init_args=ProcedureInput())
     assert manager.procedures[pid].state == ProcedureState.READY
     manager.run(pid, run_args=ProcedureInput())
     assert manager.procedures[pid].state == ProcedureState.RUNNING
 
 
-def test_process_manager_run_sets_running_procedure(manager):
+def test_process_manager_run_sets_running_procedure(manager, script_path):
     """
     Verify that ProcessManager sets the running procedure attribute
     appropriately when run() is called
     """
-    pid = manager.create('file:///test.py', init_args=ProcedureInput())
+    pid = manager.create(script_path, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
     assert manager.running == manager.procedures[pid]
+
+
+def test_process_manager_sets_running_to_none_when_process_completes(manager):
+    """
+    Verify that ProcessManager sets running procedure attribute to None
+    when process completes
+    """
+    pytest.fail()
+
+
+def test_process_manager_removes_references_to_completed_procedures(manager):
+    """
+    Verify that ProcessManager removes a completed procedure from
+    the procedures list
+    """
+    pytest.fail()
+
+
+def test_process_manager_sets_running_to_none_on_script_failure(manager):
+    """
+    Verify that ProcessManager sets running procedure attribute to None
+    when script execution fails
+    """
+    pytest.fail()
+
+
+def test_process_manager_removes_references_on_script_failure(manager):
+    """
+    Verify that ProcessManager removes a failed procedure from
+    the procedures list
+    """
+    pytest.fail()
 
 
 def test_process_manager_run_fails_on_invalid_pid(manager):
@@ -165,12 +243,12 @@ def test_process_manager_run_fails_on_invalid_pid(manager):
         manager.run(321, run_args=ProcedureInput())
 
 
-def test_process_manager_run_fails_on_process_that_is_already_running(manager):
+def test_process_manager_run_fails_on_process_that_is_already_running(manager, script_path):
     """
     Verify that an exception is raised when requesting run() for a procedure
     that is already running
     """
-    pid = manager.create('file:///test.py', init_args=ProcedureInput())
+    pid = manager.create(script_path, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
     with pytest.raises(ValueError):
         manager.run(pid, run_args=ProcedureInput())

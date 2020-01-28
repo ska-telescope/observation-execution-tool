@@ -6,6 +6,8 @@ OS processes, process supervisors, signal handlers, etc.
 import dataclasses
 import enum
 import typing
+import types
+import importlib.machinery
 
 
 class ProcedureState(enum.Enum):
@@ -53,9 +55,16 @@ class Procedure:
 
         self.id = None  # pylint:disable=invalid-name
         self.script_uri: str = script_uri
+        self.user_module = self._load_file(script_uri)
         self.script_args: typing.Dict[str, ProcedureInput] = dict(init=init_args,
                                                                   run=ProcedureInput())
         self.state = ProcedureState.READY
+
+    def _load_file(self, script_uri: str) -> types.ModuleType:
+        loader = importlib.machinery.SourceFileLoader('user_module', script_uri)
+        user_module = types.ModuleType(loader.name)
+        loader.exec_module(user_module)
+        return user_module
 
     def run(self, *args, **kwargs):
         """
