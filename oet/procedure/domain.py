@@ -8,6 +8,7 @@ import enum
 import typing
 import types
 import importlib.machinery
+import multiprocessing
 
 
 class ProcedureState(enum.Enum):
@@ -44,13 +45,14 @@ class ProcedureInput:
         return '<ProcedureInput({})>'.format(', '.join((args, kwargs)))
 
 
-class Procedure:
+class Procedure(multiprocessing.Process):
     """
     A Procedure is the OET representation of a Python script, its arguments,
     and its execution state.
     """
 
     def __init__(self, script_uri: str, *args, **kwargs):
+        multiprocessing.Process.__init__(self)
         init_args = ProcedureInput(*args, **kwargs)
 
         self.id = None  # pylint:disable=invalid-name
@@ -66,7 +68,7 @@ class Procedure:
         loader.exec_module(user_module)
         return user_module
 
-    def run(self, *args, **kwargs):
+    def run(self):
         """
         Start Procedure execution.
 
@@ -80,7 +82,9 @@ class Procedure:
             raise Exception(f'Invalidate procedure state for run: {self.state}')
 
         self.state = ProcedureState.RUNNING
-        self.script_args['run'] = ProcedureInput(*args, **kwargs)
+        args = self.script_args['run'].args
+        kwargs = self.script_args['run'].kwargs
+        self.user_module.main(*args, **kwargs)
 
 
 class ProcessManager:

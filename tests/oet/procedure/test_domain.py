@@ -2,6 +2,7 @@
 Unit tests for the oet.procedure.domain module.
 """
 import pytest
+import multiprocessing
 
 from oet.procedure.domain import Procedure, ProcedureState, ProcedureInput, ProcessManager
 
@@ -11,8 +12,18 @@ def script_path(tmpdir):
     Pytest fixture to return a path to an empty script file
     """
     script_path = tmpdir.join("script.py")
-    script_path.write("")
+    script_path.write("def main():\n\tpass")
     return script_path
+
+@pytest.fixture
+def script_with_args_path(tmpdir):
+    path = tmpdir.join("script_with_args.py")
+
+    path.write("""
+def main(queue, procedure):
+    queue.put(procedure.pid)
+""")
+    return path
 
 @pytest.fixture
 def procedure(script_path):
@@ -74,18 +85,29 @@ def test_procedure_run_sets_state_to_running(procedure):
     assert procedure.state == ProcedureState.RUNNING
 
 
-def test_procedure_run_executes_user_script(procedure):
+def test_procedure_run_executes_user_script(tmpdir, script_with_args_path):
     """
     Verify that user script executes when run() is called
     """
-    pytest.fail()
+    procedure = Procedure(script_uri=script_with_args_path)
+    queue = multiprocessing.Queue()
+    procedure.script_args['run'].args = [queue, procedure]
+    procedure.run()
+    assert queue.qsize() == 1
+    assert queue.get() is None
 
 
-def test_procedure_run_executes_user_script_in_child_process(procedure):
+def test_procedure_run_executes_user_script_in_child_process(tmpdir, script_with_args_path):
     """
     Verify that user script executes in a separate (child) process when run() is called
     """
-    pytest.fail()
+    procedure = Procedure(script_uri=script_with_args_path)
+    queue = multiprocessing.Queue()
+    procedure.script_args['run'].args = [queue, procedure]
+    procedure.start()
+    procedure.join()
+    assert not queue.empty()
+    assert queue.get() is not None
 
 
 def test_runtime_arguments_are_passed_to_user_script(procedure):
@@ -112,13 +134,6 @@ def test_procedure_init_stores_initial_arguments(procedure):
     assert procedure.script_args['init'] == ProcedureInput(1, 2, 3, kw1='a', kw2='b')
 
 
-def test_procedure_init_loads_requested_file():
-    """
-    Verify that the script file is loaded when a procedure is initialised.
-    """
-    pytest.fail()
-
-
 def test_procedure_init_raises_exception_on_script_file_not_found():
     """
     Verify that FileNotFoundError is raised if script file does not exist
@@ -128,8 +143,8 @@ def test_procedure_init_raises_exception_on_script_file_not_found():
     with pytest.raises(FileNotFoundError):
         _ = Procedure(script_uri=script_uri)
 
-
-def test_procedure_run_stores_arguments(procedure):
+# TODO: change to test process manager
+def test_calling_process_manager_run_sets_run_args_on_procedure(procedure):
     """
     Verify that the arguments to run() are captured and stored on the
     procedure instance
