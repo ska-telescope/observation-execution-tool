@@ -3,6 +3,7 @@ Unit tests for the oet.procedure.domain module.
 """
 import pytest
 import multiprocessing
+from unittest.mock import MagicMock
 
 from oet.procedure.domain import Procedure, ProcedureState, ProcedureInput, ProcessManager
 
@@ -12,12 +13,12 @@ def script_path(tmpdir):
     Pytest fixture to return a path to an empty script file
     """
     script_path = tmpdir.join("script.py")
-    script_path.write("def main():\n\tpass")
+    script_path.write("def main(*args, **kwargs):\n\tpass")
     return script_path
 
 @pytest.fixture
-def script_with_args_path(tmpdir):
-    path = tmpdir.join("script_with_args.py")
+def script_with_queue_path(tmpdir):
+    path = tmpdir.join("script_with_queue.py")
 
     path.write("""
 def main(queue, procedure):
@@ -85,11 +86,11 @@ def test_procedure_run_sets_state_to_running(procedure):
     assert procedure.state == ProcedureState.RUNNING
 
 
-def test_procedure_run_executes_user_script(tmpdir, script_with_args_path):
+def test_procedure_run_executes_user_script(tmpdir, script_with_queue_path):
     """
     Verify that user script executes when run() is called
     """
-    procedure = Procedure(script_uri=script_with_args_path)
+    procedure = Procedure(script_uri=script_with_queue_path)
     queue = multiprocessing.Queue()
     procedure.script_args['run'].args = [queue, procedure]
     procedure.run()
@@ -97,11 +98,11 @@ def test_procedure_run_executes_user_script(tmpdir, script_with_args_path):
     assert queue.get() is None
 
 
-def test_procedure_run_executes_user_script_in_child_process(tmpdir, script_with_args_path):
+def test_procedure_run_executes_user_script_in_child_process(tmpdir, script_with_queue_path):
     """
     Verify that user script executes in a separate (child) process when run() is called
     """
-    procedure = Procedure(script_uri=script_with_args_path)
+    procedure = Procedure(script_uri=script_with_queue_path)
     queue = multiprocessing.Queue()
     procedure.script_args['run'].args = [queue, procedure]
     procedure.start()
@@ -114,7 +115,11 @@ def test_runtime_arguments_are_passed_to_user_script(procedure):
     """
     Verify that arguments passed from procedure are accessible in the user script
     """
-    pytest.fail()
+    run_args = ProcedureInput(5, 6, 7, kw3='c', kw4='d')
+    procedure.script_args['run'] = run_args
+    procedure.user_module = MagicMock()
+    procedure.run()
+    procedure.user_module.main.assert_called_with(5, 6, 7, kw3='c', kw4='d')
 
 
 def test_procedure_run_raises_exception_on_a_running_procedure(procedure):
@@ -143,13 +148,16 @@ def test_procedure_init_raises_exception_on_script_file_not_found():
     with pytest.raises(FileNotFoundError):
         _ = Procedure(script_uri=script_uri)
 
-# TODO: change to test process manager
-def test_calling_process_manager_run_sets_run_args_on_procedure(procedure):
+
+def test_calling_process_manager_run_sets_run_args_on_procedure(manager, procedure):
     """
-    Verify that the arguments to run() are captured and stored on the
+    Verify that the arguments to ProcessManager run() are captured and stored on the
     procedure instance
     """
-    procedure.run(5, 6, 7, kw3='c', kw4='d')
+    procedure.id = 1
+    manager.procedures[1] = procedure
+    run_args = ProcedureInput(5, 6, 7, kw3='c', kw4='d')
+    manager.run(1, run_args=run_args)
     assert procedure.script_args['run'] == ProcedureInput(5, 6, 7, kw3='c', kw4='d')
 
 

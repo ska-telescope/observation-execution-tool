@@ -72,11 +72,7 @@ class Procedure(multiprocessing.Process):
         """
         Start Procedure execution.
 
-        This calls the run() method of the target script with the (optional)
-        arguments supplied to this function.
-
-        :param args: positional arguments for run()
-        :param kwargs: kw/val arguments for run()
+        This calls the main() method of the target script.
         """
         if self.state is not ProcedureState.READY:
             raise Exception(f'Invalidate procedure state for run: {self.state}')
@@ -142,7 +138,8 @@ class ProcessManager:
             raise ValueError(f'Process {process_id} not found') from exc
 
         self.running = procedure
-        procedure.run(*run_args.args, **run_args.kwargs)
+        procedure.script_args['run'] = run_args
+        procedure.run()
 
 
 class ProcedureFactory:
