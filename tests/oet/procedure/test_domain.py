@@ -14,7 +14,8 @@ def script_path(tmpdir):
     """
     script_path = tmpdir.join("script.py")
     script_path.write("def main(*args, **kwargs):\n\tpass")
-    return script_path
+    return f'file://{str(script_path)}'
+
 
 @pytest.fixture
 def script_with_queue_path(tmpdir):
@@ -24,7 +25,8 @@ def script_with_queue_path(tmpdir):
 def main(queue, procedure):
     queue.put(procedure.pid)
 """)
-    return path
+    return f'file://{str(path)}'
+
 
 @pytest.fixture
 def procedure(script_path):
