@@ -10,7 +10,7 @@ from oet.procedure.domain import Procedure, ProcedureState, ProcedureInput, Proc
 @pytest.fixture
 def script_path(tmpdir):
     """
-    Pytest fixture to return a path to an empty script file
+    Pytest fixture to return a path to a script file
     """
     script_path = tmpdir.join("script.py")
     script_path.write("def main(*args, **kwargs):\n\tpass")
@@ -18,6 +18,10 @@ def script_path(tmpdir):
 
 @pytest.fixture
 def script_with_queue_path(tmpdir):
+    """
+    Pytest fixture to return a path to a script with main() which takes
+    a queue and procedure as arguments and adds procedure process ID to queue.
+    """
     path = tmpdir.join("script_with_queue.py")
 
     path.write("""
@@ -149,18 +153,6 @@ def test_procedure_init_raises_exception_on_script_file_not_found():
         _ = Procedure(script_uri=script_uri)
 
 
-def test_calling_process_manager_run_sets_run_args_on_procedure(manager, procedure):
-    """
-    Verify that the arguments to ProcessManager run() are captured and stored on the
-    procedure instance
-    """
-    procedure.id = 1
-    manager.procedures[1] = procedure
-    run_args = ProcedureInput(5, 6, 7, kw3='c', kw4='d')
-    manager.run(1, run_args=run_args)
-    assert procedure.script_args['run'] == ProcedureInput(5, 6, 7, kw3='c', kw4='d')
-
-
 def test_no_procedures_running_on_a_new_process_manager(manager):
     """
     Verify that a new ProcessManager has no running procedure
@@ -204,6 +196,18 @@ def test_process_manager_create_captures_initialisation_arguments(manager, scrip
     assert created.script_args['init'] == expected
 
 
+def test_calling_process_manager_run_sets_run_args_on_procedure(manager, script_path):
+    """
+    Verify that the arguments to ProcessManager run() are captured and stored on the
+    procedure instance
+    """
+    pid = manager.create(script_path, init_args=ProcedureInput())
+    expected = ProcedureInput(5, 6, 7, kw3='c', kw4='d')
+    created = manager.procedures[pid]
+    manager.run(pid, run_args=expected)
+    assert created.script_args['run'] == expected
+
+# TODO: Fix this (should Procedure state be changed in ProcessManager and not in Procedure run()?)
 def test_process_manager_run_changes_state_of_procedure_to_running(manager, script_path):
     """
     Verify that procedure state changes when ProcessManager starts
@@ -213,6 +217,18 @@ def test_process_manager_run_changes_state_of_procedure_to_running(manager, scri
     assert manager.procedures[pid].state == ProcedureState.READY
     manager.run(pid, run_args=ProcedureInput())
     assert manager.procedures[pid].state == ProcedureState.RUNNING
+
+
+def test_process_manager_run_executes_user_script_in_child_process(manager, script_path):
+    """
+    Verify that a call to ProcessManager run() does not wait for procedure to finish
+    script execution before returning.
+    """
+    pid = manager.create(script_path, init_args=ProcedureInput())
+    procedure = manager.procedures[pid]
+    run_args = ProcedureInput()
+    manager.run(pid, run_args=run_args)
+    assert procedure.is_alive()
 
 
 def test_process_manager_run_sets_running_procedure(manager, script_path):

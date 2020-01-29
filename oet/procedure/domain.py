@@ -139,7 +139,7 @@ class ProcessManager:
 
         self.running = procedure
         procedure.script_args['run'] = run_args
-        procedure.run()
+        procedure.start()
 
 
 class ProcedureFactory:
