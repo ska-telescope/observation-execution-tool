@@ -56,17 +56,13 @@ class Procedure(multiprocessing.Process):
         init_args = ProcedureInput(*args, **kwargs)
 
         self.id = None  # pylint:disable=invalid-name
+
+        self.user_module = ModuleFactory.get_module(script_uri)
+
         self.script_uri: str = script_uri
-        self.user_module = self._load_file(script_uri)
         self.script_args: typing.Dict[str, ProcedureInput] = dict(init=init_args,
                                                                   run=ProcedureInput())
         self.state = ProcedureState.READY
-
-    def _load_file(self, script_uri: str) -> types.ModuleType:
-        loader = importlib.machinery.SourceFileLoader('user_module', script_uri)
-        user_module = types.ModuleType(loader.name)
-        loader.exec_module(user_module)
-        return user_module
 
     def run(self):
         """
@@ -160,3 +156,37 @@ class ProcedureFactory:
         :return: Script process object.
         """
         return Procedure(script_uri, *args, **kwargs)
+
+
+class ModuleFactory:
+    @staticmethod
+    def get_module(script_uri):
+        if script_uri.startswith('test://'):
+            loader = ModuleFactory._null_module_loader
+        elif script_uri.startswith('file://'):
+            loader = ModuleFactory._load_module_from_file
+        else:
+            raise ValueError('Script URI type not handled: {}'.format(script_uri))
+
+        return loader(script_uri)
+
+    @staticmethod
+    def _load_module_from_file(script_uri: str) -> types.ModuleType:
+        # remove 'file://' prefix
+        path = script_uri[7:]
+        loader = importlib.machinery.SourceFileLoader('user_module', path)
+        user_module = types.ModuleType(loader.name)
+        loader.exec_module(user_module)
+        return user_module
+
+    @staticmethod
+    def _null_module_loader(script_uri: str) -> types.ModuleType:
+        def main(*args, **kwargs):
+            pass
+
+        user_module = types.ModuleType('user_module')
+        user_module.main = main
+
+        return user_module
+
+
