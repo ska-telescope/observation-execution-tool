@@ -84,11 +84,11 @@ def test_state_of_a_new_procedure_is_ready(procedure):
     assert procedure.state == ProcedureState.READY
 
 
-def test_procedure_run_sets_state_to_running(procedure):
+def test_procedure_starrrrrrrt_sets_state_to_running(procedure):
     """
     Verify that procedure state changes to RUNNING when run() is called
     """
-    procedure.run()
+    procedure.start()
     assert procedure.state == ProcedureState.RUNNING
 
 
@@ -128,13 +128,13 @@ def test_runtime_arguments_are_passed_to_user_script(procedure):
     procedure.user_module.main.assert_called_with(5, 6, 7, kw3='c', kw4='d')
 
 
-def test_procedure_run_raises_exception_on_a_running_procedure(procedure):
+def test_procedure_start_raises_exception_on_a_running_procedure(procedure):
     """
     Verify that a RUNNING procedure can not be run again
     """
-    procedure.run()
+    procedure.start()
     with pytest.raises(Exception):
-        procedure.run()
+        procedure.start()
 
 
 def test_procedure_init_stores_initial_arguments(procedure):

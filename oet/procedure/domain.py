@@ -66,17 +66,27 @@ class Procedure(multiprocessing.Process):
 
     def run(self):
         """
-        Start Procedure execution.
+        Run user module script. Called from start() and executes in a child process
 
         This calls the main() method of the target script.
+        """
+        args = self.script_args['run'].args
+        kwargs = self.script_args['run'].kwargs
+        self.user_module.main(*args, **kwargs)
+
+    def start(self):
+        """
+        Start Procedure execution.
+
+        This calls the run() method in a new child process. Set Procedure state here
+        to record state within the parent process. Procedure state is then inherited by
+        the child process.
         """
         if self.state is not ProcedureState.READY:
             raise Exception(f'Invalidate procedure state for run: {self.state}')
 
         self.state = ProcedureState.RUNNING
-        args = self.script_args['run'].args
-        kwargs = self.script_args['run'].kwargs
-        self.user_module.main(*args, **kwargs)
+        super().start()
 
 
 class ProcessManager:
