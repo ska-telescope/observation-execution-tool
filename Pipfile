@@ -25,6 +25,7 @@ cdm-shared-library = { version=">=0.1.34", index="nexus"}
 flask = "*"
 requests = "*"
 fire = "*"
+tabulate = "*"
 
 [dev-packages]
 docutils = "*"
