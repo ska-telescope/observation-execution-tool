@@ -84,7 +84,7 @@ def test_state_of_a_new_procedure_is_ready(procedure):
     assert procedure.state == ProcedureState.READY
 
 
-def test_procedure_starrrrrrrt_sets_state_to_running(procedure):
+def test_procedure_start_sets_state_to_running(procedure):
     """
     Verify that procedure state changes to RUNNING when run() is called
     """
@@ -104,7 +104,7 @@ def test_procedure_run_executes_user_script(tmpdir, script_with_queue_path):
     assert queue.get() is None
 
 
-def test_procedure_run_executes_user_script_in_child_process(tmpdir, script_with_queue_path):
+def test_procedure_start_executes_user_script_in_child_process(tmpdir, script_with_queue_path):
     """
     Verify that user script executes in a separate (child) process when run() is called
     """
@@ -209,7 +209,6 @@ def test_calling_process_manager_run_sets_run_args_on_procedure(manager, script_
     manager.run(pid, run_args=expected)
     assert created.script_args['run'] == expected
 
-# TODO: Fix this (should Procedure state be changed in ProcessManager and not in Procedure run()?)
 def test_process_manager_run_changes_state_of_procedure_to_running(manager, script_path):
     """
     Verify that procedure state changes when ProcessManager starts
@@ -221,16 +220,15 @@ def test_process_manager_run_changes_state_of_procedure_to_running(manager, scri
     assert manager.procedures[pid].state == ProcedureState.RUNNING
 
 
-def test_process_manager_run_executes_user_script_in_child_process(manager, script_path):
+def test_process_manager_run_executes_procedure_start(manager):
     """
-    Verify that a call to ProcessManager run() does not wait for procedure to finish
-    script execution before returning.
+    Verify that a call to ProcessManager run() executes Procedure.start() instead of Procedure.run()
+    This confirms that Procedure will execute in a child process.
     """
-    pid = manager.create(script_path, init_args=ProcedureInput())
-    procedure = manager.procedures[pid]
-    run_args = ProcedureInput()
-    manager.run(pid, run_args=run_args)
-    assert procedure.is_alive()
+    procedure = MagicMock()
+    manager.procedures[1] = procedure
+    manager.run(1, run_args=ProcedureInput())
+    procedure.start.assert_called_once()
 
 
 def test_process_manager_run_sets_running_procedure(manager, script_path):
