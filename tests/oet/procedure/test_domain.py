@@ -6,6 +6,8 @@ import multiprocessing
 from unittest.mock import MagicMock
 
 from oet.procedure.domain import Procedure, ProcedureState, ProcedureInput, ProcessManager
+import time
+
 
 @pytest.fixture
 def script_path(tmpdir):
@@ -14,6 +16,19 @@ def script_path(tmpdir):
     """
     script_path = tmpdir.join("script.py")
     script_path.write("def main(*args, **kwargs):\n\tpass")
+    return f'file://{str(script_path)}'
+
+
+@pytest.fixture
+def fail_script(tmpdir):
+    """
+    Pytest fixture to return a path to a script file
+    """
+    script_path = tmpdir.join("fail.py")
+    script_path.write("""
+def main(*args, **kwargs):
+    raise Exception('oops!')
+""")
     return f'file://{str(script_path)}'
 
 
@@ -209,6 +224,7 @@ def test_calling_process_manager_run_sets_run_args_on_procedure(manager, script_
     manager.run(pid, run_args=expected)
     assert created.script_args['run'] == expected
 
+
 def test_process_manager_run_changes_state_of_procedure_to_running(manager, script_path):
     """
     Verify that procedure state changes when ProcessManager starts
@@ -231,46 +247,70 @@ def test_process_manager_run_executes_procedure_start(manager):
     procedure.start.assert_called_once()
 
 
-def test_process_manager_run_sets_running_procedure(manager, script_path):
+def test_process_manager_run_sets_running_procedure(manager, tmpdir):
     """
     Verify that ProcessManager sets the running procedure attribute
     appropriately when run() is called
     """
-    pid = manager.create(script_path, init_args=ProcedureInput())
+    script_path = tmpdir.join("sleep.py")
+    script_path.write("""
+import time
+def main(*args, **kwargs):
+    time.sleep(0.1)
+""")
+    script_uri = f'file://{str(script_path)}'
+
+    pid = manager.create(script_uri, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
     assert manager.running == manager.procedures[pid]
 
 
-def test_process_manager_sets_running_to_none_when_process_completes(manager):
+def test_process_manager_sets_running_to_none_when_process_completes(manager, script_path):
     """
     Verify that ProcessManager sets running procedure attribute to None
     when process completes
     """
-    pytest.fail()
+    pid = manager.create(script_path, init_args=ProcedureInput())
+    proc = manager.procedures[pid]
+    manager.run(pid, run_args=ProcedureInput())
+    proc.join()
+    assert manager.running is None
 
 
-def test_process_manager_removes_references_to_completed_procedures(manager):
+def test_process_manager_removes_references_to_completed_procedures(manager, script_path):
     """
     Verify that ProcessManager removes a completed procedure from
     the procedures list
     """
-    pytest.fail()
+    pid = manager.create(script_path, init_args=ProcedureInput())
+    proc = manager.procedures[pid]
+    manager.run(pid, run_args=ProcedureInput())
+    proc.join()
+    assert manager.running is None
 
 
-def test_process_manager_sets_running_to_none_on_script_failure(manager):
+def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_script):
     """
     Verify that ProcessManager sets running procedure attribute to None
     when script execution fails
     """
-    pytest.fail()
+    pid = manager.create(fail_script, init_args=ProcedureInput())
+    proc = manager.procedures[pid]
+    manager.run(pid, run_args=ProcedureInput())
+    proc.join()
+    assert pid not in manager.procedures
 
 
-def test_process_manager_removes_references_on_script_failure(manager):
+def test_process_manager_removes_references_on_script_failure(manager, fail_script):
     """
     Verify that ProcessManager removes a failed procedure from
     the procedures list
     """
-    pytest.fail()
+    pid = manager.create(fail_script, init_args=ProcedureInput())
+    proc = manager.procedures[pid]
+    manager.run(pid, run_args=ProcedureInput())
+    proc.join()
+    assert pid not in manager.procedures
 
 
 def test_process_manager_run_fails_on_invalid_pid(manager):

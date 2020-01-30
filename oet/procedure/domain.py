@@ -9,6 +9,7 @@ import typing
 import types
 import importlib.machinery
 import multiprocessing
+from multiprocessing import Pool
 
 
 class ProcedureState(enum.Enum):
@@ -101,6 +102,7 @@ class ProcessManager:
         self.running: typing.Optional[Procedure] = None
 
         self._procedure_factory = ProcedureFactory()
+        self._pool = Pool()
 
     def create(self, script_uri: str, *, init_args: ProcedureInput) -> int:
         """
@@ -146,6 +148,11 @@ class ProcessManager:
         self.running = procedure
         procedure.script_args['run'] = run_args
         procedure.start()
+
+        def callback(*_):
+            self.running = None
+            del self.procedures[process_id]
+        self._pool.apply_async(procedure.join, None, None, callback, callback)
 
 
 class ProcedureFactory:
