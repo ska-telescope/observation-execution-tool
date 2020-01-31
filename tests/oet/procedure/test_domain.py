@@ -273,9 +273,9 @@ def test_process_manager_sets_running_to_none_when_process_completes(manager, sc
     when process completes
     """
     pid = manager.create(script_path, init_args=ProcedureInput())
-    proc = manager.procedures[pid]
     manager.run(pid, run_args=ProcedureInput())
-    proc.join()
+    with manager.procedure_complete:
+        manager.procedure_complete.wait(1)
     assert manager.running is None
 
 
@@ -285,9 +285,9 @@ def test_process_manager_removes_references_to_completed_procedures(manager, scr
     the procedures list
     """
     pid = manager.create(script_path, init_args=ProcedureInput())
-    proc = manager.procedures[pid]
     manager.run(pid, run_args=ProcedureInput())
-    proc.join()
+    with manager.procedure_complete:
+        manager.procedure_complete.wait(1)
     assert manager.running is None
 
 
@@ -297,9 +297,9 @@ def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_sc
     when script execution fails
     """
     pid = manager.create(fail_script, init_args=ProcedureInput())
-    proc = manager.procedures[pid]
     manager.run(pid, run_args=ProcedureInput())
-    proc.join()
+    with manager.procedure_complete:
+        manager.procedure_complete.wait(1)
     assert pid not in manager.procedures
 
 
@@ -309,9 +309,9 @@ def test_process_manager_removes_references_on_script_failure(manager, fail_scri
     the procedures list
     """
     pid = manager.create(fail_script, init_args=ProcedureInput())
-    proc = manager.procedures[pid]
     manager.run(pid, run_args=ProcedureInput())
-    proc.join()
+    with manager.procedure_complete:
+        manager.procedure_complete.wait(1)
     assert pid not in manager.procedures
 
 

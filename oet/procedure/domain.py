@@ -9,7 +9,7 @@ import typing
 import types
 import importlib.machinery
 import multiprocessing
-from multiprocessing import Pool
+from multiprocessing.dummy import Pool
 
 
 class ProcedureState(enum.Enum):
@@ -100,6 +100,7 @@ class ProcessManager:
     def __init__(self):
         self.procedures: typing.Dict[int, Procedure] = {}
         self.running: typing.Optional[Procedure] = None
+        self.procedure_complete = multiprocessing.Condition()
 
         self._procedure_factory = ProcedureFactory()
         self._pool = Pool()
@@ -152,6 +153,9 @@ class ProcessManager:
         def callback(*_):
             self.running = None
             del self.procedures[process_id]
+            with self.procedure_complete:
+                self.procedure_complete.notify_all()
+
         self._pool.apply_async(procedure.join, None, None, callback, callback)
 
 
