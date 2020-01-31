@@ -254,15 +254,17 @@ def test_process_manager_run_sets_running_procedure(manager, tmpdir):
     """
     script_path = tmpdir.join("sleep.py")
     script_path.write("""
-import time
-def main(*args, **kwargs):
-    time.sleep(0.1)
+def main(shutdown_event, *args, **kwargs):
+    while not shutdown_event.is_set():
+        continue
 """)
     script_uri = f'file://{str(script_path)}'
 
+    shutdown_event = multiprocessing.Event()
     pid = manager.create(script_uri, init_args=ProcedureInput())
-    manager.run(pid, run_args=ProcedureInput())
+    manager.run(pid, run_args=ProcedureInput(shutdown_event))
     assert manager.running == manager.procedures[pid]
+    shutdown_event.set()
 
 
 def test_process_manager_sets_running_to_none_when_process_completes(manager, script_path):
