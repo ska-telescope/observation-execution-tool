@@ -80,7 +80,8 @@ which will generate the output: ::
   ----  ----------------------------------------------  --------------  -------
      1  http://172.16.13.18:5000/api/v1.0/procedures/1  file://test.py  READY
 
-Note the use of both positional and keyword/value arguments on the command line.
+Note the use of both positional and keyword/value arguments for the
+procedure on the command line.
 Now create a second procedure: ::
 
   tangodev: oet create file://test2.py 'goodbye'
