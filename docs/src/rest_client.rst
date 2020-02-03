@@ -115,7 +115,7 @@ giving: ::
 
 Now that we have our procedures loaded we can start one of them running.
 At this point we supply the index number of the procedure to run, and
-some runtime arguments to pass to it if we want. ::
+some runtime arguments to pass to it if required. ::
 
   tangodev: oet start 2 'bob' --simulate=false
  
