@@ -4,17 +4,17 @@
 REST Client
 ***********
 
-SKA observations will be controlled by ‘Procedures’. Each 'Procedure' comprises a 
-Python script and a set of arguments, some of which will be set when the script 
-is loaded and some at run-time. 
+SKA observations will be controlled by ‘Procedures’. Each 'Procedure' 
+comprises a Python script and a set of arguments, some of which will be 
+set when the script is loaded and some at run-time. 
 
-The management of 'Procedures' and the processes which execute them is handled by the 
-:doc:`rest_server`, which implements the methods described in the :doc:`rest_api`.
-This server lets the user:
+The management of 'Procedures' and the processes which execute them is 
+handled by the :doc:`rest_server`, which implements the methods 
+described in the :doc:`rest_api`. The :doc:`rest_server` lets the user:
 
-* Load a requested Procedure script(s) with initialization arguments and 
-  have it ready for execution.
-* When required, pass run-time arguments to the script and start a process 
+* Load requested Procedure scripts with initialization arguments and 
+  have them ready for execution.
+* When required, pass run-time arguments to a script and start a process 
   executing it.
 
 Aborting script execution is not required in this PI.
@@ -24,140 +24,113 @@ the user can communicate with the :doc:`rest_server` remotely. The
 methods available through the REST Client map closely to the 
 :doc:`rest_api` of the server and are described below:
 
-+--------------------+---------------+-----------------------+-------------------------------------+
-| REST Client Method | Parameters    | Default               | Description                         |
-+====================+===============+=======================+=====================================+
-| createAndExecute   | server_url    | "/api/v1/procedures"  | **Prepare and run a new procedure** |
-|                    +---------------+-----------------------+                                     |
-|                    | script_uri    | None                  | Load the requested script,          |
-|                    +---------------+-----------------------+ prepare it for execution            | 
-|                    | init_args     | None                  | and start it executing              |
-|                    +---------------+-----------------------+                                     |
-|                    | run_args      | None                  |                                     |
-|                    +---------------+-----------------------+                                     |
-|                    | silent        | True                  |                                     |
-+--------------------+---------------+-----------------------+-------------------------------------+
-| createProcess      | server_url    | "/api/v1/procedures"  | **Prepare a new procedure**         |
-|                    +---------------+-----------------------+                                     |
-|                    | script_uri    | None                  | Loads the requested script and      |
-|                    +---------------+-----------------------+ prepares it for execution           |
-|                    | init_args     | None                  |                                     |
-|                    +---------------+-----------------------+                                     |
-|                    | silent        | True                  |                                     |
-+--------------------+---------------+-----------------------+-------------------------------------+
-| list               | server url    | "/api/v1/procedures"  | **List procedures**                 |
-|                    +---------------+-----------------------+                                     |
-|                    | number        | None                  | Return the collection of all        |
-|                    +---------------+-----------------------+ prepared and running procedures,    |
-|                    | silent        | True                  | or the one specified by 'number'    |
-+--------------------+---------------+-----------------------+-------------------------------------+
-| startExecution     | server_url    | "/api/v1/procedures"  | **Start a Procedure Executing**     |
-|                    +---------------+-----------------------+                                     |
-|                    | number        | None                  | This starts a process executing     |
-|                    +---------------+-----------------------+ the specified procedure. If         |
-|                    | run_args      | None                  | none is specified then start        |
-|                    +---------------+-----------------------+ the last one loaded.                |
-|                    | silent        | True                  |                                     |
-+--------------------+---------------+-----------------------+-------------------------------------+
++--------------------+---------------+--------------------------------------------+-------------------------------------+
+| REST Client Method | Parameters    | Default                                    | Description                         |
++====================+===============+============================================+=====================================+
+| create             | server-url    | http://localhost:5000/api/v1.0/procedures  | **Prepare a new procedure**         |
+|                    +---------------+--------------------------------------------+                                     |
+|                    | script-uri    | None                                       | Load the requested script and       |
+|                    +---------------+--------------------------------------------+ prepare it for execution            |
+|                    | args          | None                                       |                                     |
+|                    +---------------+--------------------------------------------+                                     |
+|                    | kwargs        | None                                       |                                     |
++--------------------+---------------+--------------------------------------------+-------------------------------------+
+| list               | server-url    | http://localhost:5000/api/v1.0/procedures  | **List procedures**                 |
+|                    +---------------+--------------------------------------------+-------------------------------------+
+|                    | number        | None                                       | Return info on the collection of all|
+|                    |               |                                            | loaded and running procedures, or   |
+|                    |               |                                            | info on the one specified by number |
++--------------------+---------------+--------------------------------------------+-------------------------------------+
+| start              | server-url    | http://localhost:5000/api/v1.0/procedures  | **Start a Procedure Executing**     |
+|                    +---------------+--------------------------------------------+                                     |
+|                    | number        | None                                       | Start a process executing           |
+|                    +---------------+--------------------------------------------+ the procedure specified by number   |
+|                    | args          | None                                       | or, if none is specified start      |
+|                    +---------------+--------------------------------------------+ the last one loaded.                |
+|                    | kwargs        | None                                       |                                     |
+|                    |               |                                            | Only one procedure can be executing |
+|                    |               |                                            | at any time                         |
++--------------------+---------------+--------------------------------------------+-------------------------------------+
 
-The method parameters are described below:
+In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to 
+those specified by name e.g. --myparam=12. 
 
-+-------------+------------+----------------------------------------------------------------------+
-| Parameter   | Python Type| Description                                                          |
-+=============+============+======================================================================+
-| server_url  | str        | URI of the REST Server.                                              |
-+-------------+------------+----------------------------------------------------------------------+
-| script_uri  | str        | URI of the script to execute, e.g., file:///path/to/obsscript.py     |
-+-------------+------------+----------------------------------------------------------------------+
-| init_args   | str        | The string representation of a Python dict with the input arguments  |
-|             |            | to the "init" method of the script. The dict has two keys; "args"    |
-|             |            | and "kwargs", for positional arguments and keyword/value arguments   |
-|             |            | respectively. For example, below represents a call to                | 
-|             |            | init(1,2,3,subarray=1)::                                             |
-|             |            |                                                                      |
-|             |            |    {                                                                 |
-|             |            |      "args": [                                                       |
-|             |            |        1,                                                            |
-|             |            |        2,                                                            |
-|             |            |        3                                                             |
-|             |            |      ],                                                              |
-|             |            |      "kwargs": {                                                     |
-|             |            |        "subarray": "1"                                               |
-|             |            |      }                                                               |
-|             |            |    }                                                                 |
-|             |            |                                                                      |
-|             |            | It is IMPORTANT to note that 'init_args' is a string representation  |
-|             |            | of a dict and should be enclosed in single quotes ' on the command   |
-|             |            | line. Strings within the dict should be enclosed in double quotes ". |
-+-------------+------------+----------------------------------------------------------------------+
-| run_args    | dict       | String representation of a dict of input arguments to the "run"      | 
-|             |            | method of the script.                                                |
-|             |            | As for "init_args", the dict has two keys("args" and "kwargs") for   |
-|             |            | positional arguments and keyword/value arguments respectively.       | 
-+-------------+------------+----------------------------------------------------------------------+
-| number      | int        | The index of a particular procedure in the list maintained by the    |
-|             |            | REST Server                                                          |
-+-------------+------------+----------------------------------------------------------------------+
-| silent      | bool       | False if want to verbose reports on the interaction between the      |
-|             |            | REST client and REST server.                                         |
-+-------------+------------+----------------------------------------------------------------------+
+Help Information
+----------------
+General help information can be obtained by typing the command: ::
+
+  tangodev: oet
+
+Detailed help information for specific commands is also available e.g.::
+
+  tangodev: oet create --help
 
 Examples
-========
+--------
 
-Creating a procedure
---------------------
-The session below creates a new 'Procedure', which loads the script and calls
-the script’s init() function but does not commence execution.::
+This section runs through an example session in which we will
+load two new 'Procedures' and then run one of them.
+First we load the procedures: ::
 
-  tangodev@buster:~/ska/observation-execution-tool/oet/procedure/application$ python restclient.py createProcess --script_uri="file:///path/to/observing_script.py" --init_args='{"kwargs": {"subarray": 1, "sb_uri": "file:///path/to/scheduling_block_123.json"}}' 
+  tangodev: oet create file://test.py 'hello' --verbose=true
 
-The created procedure is returned and displayed as a dict::
+which will generate the output: ::
 
-  {'procedure': {'script_args': {'init': {'args': [], 'kwargs': {'sb_uri': 'file:///path/to/scheduling_block_123.json', 'subarray': 1}}, 'run': {'args': [], 'kwargs': {}}}, 'script_uri': 'file:///path/to/observing_script.py', 'state': 'READY', 'uri': 'http://localhost:5000/api/v1.0/procedures/1'}}
+    ID  URI                                             Script          State
+  ----  ----------------------------------------------  --------------  -------
+     1  http://172.16.13.18:5000/api/v1.0/procedures/1  file://test.py  READY
 
-which contains all the information that was input plus a 'uri' field with 
-the address of the procedure, in this case 'http://localhost:5000/api/v1.0/procedures/1'
-where the 1 on the end indicates this is the first procedure to be loaded by the 
-server. This number can be used as a shortcut address to this procedure in 
-other REST client methods.
+Note the use of both positional and keyword/value arguments on the command line.
+Now create a second procedure: ::
 
-The script is ready to execute but is not yet executing, as shown by its state
-being 'READY'.
+  tangodev: oet create file://test2.py 'goodbye'
+
+giving: ::
+
+    ID  URI                                          Script          State
+  ----  -------------------------------------------  --------------  -------
+     2  http://localhost:5000/api/v1.0/procedures/2  file://test2.py  READY
+
+We can check the state of the procedures currently loaded by: ::
+
+  tangodev: oet list
+
+giving: ::
+
+    ID  URI                                          Script           State
+  ----  -------------------------------------------  ---------------  -------
+     1  http://localhost:5000/api/v1.0/procedures/1  file://test.py   READY
+     2  http://localhost:5000/api/v1.0/procedures/2  file://test2.py  READY
+
+Alternatively, we could check the state of procedure 2 by typing: ::
+
+  tangodev: oet list 2
+
+giving: ::
+
+    ID  URI                                          Script           State
+  ----  -------------------------------------------  ---------------  -------
+     2  http://localhost:5000/api/v1.0/procedures/2  file://test2.py  READY
+
+Now that we have our procedures loaded we can start one of them running.
+At this point we supply the index number of the procedure to run, and
+some runtime arguments to pass to it if we want. ::
+
+  tangodev: oet start 2 'bob' --simulate=false
  
-Listing all procedures
-----------------------
-The session below lists all procedures known to the server, both running and 
-non-running. This example shows that two procedures have been created: procedure #1 
-that will run resource_allocation.py, and procedure #2 that will run 
-observing_script.py::
+giving: ::
 
-  tangodev@buster:~/ska/observation-execution-tool/oet/procedure/application$ python restclient.py list
+    ID  URI                                          Script           State
+  ----  -------------------------------------------  ---------------  -------
+     2  http://localhost:5000/api/v1.0/procedures/2  file://test2.py  RUNNING
 
-TBD: The output from restclient needs to be tidied up before inclusion here.
+A 'list' command will give the same information: ::
 
-Listing one procedure
----------------------
-A specific procedure can be listed by specifying its 'number'. The command below
-lists procedure #1::
+  tangodev: oet list
 
-  tangodev@buster:~/ska/observation-execution-tool/oet/procedure/application$ python restclient.py list --number=1
+gives: ::
 
-TBD: List of output.
-
-Starting procedure execution
-----------------------------
-A procedure can be told to start executing by the command 'startExecution'.
-The example below requests execution of procedure #2, with late binding kw
-argument scan_duration=14::
-
-  tangodev@buster:~/ska/observation-execution-tool/oet/procedure/application$ python restclient.py startExecution --number=2 --run_args='{"kwargs": {"scan_duration": 14.0}}'
-
-Load procedure and start immediately
-------------------------------------
-The effects of 'createProcess' and 'startExecution' are combined in the
-'createAndExecute' method.
-The example below requests execution of procedure #2, with late binding kw
-argument scan_duration=14, and will start it executing immediately::
-
-  tangodev@buster:~/ska/observation-execution-tool/oet/procedure/application$ python restclient.py createAndExecute --number=2 --run_args='{"kwargs": {"scan_duration": 14.0}}'
+    ID  URI                                          Script           State
+  ----  -------------------------------------------  ---------------  -------
+     1  http://localhost:5000/api/v1.0/procedures/1  file://test.py   READY
+     2  http://localhost:5000/api/v1.0/procedures/2  file://test2.py  RUNNING
