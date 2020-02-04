@@ -18,26 +18,26 @@ from oet.procedure.domain import ProcedureInput
 ENDPOINT = 'procedures'
 
 # Valid JSON struct for creating a new procedure
-CREATE_JSON = dict(script_uri="file:///test.py",
+CREATE_JSON = dict(script_uri="test:///test.py",
                    script_args={'init': dict(args=(1, 2, 3), kwargs=dict(kw1='a', kw2='b'))})
 
 # object expected to be returned when creating the Procedure defined above
 CREATE_SUMMARY = ProcedureSummary(
     id=1,
-    script_uri='file:///test.py',
+    script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b')},
     state=domain.ProcedureState.READY
 )
 
 # Valid JSON struct for starting a prepared procedure
-RUN_JSON = dict(script_uri="file:///test.py",
+RUN_JSON = dict(script_uri="test:///test.py",
                 script_args={'run': dict(args=(4, 5, 6), kwargs=dict(kw3='c', kw4='d'))},
                 state="RUNNING")
 
 # object expected to be returned when the procedure is executed
 RUN_SUMMARY = ProcedureSummary(
     id=1,
-    script_uri='file:///test.py',
+    script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b'),
                  'run': domain.ProcedureInput(4, 5, 6, kw3='c', kw4='d')},
     state=domain.ProcedureState.RUNNING

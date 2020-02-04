@@ -4,8 +4,13 @@ execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
 import dataclasses
-import enum
+import importlib.machinery
+import multiprocessing
 import typing
+from multiprocessing.dummy import Pool
+
+import enum
+import types
 
 
 class ProcedureState(enum.Enum):
@@ -42,36 +47,48 @@ class ProcedureInput:
         return '<ProcedureInput({})>'.format(', '.join((args, kwargs)))
 
 
-class Procedure:
+class Procedure(multiprocessing.Process):
     """
     A Procedure is the OET representation of a Python script, its arguments,
     and its execution state.
     """
 
     def __init__(self, script_uri: str, *args, **kwargs):
+        multiprocessing.Process.__init__(self)
         init_args = ProcedureInput(*args, **kwargs)
 
         self.id = None  # pylint:disable=invalid-name
+
+        self.user_module = ModuleFactory.get_module(script_uri)
+
         self.script_uri: str = script_uri
         self.script_args: typing.Dict[str, ProcedureInput] = dict(init=init_args,
                                                                   run=ProcedureInput())
         self.state = ProcedureState.READY
 
-    def run(self, *args, **kwargs):
+    def run(self):
+        """
+        Run user module script. Called from start() and executes in a child process
+
+        This calls the main() method of the target script.
+        """
+        args = self.script_args['run'].args
+        kwargs = self.script_args['run'].kwargs
+        self.user_module.main(*args, **kwargs)
+
+    def start(self):
         """
         Start Procedure execution.
 
-        This calls the run() method of the target script with the (optional)
-        arguments supplied to this function.
-
-        :param args: positional arguments for run()
-        :param kwargs: kw/val arguments for run()
+        This calls the run() method in a new child process. Set Procedure state here
+        to record state within the parent process. Procedure state is then inherited by
+        the child process.
         """
         if self.state is not ProcedureState.READY:
             raise Exception(f'Invalidate procedure state for run: {self.state}')
 
         self.state = ProcedureState.RUNNING
-        self.script_args['run'] = ProcedureInput(*args, **kwargs)
+        super().start()
 
 
 class ProcessManager:
@@ -84,8 +101,10 @@ class ProcessManager:
     def __init__(self):
         self.procedures: typing.Dict[int, Procedure] = {}
         self.running: typing.Optional[Procedure] = None
+        self.procedure_complete = multiprocessing.Condition()
 
         self._procedure_factory = ProcedureFactory()
+        self._pool = Pool()
 
     def create(self, script_uri: str, *, init_args: ProcedureInput) -> int:
         """
@@ -129,7 +148,25 @@ class ProcessManager:
             raise ValueError(f'Process {process_id} not found') from exc
 
         self.running = procedure
-        procedure.run(*run_args.args, **run_args.kwargs)
+        procedure.script_args['run'] = run_args
+        procedure.start()
+
+        def callback(*_):
+            self.running = None
+            del self.procedures[process_id]
+            with self.procedure_complete:
+                self.procedure_complete.notify_all()
+
+        self._pool.apply_async(_wait_for_process, (procedure,), {}, callback, callback)
+
+
+def _wait_for_process(process, **_):
+    """
+    Block until the given process completes.
+    :param process: process to wait for
+    :param _: unused kwargs
+    """
+    process.join()
 
 
 class ProcedureFactory:
@@ -150,3 +187,60 @@ class ProcedureFactory:
         :return: Script process object.
         """
         return Procedure(script_uri, *args, **kwargs)
+
+
+class ModuleFactory:
+    """
+    Factory class used to return Python Module instances from a variety of
+    storage back-ends.
+    """
+
+    @staticmethod
+    def get_module(script_uri):
+        """
+        Load Python code from storage, returning an executable Python module.
+
+        :param script_uri: URI of script to load
+        :return: Python module
+        """
+        if script_uri.startswith('test://'):
+            loader = ModuleFactory._null_module_loader
+        elif script_uri.startswith('file://'):
+            loader = ModuleFactory._load_module_from_file
+        else:
+            raise ValueError('Script URI type not handled: {}'.format(script_uri))
+
+        return loader(script_uri)
+
+    @staticmethod
+    def _load_module_from_file(script_uri: str) -> types.ModuleType:
+        """
+        Load Python module from file storage. This module handles file:///
+        URIs.
+
+        :param script_uri: URI of script to load.
+        :return: Python module
+        """
+        # remove 'file://' prefix
+        path = script_uri[7:]
+        loader = importlib.machinery.SourceFileLoader('user_module', path)
+        user_module = types.ModuleType(loader.name)
+        loader.exec_module(user_module)
+        return user_module
+
+    @staticmethod
+    def _null_module_loader(_: str) -> types.ModuleType:
+        """
+        Create and return an empty Python module. Handles test:/// URIs.
+
+        :param _: URI. Will be ignored.
+        :return:
+        """
+
+        def main(*_, **__):
+            pass
+
+        user_module = types.ModuleType('user_module')
+        user_module.main = main
+
+        return user_module

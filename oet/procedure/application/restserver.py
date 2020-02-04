@@ -168,7 +168,7 @@ def bad_request(cause):
 
 
 @API.errorhandler(500)
-def resource_not_found(cause):
+def internal_server_error(cause):
     """
     Custom 404 Not Found handler for Procedure API.
 
@@ -176,6 +176,7 @@ def resource_not_found(cause):
     :return:
     """
     return flask.jsonify(error=str(cause)), 500
+
 
 def create_app(config_filename):
     """
