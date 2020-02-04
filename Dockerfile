@@ -6,4 +6,6 @@ FROM nexus.engageska-portugal.pt/ska-docker/ska-python-runtime:latest AS runtime
 RUN mkdir -p ~/.ipython/profile_ska
 RUN cp -r /app/profile_ska ~/.ipython/
 
+RUN pip install .
+
 CMD ["/venv/bin/itango3","--profile=ska"]

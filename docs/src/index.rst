@@ -13,6 +13,8 @@
   :caption: Home
   :hidden:
 
+  rest_server
+  rest_client
   rest_api
 
 .. COMMUNITY SECTION ==================================================
@@ -33,9 +35,24 @@ observation-execution-tool
 Project description
 ===================
 
-This project contains the code for the Observation Execution Tool, the
+This project contains the code for the Observation Execution Tool (OET), the
 application which provides high-level scripting facilities and a high-level
 scripting UI for the SKA.
+
+Overview
+========
+The OET is made up of two components that work together to provide the required
+functionality:
+
+- The OET :doc:`rest_server` [1]_ maintains a list of the scripts that have been
+  loaded and their current state. The server implements the interface specified
+  by the OET :doc:`rest_api`.
+- The OET :doc:`rest_client` provides a Command Line Interface (CLI) to the 
+  OET :doc:`rest_server`. It does this by translating and communicating HTTP 
+  messages to and from the server.
+
+.. [1] Representational State Transfer (REST) is an architectural style that
+       guarantees interopability between computer systems on the internet.
 
 Quickstart
 ==========
@@ -130,4 +147,6 @@ inclusion in the CI server's downloadable artefacts.
 REST server
 -----------
 ``make rest`` starts the OET REST server. Details of the REST API can be
-found in :doc:`rest_api`
+found in :doc:`rest_api`. Instructions on how to use the REST client
+can be found here: :doc:`rest_client`.
+

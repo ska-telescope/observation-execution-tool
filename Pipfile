@@ -24,6 +24,8 @@ itango = "*"
 cdm-shared-library = { version=">=0.1.34", index="nexus"}
 flask = "*"
 requests = "*"
+fire = "*"
+tabulate = "*"
 
 [dev-packages]
 docutils = "*"
@@ -36,6 +38,7 @@ pytest-pylint = "*"
 pytest-json-report = "*"
 python-dotenv = "*"
 ptvsd = "*"
+requests-mock = "*"
 Sphinx = "*"
 sphinx_rtd_theme = "*"
 sphinx-autobuild = "*"
