@@ -1,6 +1,11 @@
+"""
+Unit tests for the REST client module.
+"""
+from http import HTTPStatus
+
 import requests_mock
 
-from oet.procedure.application.restclient import RestAdapter, ProcedureSummary
+from oet.procedure.application.restclient import ProcedureSummary, RestAdapter
 
 PROCEDURES_URI = 'http://localhost:5000/api/v1.0/procedures'
 
@@ -130,7 +135,8 @@ def test_create_procedure_sends_expected_script_uri():
 
     # create a mock requests object
     with requests_mock.Mocker() as mock_server:
-        mock_server.post(PROCEDURES_URI, json=CREATE_PROCESS_RESPONSE)
+        mock_server.post(PROCEDURES_URI, json=CREATE_PROCESS_RESPONSE,
+                         status_code=HTTPStatus.CREATED)
 
         adapter = RestAdapter(PROCEDURES_URI)
         adapter.create(script_uri)
@@ -150,7 +156,8 @@ def test_create_process_sends_empty_init_args_when_left_undefined_by_user():
 
     # create a mock requests object
     with requests_mock.Mocker() as mock_server:
-        mock_server.post(PROCEDURES_URI, json=CREATE_PROCESS_RESPONSE)
+        mock_server.post(PROCEDURES_URI, json=CREATE_PROCESS_RESPONSE,
+                         status_code=HTTPStatus.CREATED)
 
         # use the client to submit a CREATE request
         client = RestAdapter(PROCEDURES_URI)
@@ -177,7 +184,8 @@ def test_create_process_sends_script_args_when_defined_by_user():
 
     # create a mock requests object
     with requests_mock.Mocker() as mock_server:
-        mock_server.post(PROCEDURES_URI, json=CREATE_PROCESS_RESPONSE)
+        mock_server.post(PROCEDURES_URI, json=CREATE_PROCESS_RESPONSE,
+                         status_code=HTTPStatus.CREATED)
 
         # use the client to submit a CREATE request
         client = RestAdapter(PROCEDURES_URI)

@@ -1,12 +1,12 @@
 """
 Unit tests for the oet.procedure.domain module.
 """
-import pytest
 import multiprocessing
 from unittest.mock import MagicMock
 
-from oet.procedure.domain import Procedure, ProcedureState, ProcedureInput, ProcessManager
-import time
+import pytest
+
+from oet.procedure.domain import Procedure, ProcedureInput, ProcedureState, ProcessManager
 
 
 @pytest.fixture
@@ -107,7 +107,7 @@ def test_procedure_start_sets_state_to_running(procedure):
     assert procedure.state == ProcedureState.RUNNING
 
 
-def test_procedure_run_executes_user_script(tmpdir, script_with_queue_path):
+def test_procedure_run_executes_user_script(script_with_queue_path):
     """
     Verify that user script executes when run() is called
     """
@@ -119,7 +119,7 @@ def test_procedure_run_executes_user_script(tmpdir, script_with_queue_path):
     assert queue.get() is None
 
 
-def test_procedure_start_executes_user_script_in_child_process(tmpdir, script_with_queue_path):
+def test_procedure_start_executes_user_script_in_child_process(script_with_queue_path):
     """
     Verify that user script executes in a separate (child) process when run() is called
     """

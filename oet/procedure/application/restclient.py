@@ -1,6 +1,16 @@
+"""
+Client for the OET REST Service.
+
+This client can be used to interact with a remote OET script executor. It can
+be used to request 'procedure creation', which loads a Python script and
+prepares it for execution; to 'start a procedure', which starts execution of a
+script prepared in a prior 'create procedure' call, and to list all prepared
+and running procedures held in the remote server.
+"""
 import dataclasses
 import logging
-from typing import List, Optional, Dict
+from http import HTTPStatus
+from typing import Dict, List, Optional
 
 import fire
 import requests
@@ -11,6 +21,11 @@ LOG = logging.getLogger(__name__)
 
 @dataclasses.dataclass
 class ProcedureSummary:
+    """
+    Struct to hold Procedure metadata. No business logic is held in this
+    class.
+    """
+
     id: int
     uri: str
     script_uri: str
@@ -18,14 +33,20 @@ class ProcedureSummary:
     state: str
 
     @staticmethod
-    def from_json(d: dict):
-        uid = d['uri'].split('/')[-1]
+    def from_json(json: dict):
+        """
+        Convert a Procedure JSON payload to a ProcedureSummary object
+
+        :param json: payload to convert
+        :return: equivalent ProcedureSummary instance
+        """
+        uid = json['uri'].split('/')[-1]
         return ProcedureSummary(
             id=uid,
-            uri=d['uri'],
-            script_uri=d['script_uri'],
-            script_args=d['script_args'],
-            state=d['state']
+            uri=json['uri'],
+            script_uri=json['script_uri'],
+            script_args=json['script_args'],
+            state=json['state']
         )
 
 
@@ -52,7 +73,8 @@ class RestClientUI:
         """
         self._client = RestAdapter(server_url)
 
-    def _tabulate(self, procedures: List[ProcedureSummary]) -> str:
+    @staticmethod
+    def _tabulate(procedures: List[ProcedureSummary]) -> str:
         table_rows = [(p.id, p.uri, p.script_uri, p.state) for p in procedures]
         headers = ['ID', 'URI', 'Script', 'State']
         return tabulate.tabulate(table_rows, headers)
@@ -89,7 +111,7 @@ class RestClientUI:
         procedure = self._client.create(script_uri, init_args=init_args)
         return self._tabulate([procedure])
 
-    def start(self, number=None, *args, **kwargs) -> str:
+    def start(self, *args, number=None, **kwargs) -> str:
         """
         Start a specified Procedure.
 
@@ -119,7 +141,7 @@ class RestClientUI:
         return self._tabulate([procedure])
 
 
-class RestAdapter(object):
+class RestAdapter:
     """A simple CLI REST client using python-fire for the option parsing"""
 
     def __init__(self, server_url):
@@ -145,11 +167,11 @@ class RestAdapter(object):
             response = requests.get(url)
             procedure_json = response.json()['procedure']
             return [ProcedureSummary.from_json(procedure_json)]
-        else:
-            url = self.server_url
-            response = requests.get(url)
-            procedures_json = response.json()['procedures']
-            return [ProcedureSummary.from_json(d) for d in procedures_json]
+
+        url = self.server_url
+        response = requests.get(url)
+        procedures_json = response.json()['procedures']
+        return [ProcedureSummary.from_json(d) for d in procedures_json]
 
     def create(self, script_uri: str, init_args: Dict = None) -> ProcedureSummary:
         """
@@ -175,12 +197,13 @@ class RestAdapter(object):
                 'init': init_args,
             }
         }
-        LOG.debug('Create payload: {}'.format(request_json))
+        LOG.debug('Create payload: %s', request_json)
 
         response = requests.post(self.server_url, json=request_json)
-        procedure_json = response.json()['procedure']
-
-        return ProcedureSummary.from_json(procedure_json)
+        response_json = response.json()
+        if response.status_code == HTTPStatus.CREATED:
+            return ProcedureSummary.from_json(response_json['procedure'])
+        raise Exception(response_json['error'])
 
     def start(self, number, run_args=None) -> ProcedureSummary:
         """
@@ -208,21 +231,17 @@ class RestAdapter(object):
             },
             'state': 'RUNNING'
         }
-        LOG.debug('Start payload: {}'.format(request_json))
+        LOG.debug('Start payload: %s', request_json)
 
         response = requests.put(url, json=request_json)
         response_json = response.json()
-        if response.status_code == 200:
+        if response.status_code == HTTPStatus.OK:
             return ProcedureSummary.from_json(response_json['procedure'])
-        else:
-            raise Exception(response_json['error'])
+        raise Exception(response_json['error'])
 
 
 def main():
+    """
+    Fire entry function to provide a CLI interface for REST client.
+    """
     fire.Fire(RestClientUI)
-
-
-if __name__ == '__main__':
-    adapter = RestAdapter(server_url='http://localhost:5000/api/v1.0/procedures')
-    result = adapter.list(3)
-    print(result)

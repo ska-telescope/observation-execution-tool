@@ -4,12 +4,13 @@ execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
 import dataclasses
-import enum
-import typing
-import types
 import importlib.machinery
 import multiprocessing
+import typing
 from multiprocessing.dummy import Pool
+
+import enum
+import types
 
 
 class ProcedureState(enum.Enum):
@@ -156,7 +157,16 @@ class ProcessManager:
             with self.procedure_complete:
                 self.procedure_complete.notify_all()
 
-        self._pool.apply_async(procedure.join, None, None, callback, callback)
+        self._pool.apply_async(_wait_for_process, (procedure,), {}, callback, callback)
+
+
+def _wait_for_process(process, **_):
+    """
+    Block until the given process completes.
+    :param process: process to wait for
+    :param _: unused kwargs
+    """
+    process.join()
 
 
 class ProcedureFactory:
@@ -180,8 +190,19 @@ class ProcedureFactory:
 
 
 class ModuleFactory:
+    """
+    Factory class used to return Python Module instances from a variety of
+    storage back-ends.
+    """
+
     @staticmethod
     def get_module(script_uri):
+        """
+        Load Python code from storage, returning an executable Python module.
+
+        :param script_uri: URI of script to load
+        :return: Python module
+        """
         if script_uri.startswith('test://'):
             loader = ModuleFactory._null_module_loader
         elif script_uri.startswith('file://'):
@@ -193,6 +214,13 @@ class ModuleFactory:
 
     @staticmethod
     def _load_module_from_file(script_uri: str) -> types.ModuleType:
+        """
+        Load Python module from file storage. This module handles file:///
+        URIs.
+
+        :param script_uri: URI of script to load.
+        :return: Python module
+        """
         # remove 'file://' prefix
         path = script_uri[7:]
         loader = importlib.machinery.SourceFileLoader('user_module', path)
@@ -201,13 +229,18 @@ class ModuleFactory:
         return user_module
 
     @staticmethod
-    def _null_module_loader(script_uri: str) -> types.ModuleType:
-        def main(*args, **kwargs):
+    def _null_module_loader(_: str) -> types.ModuleType:
+        """
+        Create and return an empty Python module. Handles test:/// URIs.
+
+        :param _: URI. Will be ignored.
+        :return:
+        """
+
+        def main(*_, **__):
             pass
 
         user_module = types.ModuleType('user_module')
         user_module.main = main
 
         return user_module
-
-
