@@ -116,7 +116,10 @@ def update_procedure(procedure_id: int):
     new_state = domain.ProcedureState[flask.request.json.get('state', summary.state.name)]
     if old_state is domain.ProcedureState.READY and new_state is domain.ProcedureState.RUNNING:
         cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
-        summary = SERVICE.start(cmd)
+        try:
+            summary = SERVICE.start(cmd)
+        except Exception as exc:
+            flask.abort(500, exc)
 
     return flask.jsonify({'procedure': make_public_summary(summary)})
 
@@ -163,6 +166,16 @@ def bad_request(cause):
     """
     return flask.jsonify(error=str(cause)), 400
 
+
+@API.errorhandler(500)
+def resource_not_found(cause):
+    """
+    Custom 404 Not Found handler for Procedure API.
+
+    :param cause: root exception for failure (e.g., KeyError)
+    :return:
+    """
+    return flask.jsonify(error=str(cause)), 500
 
 def create_app(config_filename):
     """
