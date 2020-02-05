@@ -358,7 +358,7 @@ def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfigu
     execute_configure_command(command)
 
 
-def configure_from_file(subarray: domain.SubArray, request_path):
+def configure_from_file(subarray: domain.SubArray, request_path, with_processing):
     """
     Load a CDM ConfigureRequest from disk and use it to perform sub-array
     configuration.
@@ -366,18 +366,30 @@ def configure_from_file(subarray: domain.SubArray, request_path):
     This function blocks until the sub-array is configured and has an obsState
     of READY.
 
+    JSON processing is disabled when with_processing is set to False.
+
     :param subarray: the sub-array to configure
     :param request_path: path to CDM file
+    :param with_processing: False if JSON should be passed through to
+       to SubArrayNode directly without any validation or processing
     :return:
     """
-    request = schemas.CODEC.load_from_file(cdm_configure.ConfigureRequest, request_path)
+    if with_processing:
+        request = schemas.CODEC.load_from_file(cdm_configure.ConfigureRequest, request_path)
 
-    # Update scan ID with current scan ID, leaving the rest of the configuration
-    # unchanged
-    request = request.copy_with_scan_id(SCAN_ID_GENERATOR.value)
+        # Update scan ID with current scan ID, leaving the rest of the configuration
+        # unchanged
+        request = request.copy_with_scan_id(SCAN_ID_GENERATOR.value)
 
-    subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
-    request_json = schemas.CODEC.dumps(request)
+        subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+        request_json = schemas.CODEC.dumps(request)
+
+    else:
+        LOGGER.warning('Loading JSON from {request_path}')
+        # load from file. No processing
+        with open(request_path, 'r') as json_file:
+            request_json = ''.join(json_file.readlines())
+
     command = Command(subarray_node_fqdn, 'Configure', request_json)
 
     execute_configure_command(command)

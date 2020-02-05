@@ -391,15 +391,22 @@ class SubArray:
         """
         observingtasks.configure(self, subarray_config)
 
-    def configure_from_file(self, cdm_file: str):
+    def configure_from_file(self, cdm_file: str, with_processing=True):
         """
         Configure a sub-array using an exported Configuration Data Model
         located on disk.
 
+        In normal operations the OET validates and processes the JSON
+        before sending it downstream. JSON processing can be bypassed by
+        setting the with_processing argument to False.
+
+
         :param cdm_file: path of the exported CDM
+        :param with_processing: False if JSON should be passed through
+           to SubArrayNode directly without any validation or processing
         :return:
         """
-        observingtasks.configure_from_file(self, cdm_file)
+        observingtasks.configure_from_file(self, cdm_file, with_processing=with_processing)
 
     def scan(self, scan_duration: float):
         """

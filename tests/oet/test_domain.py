@@ -523,12 +523,15 @@ def test_configure_calls_correct_observing_task():
 def test_configure_from_file_calls_correct_observing_task():
     """
     confirm that the 'configure a subarray from exported CDM' command calls
-    the correct observing task exactly once.
+    the correct observing task exactly once, setting with_processing to True
+    by default so that scan IDs etc. are made consistent across the
+    configuration.
     """
     subarray = SubArray(1)
     with mock.patch('oet.domain.observingtasks') as mock_module:
         subarray.configure_from_file('foo')
-    mock_module.configure_from_file.assert_called_once_with(subarray, 'foo')
+    mock_module.configure_from_file.assert_called_once_with(subarray, 'foo',
+                                                            with_processing=True)
 
 
 def test_scan_calls_correct_observing_task():
