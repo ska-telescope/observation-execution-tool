@@ -31,6 +31,7 @@ stages:
   - pages
   - push_OET_image
   - push_SSH_image
+  - push_jupyter_image
 
 build:
   tags:
@@ -80,3 +81,11 @@ push_SSH_image:
   script:
     - make -C ssh build
     - make -C ssh push
+
+push_jupyter_image:
+  tags:
+    - docker-executor
+  stage: push_jupyter_image
+  script:
+    - make -C extras/jupyter build
+    - make -C extras/jupyter push

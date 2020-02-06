@@ -17,7 +17,8 @@ docs/_build
 docs/apidocs
 
 venv
-ssh/.release
+extras/ssh/.release
+extras/jupyter/.release
 setup.py-e
 
 # ide

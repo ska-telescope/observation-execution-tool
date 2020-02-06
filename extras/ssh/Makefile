@@ -19,7 +19,7 @@ PROJECT = oet-ssh
 # ('make interactive', 'make test', etc.) are defined in this file.
 #
 
-include ../.make/Makefile.mk
+include ../../.make/Makefile.mk
 
 #
 # Defines a default make target so that help is printed if make is called
@@ -28,10 +28,10 @@ include ../.make/Makefile.mk
 .DEFAULT_GOAL := help
 
 pre-build:
-	@cp ../.release .
+	@cp ../../.release .
 
 post-push:
-	@. $(RELEASE_SUPPORT) ; differsFromRelease || (cd ..; differsFromRelease) || docker push $(IMAGE):$(VERSION) ;
+	@. $(RELEASE_SUPPORT) ; differsFromRelease || (cd ../..; differsFromRelease) || docker push $(IMAGE):$(VERSION) ;
 
 help:  ## show this help.
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
