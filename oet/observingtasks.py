@@ -380,8 +380,6 @@ def configure_from_file(subarray: domain.SubArray, request_path, with_processing
         # Update scan ID with current scan ID, leaving the rest of the configuration
         # unchanged
         request = request.copy_with_scan_id(SCAN_ID_GENERATOR.value)
-
-        subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
         request_json = schemas.CODEC.dumps(request)
 
     else:
@@ -390,6 +388,7 @@ def configure_from_file(subarray: domain.SubArray, request_path, with_processing
         with open(request_path, 'r') as json_file:
             request_json = ''.join(json_file.readlines())
 
+    subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     command = Command(subarray_node_fqdn, 'Configure', request_json)
 
     execute_configure_command(command)
