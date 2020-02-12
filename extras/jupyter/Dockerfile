@@ -12,6 +12,7 @@ RUN usermod -s /bin/bash tango
 USER tango
 RUN /venv/bin/pip3 install jupyter
 RUN /venv/bin/jupyter notebook --generate-config
+RUN /venv/bin/python3 -m itango.install
 
 # disable authentication
 RUN echo "c.NotebookApp.token = ''" >> /home/tango/.jupyter/jupyter_notebook_config.py
