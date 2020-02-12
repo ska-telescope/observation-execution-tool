@@ -13,6 +13,7 @@ from http import HTTPStatus
 from typing import Dict, List, Optional
 
 import fire
+import os
 import requests
 import tabulate
 
@@ -62,7 +63,7 @@ class RestClientUI:
     running at any one time.
     """
 
-    def __init__(self, server_url="http://localhost:5000/api/v1.0/procedures"):
+    def __init__(self, server_url=None):
         """
         Create a new client for the OET script execution service.
 
@@ -71,6 +72,9 @@ class RestClientUI:
 
         :param server_url: URI of the target REST server
         """
+        if server_url is None:
+            server_url = os.getenv('OET_REST_URI',
+                                   'http://rest-oet-release-name:5000/api/v1.0/procedures')
         self._client = RestAdapter(server_url)
 
     @staticmethod
