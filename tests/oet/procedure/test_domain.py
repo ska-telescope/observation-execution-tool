@@ -48,6 +48,23 @@ def main(queue, procedure):
 
 
 @pytest.fixture
+def script_that_increments_and_returns_scan_id(tmpdir):
+    """
+    Pytest fixture to return a path to a script with main() that increments
+    the scan ID and adds the value to a queue.
+    """
+    path = tmpdir.join("script_for_scan_id.py")
+
+    path.write("""
+from oet.command import SCAN_ID_GENERATOR
+
+def main(queue):
+    queue.put(SCAN_ID_GENERATOR.next())
+""")
+    return f'file://{str(path)}'
+
+
+@pytest.fixture
 def procedure(script_path):
     """
     Pytest fixture to return a prepared Procedure
@@ -333,3 +350,28 @@ def test_process_manager_run_fails_on_process_that_is_already_running(manager, s
     manager.run(pid, run_args=ProcedureInput())
     with pytest.raises(ValueError):
         manager.run(pid, run_args=ProcedureInput())
+
+
+def test_scan_id_persists_between_executions(script_that_increments_and_returns_scan_id):
+    """
+    The scan ID should be shared and persisted between process executions.
+    """
+    manager = ProcessManager()
+    queue = multiprocessing.Queue()
+    run_args = ProcedureInput(queue)
+
+    pid = manager.create(script_uri=script_that_increments_and_returns_scan_id,
+                         init_args=ProcedureInput())
+    manager.run(pid, run_args=run_args)
+    with manager.procedure_complete:
+        manager.procedure_complete.wait(1)
+    scan_id = queue.get(timeout=1)
+
+    pid = manager.create(script_uri=script_that_increments_and_returns_scan_id,
+                         init_args=ProcedureInput())
+    manager.run(pid, run_args=run_args)
+    with manager.procedure_complete:
+        manager.procedure_complete.wait(1)
+    next_scan_id = queue.get(timeout=1)
+
+    assert next_scan_id == scan_id + 1

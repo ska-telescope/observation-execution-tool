@@ -8,9 +8,12 @@ import importlib.machinery
 import multiprocessing
 import typing
 from multiprocessing.dummy import Pool
+from typing import Optional
 
 import enum
 import types
+
+from oet.command import SCAN_ID_GENERATOR
 
 
 class ProcedureState(enum.Enum):
@@ -53,7 +56,8 @@ class Procedure(multiprocessing.Process):
     and its execution state.
     """
 
-    def __init__(self, script_uri: str, *args, **kwargs):
+    def __init__(self, script_uri: str, *args,
+                 scan_counter: Optional[multiprocessing.Value] = None, **kwargs):
         multiprocessing.Process.__init__(self)
         init_args = ProcedureInput(*args, **kwargs)
 
@@ -61,17 +65,23 @@ class Procedure(multiprocessing.Process):
 
         self.user_module = ModuleFactory.get_module(script_uri)
 
-        self.script_uri: str = script_uri
+        self.script_uri = script_uri
         self.script_args: typing.Dict[str, ProcedureInput] = dict(init=init_args,
                                                                   run=ProcedureInput())
         self.state = ProcedureState.READY
 
+        self._scan_counter = scan_counter
+
     def run(self):
         """
-        Run user module script. Called from start() and executes in a child process
+        Run user module script. Called from start() and executed in a child process
 
         This calls the main() method of the target script.
         """
+        # set shared scan ID backing store, if provided
+        if self._scan_counter:
+            SCAN_ID_GENERATOR.backing = self._scan_counter
+
         args = self.script_args['run'].args
         kwargs = self.script_args['run'].kwargs
         self.user_module.main(*args, **kwargs)
@@ -105,6 +115,7 @@ class ProcessManager:
 
         self._procedure_factory = ProcedureFactory()
         self._pool = Pool()
+        self._scan_id = multiprocessing.Value('i', 1)
 
     def create(self, script_uri: str, *, init_args: ProcedureInput) -> int:
         """
@@ -120,7 +131,8 @@ class ProcessManager:
         else:
             pid = max(self.procedures.keys()) + 1
 
-        procedure = self._procedure_factory.create(script_uri, *init_args.args, **init_args.kwargs)
+        procedure = self._procedure_factory.create(script_uri, *init_args.args,
+                                                   scan_counter=self._scan_id, **init_args.kwargs)
         procedure.id = pid
 
         self.procedures[pid] = procedure

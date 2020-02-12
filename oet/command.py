@@ -8,8 +8,8 @@ asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
 import logging
+import multiprocessing
 
-import itertools
 import tango
 
 LOGGER = logging.getLogger(__name__)
@@ -150,8 +150,12 @@ class ScanIdGenerator:  # pylint: disable=too-few-public-methods
     """
 
     def __init__(self, start=1):
-        self._counter = itertools.count(start=start, step=1)
-        self.value = start
+        self.backing = multiprocessing.Value('i', start)
+
+    @property
+    def value(self):
+        with self.backing.get_lock():
+            return self.backing.value
 
     def next(self):
         """
@@ -159,8 +163,10 @@ class ScanIdGenerator:  # pylint: disable=too-few-public-methods
 
         :return: integer scan ID
         """
-        self.value = next(self._counter)
-        return self.value
+        previous_scan_id = self.value
+        with self.backing.get_lock():
+            self.backing.value += 1
+            return previous_scan_id
 
 
 # hold scan ID generator at the module level
