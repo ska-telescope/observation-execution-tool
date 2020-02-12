@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_namespace_packages
+from setuptools import find_packages, setup
 
 with open('README.md') as readme_file:
     readme = readme_file.read()
@@ -14,8 +14,8 @@ setup(
     author="Your Name",
     author_email='stewart.williams@stfc.ac.uk',
     url='https://github.com/ska-telescope/observation-execution-tool',
-    packages=find_namespace_packages(include=['oet.*']),
-    entry_points = {
+    packages=find_packages(),
+    entry_points={
         'console_scripts': ['oet=oet.procedure.application.restclient:main']
     },
     package_dir={'observation-execution-tool': 'oet'},
@@ -49,6 +49,6 @@ setup(
         'pycodestyle',
     ],
     extras_require={
-        'dev':  ['prospector[with_pyroma]', 'yapf', 'isort']
+        'dev': ['prospector[with_pyroma]', 'yapf', 'isort']
     }
 )
