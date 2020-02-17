@@ -1,0 +1,40 @@
+{
+  "scanID": 123,
+  "pointing": {
+    "target": {
+      "system": "ICRS",
+      "name": "M51",
+      "RA": "13:29:52.698",
+      "dec": "+47:11:42.93"
+    }
+  },
+  "dish": {
+    "receiverBand": "1"
+  },
+  "sdp": {
+    "configure": [
+      {
+        "id": "realtime-20190627-0001",
+        "sbiId": "20190627-0001",
+        "workflow": {
+          "id": "vis_ingest",
+          "type": "realtime",
+          "version": "0.1.0"
+        },
+        "parameters": {
+          "numStations": 4,
+          "numChannels": 372,
+          "numPolarisations": 4,
+          "freqStartHz": 0.35e9,
+          "freqEndHz": 1.05e9,
+          "fields": {
+            "0": { "system": "ICRS", "name": "M51", "ra": 3.5337607188635975, "dec": 0.8237126492459581 }
+          }
+        },
+        "scanParameters": {
+          "12345": { "fieldId": 0, "intervalMs": 1400 }
+        }
+      }
+    ]
+  }
+}

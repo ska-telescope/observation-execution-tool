@@ -2,14 +2,17 @@
 Unit tests for the oet.observingtasks module
 """
 import datetime
-import enum
 import unittest.mock as mock
 
+import enum
+import os
 import pytest
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
 import ska.cdm.messages.central_node.release_resources as cdm_release
 import ska.cdm.messages.subarray_node.configure as cdm_configure
 from astropy.coordinates import SkyCoord
+from ska.cdm.messages.subarray_node.configure import ConfigureRequest
+from ska.cdm.schemas import CODEC
 
 import oet.command as command
 import oet.domain as domain
@@ -475,3 +478,32 @@ def test_end_sb_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
 
     # task should keep reading obsState until device is READY
     assert mock_read_fn.call_count == 4
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_read_fn):
+    """
+    configure_from_file with process_json=True should update both the scan ID
+    and processing block ID. This tests that the PB ID is updated.
+    """
+    mock_read_fn.side_effect = [
+        ObsState.CONFIGURING, ObsState.READY
+    ]
+
+    cwd, _ = os.path.split(__file__)
+    test_path = os.path.join(cwd, 'testfile_sample_configure.json')
+
+    original: ConfigureRequest = CODEC.load_from_file(ConfigureRequest, test_path)
+    original_scan_id = original.scan_id
+    original_pb_ids = {pb_config.sb_id for pb_config in original.sdp.configure}
+
+    subarray = SubArray(1)
+    observingtasks.configure_from_file(subarray, test_path, with_processing=True)
+    command = mock_execute_fn.call_args[0][0]
+    processed: ConfigureRequest = CODEC.loads(ConfigureRequest, command.args[0])
+    processed_scan_id = processed.scan_id
+    processed_pb_ids = {pb_config.sb_id for pb_config in processed.sdp.configure}
+
+    assert processed_scan_id != original_scan_id
+    assert not processed_pb_ids.intersection(original_pb_ids)

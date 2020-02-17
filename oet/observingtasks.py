@@ -8,10 +8,10 @@ the API of the devices they are controlling.
 """
 import datetime
 import logging
-import operator
 from typing import Optional
 
 import marshmallow
+import operator
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
 import ska.cdm.messages.central_node.release_resources as cdm_release
 import ska.cdm.messages.subarray_node.configure as cdm_configure
@@ -375,11 +375,27 @@ def configure_from_file(subarray: domain.SubArray, request_path, with_processing
     :return:
     """
     if with_processing:
-        request = schemas.CODEC.load_from_file(cdm_configure.ConfigureRequest, request_path)
+        request:cdm_configure.ConfigureRequest = schemas.CODEC.load_from_file(
+            cdm_configure.ConfigureRequest,
+            request_path
+        )
 
         # Update scan ID with current scan ID, leaving the rest of the configuration
         # unchanged
         request = request.copy_with_scan_id(SCAN_ID_GENERATOR.value)
+
+        # TODO: Remove this as soon as feasible
+        #
+        # In PI5, NCRA requested that we update the processing block ID in
+        # order for the system to perform multiple scans. We didn't budget for
+        # CDM support and so the code immediately below was introduced as a
+        # short-term fix. It should be reconsidered and probably refactored ASAP.
+        LOGGER.warning('TODO: Factor out PB ID patch introduced for SS-24')
+        date_str = datetime.date.today().strftime('%Y%m%d')
+        for pb in request.sdp.configure:
+            pb_number = '{:0>4}'.format(SCAN_ID_GENERATOR.value)
+            pb.sb_id = f'realtime-{date_str}-{pb_number}'
+
         request_json = schemas.CODEC.dumps(request)
 
     else:
