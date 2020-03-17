@@ -34,7 +34,14 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
-    install_requires=['pytango', 'cdm-shared-library'],
+    install_requires=[
+        'cdm-shared-library',
+        'fire',
+        'flask',
+        'pytango',
+        'requests',
+        'tabulate'
+    ],
     setup_requires=[
         # dependency for `python setup.py test`
         'pytest-runner',
@@ -47,6 +54,7 @@ setup(
         'pytest-cov',
         'pytest-json-report',
         'pycodestyle',
+        'requests-mock'
     ],
     extras_require={
         'dev': ['prospector[with_pyroma]', 'yapf', 'isort']

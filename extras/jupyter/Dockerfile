@@ -10,9 +10,10 @@ RUN chmod +x /usr/bin/tini
 RUN usermod -s /bin/bash tango
 
 USER tango
-RUN /venv/bin/pip3 install jupyter
-RUN /venv/bin/jupyter notebook --generate-config
-RUN /venv/bin/python3 -m itango.install
+ENV PATH="/home/tango/.local/bin:${PATH}"
+RUN python3 -m pip install jupyter
+RUN jupyter notebook --generate-config
+RUN python3 -m itango.install
 
 # disable authentication
 RUN echo "c.NotebookApp.token = ''" >> /home/tango/.jupyter/jupyter_notebook_config.py
@@ -22,4 +23,4 @@ RUN echo "c.NotebookApp.terminals_enabled = True" >> /home/tango/.jupyter/jupyte
 
 EXPOSE 8888
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["/venv/bin/jupyter", "notebook", "--ip=0.0.0.0", "--no-browser", "--port=8888"]
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--no-browser", "--port=8888"]
