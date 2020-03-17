@@ -33,6 +33,7 @@ IMAGE=$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(NAME)
 
 VERSION=$(shell . $(RELEASE_SUPPORT) ; getVersion)
 TAG=$(shell . $(RELEASE_SUPPORT); getTag)
+RELEASE=$(shell . $(RELEASE_SUPPORT); getRelease)
 
 SHELL=/bin/bash
 
@@ -59,9 +60,13 @@ docker-build: .release
 	if [ $$DOCKER_MAJOR -eq 1 ] && [ $$DOCKER_MINOR -lt 10 ] ; then \
 		echo docker tag -f $(IMAGE):$(VERSION) $(IMAGE):latest ;\
 		docker tag -f $(IMAGE):$(VERSION) $(IMAGE):latest ;\
+		echo docker tag -f $(IMAGE):$(VERSION) $(IMAGE):$(RELEASE) ;\
+		docker tag -f $(IMAGE):$(VERSION) $(IMAGE):$(RELEASE) ;\
 	else \
 		echo docker tag $(IMAGE):$(VERSION) $(IMAGE):latest ;\
 		docker tag $(IMAGE):$(VERSION) $(IMAGE):latest ; \
+		echo docker tag $(IMAGE):$(VERSION) $(IMAGE):$(RELEASE) ;\
+		docker tag $(IMAGE):$(VERSION) $(IMAGE):$(RELEASE) ; \
 	fi
 
 .release:
@@ -76,6 +81,7 @@ push: pre-push do-push post-push  ## push the image to the Docker registry
 
 do-push:
 	docker push $(IMAGE):latest
+	docker push $(IMAGE):$(RELEASE)
 
 snapshot: build push
 
