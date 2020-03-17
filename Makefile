@@ -132,7 +132,16 @@ test: build up ## test the application
 	  docker rm -f -v $(BUILD); \
 	  $(MAKE) down; \
 	  exit $$status
-
+	  
+lint: DOCKER_RUN_ARGS = --volumes-from=$(BUILD)
+lint: build up ## lint the application (static code analysis)
+	$(INIT_CACHE)
+	$(call make,lint); \
+	  rm -fr build; \
+	  docker cp $(BUILD):/build .; \
+	  docker rm -f -v $(BUILD); \
+	  $(MAKE) -f $(SKA_CUSTOMISATIONS_DIR)/Makefile down; \
+	  exit 0
 pull:  ## download the application image
 	docker pull $(IMAGE_TO_TEST)
 
