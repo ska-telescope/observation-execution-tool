@@ -11,7 +11,7 @@
 # nexus.engageska-portugal.pt/tango-example/powersupply
 #
 DOCKER_REGISTRY_USER:=ska-telescope
-PROJECT = oet-ssh
+PROJECT = observation-execution-tool-ssh
 
 #
 # include makefile to pick up the standard Make targets, e.g., 'make build'
