@@ -11,7 +11,7 @@
 # nexus.engageska-portugal.pt/tango-example/powersupply
 #
 DOCKER_REGISTRY_USER:=ska-telescope
-PROJECT = oet-jupyter
+PROJECT = observation-execution-tool-jupyter
 
 #
 # include makefile to pick up the standard Make targets, e.g., 'make build'

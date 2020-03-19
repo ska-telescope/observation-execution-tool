@@ -28,10 +28,12 @@ before_script:
 stages:
   - build
   - test
+  - linting
   - pages
   - push_OET_image
   - push_SSH_image
   - push_jupyter_image
+  - .post
 
 build:
   tags:
@@ -51,6 +53,17 @@ test:
       - build
     expire_in: 7 days
 
+linting:
+  tags:
+    - docker-executor
+  stage: linting
+  script:
+    - make lint
+  artifacts:
+    paths:
+      - build
+    expire_in: 7 days
+
 pages:
   when: always
   tags:
@@ -58,10 +71,10 @@ pages:
   stage: pages
   dependencies:
     - test
+    - linting
   script:
     - mkdir public
-    - cp build/coverage.xml public
-    - cp -r build/htmlcov/* public
+    - cp -R build public
   artifacts:
     paths:
       - public
@@ -89,3 +102,16 @@ push_jupyter_image:
   script:
     - make -C extras/jupyter build
     - make -C extras/jupyter push
+
+create ci metrics:
+  stage: .post
+  when: always
+  image: nexus.engageska-portugal.pt/ska-docker/tango-builder:latest
+  tags:
+    - docker-executor
+  script:
+    # Gitlab CI badges creation
+    - curl -s https://gitlab.com/ska-telescope/ci-metrics-utilities/raw/master/scripts/ci-badges-func.sh | sh
+  artifacts:
+    paths:
+      - public
