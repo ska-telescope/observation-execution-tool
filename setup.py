@@ -54,7 +54,8 @@ setup(
         'pytest-cov',
         'pytest-json-report',
         'pycodestyle',
-        'requests-mock'
+        'requests-mock',
+        'skuid'
     ],
     extras_require={
         'dev': ['prospector[with_pyroma]', 'yapf', 'isort']
