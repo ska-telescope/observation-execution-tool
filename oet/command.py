@@ -7,9 +7,8 @@ managed and executed by a proxy. This allows the proxy to execute commands
 asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
-import logging
+import logging, os
 import multiprocessing
-import os
 
 import tango
 
@@ -145,9 +144,9 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         return self._device_proxies[device_name]
 
 
-class LegacyScanIdGenerator:  # pylint: disable=too-few-public-methods
+class LocalScanIdGenerator:  # pylint: disable=too-few-public-methods
     """
-    ScanIDGenerator is an abstraction of a service that will generate scan
+    LocalScanIdGenerator is an abstraction of a service that will generate scan
     IDs as unique integers. Expect scan UID generation to be a database
     operation or similar in the production implementation.
     """
@@ -172,20 +171,23 @@ class LegacyScanIdGenerator:  # pylint: disable=too-few-public-methods
             return previous_scan_id
 
 
-class ScanIdGenerator:  # pylint: disable=too-few-public-methods
+class RemoteScanIdGenerator:  # pylint: disable=too-few-public-methods
     """
-    ScanIDGenerator is an abstraction of a service that will generate scan
-    IDs as unique integers. Expect scan UID generation to be a database
-    operation or similar in the production implementation.
+    RemoteScanIdGenerator connects to the skuid service to retrieve IDs
     """
 
-    def __init__(self, start):
-        self.backing = multiprocessing.Value('i', start)
+    def __init__(self, hostname):
+        self.skuid_client = SkuidClient(hostname)
+        self.__value = self.skuid_client.fetch_scan_id()
+
 
     @property
     def value(self):
-        with self.backing.get_lock():
-            return self.backing.value
+        return self.__value
+
+    @value.setter
+    def value(self, value):
+        self.__value=value
 
     def next(self):
         """
@@ -193,17 +195,12 @@ class ScanIdGenerator:  # pylint: disable=too-few-public-methods
 
         :return: integer scan ID
         """
-        previous_scan_id = self.value
-        with self.backing.get_lock():
-            self.backing.value += 1
-            return previous_scan_id
-
+        self.__value = self.skuid_client.fetch_scan_id()
+        return self.__value
 
 # hold scan ID generator at the module level
-SKUID_SERVICE_URL = os.environ.get("SKUID_URL")
-
-if SKUID_SERVICE_URL:
-    CLIENT = SkuidClient(SKUID_SERVICE_URL)
-    SCAN_ID_GENERATOR = ScanIdGenerator(CLIENT.fetch_scan_id())
+if 'SKUID_URL' in os.environ:
+    # SKUID_URL should be in the format HOST:PORT
+    SCAN_ID_GENERATOR = RemoteScanIdGenerator(os.environ['SKUID_URL'])
 else:
-    SCAN_ID_GENERATOR = LegacyScanIdGenerator()
+    SCAN_ID_GENERATOR = LocalScanIdGenerator()
