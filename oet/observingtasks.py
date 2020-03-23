@@ -19,7 +19,7 @@ import ska.cdm.messages.subarray_node.scan as cdm_scan
 import ska.cdm.schemas as schemas
 
 from . import domain
-from .command import Attribute, Command, SCAN_ID_GENERATOR, TangoExecutor
+from .command import Attribute, Command, SCAN_ID_CLIENT, TangoExecutor
 
 LOGGER = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class TangoRegistry:  # pylint: disable=too-few-public-methods
 # Used as a singleton to look up Tango device FQDNs
 TANGO_REGISTRY = TangoRegistry()
 
-# Used a a singleton to execute Tango commands. The object is kept as a
+# Used as a singleton to execute Tango commands. The object is kept as a
 # module attribute so that tests can mock the executor's 'execute()'
 # function.
 EXECUTOR = TangoExecutor()
@@ -284,7 +284,7 @@ def get_configure_subarray_command(subarray: domain.SubArray,
     :param subarray_config: the sub-array configuration to set
     :return: OET Command to configure the sub-array as requested
     """
-    scan_id = SCAN_ID_GENERATOR.value
+    scan_id = SCAN_ID_CLIENT.scan_id
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     request = get_configure_subarray_request(scan_id,
                                              subarray_config.pointing_config,
@@ -382,7 +382,8 @@ def configure_from_file(subarray: domain.SubArray, request_path, with_processing
 
         # Update scan ID with current scan ID, leaving the rest of the configuration
         # unchanged
-        request = request.copy_with_scan_id(SCAN_ID_GENERATOR.value)
+        scan_id = SCAN_ID_CLIENT.scan_id
+        request = request.copy_with_scan_id(scan_id)
 
         # TODO: Remove this as soon as feasible
         #
@@ -393,7 +394,7 @@ def configure_from_file(subarray: domain.SubArray, request_path, with_processing
         LOGGER.warning('TODO: Factor out PB ID patch introduced for SS-24')
         date_str = datetime.date.today().strftime('%Y%m%d')
         for pb in request.sdp.configure:
-            pb_number = '{:0>4}'.format(SCAN_ID_GENERATOR.value)
+            pb_number = '{:0>4}'.format(scan_id)
             pb.sb_id = f'realtime-{date_str}-{pb_number}'
 
         request_json = schemas.CODEC.dumps(request)
@@ -481,7 +482,7 @@ def scan(subarray: domain.SubArray, scan_duration: float):
     wait_for_value(obsstate, 'READY', name_getter)
 
     # increment scan ID
-    SCAN_ID_GENERATOR.next()
+    SCAN_ID_CLIENT.fetch_scan_id()
 
 
 def end_sb(subarray: domain.SubArray):
