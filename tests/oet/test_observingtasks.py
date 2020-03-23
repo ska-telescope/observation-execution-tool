@@ -303,13 +303,11 @@ def test_configure_subarray_forms_correct_request():
     assert request == expected
 
 
-@mock.patch(observingtasks, 'SCAN_ID_CLIENT')
-def test_configure_subarray_forms_correct_command(mock_scan_id_client):
+def test_configure_subarray_forms_correct_command():
     """
     Verify that the configure_subarray task constructs the correct Command
     object.
     """
-    mock_scan_id_client.scan_id = 1
     subarray = SubArray(1)
     coord = SkyCoord(ra=1, dec=1, frame='icrs', unit='rad')
     config = domain.SubArrayConfiguration(coord, 'name', receiver_band=1)
@@ -406,9 +404,7 @@ def test_get_scan_request_populates_cdm_object_correctly():
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-@mock.patch.object(observingtasks.SCAN_ID_CLIENT, 'fetch_scan_id')
-def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn,
-                                                      mock_fetch_scan_id):
+def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn):
     """
     Verify that the SubArray.configure command waits for the device obsstate
     to transition back to READY before returning.
@@ -417,7 +413,7 @@ def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read
     mock_read_fn.side_effect = [
         ObsState.SCANNING, ObsState.SCANNING, ObsState.SCANNING, ObsState.READY
     ]
-    mock_fetch_scan_id.return_value = 1
+
     subarray = domain.SubArray(1)
     subarray.scan(3)
 
@@ -486,9 +482,7 @@ def test_end_sb_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-@mock.patch(observingtasks, 'SCAN_ID_CLIENT')
-def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_read_fn,
-                                                         mock_scan_id_client):
+def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_read_fn):
     """
     configure_from_file with process_json=True should update both the scan ID
     and processing block ID. This tests that the PB ID is updated.
@@ -496,7 +490,6 @@ def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_r
     mock_read_fn.side_effect = [
         ObsState.CONFIGURING, ObsState.READY
     ]
-    mock_scan_id_client.scan_id = 1
 
     cwd, _ = os.path.split(__file__)
     test_path = os.path.join(cwd, 'testfile_sample_configure.json')
