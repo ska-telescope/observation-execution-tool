@@ -40,7 +40,8 @@ setup(
         'flask',
         'pytango',
         'requests',
-        'tabulate'
+        'tabulate',
+        'skuid'
     ],
     setup_requires=[
         # dependency for `python setup.py test`
@@ -54,8 +55,7 @@ setup(
         'pytest-cov',
         'pytest-json-report',
         'pycodestyle',
-        'requests-mock',
-        'skuid'
+        'requests-mock'
     ],
     extras_require={
         'dev': ['prospector[with_pyroma]', 'yapf', 'isort']
