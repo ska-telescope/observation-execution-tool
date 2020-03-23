@@ -3,7 +3,7 @@ Unit tests for the oet.command module.
 """
 from unittest.mock import patch, Mock
 
-from oet.command import Attribute, Command, TangoExecutor, TangoDeviceProxyFactory, LegacyScanIdGenerator
+from oet.command import Attribute, Command, TangoExecutor, TangoDeviceProxyFactory, ScanIdGenerator
 
 
 def test_attribute_repr():
@@ -176,7 +176,7 @@ def test_scan_id_generator_increments_on_next():
     """
     Confirm that the scan ID generator increments by one each call.
     """
-    generator = LegacyScanIdGenerator(start=5)
+    generator = ScanIdGenerator(start=5)
     expected = [5, 6, 7, 8, 9]
     actual = [generator.next() for _ in range(5)]
     assert actual == expected
@@ -187,7 +187,7 @@ def test_scan_id_generator_does_not_increment_when_reading_value():
     Confirm that the scan ID generator does not increment the scan ID when
     reading the current value.
     """
-    generator = LegacyScanIdGenerator(start=5)
+    generator = ScanIdGenerator(start=5)
     expected = [5, 5, 5, 5, 5]
     actual = [generator.value for _ in range(5)]
     assert actual == expected
