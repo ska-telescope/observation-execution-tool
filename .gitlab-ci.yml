@@ -30,9 +30,7 @@ stages:
   - test
   - linting
   - pages
-  - push_OET_image
-  - push_SSH_image
-  - push_jupyter_image
+  - publish
   - .post
 
 build:
@@ -41,6 +39,19 @@ build:
   stage: build
   script:
     - make build
+
+build_wheel_for_publication: # Executed on a tag:
+  stage: build
+  tags:
+    - docker-executor
+  script:
+    - apt-get update
+    - apt-get install -y python3-pip
+    - pip3 install setuptools
+    - python3 setup.py egg_info -b+dev.$CI_COMMIT_SHORT_SHA sdist bdist_wheel # --universal option to used for pure python packages
+  artifacts:
+    paths:
+      - ./dist/
 
 test:
   tags:
@@ -83,14 +94,14 @@ pages:
 push_OET_image:
   tags:
     - docker-executor
-  stage: push_OET_image
+  stage: publish
   script:
     - make push
 
 push_SSH_image:
   tags:
     - docker-executor
-  stage: push_SSH_image
+  stage: publish
   script:
     - make -C extras/ssh build
     - make -C extras/ssh push
@@ -98,10 +109,30 @@ push_SSH_image:
 push_jupyter_image:
   tags:
     - docker-executor
-  stage: push_jupyter_image
+  stage: publish
   script:
     - make -C extras/jupyter build
     - make -C extras/jupyter push
+
+publish_to_nexus:
+  tags:
+    - docker-executor
+  stage: publish
+  variables:
+    TWINE_USERNAME: $TWINE_USERNAME
+    TWINE_PASSWORD: $TWINE_PASSWORD
+  script:
+    # check metadata requirements
+    - apt-get update
+    - apt-get install -y python3-pip
+    - pip3 install setuptools
+    - scripts/validate-metadata.sh
+    - pip3 install twine
+    - twine upload --repository-url $PYPI_REPOSITORY_URL dist/*
+  only:
+    variables:
+       - $CI_COMMIT_MESSAGE =~ /^.+$/ # Confirm tag message exists
+       - $CI_COMMIT_TAG =~ /^((([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)$/ # Confirm semantic versioning of tag
 
 create ci metrics:
   stage: .post
