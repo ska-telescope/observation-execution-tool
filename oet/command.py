@@ -180,7 +180,6 @@ class RemoteScanIdGenerator:  # pylint: disable=too-few-public-methods
         self.skuid_client = SkuidClient(hostname)
         self.__value = self.skuid_client.fetch_scan_id()
 
-
     @property
     def value(self):
         return self.__value
