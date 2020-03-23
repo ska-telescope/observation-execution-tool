@@ -9,8 +9,11 @@ the execution appears synchronous.
 """
 import logging
 import multiprocessing
+import os
 
 import tango
+
+from skuid.client import SkuidClient
 
 LOGGER = logging.getLogger(__name__)
 
@@ -142,32 +145,6 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         return self._device_proxies[device_name]
 
 
-class ScanIdGenerator:  # pylint: disable=too-few-public-methods
-    """
-    ScanIDGenerator is an abstraction of a service that will generate scan
-    IDs as unique integers. Expect scan UID generation to be a database
-    operation or similar in the production implementation.
-    """
-
-    def __init__(self, start=1):
-        self.backing = multiprocessing.Value('i', start)
-
-    @property
-    def value(self):
-        with self.backing.get_lock():
-            return self.backing.value
-
-    def next(self):
-        """
-        Get the next scan ID.
-
-        :return: integer scan ID
-        """
-        previous_scan_id = self.value
-        with self.backing.get_lock():
-            self.backing.value += 1
-            return previous_scan_id
-
-
-# hold scan ID generator at the module level
-SCAN_ID_GENERATOR = ScanIdGenerator()
+# hold scan id client at the module level
+SKUID_SERVICE_URL = os.environ.get("SKUID_URL", "http://localhost:9870")
+SCAN_ID_CLIENT = SkuidClient(SKUID_SERVICE_URL)
