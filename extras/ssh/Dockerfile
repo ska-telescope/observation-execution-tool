@@ -1,4 +1,4 @@
-FROM nexus.engageska-portugal.pt/ska-telescope/oet:latest
+FROM nexus.engageska-portugal.pt/ska-telescope/observation-execution-tool:latest
 
 USER root
 
