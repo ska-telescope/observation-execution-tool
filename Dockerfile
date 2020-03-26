@@ -8,4 +8,6 @@ RUN cp -r /app/profile_ska ~/.ipython/
 
 RUN python3 -m pip install -e . --extra-index-url https://nexus.engageska-portugal.pt/repository/pypi/simple
 
+ENV PATH="~/.local/bin:${PATH}"
+
 CMD ["itango3","--profile=ska"]
