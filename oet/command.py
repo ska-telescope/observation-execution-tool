@@ -178,15 +178,15 @@ class RemoteScanIdGenerator:  # pylint: disable=too-few-public-methods
     """
 
     def __init__(self, hostname):
-        self.skuid_client = None
-        self.backing = None
-        self.hostname = hostname
+        self.skuid_client = SkuidClient(hostname)
+        self.backing = multiprocessing.Value('i', -1)
 
     @property
     def value(self):
-        if not self.backing:
-            self.next()
         with self.backing.get_lock():
+            # Default value, scan id's should be > 0
+            if self.backing.value == -1:
+                self.next()
             return self.backing.value
 
     def next(self):
@@ -195,10 +195,6 @@ class RemoteScanIdGenerator:  # pylint: disable=too-few-public-methods
 
         :return: integer scan ID
         """
-        if not self.backing:
-            self.backing = multiprocessing.Value('i', 0)
-        if not self.skuid_client:
-            self.skuid_client = SkuidClient(self.hostname)
         with self.backing.get_lock():
             self.backing.value = self.skuid_client.fetch_scan_id()
             return self.backing.value
