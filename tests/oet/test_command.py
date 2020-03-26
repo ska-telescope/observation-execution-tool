@@ -194,6 +194,7 @@ def test_local_scan_id_generator_does_not_increment_when_reading_value():
     actual = [generator.value for _ in range(5)]
     assert actual == expected
 
+
 def test_remote_scan_id_generator_increments_on_next():
     """
     Confirm that the scan ID generator increments by one each call.
@@ -210,7 +211,7 @@ def test_remote_scan_id_generator_increments_on_next():
         mocked_req.return_value = res
         generator = RemoteScanIdGenerator("url:1234")
 
-        expected = [1,2,3]
+        expected = [1, 2, 3]
         actual = [generator.next() for _ in range(3)]
         assert actual == expected
 
@@ -231,9 +232,10 @@ def test_remote_scan_id_generator_does_not_increment_when_reading_value():
         mocked_req.return_value = res
         generator = RemoteScanIdGenerator("url:1234")
 
-        expected = [1,1,1]
+        expected = [1, 1, 1]
         actual = [generator.value for _ in range(3)]
         assert actual == expected
+
 
 def test_remote_scan_id_call_order():
     """
@@ -281,11 +283,10 @@ def test_remote_scan_id_set_backing():
         mocked_req.return_value = res
         generator = RemoteScanIdGenerator("url:1234")
         generator.backing = multiprocessing.Value('i', 3)
-        expected = [3,3,3]
+        expected = [3, 3, 3]
         actual = [generator.value for _ in range(3)]
         assert actual == expected
 
-        expected = [98,99,100]
+        expected = [98, 99, 100]
         actual = [generator.next() for _ in range(3)]
         assert actual == expected
-
