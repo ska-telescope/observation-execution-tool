@@ -2,6 +2,7 @@
 Unit tests for the oet.command module.
 """
 import json
+import multiprocessing
 from unittest.mock import patch, Mock, MagicMock
 
 from oet.command import Attribute, Command, TangoExecutor, TangoDeviceProxyFactory, LocalScanIdGenerator, RemoteScanIdGenerator
@@ -193,6 +194,27 @@ def test_local_scan_id_generator_does_not_increment_when_reading_value():
     actual = [generator.value for _ in range(5)]
     assert actual == expected
 
+def test_remote_scan_id_generator_increments_on_next():
+    """
+    Confirm that the scan ID generator increments by one each call.
+    """
+    generator = None
+    with patch("skuid.client.requests.get") as mocked_req:
+        res = MagicMock()
+        res.json.side_effect = [
+            json.dumps({"scan_id": 1}),
+            json.dumps({"scan_id": 2}),
+            json.dumps({"scan_id": 3}),
+            json.dumps({"scan_id": 4}),
+        ]
+        mocked_req.return_value = res
+        generator = RemoteScanIdGenerator("url:1234")
+
+        expected = [1,2,3]
+        actual = [generator.next() for _ in range(3)]
+        assert actual == expected
+
+
 def test_remote_scan_id_generator_does_not_increment_when_reading_value():
     """
     Confirm that the scan ID generator does not increment the scan ID when
@@ -207,14 +229,63 @@ def test_remote_scan_id_generator_does_not_increment_when_reading_value():
             json.dumps({"scan_id": 3}),
         ]
         mocked_req.return_value = res
-
         generator = RemoteScanIdGenerator("url:1234")
-        # Check value does not change
+
+        expected = [1,1,1]
+        actual = [generator.value for _ in range(3)]
+        assert actual == expected
+
+def test_remote_scan_id_call_order():
+    """
+    Confirm that either value or next can be called first
+    """
+    generator = None
+    with patch("skuid.client.requests.get") as mocked_req:
+        res = MagicMock()
+        res.json.side_effect = [
+            json.dumps({"scan_id": 1}),
+            json.dumps({"scan_id": 2}),
+            json.dumps({"scan_id": 3}),
+        ]
+        mocked_req.return_value = res
+        generator = RemoteScanIdGenerator("url:1234")
         assert generator.value == 1
-        assert generator.value == 1
-        assert generator.value == 1
-        # Check next
-        assert generator.next() == 2
-        assert generator.value == 2
-        assert generator.next() == 3
-        assert generator.value == 3
+
+    generator = None
+    with patch("skuid.client.requests.get") as mocked_req:
+        res = MagicMock()
+        res.json.side_effect = [
+            json.dumps({"scan_id": 1}),
+            json.dumps({"scan_id": 2}),
+            json.dumps({"scan_id": 3}),
+        ]
+        mocked_req.return_value = res
+        generator = RemoteScanIdGenerator("url:1234")
+        assert generator.next() == 1
+
+
+def test_remote_scan_id_set_backing():
+    """
+    class `oet.procedure.domain::Procedure` can set the scan id itself if it's
+    provided with one.
+    Checking to make sure it does update and fetches next afterwards.
+    """
+    generator = None
+    with patch("skuid.client.requests.get") as mocked_req:
+        res = MagicMock()
+        res.json.side_effect = [
+            json.dumps({"scan_id": 98}),
+            json.dumps({"scan_id": 99}),
+            json.dumps({"scan_id": 100}),
+        ]
+        mocked_req.return_value = res
+        generator = RemoteScanIdGenerator("url:1234")
+        generator.backing = multiprocessing.Value('i', 3)
+        expected = [3,3,3]
+        actual = [generator.value for _ in range(3)]
+        assert actual == expected
+
+        expected = [98,99,100]
+        actual = [generator.next() for _ in range(3)]
+        assert actual == expected
+

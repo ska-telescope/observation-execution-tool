@@ -7,7 +7,8 @@ managed and executed by a proxy. This allows the proxy to execute commands
 asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
-import logging, os
+import logging
+import os
 import multiprocessing
 
 import tango
@@ -177,16 +178,16 @@ class RemoteScanIdGenerator:  # pylint: disable=too-few-public-methods
     """
 
     def __init__(self, hostname):
-        self.skuid_client = SkuidClient(hostname)
-        self.__value = self.skuid_client.fetch_scan_id()
+        self.skuid_client = None
+        self.backing = None
+        self.hostname = hostname
 
     @property
     def value(self):
-        return self.__value
-
-    @value.setter
-    def value(self, value):
-        self.__value=value
+        if not self.backing:
+            self.next()
+        with self.backing.get_lock():
+            return self.backing.value
 
     def next(self):
         """
@@ -194,8 +195,13 @@ class RemoteScanIdGenerator:  # pylint: disable=too-few-public-methods
 
         :return: integer scan ID
         """
-        self.__value = self.skuid_client.fetch_scan_id()
-        return self.__value
+        if not self.backing:
+            self.backing = multiprocessing.Value('i', 0)
+        if not self.skuid_client:
+            self.skuid_client = SkuidClient(self.hostname)
+        with self.backing.get_lock():
+            self.backing.value = self.skuid_client.fetch_scan_id()
+            return self.backing.value
 
 # hold scan ID generator at the module level
 if 'SKUID_URL' in os.environ:
