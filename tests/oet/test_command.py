@@ -5,7 +5,14 @@ import json
 import multiprocessing
 from unittest.mock import patch, Mock, MagicMock
 
-from oet.command import Attribute, Command, TangoExecutor, TangoDeviceProxyFactory, LocalScanIdGenerator, RemoteScanIdGenerator
+from oet.command import (
+    Attribute,
+    Command,
+    TangoExecutor,
+    TangoDeviceProxyFactory,
+    LocalScanIdGenerator,
+    RemoteScanIdGenerator,
+)
 
 
 def test_attribute_repr():
