@@ -132,12 +132,15 @@ publish_to_nexus:
 create ci metrics:
   stage: .post
   when: always
-  image: nexus.engageska-portugal.pt/ska-docker/tango-builder:latest
-  tags:
-    - docker-executor
   script:
-    # Gitlab CI badges creation
+    # Gitlab CI badges creation: START
+    - apt-get -y update
+    - apt-get install -y curl --no-install-recommends
     - curl -s https://gitlab.com/ska-telescope/ci-metrics-utilities/raw/master/scripts/ci-badges-func.sh | sh
+    # Gitlab CI badges creation: END
+  allow_failure: true
   artifacts:
     paths:
-      - public
+      - ./build
+
+
