@@ -470,6 +470,10 @@ def scan(subarray: domain.SubArray, scan_duration: float):
     :return: the response from sending the command to configure sub-array
     """
     command = get_scan_command(subarray, scan_duration)
+
+    # increment scan ID
+    SCAN_ID_GENERATOR.next()
+
     _ = EXECUTOR.execute(command)
 
     obsstate = Attribute(command.device, 'obsState')
@@ -479,9 +483,6 @@ def scan(subarray: domain.SubArray, scan_duration: float):
     #  wait for the sub-array obsState to transition from SCANNING to READY
     wait_for_value(obsstate, 'SCANNING', name_getter)
     wait_for_value(obsstate, 'READY', name_getter)
-
-    # increment scan ID
-    SCAN_ID_GENERATOR.next()
 
 
 def end_sb(subarray: domain.SubArray):
