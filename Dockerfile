@@ -6,7 +6,7 @@ FROM nexus.engageska-portugal.pt/ska-docker/ska-python-runtime:9.3.1 AS runtime
 RUN mkdir -p ~/.ipython/profile_ska
 RUN cp -r /app/profile_ska ~/.ipython/
 
-RUN python3 -m pip install -e . --extra-index-url https://nexus.engageska-portugal.pt/repository/pypi/simple
+RUN python3 -m pip install -e . --extra-index-url https://nexus.engageska-portugal.pt/repository/pypi/simple --only-binary astropy
 
 ENV PATH="~/.local/bin:${PATH}"
 
