@@ -127,7 +127,7 @@ publish_to_nexus:
   only:
     variables:
        - $CI_COMMIT_MESSAGE =~ /^.+$/ # Confirm tag message exists
-       - $CI_COMMIT_TAG =~ /^((([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)$/ # Confirm semantic versioning of tag
+       - $CI_COMMIT_TAG =~ /^(((?:([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*)-)?(([0-9]+)\.([0-9]+)\.([0-9]+)))$/ # Confirm semantic versioning of tag
 
 create ci metrics:
   stage: .post

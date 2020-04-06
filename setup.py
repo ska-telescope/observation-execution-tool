@@ -9,7 +9,7 @@ with open('README.md') as readme_file:
 setup(
     name='observation-execution-tool',
     version="0.4.1",
-    description="",
+    description="This project contains the code for the Observation Execution Tool, the application which provides high-level scripting facilities and a high-level scripting UI for the SKA.",
     long_description=readme + '\n\n',
     author="Your Name",
     author_email='stewart.williams@stfc.ac.uk',
