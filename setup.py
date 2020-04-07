@@ -40,7 +40,8 @@ setup(
         'flask',
         'pytango',
         'requests',
-        'tabulate'
+        'tabulate',
+        'skuid'
     ],
     setup_requires=[
         # dependency for `python setup.py test`
