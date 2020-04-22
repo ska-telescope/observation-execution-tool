@@ -41,13 +41,7 @@ setup(
         'pytango',
         'requests',
         'tabulate',
-        'skuid',
-        # SJW temp fix
-        'pytest',
-        'pytest-cov',
-        'pytest-json-report',
-        'pycodestyle',
-        'requests-mock'
+        'skuid'
     ],
     setup_requires=[
         # dependency for `python setup.py test`
