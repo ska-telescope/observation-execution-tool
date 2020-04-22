@@ -26,7 +26,7 @@ SKA_SUB_ARRAY_NODE_1_FDQN = 'ska_mid/tm_subarray_node/1'
 CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
 CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_success": ["0001"]}}'
-VALID_ASSIGN_STARTSCAN_REQUEST = '{"scanDuration": 3.21}'
+VALID_ASSIGN_STARTSCAN_REQUEST = '{"id": 123}'
 
 
 class ObsState(enum.Enum):
@@ -86,6 +86,7 @@ def test_get_dish_resource_ids():
     assert observingtasks.get_dish_resource_ids(dish_allocation) == expected
 
 
+@pytest.mark.xfail(reason='AssignResourcesRequest requires SDP configuration argument, but SDP domain objects have not been created yet')
 def test_allocate_resources_forms_correct_request():
     """
     Verify that domain objects are converted correctly to CDM objects for a
@@ -93,6 +94,8 @@ def test_allocate_resources_forms_correct_request():
     """
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray = SubArray(1)
+
+    # This request is going to require an SDP configuration
     request = observingtasks.get_allocate_resources_request(subarray, resources)
 
     cdm_dish_allocation = cdm_assign.DishAllocation(['0001', '0002'])
@@ -122,12 +125,16 @@ def test_convert_malformed_assign_resources_response():
     assert actual == expected
 
 
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument, but SDP domain objects have not been created yet')
 def test_allocate_resources_command():
     """
     Verify that an 'allocate resources to sub-array' Command is targeted and
     structured correctly.
     """
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
+    # Once we have the SDP domain objects, we should create the required
+    # SDP configuration programmatically
+    sdp_config = SDPConfiguration()
     subarray = SubArray(1)
     cmd = observingtasks.get_allocate_resources_command(subarray, resources)
     assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
@@ -180,6 +187,7 @@ def test_release_resources_command():
     assert not cmd.kwargs
 
 
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument, but SDP domain objects have not been created yet')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_allocate_resources_successful_allocation(mock_execute_fn):
     """
@@ -195,6 +203,7 @@ def test_allocate_resources_successful_allocation(mock_execute_fn):
     assert resources == allocated
 
 
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument, but SDP domain objects have not been created yet')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_allocate_resources_partial_allocation(mock_execute_fn):
     """
@@ -211,6 +220,7 @@ def test_allocate_resources_partial_allocation(mock_execute_fn):
     assert Dish(2) not in allocated.dishes
 
 
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument, but SDP domain objects have not been created yet')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_subarray_state_is_updated_when_resources_are_allocated(mock_execute_fn):
     """
@@ -298,7 +308,7 @@ def test_configure_subarray_forms_correct_request():
     pointing_config = cdm_configure.PointingConfiguration(
         cdm_configure.Target(1, 1, name='name', unit='rad'))
     dish_config = cdm_configure.DishConfiguration(receiver_band=cdm_configure.ReceiverBand.BAND_5A)
-    expected = cdm_configure.ConfigureRequest(scan_id, pointing_config, dish_config)
+    expected = cdm_configure.ConfigureRequest(pointing=pointing_config, dish=dish_config)
 
     assert request == expected
 
@@ -388,7 +398,10 @@ def test_scan_forms_correct_command():
     Tests if get_scan_command generates correct Command
     """
     sub_array = SubArray(1)
-    generated = observingtasks.get_scan_command(sub_array, 3.21)
+
+    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock) as mock_scan_id:
+        mock_scan_id.return_value = 123
+        generated = observingtasks.get_scan_command(sub_array)
     assert generated.device == SKA_SUB_ARRAY_NODE_1_FDQN
     assert generated.command_name == 'Scan'
     assert generated.args[0] == VALID_ASSIGN_STARTSCAN_REQUEST
@@ -398,8 +411,10 @@ def test_get_scan_request_populates_cdm_object_correctly():
     """
     Verify that a ScanRequest is populated correctly
     """
-    request = observingtasks.get_scan_request(3.21)
-    assert request.scan_duration == datetime.timedelta(seconds=3.21)
+    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock) as mock_value:
+        mock_value.return_value = 123
+        request = observingtasks.get_scan_request()
+    assert request.scan_id == 123
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
@@ -415,7 +430,7 @@ def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read
     ]
 
     subarray = domain.SubArray(1)
-    subarray.scan(3)
+    subarray.scan()
 
     mock_execute_fn.assert_called_with(mock.ANY)
 
@@ -480,6 +495,7 @@ def test_end_sb_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
     assert mock_read_fn.call_count == 4
 
 
+@pytest.mark.skip('TBC: ProcessingBlock ID updates are no longer required')
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_read_fn):
@@ -495,6 +511,7 @@ def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_r
     test_path = os.path.join(cwd, 'testfile_sample_configure.json')
 
     original: ConfigureRequest = CODEC.load_from_file(ConfigureRequest, test_path)
+
     original_scan_id = original.scan_id
     original_pb_ids = {pb_config.sb_id for pb_config in original.sdp.configure}
 

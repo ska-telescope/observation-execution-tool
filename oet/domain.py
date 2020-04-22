@@ -408,13 +408,14 @@ class SubArray:
         """
         observingtasks.configure_from_file(self, cdm_file, with_processing=with_processing)
 
-    def scan(self, scan_duration: float):
+    def scan(self):
         """
-        Start a scan using a scan duration defined by the user.
+        Start a scan.
 
-        :param scan_duration: scan duration in seconds
+        All scan configuration and scan duration should be configured before
+        this command is called.
         """
-        observingtasks.scan(self, scan_duration)
+        observingtasks.scan(self)
 
     def end_sb(self):
         """

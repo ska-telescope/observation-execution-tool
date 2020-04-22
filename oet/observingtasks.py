@@ -272,7 +272,7 @@ def get_configure_subarray_request(
     cdm_receiver_band = cdm_configure.ReceiverBand(dish_config.receiver_band)
     cdm_dish_config = cdm_configure.DishConfiguration(receiver_band=cdm_receiver_band)
 
-    return cdm_configure.ConfigureRequest(scan_id, cdm_pointing_config, cdm_dish_config)
+    return cdm_configure.ConfigureRequest(pointing=cdm_pointing_config, dish=cdm_dish_config)
 
 
 def get_configure_subarray_command(subarray: domain.SubArray,
@@ -375,7 +375,7 @@ def configure_from_file(subarray: domain.SubArray, request_path, with_processing
     :return:
     """
     if with_processing:
-        request:cdm_configure.ConfigureRequest = schemas.CODEC.load_from_file(
+        request: cdm_configure.ConfigureRequest = schemas.CODEC.load_from_file(
             cdm_configure.ConfigureRequest,
             request_path
         )
@@ -434,42 +434,38 @@ def telescope_standby(telescope: domain.SKAMid):
     EXECUTOR.execute(command)
 
 
-def get_scan_request(scan_duration: float) -> cdm_scan.ScanRequest:
+def get_scan_request() -> cdm_scan.ScanRequest:
     """
-    Return a ScanRequest that would execute a scan for the requested number
-    of seconds.
+    Return a ScanRequest that would execute a scan, assigning the current scan
+    ID from the scan ID generator.
 
-    :param scan_duration: scan duration in seconds
     :return: ScanRequest CDM object
     """
-    duration = datetime.timedelta(seconds=scan_duration)
-    return cdm_scan.ScanRequest(scan_duration=duration)
+    return cdm_scan.ScanRequest(scan_id=SCAN_ID_GENERATOR.value)
 
 
-def get_scan_command(subarray: domain.SubArray, scan_duration: float) -> Command:
+def get_scan_command(subarray: domain.SubArray) -> Command:
     """
     Return an OET Command that, when passed to a TangoExecutor, would start a
     scan.
 
     :param subarray: the sub-array to control
-    :param scan_duration: the scan duration in seconds
     :return: OET command ready to start a scan
     """
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
-    request = get_scan_request(scan_duration)
+    request = get_scan_request()
     request_json = schemas.CODEC.dumps(request)
     return Command(subarray_node_fqdn, 'Scan', request_json)
 
 
-def scan(subarray: domain.SubArray, scan_duration: float):
+def scan(subarray: domain.SubArray):
     """
-    Execute a scan for n seconds.
+    Execute a scan.
 
     :param subarray: the sub-array to control
-    :param scan_duration: the scan duration, in seconds
     :return: the response from sending the command to configure sub-array
     """
-    command = get_scan_command(subarray, scan_duration)
+    command = get_scan_command(subarray)
 
     # increment scan ID
     SCAN_ID_GENERATOR.next()

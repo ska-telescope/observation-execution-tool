@@ -541,8 +541,8 @@ def test_scan_calls_correct_observing_task():
     """
     subarray = SubArray(1)
     with mock.patch('oet.domain.observingtasks') as mock_module:
-        subarray.scan(3.21)
-    mock_module.scan.assert_called_once_with(subarray, 3.21)
+        subarray.scan()
+    mock_module.scan.assert_called_once_with(subarray)
 
 
 def test_end_sb_calls_correct_observing_task():
