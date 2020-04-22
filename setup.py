@@ -35,13 +35,19 @@ setup(
     ],
     test_suite='tests',
     install_requires=[
-        'cdm-shared-library<0.2.0',
+        'cdm-shared-library',
         'fire',
         'flask',
         'pytango',
         'requests',
         'tabulate',
-        'skuid'
+        'skuid',
+        # SJW temp fix
+        'pytest',
+        'pytest-cov',
+        'pytest-json-report',
+        'pycodestyle',
+        'requests-mock'
     ],
     setup_requires=[
         # dependency for `python setup.py test`
