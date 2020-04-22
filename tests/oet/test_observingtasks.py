@@ -99,7 +99,10 @@ def test_allocate_resources_forms_correct_request():
     request = observingtasks.get_allocate_resources_request(subarray, resources)
 
     cdm_dish_allocation = cdm_assign.DishAllocation(['0001', '0002'])
-    expected = cdm_assign.AssignResourcesRequest(1, cdm_dish_allocation)
+    cdm_sdp_allocation = cdm_assign.SDPConfiguration(
+        sdp_id='sdp_id', max_length=10.0, scan_types=[], processing_blocks=[]
+    )
+    expected = cdm_assign.AssignResourcesRequest(1, cdm_dish_allocation, cdm_sdp_allocation)
 
     assert request == expected
 
@@ -133,8 +136,8 @@ def test_allocate_resources_command():
     """
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     # Once we have the SDP domain objects, we should create the required
-    # SDP configuration programmatically
-    sdp_config = SDPConfiguration()
+    # SDP configuration programmatically, e.g.,
+    # sdp_config = SDPConfiguration()
     subarray = SubArray(1)
     cmd = observingtasks.get_allocate_resources_command(subarray, resources)
     assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
