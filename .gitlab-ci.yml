@@ -92,6 +92,10 @@ push_OET_image:
   stage: publish
   script:
     - make push
+  only:
+    - tags
+  except:
+    - branches
 
 push_SSH_image:
   tags:
@@ -100,6 +104,10 @@ push_SSH_image:
   script:
     - make -C extras/ssh build
     - make -C extras/ssh push
+  only:
+    - tags
+  except:
+    - branches
 
 push_jupyter_image:
   tags:
@@ -108,6 +116,10 @@ push_jupyter_image:
   script:
     - make -C extras/jupyter build
     - make -C extras/jupyter push
+  only:
+    - tags
+  except:
+    - branches
 
 publish_to_nexus:
   tags:
