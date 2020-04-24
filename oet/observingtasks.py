@@ -358,7 +358,7 @@ def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfigu
     execute_configure_command(command)
 
 
-def configure_from_file(subarray: domain.SubArray, request_path, with_processing):
+def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: float, with_processing):
     """
     Load a CDM ConfigureRequest from disk and use it to perform sub-array
     configuration.
@@ -370,6 +370,7 @@ def configure_from_file(subarray: domain.SubArray, request_path, with_processing
 
     :param subarray: the sub-array to configure
     :param request_path: path to CDM file
+    :param scan_duration: duration of the scan
     :param with_processing: False if JSON should be passed through to
        to SubArrayNode directly without any validation or processing
     :return:
@@ -382,19 +383,9 @@ def configure_from_file(subarray: domain.SubArray, request_path, with_processing
 
         # Update scan ID with current scan ID, leaving the rest of the configuration
         # unchanged
-        request = request.copy_with_scan_id(SCAN_ID_GENERATOR.value)
+        # request = request.copy_with_scan_id(SCAN_ID_GENERATOR.value)
 
-        # TODO: Remove this as soon as feasible
-        #
-        # In PI5, NCRA requested that we update the processing block ID in
-        # order for the system to perform multiple scans. We didn't budget for
-        # CDM support and so the code immediately below was introduced as a
-        # short-term fix. It should be reconsidered and probably refactored ASAP.
-        LOGGER.warning('TODO: Factor out PB ID patch introduced for SS-24')
-        date_str = datetime.date.today().strftime('%Y%m%d')
-        for pb in request.sdp.configure:
-            pb_number = '{:0>4}'.format(SCAN_ID_GENERATOR.value)
-            pb.sb_id = f'realtime-{date_str}-{pb_number}'
+        request.tmc.scan_duration = scan_duration
 
         request_json = schemas.CODEC.dumps(request)
 

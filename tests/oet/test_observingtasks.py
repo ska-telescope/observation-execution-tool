@@ -519,7 +519,7 @@ def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_r
     original_pb_ids = {pb_config.sb_id for pb_config in original.sdp.configure}
 
     subarray = SubArray(1)
-    observingtasks.configure_from_file(subarray, test_path, with_processing=True)
+    observingtasks.configure_from_file(subarray, test_path, 14.0, with_processing=True)
     command = mock_execute_fn.call_args[0][0]
     processed: ConfigureRequest = CODEC.loads(ConfigureRequest, command.args[0])
     processed_scan_id = processed.scan_id
