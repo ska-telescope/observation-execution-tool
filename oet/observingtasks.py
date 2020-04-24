@@ -358,7 +358,8 @@ def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfigu
     execute_configure_command(command)
 
 
-def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: float, with_processing):
+def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: float,
+                        with_processing):
     """
     Load a CDM ConfigureRequest from disk and use it to perform sub-array
     configuration.

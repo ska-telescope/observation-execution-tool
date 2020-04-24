@@ -1,7 +1,7 @@
 """
 Unit tests for the oet.observingtasks module
 """
-import datetime
+# import datetime
 import unittest.mock as mock
 
 import enum
@@ -86,7 +86,8 @@ def test_get_dish_resource_ids():
     assert observingtasks.get_dish_resource_ids(dish_allocation) == expected
 
 
-@pytest.mark.xfail(reason='AssignResourcesRequest requires SDP configuration argument, but SDP domain objects have not been created yet')
+@pytest.mark.xfail(reason='AssignResourcesRequest requires SDP configuration '
+                          'argument, but SDP domain objects have not been created yet')
 def test_allocate_resources_forms_correct_request():
     """
     Verify that domain objects are converted correctly to CDM objects for a
@@ -128,7 +129,8 @@ def test_convert_malformed_assign_resources_response():
     assert actual == expected
 
 
-@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument, but SDP domain objects have not been created yet')
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument,'
+                          ' but SDP domain objects have not been created yet')
 def test_allocate_resources_command():
     """
     Verify that an 'allocate resources to sub-array' Command is targeted and
@@ -190,7 +192,8 @@ def test_release_resources_command():
     assert not cmd.kwargs
 
 
-@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument, but SDP domain objects have not been created yet')
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration'
+                          ' argument, but SDP domain objects have not been created yet')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_allocate_resources_successful_allocation(mock_execute_fn):
     """
@@ -206,7 +209,8 @@ def test_allocate_resources_successful_allocation(mock_execute_fn):
     assert resources == allocated
 
 
-@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument, but SDP domain objects have not been created yet')
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration '
+                          'argument, but SDP domain objects have not been created yet')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_allocate_resources_partial_allocation(mock_execute_fn):
     """
@@ -223,7 +227,8 @@ def test_allocate_resources_partial_allocation(mock_execute_fn):
     assert Dish(2) not in allocated.dishes
 
 
-@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument, but SDP domain objects have not been created yet')
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument,'
+                          ' but SDP domain objects have not been created yet')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_subarray_state_is_updated_when_resources_are_allocated(mock_execute_fn):
     """
@@ -402,7 +407,8 @@ def test_scan_forms_correct_command():
     """
     sub_array = SubArray(1)
 
-    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock) as mock_scan_id:
+    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock)\
+            as mock_scan_id:
         mock_scan_id.return_value = 123
         generated = observingtasks.get_scan_command(sub_array)
     assert generated.device == SKA_SUB_ARRAY_NODE_1_FDQN
@@ -414,7 +420,8 @@ def test_get_scan_request_populates_cdm_object_correctly():
     """
     Verify that a ScanRequest is populated correctly
     """
-    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock) as mock_value:
+    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock)\
+            as mock_value:
         mock_value.return_value = 123
         request = observingtasks.get_scan_request()
     assert request.scan_id == 123

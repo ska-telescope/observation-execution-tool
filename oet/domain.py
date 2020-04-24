@@ -407,7 +407,8 @@ class SubArray:
            to SubArrayNode directly without any validation or processing
         :return:
         """
-        observingtasks.configure_from_file(self, cdm_file, scan_duration, with_processing=with_processing)
+        observingtasks.configure_from_file(self, cdm_file, scan_duration,
+                                           with_processing=with_processing)
 
     def scan(self):
         """
