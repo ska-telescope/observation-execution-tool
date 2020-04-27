@@ -534,3 +534,15 @@ def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_r
 
     assert processed_scan_id != original_scan_id
     assert not processed_pb_ids.intersection(original_pb_ids)
+
+
+@pytest.mark.skip('Work in progress')
+def test_allocate_from_file_():
+    """
+    test allocate from file function
+    """
+    cwd, _ = os.path.split(__file__)
+    json_path = os.path.join(cwd, 'testfile_sample_configure.json')
+
+    subarray = domain.SubArray(1)
+    subarray.allocate_from_file(json_path)

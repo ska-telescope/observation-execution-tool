@@ -222,6 +222,30 @@ def allocate_resources(subarray: domain.SubArray,
     return allocated
 
 
+def allocate_resources_from_file(subarray: domain.SubArray, request_path) -> domain.ResourceAllocation:
+    """
+    Allocate resources to a sub-array using a JSON file.
+
+    :param subarray: the sub-array to control
+    :param request_path: JSON file path
+    :return: the resources that were successfully allocated to the sub-array
+    """
+
+    request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file((
+        cdm_assign.AssignResourcesRequest,
+        request_path
+    ))
+
+    #TODO add dish allocation
+
+    command = get_allocate_resources_command(subarray, request)
+
+    response = EXECUTOR.execute(command)
+    allocated = convert_assign_resources_response(response)
+    subarray.resources += allocated
+    return allocated
+
+
 def deallocate_resources(subarray: domain.SubArray,
                          release_all: bool = False,
                          resources: domain.ResourceAllocation = None):
@@ -400,32 +424,6 @@ def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: 
     command = Command(subarray_node_fqdn, 'Configure', request_json)
 
     execute_configure_command(command)
-
-
-def assign_from_file():
-    """
-    TODO: assign_from_file for AT2-419
-    Direct JSON passthrough mode where all info, including the dish allocation,
-    comes from the JSON, and a second mode where the dish allocation part of the
-    JSON is overwritten by the SubArray.resource_allocation state
-
-    :param
-    :return:
-    """
-
-
-def assign_resources_from_file():
-    """
-    TODO: assign_resources_from_file for AT2-419
-    function that uses the CDM library to load in the JSON and set, if necessary,
-    any scan IDs. We're not sure if the scan ID needs to be updated yet, so for now
-    assume we don't need to make any changes. This function could execute the command
-    directly, or delegate to a dedicated 'execute assign resources command' function,
-    however you want to do it.
-
-    :param
-    :return:
-    """
 
 
 def telescope_start_up(telescope: domain.SKAMid):
