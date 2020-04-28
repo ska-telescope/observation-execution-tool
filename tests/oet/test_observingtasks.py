@@ -542,7 +542,7 @@ def test_allocate_from_file_():
     test allocate from file function
     """
     cwd, _ = os.path.split(__file__)
-    json_path = os.path.join(cwd, 'testfile_sample_configure.json')
+    json_path = os.path.join(cwd, 'testfile_sample_assign.json')
 
     subarray = domain.SubArray(1)
     subarray.allocate_from_file(json_path)

@@ -231,10 +231,10 @@ def allocate_resources_from_file(subarray: domain.SubArray, request_path) -> dom
     :return: the resources that were successfully allocated to the sub-array
     """
 
-    request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file((
+    request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
         cdm_assign.AssignResourcesRequest,
         request_path
-    ))
+    )
 
     #TODO add dish allocation
 
