@@ -545,4 +545,5 @@ def test_allocate_from_file_():
     json_path = os.path.join(cwd, 'testfile_sample_assign.json')
 
     subarray = domain.SubArray(1)
+
     subarray.allocate_from_file(json_path)

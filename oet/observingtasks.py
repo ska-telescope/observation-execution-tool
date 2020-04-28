@@ -139,6 +139,43 @@ def get_allocate_resources_request(
     return request
 
 
+def get_allocate_resources_request_with_sdp(
+        subarray: domain.SubArray,
+        resources: domain.ResourceAllocation,
+        assign_resource_allocation: cdm_assign.AssignResourcesRequest) -> cdm_assign.AssignResourcesRequest:
+    """
+    Return the JSON string that, when passed as argument to
+    CentralNode.AssignResources, would allocate resources to a sub-array.
+
+    :param subarray: the sub-array to allocate resources to
+    :param resources: the resources to allocate
+    :return: CDM request for CentralNode.AssignResources
+    """
+    receptor_ids = get_dish_resource_ids(resources.dishes)
+    dish_allocation = cdm_assign.DishAllocation(receptor_ids=receptor_ids)
+    request = cdm_assign.AssignResourcesRequest(subarray_id=subarray.id,
+                                                sdp_config=assign_resource_allocation.sdp_config,
+                                                dish_allocation=dish_allocation)
+    return request
+
+
+def get_allocate_resources_command_with_sdp(subarray: domain.SubArray,
+                                        resources: domain.ResourceAllocation,
+                                        assign_resource_allocation: cdm_assign.AssignResourcesRequest) -> Command:
+    """
+    Return an OET Command that, when passed to a TangoExecutor, would allocate
+    resources from a sub-array.
+
+    :param subarray: the sub-array to control
+    :param resources: the set of resources to allocate
+    :return:
+    """
+    central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
+    request = get_allocate_resources_request_with_sdp(subarray, resources, assign_resource_allocation)
+    request_json = schemas.CODEC.dumps(request)
+    return Command(central_node_fqdn, 'AssignResources', request_json)
+
+
 def get_allocate_resources_command(subarray: domain.SubArray,
                                    resources: domain.ResourceAllocation) -> Command:
     """
@@ -237,8 +274,10 @@ def allocate_resources_from_file(subarray: domain.SubArray, request_path) -> dom
     )
 
     #TODO add dish allocation
+    resources = domain.ResourceAllocation(dishes=[domain.Dish(1), domain.Dish(2)])
+    #subarray.allocate(resources)
 
-    command = get_allocate_resources_command(subarray, request)
+    command = get_allocate_resources_command_with_sdp(subarray, resources, request)
 
     response = EXECUTOR.execute(command)
     allocated = convert_assign_resources_response(response)
