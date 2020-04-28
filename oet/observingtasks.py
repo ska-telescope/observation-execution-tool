@@ -153,8 +153,9 @@ def get_allocate_resources_request_with_sdp(
     """
     receptor_ids = get_dish_resource_ids(resources.dishes)
     dish_allocation = cdm_assign.DishAllocation(receptor_ids=receptor_ids)
+    sdp_config = assign_resource_allocation.sdp_config
     request = cdm_assign.AssignResourcesRequest(subarray_id=subarray.id,
-                                                sdp_config=assign_resource_allocation.sdp_config,
+                                                sdp_config=sdp_config,
                                                 dish_allocation=dish_allocation)
     return request
 
@@ -259,12 +260,14 @@ def allocate_resources(subarray: domain.SubArray,
     return allocated
 
 
-def allocate_resources_from_file(subarray: domain.SubArray, request_path) -> domain.ResourceAllocation:
+def allocate_resources_from_file(subarray: domain.SubArray, request_path, resources: domain.ResourceAllocation= None) \
+        -> domain.ResourceAllocation:
     """
     Allocate resources to a sub-array using a JSON file.
 
     :param subarray: the sub-array to control
     :param request_path: JSON file path
+    :param resources: a optional parameter that permits to overwrite dish allocation defined in the JSON
     :return: the resources that were successfully allocated to the sub-array
     """
 
@@ -273,9 +276,8 @@ def allocate_resources_from_file(subarray: domain.SubArray, request_path) -> dom
         request_path
     )
 
-    #TODO add dish allocation
-    resources = domain.ResourceAllocation(dishes=[domain.Dish(1), domain.Dish(2)])
-    #subarray.allocate(resources)
+    if resources is None:
+        resources = domain.ResourceAllocation(dishes=[domain.Dish(i) for i in request.dish.receptor_ids])
 
     command = get_allocate_resources_command_with_sdp(subarray, resources, request)
 
