@@ -149,6 +149,7 @@ def get_allocate_resources_request_with_sdp(
 
     :param subarray: the sub-array to allocate resources to
     :param resources: the resources to allocate
+    :param assign_resource_allocation: the resource with SDP config
     :return: CDM request for CentralNode.AssignResources
     """
     receptor_ids = get_dish_resource_ids(resources.dishes)
@@ -260,7 +261,7 @@ def allocate_resources(subarray: domain.SubArray,
     return allocated
 
 
-def allocate_resources_from_file(subarray: domain.SubArray, request_path, resources: domain.ResourceAllocation= None) \
+def allocate_resources_from_file(subarray: domain.SubArray, request_path, resources: domain.ResourceAllocation = None) \
         -> domain.ResourceAllocation:
     """
     Allocate resources to a sub-array using a JSON file.

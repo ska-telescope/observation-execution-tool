@@ -362,7 +362,7 @@ class SubArray:
         allocated = observingtasks.allocate_resources(self, resources)
         return allocated
 
-    def allocate_from_file(self, cdm_file: str) -> ResourceAllocation:
+    def allocate_from_file(self, cdm_file: str, resources: Optional[ResourceAllocation] = None) -> ResourceAllocation:
         """
         Allocate resources to a sub-array using a JSON file.
 
@@ -370,10 +370,11 @@ class SubArray:
         to match the state of the sub-array after resource allocation.
 
         :param cdm_file: JSON file
+        :param resources: the resources to overwrite to the resources defined in the JSON file
         :return: the successfully allocated resources.
         :rtype: ResourceAllocation
         """
-        allocated = observingtasks.allocate_resources_from_file(self, cdm_file)
+        allocated = observingtasks.allocate_resources_from_file(self, cdm_file, resources)
         return allocated
 
     def deallocate(self, resources: Optional[ResourceAllocation] = None) -> ResourceAllocation:

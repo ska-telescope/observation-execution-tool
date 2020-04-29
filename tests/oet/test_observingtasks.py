@@ -536,14 +536,39 @@ def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_r
     assert not processed_pb_ids.intersection(original_pb_ids)
 
 
-#@pytest.mark.skip('Work in progress')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_allocate_from_file_(mock_execute_fn):
+def test_if_get_allocate_resources_generate_correct_command(mock_execute_fn):
     """
-    test allocate from file function
+    Test if the function allocate_from_file generate the expected command
+    using or not the overwrite of the Resources
     """
+
+    mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE  # to update with the last json expected
     cwd, _ = os.path.split(__file__)
     json_path = os.path.join(cwd, 'testfile_sample_assign.json')
 
     subarray = domain.SubArray(1)
+
+    request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
+        cdm_assign.AssignResourcesRequest,
+        json_path
+    )
+
+    resources = domain.ResourceAllocation(dishes=[domain.Dish(i) for i in request.dish.receptor_ids])
+
+    command_expected = observingtasks.get_allocate_resources_command_with_sdp(subarray, resources, request)
+
     subarray.allocate_from_file(json_path)
+    command_returned = mock_execute_fn.call_args[0][0]
+
+    assert command_returned == command_expected
+
+    resources = domain.ResourceAllocation(dishes=[Dish('0002'), Dish('0003')]) # Resource different from the JSON
+    command_expected = observingtasks.get_allocate_resources_command_with_sdp(subarray, resources, request)
+
+    assert command_returned != command_expected
+
+    subarray.allocate_from_file(json_path, resources)
+    command_returned = mock_execute_fn.call_args[0][0]
+
+    assert command_returned == command_expected
