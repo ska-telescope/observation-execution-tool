@@ -13,6 +13,7 @@ import ska.cdm.messages.subarray_node.configure as cdm_configure
 from astropy.coordinates import SkyCoord
 from ska.cdm.messages.subarray_node.configure import ConfigureRequest
 from ska.cdm.schemas import CODEC
+from ska.cdm import schemas
 
 import oet.command as command
 import oet.domain as domain
@@ -556,7 +557,7 @@ def test_if_get_allocate_resources_generate_correct_command(mock_execute_fn):
 
     resources = domain.ResourceAllocation(dishes=[domain.Dish(i) for i in request.dish.receptor_ids])
 
-    command_expected = observingtasks.get_allocate_resources_command_with_sdp(subarray, resources, request)
+    command_expected = observingtasks.get_allocate_resources_command(subarray, resources, request)
 
     subarray.allocate_from_file(json_path)
     command_returned = mock_execute_fn.call_args[0][0]
@@ -564,7 +565,7 @@ def test_if_get_allocate_resources_generate_correct_command(mock_execute_fn):
     assert command_returned == command_expected
 
     resources = domain.ResourceAllocation(dishes=[Dish('0002'), Dish('0003')]) # Resource different from the JSON
-    command_expected = observingtasks.get_allocate_resources_command_with_sdp(subarray, resources, request)
+    command_expected = observingtasks.get_allocate_resources_command(subarray, resources, request)
 
     assert command_returned != command_expected
 
