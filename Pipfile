@@ -21,7 +21,7 @@ itango = { version="*", index="pypi" }
 #pydevd = "*"
 
 #SKA Configuration Data Model (used for formatting API requests from OET to TMC)
-cdm-shared-library = { version=">=0.1.34", index="nexus"}
+cdm-shared-library = { version="*", index="nexus"}
 flask = { version="*", index="pypi" }
 requests = { version="*", index="pypi" }
 fire = { version="*", index="pypi" }

@@ -123,34 +123,54 @@ def get_telescope_standby_command(telescope: domain.SKAMid) -> Command:
 
 def get_allocate_resources_request(
         subarray: domain.SubArray,
-        resources: domain.ResourceAllocation) -> cdm_assign.AssignResourcesRequest:
+        resources: domain.ResourceAllocation,
+        template_request: Optional[cdm_assign.AssignResourcesRequest] = None) -> cdm_assign.AssignResourcesRequest:
     """
     Return the JSON string that, when passed as argument to
     CentralNode.AssignResources, would allocate resources to a sub-array.
 
+    This function can be given a template request. Values in the template
+    request will be overwritten by values derived from the domain objects,
+    where present.
+
     :param subarray: the sub-array to allocate resources to
     :param resources: the resources to allocate
+    :param template_request: optional CDM template to use
     :return: CDM request for CentralNode.AssignResources
     """
-    receptor_ids = get_dish_resource_ids(resources.dishes)
-    dish_allocation = cdm_assign.DishAllocation(receptor_ids=receptor_ids)
+    # get SDP config from template. We don't have a way to populate it from
+    # the domain object yet.
+    template_sdp_config = template_request.sdp_config
+
+    # get dish allocation from template, overwriting with allocation specified
+    # on the domain object if present
+    if len(resources.dishes) > 0:
+        receptor_ids = get_dish_resource_ids(resources.dishes)
+        dish_allocation = cdm_assign.DishAllocation(receptor_ids=receptor_ids)
+    else:
+        dish_allocation = template_request.dish
+
     request = cdm_assign.AssignResourcesRequest(subarray_id=subarray.id,
+                                                sdp_config=template_sdp_config,
                                                 dish_allocation=dish_allocation)
+
     return request
 
 
 def get_allocate_resources_command(subarray: domain.SubArray,
-                                   resources: domain.ResourceAllocation) -> Command:
+                                   resources: domain.ResourceAllocation,
+                                   template_request: Optional[cdm_assign.AssignResourcesRequest] = None) -> Command:
     """
     Return an OET Command that, when passed to a TangoExecutor, would allocate
     resources from a sub-array.
 
     :param subarray: the sub-array to control
     :param resources: the set of resources to allocate
+    :param template_request: assign resources allocation template
     :return:
     """
     central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
-    request = get_allocate_resources_request(subarray, resources)
+    request = get_allocate_resources_request(subarray, resources, template_request)
     request_json = schemas.CODEC.dumps(request)
     return Command(central_node_fqdn, 'AssignResources', request_json)
 
@@ -222,6 +242,38 @@ def allocate_resources(subarray: domain.SubArray,
     return allocated
 
 
+def allocate_resources_from_file(
+        subarray: domain.SubArray,
+        template_json_path: str,
+        resources: Optional[domain.ResourceAllocation] = None) \
+        -> domain.ResourceAllocation:
+    """
+    Allocate resources to a sub-array using a JSON file as a template.
+
+    Resources specified in the optional ResourceAllocation argument will
+    override those in the template.
+
+    :param subarray: the sub-array to control
+    :param template_json_path: JSON file path
+    :param resources: a optional parameter that permits to overwrite dish allocation defined in the JSON
+    :return: the resources that were successfully allocated to the sub-array
+    """
+    if resources is None:
+        resources = domain.ResourceAllocation()
+
+    template_request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
+        cdm_assign.AssignResourcesRequest,
+        template_json_path
+    )
+
+    command = get_allocate_resources_command(subarray, resources, template_request)
+
+    response = EXECUTOR.execute(command)
+    allocated = convert_assign_resources_response(response)
+    subarray.resources += allocated
+    return allocated
+
+
 def deallocate_resources(subarray: domain.SubArray,
                          release_all: bool = False,
                          resources: domain.ResourceAllocation = None):
@@ -272,7 +324,7 @@ def get_configure_subarray_request(
     cdm_receiver_band = cdm_configure.ReceiverBand(dish_config.receiver_band)
     cdm_dish_config = cdm_configure.DishConfiguration(receiver_band=cdm_receiver_band)
 
-    return cdm_configure.ConfigureRequest(scan_id, cdm_pointing_config, cdm_dish_config)
+    return cdm_configure.ConfigureRequest(pointing=cdm_pointing_config, dish=cdm_dish_config)
 
 
 def get_configure_subarray_command(subarray: domain.SubArray,
@@ -358,7 +410,8 @@ def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfigu
     execute_configure_command(command)
 
 
-def configure_from_file(subarray: domain.SubArray, request_path, with_processing):
+def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: float,
+                        with_processing):
     """
     Load a CDM ConfigureRequest from disk and use it to perform sub-array
     configuration.
@@ -370,31 +423,22 @@ def configure_from_file(subarray: domain.SubArray, request_path, with_processing
 
     :param subarray: the sub-array to configure
     :param request_path: path to CDM file
+    :param scan_duration: duration of the scan
     :param with_processing: False if JSON should be passed through to
        to SubArrayNode directly without any validation or processing
     :return:
     """
     if with_processing:
-        request:cdm_configure.ConfigureRequest = schemas.CODEC.load_from_file(
+        request: cdm_configure.ConfigureRequest = schemas.CODEC.load_from_file(
             cdm_configure.ConfigureRequest,
             request_path
         )
 
         # Update scan ID with current scan ID, leaving the rest of the configuration
         # unchanged
-        request = request.copy_with_scan_id(SCAN_ID_GENERATOR.value)
+        # request = request.copy_with_scan_id(SCAN_ID_GENERATOR.value)
 
-        # TODO: Remove this as soon as feasible
-        #
-        # In PI5, NCRA requested that we update the processing block ID in
-        # order for the system to perform multiple scans. We didn't budget for
-        # CDM support and so the code immediately below was introduced as a
-        # short-term fix. It should be reconsidered and probably refactored ASAP.
-        LOGGER.warning('TODO: Factor out PB ID patch introduced for SS-24')
-        date_str = datetime.date.today().strftime('%Y%m%d')
-        for pb in request.sdp.configure:
-            pb_number = '{:0>4}'.format(SCAN_ID_GENERATOR.value)
-            pb.sb_id = f'realtime-{date_str}-{pb_number}'
+        request.tmc.scan_duration = scan_duration
 
         request_json = schemas.CODEC.dumps(request)
 
@@ -434,42 +478,38 @@ def telescope_standby(telescope: domain.SKAMid):
     EXECUTOR.execute(command)
 
 
-def get_scan_request(scan_duration: float) -> cdm_scan.ScanRequest:
+def get_scan_request() -> cdm_scan.ScanRequest:
     """
-    Return a ScanRequest that would execute a scan for the requested number
-    of seconds.
+    Return a ScanRequest that would execute a scan, assigning the current scan
+    ID from the scan ID generator.
 
-    :param scan_duration: scan duration in seconds
     :return: ScanRequest CDM object
     """
-    duration = datetime.timedelta(seconds=scan_duration)
-    return cdm_scan.ScanRequest(scan_duration=duration)
+    return cdm_scan.ScanRequest(scan_id=SCAN_ID_GENERATOR.value)
 
 
-def get_scan_command(subarray: domain.SubArray, scan_duration: float) -> Command:
+def get_scan_command(subarray: domain.SubArray) -> Command:
     """
     Return an OET Command that, when passed to a TangoExecutor, would start a
     scan.
 
     :param subarray: the sub-array to control
-    :param scan_duration: the scan duration in seconds
     :return: OET command ready to start a scan
     """
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
-    request = get_scan_request(scan_duration)
+    request = get_scan_request()
     request_json = schemas.CODEC.dumps(request)
     return Command(subarray_node_fqdn, 'Scan', request_json)
 
 
-def scan(subarray: domain.SubArray, scan_duration: float):
+def scan(subarray: domain.SubArray):
     """
-    Execute a scan for n seconds.
+    Execute a scan.
 
     :param subarray: the sub-array to control
-    :param scan_duration: the scan duration, in seconds
     :return: the response from sending the command to configure sub-array
     """
-    command = get_scan_command(subarray, scan_duration)
+    command = get_scan_command(subarray)
 
     # increment scan ID
     SCAN_ID_GENERATOR.next()

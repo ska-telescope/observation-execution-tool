@@ -35,7 +35,7 @@ setup(
     ],
     test_suite='tests',
     install_requires=[
-        'cdm-shared-library<0.2.0',
+        'cdm-shared-library',
         'fire',
         'flask',
         'pytango',

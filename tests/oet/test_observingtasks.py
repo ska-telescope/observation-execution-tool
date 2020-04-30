@@ -1,7 +1,7 @@
 """
 Unit tests for the oet.observingtasks module
 """
-import datetime
+# import datetime
 import unittest.mock as mock
 
 import enum
@@ -13,6 +13,7 @@ import ska.cdm.messages.subarray_node.configure as cdm_configure
 from astropy.coordinates import SkyCoord
 from ska.cdm.messages.subarray_node.configure import ConfigureRequest
 from ska.cdm.schemas import CODEC
+from ska.cdm import schemas
 
 import oet.command as command
 import oet.domain as domain
@@ -26,7 +27,7 @@ SKA_SUB_ARRAY_NODE_1_FDQN = 'ska_mid/tm_subarray_node/1'
 CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["0001", "0002"]}}'
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
 CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_success": ["0001"]}}'
-VALID_ASSIGN_STARTSCAN_REQUEST = '{"scanDuration": 3.21}'
+VALID_ASSIGN_STARTSCAN_REQUEST = '{"id": 123}'
 
 
 class ObsState(enum.Enum):
@@ -86,6 +87,8 @@ def test_get_dish_resource_ids():
     assert observingtasks.get_dish_resource_ids(dish_allocation) == expected
 
 
+@pytest.mark.xfail(reason='AssignResourcesRequest requires SDP configuration '
+                          'argument, but SDP domain objects have not been created yet')
 def test_allocate_resources_forms_correct_request():
     """
     Verify that domain objects are converted correctly to CDM objects for a
@@ -93,10 +96,15 @@ def test_allocate_resources_forms_correct_request():
     """
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray = SubArray(1)
+
+    # This request is going to require an SDP configuration
     request = observingtasks.get_allocate_resources_request(subarray, resources)
 
     cdm_dish_allocation = cdm_assign.DishAllocation(['0001', '0002'])
-    expected = cdm_assign.AssignResourcesRequest(1, cdm_dish_allocation)
+    cdm_sdp_allocation = cdm_assign.SDPConfiguration(
+        sdp_id='sdp_id', max_length=10.0, scan_types=[], processing_blocks=[]
+    )
+    expected = cdm_assign.AssignResourcesRequest(1, cdm_dish_allocation, cdm_sdp_allocation)
 
     assert request == expected
 
@@ -122,12 +130,17 @@ def test_convert_malformed_assign_resources_response():
     assert actual == expected
 
 
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument,'
+                          ' but SDP domain objects have not been created yet')
 def test_allocate_resources_command():
     """
     Verify that an 'allocate resources to sub-array' Command is targeted and
     structured correctly.
     """
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
+    # Once we have the SDP domain objects, we should create the required
+    # SDP configuration programmatically, e.g.,
+    # sdp_config = SDPConfiguration()
     subarray = SubArray(1)
     cmd = observingtasks.get_allocate_resources_command(subarray, resources)
     assert cmd.device == SKA_MID_CENTRAL_NODE_FDQN
@@ -180,6 +193,8 @@ def test_release_resources_command():
     assert not cmd.kwargs
 
 
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration'
+                          ' argument, but SDP domain objects have not been created yet')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_allocate_resources_successful_allocation(mock_execute_fn):
     """
@@ -195,6 +210,8 @@ def test_allocate_resources_successful_allocation(mock_execute_fn):
     assert resources == allocated
 
 
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration '
+                          'argument, but SDP domain objects have not been created yet')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_allocate_resources_partial_allocation(mock_execute_fn):
     """
@@ -211,6 +228,8 @@ def test_allocate_resources_partial_allocation(mock_execute_fn):
     assert Dish(2) not in allocated.dishes
 
 
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument,'
+                          ' but SDP domain objects have not been created yet')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_subarray_state_is_updated_when_resources_are_allocated(mock_execute_fn):
     """
@@ -298,7 +317,7 @@ def test_configure_subarray_forms_correct_request():
     pointing_config = cdm_configure.PointingConfiguration(
         cdm_configure.Target(1, 1, name='name', unit='rad'))
     dish_config = cdm_configure.DishConfiguration(receiver_band=cdm_configure.ReceiverBand.BAND_5A)
-    expected = cdm_configure.ConfigureRequest(scan_id, pointing_config, dish_config)
+    expected = cdm_configure.ConfigureRequest(pointing=pointing_config, dish=dish_config)
 
     assert request == expected
 
@@ -388,7 +407,11 @@ def test_scan_forms_correct_command():
     Tests if get_scan_command generates correct Command
     """
     sub_array = SubArray(1)
-    generated = observingtasks.get_scan_command(sub_array, 3.21)
+
+    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock)\
+            as mock_scan_id:
+        mock_scan_id.return_value = 123
+        generated = observingtasks.get_scan_command(sub_array)
     assert generated.device == SKA_SUB_ARRAY_NODE_1_FDQN
     assert generated.command_name == 'Scan'
     assert generated.args[0] == VALID_ASSIGN_STARTSCAN_REQUEST
@@ -398,8 +421,11 @@ def test_get_scan_request_populates_cdm_object_correctly():
     """
     Verify that a ScanRequest is populated correctly
     """
-    request = observingtasks.get_scan_request(3.21)
-    assert request.scan_duration == datetime.timedelta(seconds=3.21)
+    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock)\
+            as mock_value:
+        mock_value.return_value = 123
+        request = observingtasks.get_scan_request()
+    assert request.scan_id == 123
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
@@ -415,7 +441,7 @@ def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read
     ]
 
     subarray = domain.SubArray(1)
-    subarray.scan(3)
+    subarray.scan()
 
     mock_execute_fn.assert_called_with(mock.ANY)
 
@@ -480,6 +506,7 @@ def test_end_sb_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
     assert mock_read_fn.call_count == 4
 
 
+@pytest.mark.skip('TBC: ProcessingBlock ID updates are no longer required')
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_read_fn):
@@ -495,11 +522,12 @@ def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_r
     test_path = os.path.join(cwd, 'testfile_sample_configure.json')
 
     original: ConfigureRequest = CODEC.load_from_file(ConfigureRequest, test_path)
+
     original_scan_id = original.scan_id
     original_pb_ids = {pb_config.sb_id for pb_config in original.sdp.configure}
 
     subarray = SubArray(1)
-    observingtasks.configure_from_file(subarray, test_path, with_processing=True)
+    observingtasks.configure_from_file(subarray, test_path, 14.0, with_processing=True)
     command = mock_execute_fn.call_args[0][0]
     processed: ConfigureRequest = CODEC.loads(ConfigureRequest, command.args[0])
     processed_scan_id = processed.scan_id
@@ -507,3 +535,41 @@ def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_r
 
     assert processed_scan_id != original_scan_id
     assert not processed_pb_ids.intersection(original_pb_ids)
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_if_get_allocate_resources_generate_correct_command(mock_execute_fn):
+    """
+    Test if the function allocate_from_file generate the expected command
+    using or not the overwrite of the Resources
+    """
+
+    mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE  # to update with the last json expected
+    cwd, _ = os.path.split(__file__)
+    json_path = os.path.join(cwd, 'testfile_sample_assign.json')
+
+    subarray = domain.SubArray(1)
+
+    request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
+        cdm_assign.AssignResourcesRequest,
+        json_path
+    )
+
+    resources = domain.ResourceAllocation(dishes=[domain.Dish(i) for i in request.dish.receptor_ids])
+
+    command_expected = observingtasks.get_allocate_resources_command(subarray, resources, request)
+
+    subarray.allocate_from_file(json_path)
+    command_returned = mock_execute_fn.call_args[0][0]
+
+    assert command_returned == command_expected
+
+    resources = domain.ResourceAllocation(dishes=[Dish('0002'), Dish('0003')]) # Resource different from the JSON
+    command_expected = observingtasks.get_allocate_resources_command(subarray, resources, request)
+
+    assert command_returned != command_expected
+
+    subarray.allocate_from_file(json_path, resources)
+    command_returned = mock_execute_fn.call_args[0][0]
+
+    assert command_returned == command_expected

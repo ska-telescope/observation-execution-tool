@@ -362,6 +362,21 @@ class SubArray:
         allocated = observingtasks.allocate_resources(self, resources)
         return allocated
 
+    def allocate_from_file(self, cdm_file: str, resources: Optional[ResourceAllocation] = None) -> ResourceAllocation:
+        """
+        Allocate resources to a sub-array using a JSON file.
+
+        The resource allocation state of the sub-array object will be updated
+        to match the state of the sub-array after resource allocation.
+
+        :param cdm_file: JSON file
+        :param resources: the resources to overwrite to the resources defined in the JSON file
+        :return: the successfully allocated resources.
+        :rtype: ResourceAllocation
+        """
+        allocated = observingtasks.allocate_resources_from_file(self, cdm_file, resources)
+        return allocated
+
     def deallocate(self, resources: Optional[ResourceAllocation] = None) -> ResourceAllocation:
         """
         Deallocate resources from a sub-array.
@@ -391,7 +406,7 @@ class SubArray:
         """
         observingtasks.configure(self, subarray_config)
 
-    def configure_from_file(self, cdm_file: str, with_processing=True):
+    def configure_from_file(self, cdm_file: str, scan_duration: float, with_processing=True):
         """
         Configure a sub-array using an exported Configuration Data Model
         located on disk.
@@ -402,19 +417,22 @@ class SubArray:
 
 
         :param cdm_file: path of the exported CDM
+        :param scan_duration: duration of the scan
         :param with_processing: False if JSON should be passed through
            to SubArrayNode directly without any validation or processing
         :return:
         """
-        observingtasks.configure_from_file(self, cdm_file, with_processing=with_processing)
+        observingtasks.configure_from_file(self, cdm_file, scan_duration,
+                                           with_processing=with_processing)
 
-    def scan(self, scan_duration: float):
+    def scan(self):
         """
-        Start a scan using a scan duration defined by the user.
+        Start a scan.
 
-        :param scan_duration: scan duration in seconds
+        All scan configuration and scan duration should be configured before
+        this command is called.
         """
-        observingtasks.scan(self, scan_duration)
+        observingtasks.scan(self)
 
     def end_sb(self):
         """
