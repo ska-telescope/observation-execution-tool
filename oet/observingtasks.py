@@ -124,39 +124,53 @@ def get_telescope_standby_command(telescope: domain.SKAMid) -> Command:
 def get_allocate_resources_request(
         subarray: domain.SubArray,
         resources: domain.ResourceAllocation,
-        assign_resource_allocation: cdm_assign.AssignResourcesRequest) -> cdm_assign.AssignResourcesRequest:
+        template_request: Optional[cdm_assign.AssignResourcesRequest] = None) -> cdm_assign.AssignResourcesRequest:
     """
     Return the JSON string that, when passed as argument to
     CentralNode.AssignResources, would allocate resources to a sub-array.
 
+    This function can be given a template request. Values in the template
+    request will be overwritten by values derived from the domain objects,
+    where present.
+
     :param subarray: the sub-array to allocate resources to
     :param resources: the resources to allocate
-    :param assign_resource_allocation: the resource with SDP config
+    :param template_request: optional CDM template to use
     :return: CDM request for CentralNode.AssignResources
     """
-    receptor_ids = get_dish_resource_ids(resources.dishes)
-    dish_allocation = cdm_assign.DishAllocation(receptor_ids=receptor_ids)
-    sdp_config = assign_resource_allocation.sdp_config
+    # get SDP config from template. We don't have a way to populate it from
+    # the domain object yet.
+    template_sdp_config = template_request.sdp_config
+
+    # get dish allocation from template, overwriting with allocation specified
+    # on the domain object if present
+    if len(resources.dishes) > 0:
+        receptor_ids = get_dish_resource_ids(resources.dishes)
+        dish_allocation = cdm_assign.DishAllocation(receptor_ids=receptor_ids)
+    else:
+        dish_allocation = template_request.dish
+
     request = cdm_assign.AssignResourcesRequest(subarray_id=subarray.id,
-                                                sdp_config=sdp_config,
+                                                sdp_config=template_sdp_config,
                                                 dish_allocation=dish_allocation)
+
     return request
 
 
 def get_allocate_resources_command(subarray: domain.SubArray,
                                    resources: domain.ResourceAllocation,
-                                   assign_resource_allocation: cdm_assign.AssignResourcesRequest) -> Command:
+                                   template_request: Optional[cdm_assign.AssignResourcesRequest] = None) -> Command:
     """
     Return an OET Command that, when passed to a TangoExecutor, would allocate
     resources from a sub-array.
 
     :param subarray: the sub-array to control
     :param resources: the set of resources to allocate
-    :param assign_resource_allocation: assign resource allocation
+    :param template_request: assign resources allocation template
     :return:
     """
     central_node_fqdn = TANGO_REGISTRY.get_central_node(subarray)
-    request = get_allocate_resources_request(subarray, resources, assign_resource_allocation)
+    request = get_allocate_resources_request(subarray, resources, template_request)
     request_json = schemas.CODEC.dumps(request)
     return Command(central_node_fqdn, 'AssignResources', request_json)
 
@@ -228,26 +242,31 @@ def allocate_resources(subarray: domain.SubArray,
     return allocated
 
 
-def allocate_resources_from_file(subarray: domain.SubArray, request_path, resources: domain.ResourceAllocation = None) \
+def allocate_resources_from_file(
+        subarray: domain.SubArray,
+        template_json_path: str,
+        resources: Optional[domain.ResourceAllocation] = None) \
         -> domain.ResourceAllocation:
     """
-    Allocate resources to a sub-array using a JSON file.
+    Allocate resources to a sub-array using a JSON file as a template.
+
+    Resources specified in the optional ResourceAllocation argument will
+    override those in the template.
 
     :param subarray: the sub-array to control
-    :param request_path: JSON file path
+    :param template_json_path: JSON file path
     :param resources: a optional parameter that permits to overwrite dish allocation defined in the JSON
     :return: the resources that were successfully allocated to the sub-array
     """
+    if resources is None:
+        resources = domain.ResourceAllocation()
 
-    request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
+    template_request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
         cdm_assign.AssignResourcesRequest,
-        request_path
+        template_json_path
     )
 
-    if resources is None:
-        resources = domain.ResourceAllocation(dishes=[domain.Dish(i) for i in request.dish.receptor_ids])
-
-    command = get_allocate_resources_command(subarray, resources, request)
+    command = get_allocate_resources_command(subarray, resources, template_request)
 
     response = EXECUTOR.execute(command)
     allocated = convert_assign_resources_response(response)
