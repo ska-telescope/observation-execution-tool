@@ -1,0 +1,48 @@
+{
+  "id": "sbd1",
+  "scienceFieldConfigurations": {
+    "science": {
+      "targets": {
+        "beam #1": {
+          "type": "sidereal",
+          "name": "Polaris",
+          "system": "ICRS",
+          "RA": "02:31:49.09",
+          "dec": "+89:15:50.79"
+        },
+        "beam #2": {
+          "type": "sidereal",
+          "name": "Circumpolar2",
+          "system": "ICRS",
+          "RA": "07:31:49.09",
+          "dec": "+89:15:50.79"
+        }
+      }
+    },
+    "calibrator": {
+      "targets": {
+        "bandpass": {
+          "type": "sidereal",
+          "name": "Barsoom",
+          "system": "ICRS",
+          "RA": "12:31:49.09",
+          "dec": "+89:15:50.79"
+        }
+      }
+    }
+  },
+  "scanDefinitions": {
+    "calibrator scan": {
+      "scanDuration": 10.0,
+      "scienceFieldConfiguration": "calibrator"
+    },
+    "science scan": {
+      "scanDuration": 60.0,
+      "scienceFieldConfiguration": "science"
+    }
+  },
+  "scanSequence": [
+    "calibrator scan", "science scan", "science scan", "calibrator scan"
+  ]
+}
+

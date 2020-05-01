@@ -1,0 +1,11 @@
+//
+// Taken from OSO-TMC JSON for PI#3 MVP.
+//
+// Example JSON for sub-array resource allocation.
+//
+{
+  "subarrayID": 1,
+  "dish": {
+    "receptorIDList": ["0001", "0002"]
+  }
+}
