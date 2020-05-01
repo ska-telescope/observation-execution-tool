@@ -36,7 +36,7 @@ def main(configuration, scan_duration, subarray_id=1, repeat=1, process_json=Tru
     subarray = SubArray(subarray_id)
 
     LOG.info(f'Configure subarray from CDM: {configuration}'
-             f'Scan duration: {scan_duration})
+             f'Scan duration: {scan_duration}')
     subarray.configure_from_file(configuration, scan_duration, 
                                  with_processing=process_json)
 
