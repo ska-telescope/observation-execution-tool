@@ -42,9 +42,8 @@ def main(configuration, scan_duration, subarray_id=1, repeat=1, process_json=Tru
 
     for i in range(repeat):
         LOG.info(f'Scan {i+1} of {repeat}')
-
         LOG.info(f'Perform scan for {scan_duration}s')
-        subarray.scan(float(scan_duration))
+        subarray.scan()
 
     LOG.info('End scheduling block')
     subarray.end_sb()

@@ -160,9 +160,8 @@ full observation, e.g.,::
   oet start
 
   # create process for resource allocation script
-  oet create file:///scripts/allocate.py
-  # run the allocation script, allocating dishes 1-4
-  oet start --dish_ids=1,2,3,4
+  oet create file:///scripts/allocate_from_file.py
+  oet start /scripts/example_allocate.json --subarray_id=1
 
   # create process for configure/scan script
   oet create file:///scripts/observe.py
