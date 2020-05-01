@@ -20,7 +20,7 @@ def main(configuration, scan_duration, subarray_id=1, repeat=1, process_json=Tru
     :param configuration: name of configuration file
     :param scan_duration: scan duration in seconds
     :param subarray_id: numeric subarray ID
-    :param repeat: number of times to repeat the configure/scan
+    :param repeat: number of times to repeat the scan
     :param process_json: set to False to pass JSON directly to TMC without processing
     :return:
     """
