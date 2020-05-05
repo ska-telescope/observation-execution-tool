@@ -133,7 +133,7 @@ publish_to_nexus:
     - apt-get update
     - apt-get install -y python3-pip
     - pip3 install setuptools
-    - .validate-metadata.sh
+    - ./.validate-metadata.sh
     - pip3 install twine
     - twine upload --repository-url $PYPI_REPOSITORY_URL dist/*
   only:
