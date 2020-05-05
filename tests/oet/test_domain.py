@@ -2,6 +2,7 @@
 Unit tests for the oet.domain module.
 """
 import unittest.mock as mock
+from datetime import timedelta
 
 import pytest
 from astropy.coordinates import SkyCoord
@@ -530,7 +531,7 @@ def test_configure_from_file_calls_correct_observing_task():
     subarray = SubArray(1)
     with mock.patch('oet.domain.observingtasks') as mock_module:
         subarray.configure_from_file('foo', 14.0)
-    mock_module.configure_from_file.assert_called_once_with(subarray, 'foo', 14.0,
+    mock_module.configure_from_file.assert_called_once_with(subarray, 'foo', timedelta(seconds=14.0),
                                                             with_processing=True)
 
 
