@@ -6,12 +6,12 @@ control system domain.
 This module is intended to be maintained by someone familiar with Tango and
 the API of the devices they are controlling.
 """
-import datetime
 import logging
+import operator
+from datetime import timedelta
 from typing import Optional
 
 import marshmallow
-import operator
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
 import ska.cdm.messages.central_node.release_resources as cdm_release
 import ska.cdm.messages.subarray_node.configure as cdm_configure
@@ -82,7 +82,11 @@ def convert_assign_resources_response(response: str) -> domain.ResourceAllocatio
     except marshmallow.ValidationError:
         allocated_dishes = []
     else:
-        allocated_dishes = [domain.Dish(i) for i in unmarshalled.dish.receptor_ids]
+        try:
+            allocated_dishes = [domain.Dish(i) for i in unmarshalled.dish.receptor_ids]
+        except ValueError:
+            LOGGER.warning('Dish ID(s) cannot be converted to integers (IDs: %)', unmarshalled.dish.receptor_ids)
+            allocated_dishes = []
     return domain.ResourceAllocation(dishes=allocated_dishes)
 
 
@@ -269,6 +273,8 @@ def allocate_resources_from_file(
     command = get_allocate_resources_command(subarray, resources, template_request)
 
     response = EXECUTOR.execute(command)
+    LOGGER.info("Command returned")
+    LOGGER.info(response)
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -410,7 +416,7 @@ def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfigu
     execute_configure_command(command)
 
 
-def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: float,
+def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: timedelta,
                         with_processing):
     """
     Load a CDM ConfigureRequest from disk and use it to perform sub-array
