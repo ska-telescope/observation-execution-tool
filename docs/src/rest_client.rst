@@ -160,16 +160,15 @@ full observation, e.g.,::
   oet start
 
   # create process for resource allocation script
-  oet create file:///scripts/allocate.py
-  # run the allocation script, allocating dishes 1-4
-  oet start --dish_ids=1,2,3,4
+  oet create file:///scripts/allocate_from_file.py
+  oet start scripts/example_allocate.json --subarray_id=1
 
   # create process for configure/scan script
   oet create file:///scripts/observe.py
   # run the script, specifying configuration JSON to applied followed by a
   # 10 second scan. Set process_json to False if JSON should be passed through
   # directly to TMC (possibly required for new SDP schema)
-  oet start sp354/polaris_b1_no_cam.json 10 --process_json=True
+  oet start scripts/example_configure.json 10 --subarray_id=1 --repeat=1 --process_json=True
 
   # create process for resource deallocation script
   oet create file:///scripts/deallocate.py
