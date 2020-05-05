@@ -6,13 +6,12 @@ control system domain.
 This module is intended to be maintained by someone familiar with Tango and
 the API of the devices they are controlling.
 """
-import datetime
 import logging
-from typing import Optional
+import operator
 from datetime import timedelta
+from typing import Optional
 
 import marshmallow
-import operator
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
 import ska.cdm.messages.central_node.release_resources as cdm_release
 import ska.cdm.messages.subarray_node.configure as cdm_configure
@@ -86,7 +85,7 @@ def convert_assign_resources_response(response: str) -> domain.ResourceAllocatio
         try:
             allocated_dishes = [domain.Dish(i) for i in unmarshalled.dish.receptor_ids]
         except ValueError:
-            LOGGER.warning(f"Dish ID(s) cannot be converted to integers (IDs: {unmarshalled.dish.receptor_ids})")
+            LOGGER.warning('Dish ID(s) cannot be converted to integers (IDs: %)', unmarshalled.dish.receptor_ids)
             allocated_dishes = []
     return domain.ResourceAllocation(dishes=allocated_dishes)
 
