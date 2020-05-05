@@ -6,6 +6,7 @@ knowledge of the Tango control system.
 """
 import collections
 from typing import Optional, List
+from datetime import timedelta
 
 import operator
 from astropy.coordinates import SkyCoord
@@ -417,12 +418,13 @@ class SubArray:
 
 
         :param cdm_file: path of the exported CDM
-        :param scan_duration: duration of the scan
+        :param scan_duration: duration of the scan in seconds
         :param with_processing: False if JSON should be passed through
            to SubArrayNode directly without any validation or processing
         :return:
         """
-        observingtasks.configure_from_file(self, cdm_file, scan_duration,
+        scan_duration_timedelta = timedelta(seconds=scan_duration)
+        observingtasks.configure_from_file(self, cdm_file, scan_duration_timedelta,
                                            with_processing=with_processing)
 
     def scan(self):

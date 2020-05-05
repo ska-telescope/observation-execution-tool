@@ -538,7 +538,7 @@ def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_r
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_if_get_allocate_resources_generate_correct_command(mock_execute_fn):
+def test_get_allocate_resources_generates_correct_command(mock_execute_fn):
     """
     Test if the function allocate_from_file generate the expected command
     using or not the overwrite of the Resources

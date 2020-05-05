@@ -9,6 +9,7 @@ the API of the devices they are controlling.
 import datetime
 import logging
 from typing import Optional
+from datetime import timedelta
 
 import marshmallow
 import operator
@@ -82,7 +83,11 @@ def convert_assign_resources_response(response: str) -> domain.ResourceAllocatio
     except marshmallow.ValidationError:
         allocated_dishes = []
     else:
-        allocated_dishes = [domain.Dish(i) for i in unmarshalled.dish.receptor_ids]
+        try:
+            allocated_dishes = [domain.Dish(i) for i in unmarshalled.dish.receptor_ids]
+        except ValueError:
+            LOGGER.warning(f"Dish ID(s) cannot be converted to integers (IDs: {unmarshalled.dish.receptor_ids})")
+            allocated_dishes = []
     return domain.ResourceAllocation(dishes=allocated_dishes)
 
 
@@ -269,6 +274,8 @@ def allocate_resources_from_file(
     command = get_allocate_resources_command(subarray, resources, template_request)
 
     response = EXECUTOR.execute(command)
+    LOGGER.info("Command returned")
+    LOGGER.info(response)
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -410,7 +417,7 @@ def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfigu
     execute_configure_command(command)
 
 
-def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: float,
+def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: timedelta,
                         with_processing):
     """
     Load a CDM ConfigureRequest from disk and use it to perform sub-array

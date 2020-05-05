@@ -3,8 +3,8 @@
     "target": {
       "system":"ICRS",
       "name": "NGC1068",
-      "RA": 0.70984,
-      "dec": 0.000233
+      "RA": "12:29:06.699",
+      "dec": "02:03:08.598"
     }
   },
   "dish": {
@@ -18,15 +18,6 @@
         "fspID": 1,
         "functionMode": "CORR",
         "frequencySliceID": 1,
-        "integrationTime": 1400,
-        "corrBandwidth": 0,
-        "channelAveragingMap": [[1,2], [745,0]],
-        "outputLinkMap": [[1,0], [201,1]]
-      },
-      {
-        "fspID": 2,
-        "functionMode": "CORR",
-        "frequencySliceID": 2,
         "integrationTime": 1400,
         "corrBandwidth": 0
       }
