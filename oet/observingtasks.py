@@ -462,12 +462,14 @@ def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: 
 
 def configure_from_cdm(subarray_id: int, request: cdm_configure.ConfigureRequest):
     """
-        Load a CDM ConfigureRequest from file and use it to perform sub-array
-        configuration.
+    Configure a sub-array using the supplied CDM configuration.
 
-        :param subarray_id: the sub-array to configure
-        :param request: CDM ConfigureRequest object
-        :return:
+    This method does not make any changes to the configuration. It is the
+    responsibility of the caller to ensure that all IDs, etc. are consistent.
+
+    :param subarray_id: the ID of the sub-array to configure
+    :param request: the CDM configuration to set
+    :return:
     """
     subarray = domain.SubArray(subarray_id)
     request_json = schemas.CODEC.dumps(request)
