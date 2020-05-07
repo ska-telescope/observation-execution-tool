@@ -578,7 +578,7 @@ def test_get_allocate_resources_generates_correct_command(mock_execute_fn):
 @mock.patch.object(observingtasks, 'execute_configure_command')
 def test_configure_from_cdm(mock_execute_fn):
     """
-       verify configure_from_cdm with test cdm configureRequest_obj
+    verify configure_from_cdm with test cdm configureRequest_obj
     """
 
     # define the subarray id
@@ -600,38 +600,55 @@ def test_configure_from_cdm(mock_execute_fn):
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_allocate_from_cdm(mock_execute_fn):
+def test_assign_resources_from_cdm(mock_execute_fn):
     """
-    Test if
+    Verify that assign_resources_from_cdm requests resource allocation as
+    expected.
     """
+    #
+    # If allocate_from_cdm works correctly, it should be formulating an
+    # 'allocate resources' Command containing CDM JSON equal to the CDM object
+    # passed as an argument. There are two things to test:
+    #
+    #    1. an 'allocate resources' command is sent, not 'configure', not
+    #       'scan', etc.;
+    #    2. the CDM JSON should not be modified in any way;
+    #
+    # The test strategy is to populate CDM object from example JSON on disk,
+    # execute the allocate_from_cdm() function using that CDM object, then we
+    # can test that the Command executed is an allocation request that
+    # contains the CDM JSON we expect.
+    #
 
-    # define the subarray id
-    subarray_id = 1
-
-    # generate the expected command
-    mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
+    # Load the CDM resource assignment request object from the test JSON file
+    # on disk
     cwd, _ = os.path.split(__file__)
     json_path = os.path.join(cwd, 'testfile_sample_assign.json')
-
-    subarray = domain.SubArray(subarray_id)
-
     request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
         cdm_assign.AssignResourcesRequest,
         json_path
     )
 
-    # Using an empty Resources Allocation in order to create the allocation defined in the JSON
-    resources = ResourceAllocation()
+    # Set the sub-array ID for this test session.
+    subarray_id = 1
 
+    # Create the Command we expect to be issued by assign_resources_from_cdm
+    # We use an empty Resources Allocation in order to create the allocation
+    # exactly as defined in the JSON.
+    subarray = domain.SubArray(subarray_id)
+    resources = ResourceAllocation()
     command_expected = observingtasks.get_allocate_resources_command(subarray, resources, request)
 
-    # create the cdm object using the json
-    cdm_assign_object: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
-        cdm_assign.AssignResourcesRequest,
-        json_path
-    )
+    # Tell the mock executor to return a 'resources successfully assigned'
+    # response when called...
+    mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
 
-    observingtasks.assign_resources_from_cdm(subarray_id, cdm_assign_object)
+    # ... then call the function under test
+    observingtasks.assign_resources_from_cdm(subarray_id, request)
+
+    # ... get the Command that was sent for execution by assign_resources_from_cdm
     command_returned = mock_execute_fn.call_args[0][0]
 
+    # ... and verify the Command is as expected. This assertion checks both
+    # command type and JSON, validating 1. and 2.
     assert command_returned == command_expected
