@@ -27,6 +27,7 @@ requests = { version="*", index="pypi" }
 fire = { version="*", index="pypi" }
 tabulate = { version="*", index="pypi" }
 skuid = { version=">=0.0.1", index="nexus"}
+ska-project-data-model-library = { version="*", index="nexus" }
 
 [dev-packages]
 docutils = { version="*", index="pypi" }
