@@ -85,7 +85,8 @@ def convert_assign_resources_response(response: str) -> domain.ResourceAllocatio
         try:
             allocated_dishes = [domain.Dish(i) for i in unmarshalled.dish.receptor_ids]
         except ValueError:
-            LOGGER.warning('Dish ID(s) cannot be converted to integers (IDs: %)', unmarshalled.dish.receptor_ids)
+            LOGGER.warning('Dish ID(s) cannot be converted to integers (IDs: %s)',
+                           unmarshalled.dish.receptor_ids)
             allocated_dishes = []
     return domain.ResourceAllocation(dishes=allocated_dishes)
 
