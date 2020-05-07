@@ -280,6 +280,28 @@ def allocate_resources_from_file(
     return allocated
 
 
+def assign_resources_from_cdm(subarray_id: int,
+                              request: cdm_configure.AssignResourcesRequest) -> domain.ResourceAllocation:
+    """
+    Allocate resources to a sub-array using a CDM object.
+
+    :param subarray_id: the id of the sub-array to allocate the resources
+    :param request: the CDM AssignResourcesRequest object
+    retun: the resources that were successfully allocated to the sub-array
+    """
+
+    subarray = domain.SubArray(subarray_id)
+    resources = domain.ResourceAllocation
+    command = get_allocate_resources_command(subarray, resources, request)
+
+    response = EXECUTOR.execute(command)
+    LOGGER.info("Command returned")
+    LOGGER.info(response)
+    allocated = convert_assign_resources_response(response)
+    subarray.resources += allocated
+    return allocated
+
+
 def deallocate_resources(subarray: domain.SubArray,
                          release_all: bool = False,
                          resources: domain.ResourceAllocation = None):
