@@ -41,7 +41,8 @@ setup(
         'pytango',
         'requests',
         'tabulate',
-        'skuid'
+        'skuid',
+        'ska-project-data-model-library'
     ],
     setup_requires=[
         # dependency for `python setup.py test`
