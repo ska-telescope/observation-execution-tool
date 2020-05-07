@@ -580,11 +580,23 @@ def test_configure_from_cdm(mock_execute_fn):
     """
        verify configure_from_cdm with test cdm configureRequest_obj
     """
-    cdm_obj = ConfigureRequest(123)
+
+    # define the subarray id
+    subarray_id = 1
+
+    # define the scan_id
+    scan_id = 123
+
+    # create the test CDM object
+    cdm_obj = ConfigureRequest(scan_id)
+
     request_json = schemas.CODEC.dumps(cdm_obj)
-    cmd = command.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Configure', request_json)
-    observingtasks.execute_configure_command(cmd)
-    mock_execute_fn.assert_called_with(mock.ANY)
+    command_expected = command.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Configure', request_json)
+
+    observingtasks.configure_from_cdm(subarray_id, cdm_obj)
+    command_returned = mock_execute_fn.call_args[0][0]
+
+    assert command_returned == command_expected
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
