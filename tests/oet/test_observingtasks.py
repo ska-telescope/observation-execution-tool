@@ -408,7 +408,7 @@ def test_scan_forms_correct_command():
     """
     sub_array = SubArray(1)
 
-    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock)\
+    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock) \
             as mock_scan_id:
         mock_scan_id.return_value = 123
         generated = observingtasks.get_scan_command(sub_array)
@@ -421,7 +421,7 @@ def test_get_scan_request_populates_cdm_object_correctly():
     """
     Verify that a ScanRequest is populated correctly
     """
-    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock)\
+    with mock.patch('oet.command.LocalScanIdGenerator.value', new_callable=mock.PropertyMock) \
             as mock_value:
         mock_value.return_value = 123
         request = observingtasks.get_scan_request()
@@ -564,7 +564,7 @@ def test_get_allocate_resources_generates_correct_command(mock_execute_fn):
 
     assert command_returned == command_expected
 
-    resources = domain.ResourceAllocation(dishes=[Dish('0002'), Dish('0003')]) # Resource different from the JSON
+    resources = domain.ResourceAllocation(dishes=[Dish('0002'), Dish('0003')])  # Resource different from the JSON
     command_expected = observingtasks.get_allocate_resources_command(subarray, resources, request)
 
     assert command_returned != command_expected
@@ -573,3 +573,15 @@ def test_get_allocate_resources_generates_correct_command(mock_execute_fn):
     command_returned = mock_execute_fn.call_args[0][0]
 
     assert command_returned == command_expected
+
+
+@mock.patch.object(observingtasks, 'execute_configure_command')
+def test_configure_from_cdm(mock_execute_fn):
+    """
+       verify configure_from_cdm with test cdm configureRequest_obj
+    """
+    cdm_obj = ConfigureRequest(123)
+    request_json = schemas.CODEC.dumps(cdm_obj)
+    cmd = command.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Configure', request_json)
+    observingtasks.execute_configure_command(cmd)
+    mock_execute_fn.assert_called_with(mock.ANY)

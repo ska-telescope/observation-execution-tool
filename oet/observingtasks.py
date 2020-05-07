@@ -460,6 +460,22 @@ def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: 
     execute_configure_command(command)
 
 
+def configure_from_cdm(subarray_id: int, request: cdm_configure.ConfigureRequest):
+    """
+        Load a CDM ConfigureRequest from file and use it to perform sub-array
+        configuration.
+
+        :param subarray_id: the sub-array to configure
+        :param request: CDM ConfigureRequest object
+        :return:
+    """
+    subarray = domain.SubArray(subarray_id)
+    request_json = schemas.CODEC.dumps(request)
+    subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+    command = Command(subarray_node_fqdn, 'Configure', request_json)
+    execute_configure_command(command)
+
+
 def telescope_start_up(telescope: domain.SKAMid):
     """
     Start up the telescope.
