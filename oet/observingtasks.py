@@ -281,7 +281,7 @@ def allocate_resources_from_file(
 
 
 def assign_resources_from_cdm(subarray_id: int,
-                              request: cdm_configure.AssignResourcesRequest) -> domain.ResourceAllocation:
+                              request: cdm_assign.AssignResourcesRequest) -> domain.ResourceAllocation:
     """
     Allocate resources to a sub-array using a CDM object.
 
@@ -291,7 +291,7 @@ def assign_resources_from_cdm(subarray_id: int,
     """
 
     subarray = domain.SubArray(subarray_id)
-    resources = domain.ResourceAllocation
+    resources = domain.ResourceAllocation()
     command = get_allocate_resources_command(subarray, resources, request)
 
     response = EXECUTOR.execute(command)

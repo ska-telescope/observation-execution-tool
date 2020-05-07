@@ -585,3 +585,41 @@ def test_configure_from_cdm(mock_execute_fn):
     cmd = command.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Configure', request_json)
     observingtasks.execute_configure_command(cmd)
     mock_execute_fn.assert_called_with(mock.ANY)
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_allocate_from_cdm(mock_execute_fn):
+    """
+    Test if
+    """
+
+    # define the subarray id
+    subarray_id = 1
+
+    # generate the expected command
+    mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
+    cwd, _ = os.path.split(__file__)
+    json_path = os.path.join(cwd, 'testfile_sample_assign.json')
+
+    subarray = domain.SubArray(subarray_id)
+
+    request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
+        cdm_assign.AssignResourcesRequest,
+        json_path
+    )
+
+    # Using an empty Resources Allocation in order to create the allocation defined in the JSON
+    resources = ResourceAllocation()
+
+    command_expected = observingtasks.get_allocate_resources_command(subarray, resources, request)
+
+    # create the cdm object using the json
+    cdm_assign_object: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
+        cdm_assign.AssignResourcesRequest,
+        json_path
+    )
+
+    observingtasks.assign_resources_from_cdm(subarray_id, cdm_assign_object)
+    command_returned = mock_execute_fn.call_args[0][0]
+
+    assert command_returned == command_expected
