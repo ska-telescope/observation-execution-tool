@@ -578,24 +578,42 @@ def test_get_allocate_resources_generates_correct_command(mock_execute_fn):
 @mock.patch.object(observingtasks, 'execute_configure_command')
 def test_configure_from_cdm(mock_execute_fn):
     """
-    verify configure_from_cdm with test cdm configureRequest_obj
+       Verify  configure_from_cdm  with test cdm configureRequest obj
     """
+    # The test to populate CDM object from example JSON on disk,
+    # execute the configure_from_cdm() function using that CDM object, then we
+    # can test that the Command executed is contains the CDM JSON we expect.
 
-    # define the subarray id
+    # Load the CDM configure request object from the test JSON file
+    # on disk
+    cwd, _ = os.path.split(__file__)
+    test_path = os.path.join(cwd, 'testfile_sample_configure.json')
+
+    request1: cdm_configure.ConfigureRequest = schemas.CODEC.load_from_file(
+        cdm_configure.ConfigureRequest,
+        test_path)
+
+    request2: cdm_configure.ConfigureRequest = schemas.CODEC.load_from_file(
+        cdm_configure.ConfigureRequest,
+        test_path)
+
+    # Set the sub-array ID for this test session.
     subarray_id = 1
 
-    # define the scan_id
-    scan_id = 123
+    # convert CDM configure rquest object into json string
+    request_json = schemas.CODEC.dumps(request2)
 
-    # create the test CDM object
-    cdm_obj = ConfigureRequest(scan_id)
-
-    request_json = schemas.CODEC.dumps(cdm_obj)
+    # create the command
     command_expected = command.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Configure', request_json)
 
-    observingtasks.configure_from_cdm(subarray_id, cdm_obj)
+    # ... then call the function under test
+    observingtasks.configure_from_cdm(subarray_id, request1)
+
+    # ... get the Command that was sent for execution by configure_from_cdm
     command_returned = mock_execute_fn.call_args[0][0]
 
+    # verify the Command is as expected. This assertion checks both
+    # command type and JSON
     assert command_returned == command_expected
 
 
