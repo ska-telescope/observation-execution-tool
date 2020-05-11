@@ -85,7 +85,8 @@ def convert_assign_resources_response(response: str) -> domain.ResourceAllocatio
         try:
             allocated_dishes = [domain.Dish(i) for i in unmarshalled.dish.receptor_ids]
         except ValueError:
-            LOGGER.warning('Dish ID(s) cannot be converted to integers (IDs: %)', unmarshalled.dish.receptor_ids)
+            LOGGER.warning('Dish ID(s) cannot be converted to integers (IDs: %s)',
+                           unmarshalled.dish.receptor_ids)
             allocated_dishes = []
     return domain.ResourceAllocation(dishes=allocated_dishes)
 
@@ -280,6 +281,28 @@ def allocate_resources_from_file(
     return allocated
 
 
+def assign_resources_from_cdm(subarray_id: int,
+                              request: cdm_assign.AssignResourcesRequest) -> domain.ResourceAllocation:
+    """
+    Allocate resources to a sub-array using a CDM object.
+
+    :param subarray_id: the id of the sub-array to allocate the resources
+    :param request: the CDM AssignResourcesRequest object
+    retun: the resources that were successfully allocated to the sub-array
+    """
+
+    subarray = domain.SubArray(subarray_id)
+    resources = domain.ResourceAllocation()
+    command = get_allocate_resources_command(subarray, resources, request)
+
+    response = EXECUTOR.execute(command)
+    LOGGER.info("Command returned")
+    LOGGER.info(response)
+    allocated = convert_assign_resources_response(response)
+    subarray.resources += allocated
+    return allocated
+
+
 def deallocate_resources(subarray: domain.SubArray,
                          release_all: bool = False,
                          resources: domain.ResourceAllocation = None):
@@ -457,6 +480,24 @@ def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: 
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     command = Command(subarray_node_fqdn, 'Configure', request_json)
 
+    execute_configure_command(command)
+
+
+def configure_from_cdm(subarray_id: int, request: cdm_configure.ConfigureRequest):
+    """
+    Configure a sub-array using the supplied CDM configuration.
+
+    This method does not make any changes to the configuration. It is the
+    responsibility of the caller to ensure that all IDs, etc. are consistent.
+
+    :param subarray_id: the ID of the sub-array to configure
+    :param request: the CDM configuration to set
+    :return:
+    """
+    subarray = domain.SubArray(subarray_id)
+    request_json = schemas.CODEC.dumps(request)
+    subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+    command = Command(subarray_node_fqdn, 'Configure', request_json)
     execute_configure_command(command)
 
 
