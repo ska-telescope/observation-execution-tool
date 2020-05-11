@@ -589,25 +589,21 @@ def test_configure_from_cdm(mock_execute_fn):
     cwd, _ = os.path.split(__file__)
     test_path = os.path.join(cwd, 'testfile_sample_configure.json')
 
-    request1: cdm_configure.ConfigureRequest = schemas.CODEC.load_from_file(
-        cdm_configure.ConfigureRequest,
-        test_path)
-
-    request2: cdm_configure.ConfigureRequest = schemas.CODEC.load_from_file(
+    request: cdm_configure.ConfigureRequest = schemas.CODEC.load_from_file(
         cdm_configure.ConfigureRequest,
         test_path)
 
     # Set the sub-array ID for this test session.
     subarray_id = 1
 
-    # convert CDM configure rquest object into json string
-    request_json = schemas.CODEC.dumps(request2)
+    # convert CDM configure request object into json string
+    request_json = schemas.CODEC.dumps(request)
 
     # create the command
     command_expected = command.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Configure', request_json)
 
     # ... then call the function under test
-    observingtasks.configure_from_cdm(subarray_id, request1)
+    observingtasks.configure_from_cdm(subarray_id, request)
 
     # ... get the Command that was sent for execution by configure_from_cdm
     command_returned = mock_execute_fn.call_args[0][0]
