@@ -19,6 +19,11 @@ FORMAT = '%(asctime)-15s %(message)s'
 
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
+#
+# Changelog
+#
+# v1 number of scans and scan duration are sourced from SB
+#
 
 def main(sb_json, configure_json, subarray_id=1):
     """
