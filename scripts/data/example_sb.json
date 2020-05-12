@@ -1,0 +1,44 @@
+{
+  "id": "sbi-mvp01-20200325-00001",
+  "fieldConfigurations": {
+    "science field": {
+      "targets": {
+        "beam #1": {
+          "type": "sidereal",
+          "name": "NGC123",
+          "system": "ICRS",
+          "RA": "12:34:56.78",
+          "dec": "+12:34:56.78"
+        },
+        "beam #2": {
+          "type": "sidereal",
+          "name": "M51",
+          "system": "ICRS",
+          "RA": "01:23:45.67",
+          "dec": "+01:23:45.67"
+        }
+      }
+    },
+    "calibrator field": {
+      "targets": {
+        "Mars": {
+          "type": "planet",
+          "name": "mars"
+        }
+      }
+    }
+  },
+  "scanDefinitions": {
+    "calibrator scan": {
+      "scanDuration": 5.0,
+      "fieldConfiguration": "calibrator field"
+    },
+    "science scan": {
+      "scanDuration": 10.0,
+      "fieldConfiguration": "science field"
+    }
+  },
+  "scanSequence": [
+    "calibrator scan", "science scan", "science scan", "calibrator scan"
+  ]
+}
