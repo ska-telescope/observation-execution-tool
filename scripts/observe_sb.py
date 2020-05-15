@@ -8,6 +8,7 @@ from datetime import timedelta
 from ska.cdm.messages.subarray_node.configure import ConfigureRequest
 from ska.cdm.schemas import CODEC as cdm_CODEC
 from ska.pdm.entities.sb_definition import SBDefinition
+from ska.pdm.entities.field_configuration import Target
 from ska.pdm.schemas import CODEC as pdm_CODEC
 
 from oet.domain import SubArray
@@ -66,26 +67,24 @@ def main(sb_json, configure_json, subarray_id=1):
     # the loop, therefore creating it only once rather than once per iteration.
     scan_definitions = {scan_definition.id: scan_definition
                         for scan_definition in sched_block.scan_definitions}
-    # Similarly we will need a look-up table for the science field 
-    # configurations as the scan definitions contain only the science field 
-    # configuration IDs 
-    science_field_configurations = {sfc.id: sfc
-                        for sfc in sched_block.science_field_configurations}
+
+    # Similarly we will need a look-up table for the FieldConfigurations as
+    # the scan definitions contain only the FieldConfiguration IDs
+    field_configurations = {field_configuration.id: field_configuration
+                            for field_configuration in sched_block.field_configurations}
+
     for scan_definition_id in sched_block.scan_sequence:
         # Get the scan ID. This is only used for logging, not for any
         # business logic.
         scan_id = SCAN_ID_GENERATOR.value
 
         scan_definition = scan_definitions[scan_definition_id]
-        # The Science Field Configuration is referenced by ID in the 
-        # scan definition
-        science_field_configuration_id = \
-                scan_definition.science_field_configuration_id
-        science_field_configuration = \
-                science_field_configurations[science_field_configuration_id]
-        
-
         LOG.info(f'Configuring for scan definition: {scan_definition.id}')
+
+        # The Science Field Configuration is referenced by ID in the
+        # scan definition
+        field_configuration_id = scan_definition.field_configuration_id
+        field_configuration = field_configurations[field_configuration_id]
 
         # Override the scan duration specified in the CDM with the scan
         # duration extracted from the SB. Note that the CDM library requires
@@ -95,15 +94,15 @@ def main(sb_json, configure_json, subarray_id=1):
         LOG.info(f'Setting scan duration: {sb_scan_duration} seconds')
         
         # Now override the pointing with that found in the SB target
-        targets = science_field_configuration.targets
-        # assume just using the first target
-        target = targets[0]
-        coord = target.coord
-        cdm_config.pointing.target.coord = coord
+        targets = field_configuration.targets
+        # assume just using the first target for SKA MID. SKA LOW, with its
+        # multiple beams, might be different.
+        target: Target = targets[0]
+        cdm_config.pointing.target.coord = target.coord
         # alternatively cdm_config.pointing.target.coord = targets[0].coord
-        # Log the change (there is no string representation of the SkyCoord class)
-        LOG.info(f'Setting pointing information')
-        
+        # Log the change
+        LOG.info(f'Setting pointing information for {target.name} '
+                 f'({target.coord.to_string(style="hmsdms")})')
 
         # With the CDM modified, we can now issue the Configure instruction...
         LOG.info(f'Configuring subarray {subarray_id} for scan {scan_id}')
