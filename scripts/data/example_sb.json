@@ -31,14 +31,22 @@
   "scanDefinitions": {
     "calibrator scan": {
       "scanDuration": 5.0,
-      "fieldConfiguration": "calibrator field"
+      "fieldConfiguration": "calibrator field",
+      "dishConfiguration": "dish config 123"
     },
     "science scan": {
       "scanDuration": 10.0,
-      "fieldConfiguration": "science field"
+      "fieldConfiguration": "science field",
+      "dishConfiguration": "dish config 123"
     }
   },
   "scanSequence": [
     "calibrator scan", "science scan", "science scan", "calibrator scan"
+  ],
+  "dishConfigurations" : [
+    {
+      "id": "dish config 123",
+      "receiverBand": "1"
+    }
   ]
 }

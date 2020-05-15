@@ -19,6 +19,7 @@ FORMAT = '%(asctime)-15s %(message)s'
 
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
+
 #
 # Changelog
 #
@@ -58,16 +59,22 @@ def main(sb_json, configure_json, subarray_id=1):
 
     # Scan sequence is an ordered list of ScanDefinition identifiers. These
     # are string IDs, not the ScanDefinition instances themselves.
+    # We need the ScanDefinition with matching ID. We could inspect each
+    # ScanDefinition and return the one with matching ID, or we could do
+    # as we do here, creating a temporary mapping and retrieving by key.
+    scan_definitions = {scan_definition.id: scan_definition
+                        for scan_definition in sched_block.scan_definitions}
+
+    # We need the dish configuration object with matching id.
+    # creating a temporary mapping and retrieving by key
+    dish_configurations = {dish_configuration.id: dish_configuration
+                           for dish_configuration in sched_block.dish_configurations}
+
     for scan_definition_id in sched_block.scan_sequence:
         # Get the scan ID. This is only used for logging, not for any
         # business logic.
         scan_id = SCAN_ID_GENERATOR.value
 
-        # We need the ScanDefinition with matching ID. We could inspect each
-        # ScanDefinition and return the one with matching ID, or we could do
-        # as we do here, creating a temporary mapping and retrieving by key.
-        scan_definitions = {scan_definition.id: scan_definition
-                            for scan_definition in sched_block.scan_definitions}
         scan_definition = scan_definitions[scan_definition_id]
 
         LOG.info(f'Configuring for scan definition: {scan_definition.id}')
@@ -77,7 +84,19 @@ def main(sb_json, configure_json, subarray_id=1):
         # scan durations to be timedelta instances, not floats.
         sb_scan_duration = scan_definition.scan_duration
         cdm_config.tmc.scan_duration = timedelta(seconds=sb_scan_duration)
+
         LOG.info(f'Setting scan duration: {sb_scan_duration} seconds')
+
+        # The dish configuraton is referenced by ID in the
+        # scan definition. Get the dish configuraton Id from the scan definition.
+        sb_dish_configuration_id = scan_definition.dishConfiguration
+
+        dish_configuration = dish_configurations[sb_dish_configuration_id]
+        LOG.info(f'Configuring dish configuration: {sb_dish_configuration_id}')
+
+        cdm_config.dish.receiver_band = dish_configuration.receiver_band
+
+        LOG.info(f'Setting receiver Band: {dish_configuration.receiver_band} ')
 
         # With the CDM modified, we can now issue the Configure instruction...
         LOG.info(f'Configuring subarray {subarray_id} for scan {scan_id}')
