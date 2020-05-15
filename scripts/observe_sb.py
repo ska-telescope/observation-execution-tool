@@ -113,7 +113,7 @@ def main(sb_json, configure_json, subarray_id=1):
 
         # The dish configuraton is referenced by ID in the
         # scan definition. Get the dish configuraton Id from the scan definition.
-        sb_dish_configuration_id = scan_definition.dishConfiguration
+        sb_dish_configuration_id = scan_definition.dish_configuration_id
 
         dish_configuration = dish_configurations[sb_dish_configuration_id]
         LOG.info(f'Configuring dish configuration: {sb_dish_configuration_id}')
