@@ -5,7 +5,7 @@ import logging
 import os
 from datetime import timedelta
 
-from ska.cdm.messages.subarray_node.configure import ConfigureRequest
+from ska.cdm.messages.subarray_node.configure import ConfigureRequest, ReceiverBand
 from ska.cdm.schemas import CODEC as cdm_CODEC
 from ska.pdm.entities.sb_definition import SBDefinition
 from ska.pdm.schemas import CODEC as pdm_CODEC
@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 # Changelog
 #
 # v1 number of scans and scan duration are sourced from SB
-#
+# v2 csp is sourced from the SB
 
 def main(sb_json, configure_json, subarray_id=1):
     """
@@ -77,10 +77,31 @@ def main(sb_json, configure_json, subarray_id=1):
         # scan durations to be timedelta instances, not floats.
         sb_scan_duration = scan_definition.scan_duration
         cdm_config.tmc.scan_duration = timedelta(seconds=sb_scan_duration)
+
         LOG.info(f'Setting scan duration: {sb_scan_duration} seconds')
+
+        # get temporary mapping of available csp and dish configurations 
+        csp_configurations = {csp_configuration.csp_id: csp_configuration
+                             for csp_configuration in sched_block.csp_configurations}
+        dish_configurations = {dish_configuration.id: dish_configuration
+                               for dish_configuration in sched_block.dish_configurations}
+
+        # Override the CSP in the CDM with the one specified in the SB 
+        # scan definition.
+        cdm_config.csp = csp_configurations.get(
+                         scan_definition.csp_configuration_id)
+
+        # Complete the CSP configuration by setting the frequency band from 
+        # the dish configuration for this scan.
+        dish_configuration = dish_configurations[scan_definition.dish_configuration_id]
+        if (cdm_config.csp is not None):
+            cdm_config.csp.frequency_band = dish_configuration.receiver_band
+
+        LOG.info(f'Setting CSP configuration: {scan_definition.csp_configuration_id}')
 
         # With the CDM modified, we can now issue the Configure instruction...
         LOG.info(f'Configuring subarray {subarray_id} for scan {scan_id}')
+#        print(cdm_CODEC.dumps(cdm_config))
         observingtasks.configure_from_cdm(subarray_id, cdm_config)
 
         # .. and with configuration complete, we can begin the scan.
