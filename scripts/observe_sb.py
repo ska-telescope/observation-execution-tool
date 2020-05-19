@@ -20,11 +20,13 @@ FORMAT = '%(asctime)-15s %(message)s'
 
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
+
 #
 # Changelog
 #
 # v1 number of scans and scan duration are sourced from SB
 # v2 pointing information is sourced from SB
+# v3 dish receiver comes from SB
 #
 
 def main(sb_json, configure_json, subarray_id=1):
@@ -63,8 +65,8 @@ def main(sb_json, configure_json, subarray_id=1):
     # We need the ScanDefinition with matching ID. We could inspect each
     # ScanDefinition and return the one with matching ID, or we could do
     # as we do here, creating a look-up table and retrieving by key.
-    # The advantage of this is that we can do create the table outside of 
-    # the loop, therefore creating it only once rather than once per iteration.
+    # The advantage of this is that we can create the table outside of
+    # the loop, therefore creating it once rather than once per iteration.
     scan_definitions = {scan_definition.id: scan_definition
                         for scan_definition in sched_block.scan_definitions}
 
@@ -72,6 +74,11 @@ def main(sb_json, configure_json, subarray_id=1):
     # the scan definitions contain only the FieldConfiguration IDs
     field_configurations = {field_configuration.id: field_configuration
                             for field_configuration in sched_block.field_configurations}
+
+    # We need the dish configuration object with matching id.
+    # creating a temporary mapping and retrieving by key
+    dish_configurations = {dish_configuration.id: dish_configuration
+                           for dish_configuration in sched_block.dish_configurations}
 
     for scan_definition_id in sched_block.scan_sequence:
         # Get the scan ID. This is only used for logging, not for any
@@ -91,6 +98,7 @@ def main(sb_json, configure_json, subarray_id=1):
         # scan durations to be timedelta instances, not floats.
         sb_scan_duration = scan_definition.scan_duration
         cdm_config.tmc.scan_duration = timedelta(seconds=sb_scan_duration)
+
         LOG.info(f'Setting scan duration: {sb_scan_duration} seconds')
         
         # Now override the pointing with that found in the SB target
@@ -103,6 +111,14 @@ def main(sb_json, configure_json, subarray_id=1):
         # Log the change
         LOG.info(f'Setting pointing information for {target.name} '
                  f'({target.coord.to_string(style="hmsdms")})')
+
+        # The dish configuration is referenced by ID in the scan definition.
+        # Get the dish configuration ID from the scan definition.
+        sb_dish_configuration_id = scan_definition.dish_configuration_id
+        dish_configuration = dish_configurations[sb_dish_configuration_id]
+
+        LOG.info(f'Setting receiver band: {dish_configuration.receiver_band} ')
+        cdm_config.dish.receiver_band = dish_configuration.receiver_band
 
         # With the CDM modified, we can now issue the Configure instruction...
         LOG.info(f'Configuring subarray {subarray_id} for scan {scan_id}')
