@@ -4,7 +4,6 @@ Unit tests for the oet.observingtasks module
 # import datetime
 import unittest.mock as mock
 
-import enum
 import os
 import pytest
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
@@ -18,6 +17,7 @@ from ska.cdm import schemas
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
+from oet.observingtasks import ObsState
 from oet.domain import Dish, DishAllocation, ResourceAllocation, SKAMid, SubArray
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
@@ -28,19 +28,6 @@ CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["00
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
 CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_success": ["0001"]}}'
 VALID_ASSIGN_STARTSCAN_REQUEST = '{"id": 123}'
-
-
-class ObsState(enum.Enum):
-    """
-    Represent the ObsState Tango enumeration
-    """
-    IDLE = 0
-    CONFIGURING = 1
-    READY = 2
-    SCANNING = 3
-    PAUSED = 4
-    ABORTED = 5
-    FAULT = 6
 
 
 def test_tango_registry_returns_correct_url_for_ska_mid():
@@ -338,10 +325,49 @@ def test_configure_subarray_forms_correct_command():
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
+def test_wait_for_state_returns_target_state(mock_read_fn):
+    """
+    Verify wait_for_state waits for the device obsState
+    """
+    mock_read_fn.side_effect = [
+        ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
+    ]
+
+    attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    target_state = ObsState.IDLE
+    error_state = [ObsState.ABORTED, ObsState.FAULT]
+    final_state = observingtasks.wait_for_state(SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state)
+
+    mock_read_fn.assert_called_with(attribute)
+    assert final_state == ObsState.IDLE
+    assert mock_read_fn.call_count == 3
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+def test_wait_for_state_returns_error_state(mock_read_fn):
+    """
+    Verify wait_for_state stops waiting for the device target obsState when
+    error state is encountered
+    """
+    mock_read_fn.side_effect = [
+        ObsState.IDLE, ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.FAULT, ObsState.RESTARTING
+    ]
+
+    attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    target_state = ObsState.READY
+    error_state = [ObsState.ABORTING, ObsState.FAULT]
+    final_state = observingtasks.wait_for_state(SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state)
+
+    mock_read_fn.assert_called_with(attribute)
+    assert final_state == ObsState.FAULT
+    assert mock_read_fn.call_count == 4
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_execute_configure_command_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn):
     """
-    Verify that execute_configure_command mmand for the device obsState to
+    Verify that execute_configure_command waits for the device obsState to
     transition back to READY before returning.
     """
     # obsState will be CONFIGURING for the first three reads, then READY

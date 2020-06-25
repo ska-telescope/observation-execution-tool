@@ -8,8 +8,9 @@ the API of the devices they are controlling.
 """
 import logging
 import operator
+import enum
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, List, Any
 
 import marshmallow
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
@@ -22,6 +23,27 @@ from . import domain
 from .command import Attribute, Command, SCAN_ID_GENERATOR, TangoExecutor
 
 LOGGER = logging.getLogger(__name__)
+
+
+class ObsState(enum.Enum):
+    """
+    Represent the ObsState Tango enumeration
+    """
+    EMPTY = 0
+    IDLE = 1
+    RESOURCING = 2
+    CONFIGURING = 3
+    READY = 4
+    SCANNING = 5
+    PAUSED = 6
+    ABORTING = 7
+    ABORTED = 8
+    RESETTING = 9
+    RESTARTING = 10
+    FAULT = 11
+
+    def __str__(self):
+        return str(self.name)
 
 
 class TangoRegistry:  # pylint: disable=too-few-public-methods
@@ -375,24 +397,55 @@ def get_configure_subarray_command(subarray: domain.SubArray,
     return Command(subarray_node_fqdn, 'Configure', request_json)
 
 
-def wait_for_value(attribute: Attribute, target_value, key=lambda _: _):
+def wait_for_value(attribute: Attribute, target_values: List[Any], key=lambda _: _) -> Any:
     """
-    Block until a Tango device attribute has reached a target value.
+    Block until a Tango device attribute has reached one of target values.
 
     If defined, the optional 'key' function will be used to process the device
     attribute value before comparison to the target value.
 
-    :param attribute: attribute to query
-    :param target_value: value to wait for
+    :param attribute: device to query
+    :param target_values: target ObsState to wait for
     :param key: function to process each attribute value before comparison
-    :return:
+    :return: Attribute value read from device (one of target_values)
     """
-    LOGGER.info('Waiting for %s to transition to %s', attribute.name, target_value)
     while True:
         response = EXECUTOR.read(attribute)
         processed = key(response)
-        if processed == target_value:
-            break
+        if processed in target_values:
+            return processed
+
+
+# TODO: 1. implement timeout functionality 2. return value to use Either pattern
+def wait_for_state(device: str, target_state: ObsState, error_states: List[ObsState], key=lambda _: _) -> ObsState: # timeout) -> Either[SadPathReturnValue,HappyPathReturnValue]
+    """
+    Block until a Tango device attribute obsState has reached a target state or
+    one of the error states.
+
+    If defined, the optional 'key' function will be used to process the device
+    attribute value before comparison to the target value.
+
+    :param device: device to query
+    :param target_state: target ObsState to wait for
+    :param error_states: list of possible error ObsStates
+    :param key: function to process each attribute value before comparison
+    :return: ObsState of the device (either target state or error state)
+    """
+    attribute = Attribute(device, 'obsState')
+    LOGGER.info('Waiting for %s to transition to %s', attribute.name, target_state)
+
+    target_values = error_states.copy()
+    target_values.append(target_state)
+
+    final_state = ObsState(wait_for_value(attribute, target_values, key))
+
+    if final_state == target_state:
+        LOGGER.info('%s reached target state %s', attribute.name, target_state)
+    else:
+        LOGGER.warning('%s state expected to go to %s but instead went to %s',
+                       attribute.name, target_state, final_state)
+
+    return final_state
 
 
 def execute_configure_command(command: Command):
