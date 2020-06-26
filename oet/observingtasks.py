@@ -650,12 +650,10 @@ def end_sb(subarray: domain.SubArray):
     command = get_end_sb_command(subarray)
     _ = EXECUTOR.execute(command)
 
-    obsstate = Attribute(command.device, 'obsState')
-    # obsState is a Python Enum, so compare desired state against enum.name
-    name_getter = operator.attrgetter('name')
-
-    #  wait for the sub-array obsState to transition from READY to IDLE
-    wait_for_value(obsstate, 'IDLE', name_getter)
+    final_state = wait_for_state(command.device, target_state=ObsState.IDLE,
+                                 error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
+    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
+        raise Exception(f'Reached at failure state: {final_state[1]}')
 
 
 def get_end_sb_command(subarray: domain.SubArray) -> Command:
