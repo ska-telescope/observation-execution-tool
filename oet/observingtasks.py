@@ -630,13 +630,15 @@ def scan(subarray: domain.SubArray):
 
     _ = EXECUTOR.execute(command)
 
-    obsstate = Attribute(command.device, 'obsState')
-    # obsState is a Python Enum, so compare desired state against enum.name
-    name_getter = operator.attrgetter('name')
+    final_state_1 = wait_for_state(command.device, target_state=ObsState.SCANNING,
+                                   error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
+    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state_1:
+        raise Exception(f'Reached at failure state: {final_state_1[1]}')
 
-    #  wait for the sub-array obsState to transition from SCANNING to READY
-    wait_for_value(obsstate, 'SCANNING', name_getter)
-    wait_for_value(obsstate, 'READY', name_getter)
+    final_state_2 = wait_for_state(command.device, target_state=ObsState.READY,
+                                   error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
+    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state_2:
+        raise Exception(f'Reached at failure state: {final_state_2[1]}')
 
 
 def end_sb(subarray: domain.SubArray):
