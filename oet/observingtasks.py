@@ -481,13 +481,11 @@ def execute_configure_command(command: Command):
     # Python convention is to label unused variables as _
     _ = EXECUTOR.execute(command)
 
-    obsstate = Attribute(command.device, 'obsState')
-    # obsState is a Python Enum, so compare desired state against enum.name
-    name_getter = operator.attrgetter('name')
-
-    #  wait for the sub-array obsState to transition from CONFIGURING to READY
-    wait_for_value(obsstate, 'CONFIGURING', name_getter)
-    wait_for_value(obsstate, 'READY', name_getter)
+    # wait for state
+    final_state = wait_for_state(command.device, target_state=ObsState.READY,
+                                 error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
+    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
+        raise Exception(f'Reached at failure state: {final_state[1]}')
 
 
 def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfiguration):
