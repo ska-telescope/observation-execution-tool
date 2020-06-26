@@ -24,6 +24,8 @@ from .command import Attribute, Command, SCAN_ID_GENERATOR, TangoExecutor
 
 LOGGER = logging.getLogger(__name__)
 
+WAIT_FOR_STATE_SUCCESS_RESPONSE = 'SUCCESS'
+WAIT_FOR_STATE_FAILURE_RESPONSE = 'FAILURE'
 
 class ObsState(enum.Enum):
     """
@@ -264,6 +266,10 @@ def allocate_resources(subarray: domain.SubArray,
     # requires variable annotations in Python > 3.5
     # response: List[int] = EXECUTOR.execute(command)
     response = EXECUTOR.execute(command)
+    # wait for state
+    final_state = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
+    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
+        raise Exception(f'Reached at failure state: {final_state[1]}')
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -296,8 +302,10 @@ def allocate_resources_from_file(
     command = get_allocate_resources_command(subarray, resources, template_request)
 
     response = EXECUTOR.execute(command)
-    LOGGER.info("Command returned")
-    LOGGER.info(response)
+    # wait for state
+    final_state = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
+    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
+        raise Exception(f'Reached at failure state: {final_state[1]}')
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -318,8 +326,10 @@ def assign_resources_from_cdm(subarray_id: int,
     command = get_allocate_resources_command(subarray, resources, request)
 
     response = EXECUTOR.execute(command)
-    LOGGER.info("Command returned")
-    LOGGER.info(response)
+    # wait for state
+    final_state = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
+    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
+        raise Exception(f'Reached at failure state: {final_state[1]}')
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -441,11 +451,13 @@ def wait_for_state(device: str, target_state: ObsState, error_states: List[ObsSt
 
     if final_state == target_state:
         LOGGER.info('%s reached target state %s', attribute.name, target_state)
+        return [WAIT_FOR_STATE_SUCCESS_RESPONSE, final_state]
     else:
         LOGGER.warning('%s state expected to go to %s but instead went to %s',
                        attribute.name, target_state, final_state)
+        return [WAIT_FOR_STATE_FAILURE_RESPONSE, final_state]
 
-    return final_state
+    # return final_state
 
 
 def execute_configure_command(command: Command):

@@ -339,7 +339,7 @@ def test_wait_for_state_returns_target_state(mock_read_fn):
     final_state = observingtasks.wait_for_state(SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state)
 
     mock_read_fn.assert_called_with(attribute)
-    assert final_state == ObsState.IDLE
+    assert final_state[1] == ObsState.IDLE
     assert mock_read_fn.call_count == 3
 
 
@@ -359,7 +359,7 @@ def test_wait_for_state_returns_error_state(mock_read_fn):
     final_state = observingtasks.wait_for_state(SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state)
 
     mock_read_fn.assert_called_with(attribute)
-    assert final_state == ObsState.FAULT
+    assert final_state[1] == ObsState.FAULT
     assert mock_read_fn.call_count == 4
 
 
@@ -562,14 +562,16 @@ def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_r
     assert processed_scan_id != original_scan_id
     assert not processed_pb_ids.intersection(original_pb_ids)
 
-
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_get_allocate_resources_generates_correct_command(mock_execute_fn):
+def test_get_allocate_resources_generates_correct_command(mock_execute_fn,mock_read_fn):
     """
     Test if the function allocate_from_file generate the expected command
     using or not the overwrite of the Resources
     """
-
+    mock_read_fn.side_effect = [
+        ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
+    ]
     mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE  # to update with the last json expected
     cwd, _ = os.path.split(__file__)
     json_path = os.path.join(cwd, 'testfile_sample_assign.json')
@@ -638,9 +640,9 @@ def test_configure_from_cdm(mock_execute_fn):
     # command type and JSON
     assert command_returned == command_expected
 
-
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_assign_resources_from_cdm(mock_execute_fn):
+def test_assign_resources_from_cdm(mock_execute_fn,mock_read_fn):
     """
     Verify that assign_resources_from_cdm requests resource allocation as
     expected.
@@ -662,6 +664,10 @@ def test_assign_resources_from_cdm(mock_execute_fn):
 
     # Load the CDM resource assignment request object from the test JSON file
     # on disk
+    mock_read_fn.side_effect = [
+        ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
+    ]
+
     cwd, _ = os.path.split(__file__)
     json_path = os.path.join(cwd, 'testfile_sample_assign.json')
     request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
