@@ -259,13 +259,16 @@ def test_deallocate_resources_enforces_boolean_release_all_argument():
     with pytest.raises(ValueError):
         _ = observingtasks.deallocate_resources(subarray, release_all=1, resources=resources)
 
-
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_release_resources_successful_default_deallocation(_):
+def test_release_resources_successful_default_deallocation(mock_execute_fn, mock_read_fn):
     """
     Verify that the ResourceAllocation state of a SubArray object is emptied
     when all sub-array resources are released.
     """
+    mock_read_fn.side_effect = [
+        ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
+    ]
     subarray = SubArray(1)
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray.resources = resources
@@ -273,13 +276,16 @@ def test_release_resources_successful_default_deallocation(_):
     subarray.deallocate()
     assert not subarray.resources.dishes
 
-
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_release_resources_successful_specified_deallocation(_):
+def test_release_resources_successful_specified_deallocation(mock_execute_fn, mock_read_fn):
     """
     Verify that the ResourceAllocation state of a SubArray object is updated
     when resources are released from a sub-array.
     """
+    mock_read_fn.side_effect = [
+        ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
+    ]
     subarray = SubArray(1)
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray.resources = resources

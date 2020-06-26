@@ -354,6 +354,10 @@ def deallocate_resources(subarray: domain.SubArray,
         raise ValueError('Either release_all or resources must be defined')
     command = get_release_resources_command(subarray, release_all, resources)
     EXECUTOR.execute(command)
+    # wait for state
+    final_state = wait_for_state(command.device, target_state=ObsState.EMPTY, error_states=[ObsState.FAULT])
+    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
+        raise Exception(f'Reached at failure state: {final_state[1]}')
     if release_all:
         resources = subarray.resources
     released = domain.ResourceAllocation(dishes=resources.dishes)
