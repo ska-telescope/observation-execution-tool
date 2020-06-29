@@ -336,9 +336,9 @@ def assign_resources_from_cdm(subarray_id: int,
 
     response = EXECUTOR.execute(command)
     # wait for state
-    state_reponse = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
-    if state_reponse.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise Exception(f'Reached at failure state: {state_reponse.final_state}')
+    state_response = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise Exception(f'Reached at failure state: {state_response.final_state}')
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -364,9 +364,9 @@ def deallocate_resources(subarray: domain.SubArray,
     command = get_release_resources_command(subarray, release_all, resources)
     EXECUTOR.execute(command)
     # wait for state
-    state_reponse = wait_for_state(command.device, target_state=ObsState.EMPTY, error_states=[ObsState.FAULT])
-    if state_reponse.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise Exception(f'Reached at failure state: {state_reponse.final_state}')
+    state_response = wait_for_state(command.device, target_state=ObsState.EMPTY, error_states=[ObsState.FAULT])
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise Exception(f'Reached at failure state: {state_response.final_state}')
     if release_all:
         resources = subarray.resources
     released = domain.ResourceAllocation(dishes=resources.dishes)
