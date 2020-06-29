@@ -10,7 +10,7 @@ import logging
 import operator
 import enum
 from datetime import timedelta
-from typing import Optional, List, Any
+from typing import Optional, List, Any, NamedTuple
 
 import marshmallow
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
@@ -47,6 +47,14 @@ class ObsState(enum.Enum):
     # A function to convert enum name to string (str(ObstState.IDLE) gives IDLE string)
     def __str__(self):
         return str(self.name)
+
+
+class ObsStateResponse(NamedTuple):
+    """
+    Represent the status response from wait_for_state() function
+    """
+    response_msg: str
+    final_state: ObsState
 
 
 class TangoRegistry:  # pylint: disable=too-few-public-methods
@@ -268,9 +276,9 @@ def allocate_resources(subarray: domain.SubArray,
     # response: List[int] = EXECUTOR.execute(command)
     response = EXECUTOR.execute(command)
     # wait for state
-    final_state = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
-    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
-        raise Exception(f'Reached at failure state: {final_state[1]}')
+    state_response = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise Exception(f'Reached at failure state: {state_response.final_state}')
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -304,9 +312,9 @@ def allocate_resources_from_file(
 
     response = EXECUTOR.execute(command)
     # wait for state
-    final_state = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
-    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
-        raise Exception(f'Reached at failure state: {final_state[1]}')
+    state_response = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise Exception(f'Reached at failure state: {state_response.final_state}')
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -328,9 +336,9 @@ def assign_resources_from_cdm(subarray_id: int,
 
     response = EXECUTOR.execute(command)
     # wait for state
-    final_state = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
-    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
-        raise Exception(f'Reached at failure state: {final_state[1]}')
+    state_reponse = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
+    if state_reponse.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise Exception(f'Reached at failure state: {state_reponse.final_state}')
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -356,9 +364,9 @@ def deallocate_resources(subarray: domain.SubArray,
     command = get_release_resources_command(subarray, release_all, resources)
     EXECUTOR.execute(command)
     # wait for state
-    final_state = wait_for_state(command.device, target_state=ObsState.EMPTY, error_states=[ObsState.FAULT])
-    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
-        raise Exception(f'Reached at failure state: {final_state[1]}')
+    state_reponse = wait_for_state(command.device, target_state=ObsState.EMPTY, error_states=[ObsState.FAULT])
+    if state_reponse.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise Exception(f'Reached at failure state: {state_reponse.final_state}')
     if release_all:
         resources = subarray.resources
     released = domain.ResourceAllocation(dishes=resources.dishes)
@@ -432,7 +440,9 @@ def wait_for_value(attribute: Attribute, target_values: List[Any], key=lambda _:
 
 
 # TODO: 1. implement timeout functionality 2. return value to use Either pattern
-def wait_for_state(device: str, target_state: ObsState, error_states: List[ObsState], key=lambda _: _) -> ObsState: # timeout) -> Either[SadPathReturnValue,HappyPathReturnValue]
+def wait_for_state(device: str, target_state: ObsState,
+                   error_states: List[ObsState],
+                   key=lambda _: _) -> ObsStateResponse:  # timeout) -> Either[Left,Right]
     """
     Block until a Tango device attribute obsState has reached a target state or
     one of the error states.
@@ -452,17 +462,15 @@ def wait_for_state(device: str, target_state: ObsState, error_states: List[ObsSt
     target_values = error_states.copy()
     target_values.append(target_state)
 
-    final_state = ObsState(wait_for_value(attribute, target_values, key))
+    final_state = wait_for_value(attribute, target_values, key)
 
     if final_state == target_state:
         LOGGER.info('%s reached target state %s', attribute.name, target_state)
-        return [WAIT_FOR_STATE_SUCCESS_RESPONSE, final_state]
+        return ObsStateResponse(WAIT_FOR_STATE_SUCCESS_RESPONSE, final_state)
     else:
         LOGGER.warning('%s state expected to go to %s but instead went to %s',
                        attribute.name, target_state, final_state)
-        return [WAIT_FOR_STATE_FAILURE_RESPONSE, final_state]
-
-    # return final_state
+        return ObsStateResponse(WAIT_FOR_STATE_FAILURE_RESPONSE, final_state)
 
 
 def execute_configure_command(command: Command):
@@ -483,10 +491,10 @@ def execute_configure_command(command: Command):
     _ = EXECUTOR.execute(command)
 
     # wait for state
-    final_state = wait_for_state(command.device, target_state=ObsState.READY,
-                                 error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
-    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
-        raise Exception(f'Reached at failure state: {final_state[1]}')
+    state_response = wait_for_state(command.device, target_state=ObsState.READY,
+                                    error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise Exception(f'Reached at failure state: {state_response.final_state}')
 
 
 def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfiguration):
@@ -631,15 +639,15 @@ def scan(subarray: domain.SubArray):
 
     _ = EXECUTOR.execute(command)
 
-    final_state_1 = wait_for_state(command.device, target_state=ObsState.SCANNING,
-                                   error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
-    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state_1:
-        raise Exception(f'Reached at failure state: {final_state_1[1]}')
+    state_response_1 = wait_for_state(command.device, target_state=ObsState.SCANNING,
+                                      error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
+    if state_response_1.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise Exception(f'Reached at failure state: {state_response_1.final_state}')
 
-    final_state_2 = wait_for_state(command.device, target_state=ObsState.READY,
-                                   error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
-    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state_2:
-        raise Exception(f'Reached at failure state: {final_state_2[1]}')
+    state_response_2 = wait_for_state(command.device, target_state=ObsState.READY,
+                                      error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
+    if state_response_2.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise Exception(f'Reached at failure state: {state_response_2.final_state}')
 
 
 def end_sb(subarray: domain.SubArray):
@@ -651,10 +659,10 @@ def end_sb(subarray: domain.SubArray):
     command = get_end_sb_command(subarray)
     _ = EXECUTOR.execute(command)
 
-    final_state = wait_for_state(command.device, target_state=ObsState.IDLE,
-                                 error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
-    if WAIT_FOR_STATE_FAILURE_RESPONSE in final_state:
-        raise Exception(f'Reached at failure state: {final_state[1]}')
+    state_response = wait_for_state(command.device, target_state=ObsState.IDLE,
+                                    error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise Exception(f'Reached at failure state: {state_response.final_state}')
 
 
 def get_end_sb_command(subarray: domain.SubArray) -> Command:
