@@ -27,23 +27,24 @@ LOGGER = logging.getLogger(__name__)
 WAIT_FOR_STATE_SUCCESS_RESPONSE = 'SUCCESS'
 WAIT_FOR_STATE_FAILURE_RESPONSE = 'FAILURE'
 
+
 class ObsState(enum.Enum):
     """
     Represent the ObsState Tango enumeration
     """
     EMPTY = 0
-    IDLE = 1
-    RESOURCING = 2
+    RESOURCING = 1
+    IDLE = 2
     CONFIGURING = 3
     READY = 4
     SCANNING = 5
-    PAUSED = 6
-    ABORTING = 7
-    ABORTED = 8
-    RESETTING = 9
+    ABORTING = 6
+    ABORTED = 7
+    RESETTING = 8
+    FAULT = 9
     RESTARTING = 10
-    FAULT = 11
 
+    # A function to convert enum name to string (str(ObstState.IDLE) gives IDLE string)
     def __str__(self):
         return str(self.name)
 
