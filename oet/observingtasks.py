@@ -57,6 +57,19 @@ class ObsStateResponse(NamedTuple):
     final_state: ObsState
 
 
+class ObsStateError(Exception):
+    """
+    Represent the status response from wait_for_state() function
+    """
+    def __init__(self, state, msg='Unexpected ObsState'):
+        super(ObsStateError, self).__init__(msg)
+        self.msg = msg
+        self.state = state
+
+    def __str__(self):
+        return f'{self.msg}: {self.state}'
+
+
 class TangoRegistry:  # pylint: disable=too-few-public-methods
     """
     Registry used to look up Tango FQDNs.
@@ -278,7 +291,7 @@ def allocate_resources(subarray: domain.SubArray,
     # wait for state
     state_response = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
     if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise Exception(f'Reached at failure state: {state_response.final_state}')
+        raise ObsStateError(state_response.final_state)
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -314,7 +327,7 @@ def allocate_resources_from_file(
     # wait for state
     state_response = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
     if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise Exception(f'Reached at failure state: {state_response.final_state}')
+        raise ObsStateError(state_response.final_state)
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -338,7 +351,7 @@ def assign_resources_from_cdm(subarray_id: int,
     # wait for state
     state_response = wait_for_state(command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT])
     if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise Exception(f'Reached at failure state: {state_response.final_state}')
+        raise ObsStateError(state_response.final_state)
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -366,7 +379,7 @@ def deallocate_resources(subarray: domain.SubArray,
     # wait for state
     state_response = wait_for_state(command.device, target_state=ObsState.EMPTY, error_states=[ObsState.FAULT])
     if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise Exception(f'Reached at failure state: {state_response.final_state}')
+        raise ObsStateError(state_response.final_state)
     if release_all:
         resources = subarray.resources
     released = domain.ResourceAllocation(dishes=resources.dishes)
@@ -494,7 +507,7 @@ def execute_configure_command(command: Command):
     state_response = wait_for_state(command.device, target_state=ObsState.READY,
                                     error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
     if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise Exception(f'Reached at failure state: {state_response.final_state}')
+        raise ObsStateError(state_response.final_state)
 
 
 def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfiguration):
@@ -642,12 +655,12 @@ def scan(subarray: domain.SubArray):
     state_response_1 = wait_for_state(command.device, target_state=ObsState.SCANNING,
                                       error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
     if state_response_1.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise Exception(f'Reached at failure state: {state_response_1.final_state}')
+        raise ObsStateError(state_response_1.final_state)
 
     state_response_2 = wait_for_state(command.device, target_state=ObsState.READY,
                                       error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
     if state_response_2.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise Exception(f'Reached at failure state: {state_response_2.final_state}')
+        raise ObsStateError(state_response_2.final_state)
 
 
 def end_sb(subarray: domain.SubArray):
@@ -662,7 +675,7 @@ def end_sb(subarray: domain.SubArray):
     state_response = wait_for_state(command.device, target_state=ObsState.IDLE,
                                     error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])
     if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise Exception(f'Reached at failure state: {state_response.final_state}')
+        raise ObsStateError(state_response.final_state)
 
 
 def get_end_sb_command(subarray: domain.SubArray) -> Command:
