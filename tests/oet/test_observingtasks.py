@@ -17,7 +17,7 @@ from ska.cdm import schemas
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
-from oet.observingtasks import ObsState
+from oet.observingtasks import ObsState, ObsStateError
 from oet.domain import Dish, DishAllocation, ResourceAllocation, SKAMid, SubArray
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
@@ -262,7 +262,8 @@ def test_subarray_state_is_updated_when_resources_are_allocated(mock_read_fn, mo
                           'argument, but SDP domain objects have not been created yet')
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_allocate_resources_raises_exception_when_error_state_encountered(mock_read_fn, mock_execute_fn):
+def test_allocate_resources_raises_exception_when_error_state_encountered(
+        mock_read_fn, mock_execute_fn):
     """
     Verify that the response to an allocation request that was only part
     successful is processed correctly.
@@ -273,7 +274,7 @@ def test_allocate_resources_raises_exception_when_error_state_encountered(mock_r
 
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray = SubArray(1)
-    with pytest.raises(Exception):
+    with pytest.raises(ObsStateError):
         _ = subarray.allocate(resources)
 
     mock_execute_fn.assert_called_once()
@@ -305,7 +306,8 @@ def test_deallocate_resources_enforces_boolean_release_all_argument():
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_deallocate_resources_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
+def test_deallocate_resources_raises_exception_when_error_state_encountered(
+        mock_execute_fn, mock_read_fn):
     """
     Verify that the boolean release_all argument is required.
     """
@@ -314,7 +316,7 @@ def test_deallocate_resources_raises_exception_when_error_state_encountered(mock
     ]
 
     subarray = SubArray(1)
-    with pytest.raises(Exception):
+    with pytest.raises(ObsStateError):
         _ = observingtasks.deallocate_resources(subarray, release_all=True)
 
     mock_execute_fn.assert_called_once()
@@ -402,9 +404,9 @@ def test_configure_subarray_forms_correct_command():
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
-def test_wait_for_state_returns_target_state(mock_read_fn):
+def test_wait_for_obsstate_returns_target_state(mock_read_fn):
     """
-    Verify wait_for_state waits for the device obsState
+    Verify wait_for_obsstate waits for the device obsState
     """
     mock_read_fn.side_effect = [
         ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
@@ -413,7 +415,9 @@ def test_wait_for_state_returns_target_state(mock_read_fn):
     attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
     target_state = ObsState.IDLE
     error_state = [ObsState.ABORTED, ObsState.FAULT]
-    state_response = observingtasks.wait_for_state(SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state)
+    state_response = observingtasks.wait_for_obsstate(
+        SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state
+    )
 
     mock_read_fn.assert_called_with(attribute)
     assert state_response.final_state == ObsState.IDLE
@@ -421,19 +425,22 @@ def test_wait_for_state_returns_target_state(mock_read_fn):
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
-def test_wait_for_state_returns_error_state(mock_read_fn):
+def test_wait_for_obsstate_returns_error_state(mock_read_fn):
     """
-    Verify wait_for_state stops waiting for the device target obsState when
+    Verify wait_for_obsstate stops waiting for the device target obsState when
     error state is encountered
     """
     mock_read_fn.side_effect = [
-        ObsState.IDLE, ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.FAULT, ObsState.RESTARTING
+        ObsState.IDLE, ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.FAULT,
+        ObsState.RESTARTING
     ]
 
     attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
     target_state = ObsState.READY
     error_state = [ObsState.ABORTING, ObsState.FAULT]
-    state_response = observingtasks.wait_for_state(SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state)
+    state_response = observingtasks.wait_for_obsstate(
+        SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state
+    )
 
     mock_read_fn.assert_called_with(attribute)
     assert state_response.final_state == ObsState.FAULT
@@ -467,16 +474,18 @@ def test_execute_configure_command_returns_when_obsstate_is_ready(mock_execute_f
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_execute_configure_command_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
+def test_execute_configure_command_raises_exception_when_error_state_encountered(
+        mock_execute_fn, mock_read_fn):
     """
-    Verify that execute_configure_command raises an Exception when ObsState transitions to an error state
+    Verify that execute_configure_command raises an Exception when ObsState
+    transitions to an error state
     """
     mock_read_fn.side_effect = [
         ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.ABORTING
     ]
 
     cmd = command.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Configure', 'configure JSON would go here')
-    with pytest.raises(Exception):
+    with pytest.raises(ObsStateError):
         observingtasks.execute_configure_command(cmd)
 
     mock_execute_fn.assert_called_once()
@@ -585,7 +594,7 @@ def test_subarray_scan_raises_exception_when_error_state_encountered(mock_execut
     ]
 
     subarray = domain.SubArray(1)
-    with pytest.raises(Exception):
+    with pytest.raises(ObsStateError):
         subarray.scan()
 
     expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
@@ -659,7 +668,7 @@ def test_end_sb_raises_exception_when_error_state_encountered(mock_execute_fn, m
     ]
 
     subarray = domain.SubArray(1)
-    with pytest.raises(Exception):
+    with pytest.raises(ObsStateError):
         observingtasks.end_sb(subarray)
 
     expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
@@ -703,7 +712,7 @@ def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_r
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_get_allocate_resources_generates_correct_command(mock_execute_fn,mock_read_fn):
+def test_get_allocate_resources_generates_correct_command(mock_execute_fn, mock_read_fn):
     """
     Test if the function allocate_from_file generate the expected command
     using or not the overwrite of the Resources
@@ -711,7 +720,8 @@ def test_get_allocate_resources_generates_correct_command(mock_execute_fn,mock_r
     mock_read_fn.side_effect = [
         ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
     ]
-    mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE  # to update with the last json expected
+    # to update with the last json expected
+    mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
     cwd, _ = os.path.split(__file__)
     json_path = os.path.join(cwd, 'testfile_sample_assign.json')
 
@@ -722,7 +732,9 @@ def test_get_allocate_resources_generates_correct_command(mock_execute_fn,mock_r
         json_path
     )
 
-    resources = domain.ResourceAllocation(dishes=[domain.Dish(i) for i in request.dish.receptor_ids])
+    resources = domain.ResourceAllocation(
+        dishes=[domain.Dish(i) for i in request.dish.receptor_ids]
+    )
 
     command_expected = observingtasks.get_allocate_resources_command(subarray, resources, request)
 
@@ -731,7 +743,9 @@ def test_get_allocate_resources_generates_correct_command(mock_execute_fn,mock_r
 
     assert command_returned == command_expected
 
-    resources = domain.ResourceAllocation(dishes=[Dish('0002'), Dish('0003')])  # Resource different from the JSON
+    resources = domain.ResourceAllocation(
+        dishes=[Dish('0002'), Dish('0003')]  # Resource different from the JSON
+    )
     command_expected = observingtasks.get_allocate_resources_command(subarray, resources, request)
 
     assert command_returned != command_expected
