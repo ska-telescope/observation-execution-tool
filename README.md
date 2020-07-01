@@ -18,10 +18,10 @@ Build a new Docker image for the OET with:
 make build
 ```
 
-Execute the test suite with:
+Execute the test suite and lint the project with:
 
 ```
-make test
+make test-all
 ```
 
 Launch an interactive shell inside a container, with your workspace visible
