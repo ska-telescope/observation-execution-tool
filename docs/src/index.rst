@@ -67,11 +67,11 @@ Build a new Docker image for the OET with:
 
   make build
 
-Execute the test suite with:
+Execute the test suite and lint the project with:
 
 ::
 
-  make test
+  make test-all
 
 
 Launch an interactive shell inside a container, with your workspace visible
@@ -92,7 +92,11 @@ The following make targets are defined:
 +=================+================================================+
 | build           | Build a new application image                  |
 +-----------------+------------------------------------------------+
+| test-all        | Test and lint the application image            |
++-----------------+------------------------------------------------+
 | test            | Test the application image                     |
++-----------------+------------------------------------------------+
+| lint            | Lint the application image                     |                     |
 +-----------------+------------------------------------------------+
 | interactive     | Launch a minimal Tango system (including the   |
 |                 | device under development), mounting the source |
