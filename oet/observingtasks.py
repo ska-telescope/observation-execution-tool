@@ -6,10 +6,10 @@ control system domain.
 This module is intended to be maintained by someone familiar with Tango and
 the API of the devices they are controlling.
 """
+import enum
 import logging
-import operator
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, Any, NamedTuple, Iterable
 
 import marshmallow
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
@@ -22,6 +22,54 @@ from . import domain
 from .command import Attribute, Command, SCAN_ID_GENERATOR, TangoExecutor
 
 LOGGER = logging.getLogger(__name__)
+
+WAIT_FOR_STATE_SUCCESS_RESPONSE = 'SUCCESS'
+WAIT_FOR_STATE_FAILURE_RESPONSE = 'FAILURE'
+
+
+class ObsState(enum.Enum):
+    """
+    Represent the ObsState Tango enumeration
+    """
+    EMPTY = 0
+    RESOURCING = 1
+    IDLE = 2
+    CONFIGURING = 3
+    READY = 4
+    SCANNING = 5
+    ABORTING = 6
+    ABORTED = 7
+    RESETTING = 8
+    FAULT = 9
+    RESTARTING = 10
+
+    def __str__(self):
+        """
+        Convert enum to string
+        """
+        # str(ObsState.IDLE) gives 'IDLE'
+        return str(self.name)
+
+
+class ObsStateResponse(NamedTuple):
+    """
+    Represent the status response from wait_for_obsstate() function
+    """
+    response_msg: str
+    final_state: ObsState
+
+
+class ObsStateError(Exception):
+    """
+    Represent the status response from wait_for_obsstate() function
+    """
+    def __init__(self, state, msg='Unexpected ObsState'):
+        super().__init__(msg)
+        self.msg = msg
+        self.state = state
+
+    def __str__(self):
+        return f'{self.msg}: {self.state}'
 
 
 class TangoRegistry:  # pylint: disable=too-few-public-methods
@@ -129,7 +177,8 @@ def get_telescope_standby_command(telescope: domain.SKAMid) -> Command:
 def get_allocate_resources_request(
         subarray: domain.SubArray,
         resources: domain.ResourceAllocation,
-        template_request: Optional[cdm_assign.AssignResourcesRequest] = None) -> cdm_assign.AssignResourcesRequest:
+        template_request: Optional[cdm_assign.AssignResourcesRequest] = None
+) -> cdm_assign.AssignResourcesRequest:
     """
     Return the JSON string that, when passed as argument to
     CentralNode.AssignResources, would allocate resources to a sub-array.
@@ -162,9 +211,10 @@ def get_allocate_resources_request(
     return request
 
 
-def get_allocate_resources_command(subarray: domain.SubArray,
-                                   resources: domain.ResourceAllocation,
-                                   template_request: Optional[cdm_assign.AssignResourcesRequest] = None) -> Command:
+def get_allocate_resources_command(
+        subarray: domain.SubArray,
+        resources: domain.ResourceAllocation,
+        template_request: Optional[cdm_assign.AssignResourcesRequest] = None) -> Command:
     """
     Return an OET Command that, when passed to a TangoExecutor, would allocate
     resources from a sub-array.
@@ -242,6 +292,12 @@ def allocate_resources(subarray: domain.SubArray,
     # requires variable annotations in Python > 3.5
     # response: List[int] = EXECUTOR.execute(command)
     response = EXECUTOR.execute(command)
+    # wait for state
+    state_response = wait_for_obsstate(
+        command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
+    )
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise ObsStateError(state_response.final_state)
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -260,7 +316,8 @@ def allocate_resources_from_file(
 
     :param subarray: the sub-array to control
     :param template_json_path: JSON file path
-    :param resources: a optional parameter that permits to overwrite dish allocation defined in the JSON
+    :param resources: a optional parameter that permits to overwrite dish
+        allocation defined in the JSON
     :return: the resources that were successfully allocated to the sub-array
     """
     if resources is None:
@@ -272,17 +329,24 @@ def allocate_resources_from_file(
     )
 
     command = get_allocate_resources_command(subarray, resources, template_request)
-
     response = EXECUTOR.execute(command)
-    LOGGER.info("Command returned")
-    LOGGER.info(response)
+
+    # Wait for obsState transition to signify success or failure. A resource
+    # allocation command cannot be reset or aborted, hence we wait only for
+    # FAULT.
+    state_response = wait_for_obsstate(
+        command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
+    )
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise ObsStateError(state_response.final_state)
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
 
 
-def assign_resources_from_cdm(subarray_id: int,
-                              request: cdm_assign.AssignResourcesRequest) -> domain.ResourceAllocation:
+def assign_resources_from_cdm(
+        subarray_id: int,
+        request: cdm_assign.AssignResourcesRequest) -> domain.ResourceAllocation:
     """
     Allocate resources to a sub-array using a CDM object.
 
@@ -290,14 +354,23 @@ def assign_resources_from_cdm(subarray_id: int,
     :param request: the CDM AssignResourcesRequest object
     retun: the resources that were successfully allocated to the sub-array
     """
-
     subarray = domain.SubArray(subarray_id)
     resources = domain.ResourceAllocation()
-    command = get_allocate_resources_command(subarray, resources, request)
 
+    command = get_allocate_resources_command(subarray, resources, request)
     response = EXECUTOR.execute(command)
-    LOGGER.info("Command returned")
-    LOGGER.info(response)
+
+    # Wait for obsState transition to signify success or failure. A resource
+    # allocation command cannot be reset or aborted, hence we wait only for
+    # FAULT.
+    state_response = wait_for_obsstate(
+        command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
+    )
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        # Allocation failed. Raise an exception and let the client decide how
+        # to handle the failure (retry, abort, reset, etc.).
+        raise ObsStateError(state_response.final_state)
+
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
@@ -320,8 +393,18 @@ def deallocate_resources(subarray: domain.SubArray,
         raise ValueError('release_all must be a boolean')
     if release_all is False and resources is None:
         raise ValueError('Either release_all or resources must be defined')
+
     command = get_release_resources_command(subarray, release_all, resources)
     EXECUTOR.execute(command)
+
+    # Wait for obsState transition to signify success or failure. A resource
+    # release command cannot be reset or aborted, hence we wait only for FAULT
+    state_response = wait_for_obsstate(
+        command.device, target_state=ObsState.EMPTY, error_states=[ObsState.FAULT]
+    )
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise ObsStateError(state_response.final_state)
+
     if release_all:
         resources = subarray.resources
     released = domain.ResourceAllocation(dishes=resources.dishes)
@@ -375,24 +458,62 @@ def get_configure_subarray_command(subarray: domain.SubArray,
     return Command(subarray_node_fqdn, 'Configure', request_json)
 
 
-def wait_for_value(attribute: Attribute, target_value, key=lambda _: _):
+def wait_for_value(attribute: Attribute, target_values: Iterable[Any], key=lambda _: _) -> Any:
     """
-    Block until a Tango device attribute has reached a target value.
+    Block until a Tango device attribute has reached one of target values.
 
     If defined, the optional 'key' function will be used to process the device
     attribute value before comparison to the target value.
 
-    :param attribute: attribute to query
-    :param target_value: value to wait for
+    :param attribute: device to query
+    :param target_values: target ObsState to wait for
     :param key: function to process each attribute value before comparison
-    :return:
+    :return: Attribute value read from device (one of target_values)
     """
-    LOGGER.info('Waiting for %s to transition to %s', attribute.name, target_value)
     while True:
         response = EXECUTOR.read(attribute)
         processed = key(response)
-        if processed == target_value:
-            break
+        if processed in target_values:
+            return processed
+
+
+# TODO: 1. implement timeout functionality 2. return value to use Either pattern
+def wait_for_obsstate(
+        device: str,
+        target_state: ObsState,
+        error_states: Iterable[ObsState]) -> ObsStateResponse:
+    #   timeout) -> Either[Left,Right]
+    """
+    Block until a Tango device attribute obsState has reached a target state or
+    one of the error states.
+
+    If defined, the optional 'key' function will be used to process the device
+    attribute value before comparison to the target value.
+
+    :param device: device to query
+    :param target_state: target ObsState to wait for
+    :param error_states: list of possible error ObsStates
+    :param key: function to process each attribute value before comparison
+    :return: ObsState of the device (either target state or error state)
+    """
+    attribute = Attribute(device, 'obsState')
+    LOGGER.info('Waiting for %s to transition to %s', attribute.name, target_state)
+
+    # wait_for_value should block until obsState transitions to any happy path
+    # or sad path state. This list holds the union of obsStates.
+    obstates_union = list(error_states)
+    obstates_union.append(target_state)
+    # obsState values do not need processing so the optional 'key' argument to
+    # wait_for_value is left unset
+    final_state = wait_for_value(attribute, obstates_union)
+
+    if final_state != target_state:
+        LOGGER.warning('%s state expected to go to %s but instead went to %s',
+                       attribute.name, target_state, final_state)
+        return ObsStateResponse(WAIT_FOR_STATE_FAILURE_RESPONSE, final_state)
+
+    LOGGER.info('%s reached target state %s', attribute.name, target_state)
+    return ObsStateResponse(WAIT_FOR_STATE_SUCCESS_RESPONSE, final_state)
 
 
 def execute_configure_command(command: Command):
@@ -412,13 +533,21 @@ def execute_configure_command(command: Command):
     # Python convention is to label unused variables as _
     _ = EXECUTOR.execute(command)
 
-    obsstate = Attribute(command.device, 'obsState')
-    # obsState is a Python Enum, so compare desired state against enum.name
-    name_getter = operator.attrgetter('name')
-
-    #  wait for the sub-array obsState to transition from CONFIGURING to READY
-    wait_for_value(obsstate, 'CONFIGURING', name_getter)
-    wait_for_value(obsstate, 'READY', name_getter)
+    # In the ADR-8 state model, sub-array configuration completes via one of
+    # three paths:
+    #
+    #   1. Successful configuration: obsState transitions to READY
+    #   2. Operation aborted (behind our back!): obsState transitions to
+    #      ABORTING. We don't know how long the SubArrayNode will remain in
+    #      the transient ABORTING state so we also wait for ABORTED.
+    #   3. Operation failed: obsState transitions to FAULT.
+    obsstate_response = wait_for_obsstate(
+        command.device,
+        target_state=ObsState.READY,
+        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
+    )
+    if obsstate_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise ObsStateError(obsstate_response.final_state)
 
 
 def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfiguration):
@@ -563,13 +692,36 @@ def scan(subarray: domain.SubArray):
 
     _ = EXECUTOR.execute(command)
 
-    obsstate = Attribute(command.device, 'obsState')
-    # obsState is a Python Enum, so compare desired state against enum.name
-    name_getter = operator.attrgetter('name')
+    # In the ADR-8 state model, scanning is signified by the SubArrayNode
+    # obsState transitioning from READY to SCANNING, and then back to READY.
+    # At the time of writing, the SubArrayNode.scan() call returns before the
+    # obsState has transitioned to SCANNING, hence we need a two-phase process
+    # that can distinguish between a start READY state and an end READY state.
+    # Checking whether the device has transitioned through SCANNING is
+    # sufficient to distinguish the two.
+    #
+    # ADR-8 also allows for two possible sad paths:
+    #
+    #   1. Operation aborted (behind our back!): obsState transitions to
+    #      ABORTING. We don't know how long the SubArrayNode will remain in
+    #      the transient ABORTING state so we also wait for ABORTED.
+    #   2. Operation failed: obsState transitions to FAULT.
 
-    #  wait for the sub-array obsState to transition from SCANNING to READY
-    wait_for_value(obsstate, 'SCANNING', name_getter)
-    wait_for_value(obsstate, 'READY', name_getter)
+    state_response_1 = wait_for_obsstate(
+        command.device,
+        target_state=ObsState.SCANNING,
+        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
+    )
+    if state_response_1.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise ObsStateError(state_response_1.final_state)
+
+    state_response_2 = wait_for_obsstate(
+        command.device,
+        target_state=ObsState.READY,
+        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
+    )
+    if state_response_2.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise ObsStateError(state_response_2.final_state)
 
 
 def end_sb(subarray: domain.SubArray):
@@ -581,12 +733,13 @@ def end_sb(subarray: domain.SubArray):
     command = get_end_sb_command(subarray)
     _ = EXECUTOR.execute(command)
 
-    obsstate = Attribute(command.device, 'obsState')
-    # obsState is a Python Enum, so compare desired state against enum.name
-    name_getter = operator.attrgetter('name')
-
-    #  wait for the sub-array obsState to transition from READY to IDLE
-    wait_for_value(obsstate, 'IDLE', name_getter)
+    state_response = wait_for_obsstate(
+        command.device,
+        target_state=ObsState.IDLE,
+        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
+    )
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise ObsStateError(state_response.final_state)
 
 
 def get_end_sb_command(subarray: domain.SubArray) -> Command:

@@ -4,7 +4,6 @@ Unit tests for the oet.observingtasks module
 # import datetime
 import unittest.mock as mock
 
-import enum
 import os
 import pytest
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
@@ -18,6 +17,7 @@ from ska.cdm import schemas
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
+from oet.observingtasks import ObsState, ObsStateError
 from oet.domain import Dish, DishAllocation, ResourceAllocation, SKAMid, SubArray
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
@@ -28,19 +28,6 @@ CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["00
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
 CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_success": ["0001"]}}'
 VALID_ASSIGN_STARTSCAN_REQUEST = '{"id": 123}'
-
-
-class ObsState(enum.Enum):
-    """
-    Represent the ObsState Tango enumeration
-    """
-    IDLE = 0
-    CONFIGURING = 1
-    READY = 2
-    SCANNING = 3
-    PAUSED = 4
-    ABORTED = 5
-    FAULT = 6
 
 
 def test_tango_registry_returns_correct_url_for_ska_mid():
@@ -195,12 +182,16 @@ def test_release_resources_command():
 
 @pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration'
                           ' argument, but SDP domain objects have not been created yet')
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_allocate_resources_successful_allocation(mock_execute_fn):
+def test_allocate_resources_successful_allocation(mock_read_fn, mock_execute_fn):
     """
     Verify that domain objects representing the successfully allocated
     resources are returned from an allocate resources instruction.
     """
+    mock_read_fn.side_effect = [
+        ObsState.RESOURCING, ObsState.RESOURCING, ObsState.IDLE
+    ]
     mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
 
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
@@ -209,15 +200,22 @@ def test_allocate_resources_successful_allocation(mock_execute_fn):
 
     assert resources == allocated
 
+    mock_execute_fn.assert_called_once()
+    assert mock_read_fn.call_count == 3
+
 
 @pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration '
                           'argument, but SDP domain objects have not been created yet')
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_allocate_resources_partial_allocation(mock_execute_fn):
+def test_allocate_resources_partial_allocation(mock_read_fn, mock_execute_fn):
     """
     Verify that the response to an allocation request that was only part
     successful is processed correctly.
     """
+    mock_read_fn.side_effect = [
+        ObsState.RESOURCING, ObsState.RESOURCING, ObsState.IDLE
+    ]
     mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE
 
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
@@ -227,15 +225,22 @@ def test_allocate_resources_partial_allocation(mock_execute_fn):
     assert resources != allocated
     assert Dish(2) not in allocated.dishes
 
+    mock_execute_fn.assert_called_once()
+    assert mock_read_fn.call_count == 3
+
 
 @pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration argument,'
                           ' but SDP domain objects have not been created yet')
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_subarray_state_is_updated_when_resources_are_allocated(mock_execute_fn):
+def test_subarray_state_is_updated_when_resources_are_allocated(mock_read_fn, mock_execute_fn):
     """
     Verify that the SubArray resource allocation state is updated after
     resources are allocated to the sub-array.
     """
+    mock_read_fn.side_effect = [
+        ObsState.RESOURCING, ObsState.IDLE
+    ]
     mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
 
     resources = ResourceAllocation(dishes=[Dish(1)])
@@ -248,6 +253,32 @@ def test_subarray_state_is_updated_when_resources_are_allocated(mock_execute_fn)
     # the sub-array state should reflect the successfully allocated dishes
     allocated = subarray.allocate(resources)
     assert subarray.resources.dishes >= allocated.dishes
+
+    mock_execute_fn.assert_called_once()
+    assert mock_read_fn.call_count == 2
+
+
+@pytest.mark.xfail(reason='CDM AssignResourcesRequest requires SDP configuration '
+                          'argument, but SDP domain objects have not been created yet')
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_allocate_resources_raises_exception_when_error_state_encountered(
+        mock_read_fn, mock_execute_fn):
+    """
+    Verify that the response to an allocation request that was only part
+    successful is processed correctly.
+    """
+    mock_read_fn.side_effect = [
+        ObsState.RESOURCING, ObsState.RESOURCING, ObsState.FAULT
+    ]
+
+    resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
+    subarray = SubArray(1)
+    with pytest.raises(ObsStateError):
+        _ = subarray.allocate(resources)
+
+    mock_execute_fn.assert_called_once()
+    assert mock_read_fn.call_count == 3
 
 
 def test_deallocate_resources_must_define_resources_argument_if_not_releasing_all():
@@ -273,32 +304,67 @@ def test_deallocate_resources_enforces_boolean_release_all_argument():
         _ = observingtasks.deallocate_resources(subarray, release_all=1, resources=resources)
 
 
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_release_resources_successful_default_deallocation(_):
+def test_deallocate_resources_raises_exception_when_error_state_encountered(
+        mock_execute_fn, mock_read_fn):
+    """
+    Verify that the boolean release_all argument is required.
+    """
+    mock_read_fn.side_effect = [
+        ObsState.RESOURCING, ObsState.RESOURCING, ObsState.FAULT
+    ]
+
+    subarray = SubArray(1)
+    with pytest.raises(ObsStateError):
+        _ = observingtasks.deallocate_resources(subarray, release_all=True)
+
+    mock_execute_fn.assert_called_once()
+    assert mock_read_fn.call_count == 3
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_release_resources_successful_default_deallocation(mock_execute_fn, mock_read_fn):
     """
     Verify that the ResourceAllocation state of a SubArray object is emptied
     when all sub-array resources are released.
     """
+    mock_read_fn.side_effect = [
+        ObsState.IDLE, ObsState.EMPTY
+    ]
     subarray = SubArray(1)
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray.resources = resources
 
     subarray.deallocate()
+
     assert not subarray.resources.dishes
 
+    mock_execute_fn.assert_called_once()
+    assert mock_read_fn.call_count == 2
 
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_release_resources_successful_specified_deallocation(_):
+def test_release_resources_successful_specified_deallocation(mock_execute_fn, mock_read_fn):
     """
     Verify that the ResourceAllocation state of a SubArray object is updated
     when resources are released from a sub-array.
     """
+    mock_read_fn.side_effect = [
+        ObsState.IDLE, ObsState.EMPTY
+    ]
     subarray = SubArray(1)
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray.resources = resources
 
     subarray.deallocate(resources)
+
     assert not subarray.resources.dishes
+
+    mock_execute_fn.assert_called_once()
+    assert mock_read_fn.call_count == 2
 
 
 def test_configure_subarray_forms_correct_request():
@@ -338,10 +404,54 @@ def test_configure_subarray_forms_correct_command():
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
+def test_wait_for_obsstate_returns_target_state(mock_read_fn):
+    """
+    Verify wait_for_obsstate waits for the device obsState
+    """
+    mock_read_fn.side_effect = [
+        ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
+    ]
+
+    attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    target_state = ObsState.IDLE
+    error_state = [ObsState.ABORTED, ObsState.FAULT]
+    state_response = observingtasks.wait_for_obsstate(
+        SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state
+    )
+
+    mock_read_fn.assert_called_with(attribute)
+    assert state_response.final_state == ObsState.IDLE
+    assert mock_read_fn.call_count == 3
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+def test_wait_for_obsstate_returns_error_state(mock_read_fn):
+    """
+    Verify wait_for_obsstate stops waiting for the device target obsState when
+    error state is encountered
+    """
+    mock_read_fn.side_effect = [
+        ObsState.IDLE, ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.FAULT,
+        ObsState.RESTARTING
+    ]
+
+    attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    target_state = ObsState.READY
+    error_state = [ObsState.ABORTING, ObsState.FAULT]
+    state_response = observingtasks.wait_for_obsstate(
+        SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state
+    )
+
+    mock_read_fn.assert_called_with(attribute)
+    assert state_response.final_state == ObsState.FAULT
+    assert mock_read_fn.call_count == 4
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_execute_configure_command_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn):
     """
-    Verify that execute_configure_command mmand for the device obsState to
+    Verify that execute_configure_command waits for the device obsState to
     transition back to READY before returning.
     """
     # obsState will be CONFIGURING for the first three reads, then READY
@@ -360,6 +470,25 @@ def test_execute_configure_command_returns_when_obsstate_is_ready(mock_execute_f
 
     # task should keep reading obsState until device is READY
     assert mock_read_fn.call_count == 4
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_execute_configure_command_raises_exception_when_error_state_encountered(
+        mock_execute_fn, mock_read_fn):
+    """
+    Verify that execute_configure_command raises an Exception when ObsState
+    transitions to an error state
+    """
+    mock_read_fn.side_effect = [
+        ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.ABORTING
+    ]
+
+    cmd = command.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Configure', 'configure JSON would go here')
+    with pytest.raises(ObsStateError):
+        observingtasks.execute_configure_command(cmd)
+
+    mock_execute_fn.assert_called_once()
 
 
 @mock.patch.object(observingtasks, 'execute_configure_command')
@@ -452,6 +581,28 @@ def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read
     assert mock_read_fn.call_count == 4
 
 
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_subarray_scan_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
+    """
+    Verify that the SubArray.configure command waits for the device obsstate
+    to transition back to READY before returning.
+    """
+    # obsState will be SCANNING for the first three reads, then READY
+    mock_read_fn.side_effect = [
+        ObsState.SCANNING, ObsState.SCANNING, ObsState.SCANNING, ObsState.FAULT
+    ]
+
+    subarray = domain.SubArray(1)
+    with pytest.raises(ObsStateError):
+        subarray.scan()
+
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+    mock_execute_fn.assert_called_once()
+    assert mock_read_fn.call_count == 4
+
+
 def test_get_end_sb_command():
     """
     Verify that a 'end SB' Command is targeted and structured correctly.
@@ -506,6 +657,28 @@ def test_end_sb_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
     assert mock_read_fn.call_count == 4
 
 
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_end_sb_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
+    """
+    Verify that the SubArray.end_sb raises an exception when obsState goes to error state
+    """
+    mock_read_fn.side_effect = [
+        ObsState.READY, ObsState.READY, ObsState.READY, ObsState.FAULT
+    ]
+
+    subarray = domain.SubArray(1)
+    with pytest.raises(ObsStateError):
+        observingtasks.end_sb(subarray)
+
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+    mock_execute_fn.assert_called_once()
+
+    # task should keep reading obsState until device goes to FAULT
+    assert mock_read_fn.call_count == 4
+
+
 @pytest.mark.skip('TBC: ProcessingBlock ID updates are no longer required')
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
@@ -537,14 +710,18 @@ def test_configure_from_file_updates_processing_block_id(mock_execute_fn, mock_r
     assert not processed_pb_ids.intersection(original_pb_ids)
 
 
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_get_allocate_resources_generates_correct_command(mock_execute_fn):
+def test_get_allocate_resources_generates_correct_command(mock_execute_fn, mock_read_fn):
     """
     Test if the function allocate_from_file generate the expected command
     using or not the overwrite of the Resources
     """
-
-    mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE  # to update with the last json expected
+    mock_read_fn.side_effect = [
+        ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
+    ]
+    # to update with the last json expected
+    mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
     cwd, _ = os.path.split(__file__)
     json_path = os.path.join(cwd, 'testfile_sample_assign.json')
 
@@ -555,7 +732,9 @@ def test_get_allocate_resources_generates_correct_command(mock_execute_fn):
         json_path
     )
 
-    resources = domain.ResourceAllocation(dishes=[domain.Dish(i) for i in request.dish.receptor_ids])
+    resources = domain.ResourceAllocation(
+        dishes=[domain.Dish(i) for i in request.dish.receptor_ids]
+    )
 
     command_expected = observingtasks.get_allocate_resources_command(subarray, resources, request)
 
@@ -564,7 +743,9 @@ def test_get_allocate_resources_generates_correct_command(mock_execute_fn):
 
     assert command_returned == command_expected
 
-    resources = domain.ResourceAllocation(dishes=[Dish('0002'), Dish('0003')])  # Resource different from the JSON
+    resources = domain.ResourceAllocation(
+        dishes=[Dish('0002'), Dish('0003')]  # Resource different from the JSON
+    )
     command_expected = observingtasks.get_allocate_resources_command(subarray, resources, request)
 
     assert command_returned != command_expected
@@ -613,8 +794,9 @@ def test_configure_from_cdm(mock_execute_fn):
     assert command_returned == command_expected
 
 
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_assign_resources_from_cdm(mock_execute_fn):
+def test_assign_resources_from_cdm(mock_execute_fn, mock_read_fn):
     """
     Verify that assign_resources_from_cdm requests resource allocation as
     expected.
@@ -636,6 +818,10 @@ def test_assign_resources_from_cdm(mock_execute_fn):
 
     # Load the CDM resource assignment request object from the test JSON file
     # on disk
+    mock_read_fn.side_effect = [
+        ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
+    ]
+
     cwd, _ = os.path.split(__file__)
     json_path = os.path.join(cwd, 'testfile_sample_assign.json')
     request: cdm_assign.AssignResourcesRequest = schemas.CODEC.load_from_file(
