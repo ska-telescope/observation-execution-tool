@@ -24,10 +24,11 @@
 
 .. toctree::
   :maxdepth: 1
-  :caption: Package-name
+  :caption: Public API Documentation
   :hidden:
 
-  package/guide
+  package/domain
+  package/observingtasks
 
 ==========================
 observation-execution-tool
@@ -97,7 +98,7 @@ The following make targets are defined:
 +-----------------+------------------------------------------------+
 | test            | Test the application image                     |
 +-----------------+------------------------------------------------+
-| lint            | Lint the application image                     |                     |
+| lint            | Lint the application image                     |
 +-----------------+------------------------------------------------+
 | interactive     | Launch a minimal Tango system (including the   |
 |                 | device under development), mounting the source |

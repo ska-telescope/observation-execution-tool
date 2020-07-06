@@ -352,7 +352,7 @@ def assign_resources_from_cdm(
 
     :param subarray_id: the id of the sub-array to allocate the resources
     :param request: the CDM AssignResourcesRequest object
-    retun: the resources that were successfully allocated to the sub-array
+    :return: the resources that were successfully allocated to the sub-array
     """
     subarray = domain.SubArray(subarray_id)
     resources = domain.ResourceAllocation()
