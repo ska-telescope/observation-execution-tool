@@ -1,4 +1,4 @@
-.. _package-guide:
+.. _domain-guide:
 
 .. todo::
     - Insert todo's here

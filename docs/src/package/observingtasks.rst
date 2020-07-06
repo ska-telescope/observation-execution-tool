@@ -1,4 +1,4 @@
-.. _package-guide:
+.. _observingtasks-guide:
 
 .. todo::
    - The following are a subset of the functions in the observingtasks module, 
