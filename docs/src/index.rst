@@ -16,6 +16,7 @@
   rest_server
   rest_client
   rest_api
+  observing_scripts
 
 .. COMMUNITY SECTION ==================================================
 
