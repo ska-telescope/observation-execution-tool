@@ -7,17 +7,18 @@ Observing Scripts
 -------
 Context
 -------
-The `SKA Project Data Model (PDM) <https://developer.skatelescope.org/projects/ska-project-data-model-library/en/latest/?badge=latest>`_
+
+The `SKA Project Data Model (PDM) <https://developer.skatelescope.org/projects/ska-project-data-model-library/en/latest/?badge=latest>`_ 
 describes the structure of a Scheduling 
 Block (SB) as a high-level JSON [#f1]_ specification of an individual, 
 self-contained observation on one of the SKA Telescopes. SBs are the 
 atomic units of observation with the SKA. 
 
-At any time the SKA observing system will have a pool of pending SBs 
+At any time the SKA observing system will have a pool of pending SBs
 awaiting execution. As they are selected, SBs will be run by the
 subject of this project the  
 Observation Execution Tool (OET). The OET actually runs a Python *observing 
-script* to do the work and it is the job of this script to `connect’ the SB 
+script* to do the work and it is the job of this script to 'connect’ the SB 
 to the series of lower level commands and configurations that must be sent 
 to the telescope for execution. 
 
