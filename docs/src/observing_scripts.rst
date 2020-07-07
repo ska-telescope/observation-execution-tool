@@ -76,8 +76,11 @@ OET helpers reside in two modules,
 :ref:`oet.domain <domain-guide>` and 
 :ref:`oet.observingtasks <observingtasks-guide>`. 
 
-PDM helpers are documented
-`here <https://developer.skatelescope.org/projects/ska-project-data-model-library/en/latest/spdm_design.html#field-scan-and-csp-information>`_ .
+PDM helpers are documented in the
+`PDM documentation <https://developer.skatelescope.org/projects/ska-project-data-model-library/en/latest/index.html>`_ .
+
+CDM helpers are described in the 
+`CDM documentation <https://developer.skatelescope.org/projects/cdm-shared-library/en/latest/?badge=latest>`_ .
 
 
 .. rubric:: Footnotes
