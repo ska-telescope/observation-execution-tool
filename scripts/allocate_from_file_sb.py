@@ -205,9 +205,12 @@ def get_targets(target_id, pdm_field_configuration):
     """
     for pdm_field_configuration_id in pdm_field_configuration:
         if pdm_field_configuration_id.targets[0].id == target_id:
-            system = pdm_field_configuration_id.targets[0].coord.frame.name
-            ra = str(pdm_field_configuration_id.targets[0].coord.ra.value)
-            dec = str(pdm_field_configuration_id.targets[0].coord.dec.value)
+            frame_name = pdm_field_configuration_id.targets[0].coord.frame.name
+            icrs_coord = pdm_field_configuration_id.targets[0].coord.transform_to(frame_name)
+            hms, dms = icrs_coord.to_string('hmsdms', sep=':').split(' ')
+            ra = hms
+            dec = dms
+            system = icrs_coord.frame.name
             LOG.info(f'Setting Target attribute for targetid:{target_id} -> system:{system} , ra:{ra} ,'
                      f' dec:{dec}')
             return system, ra, dec
