@@ -363,8 +363,9 @@ def assign_resources_from_cdm(
     # Wait for obsState transition to signify success or failure. A resource
     # allocation command cannot be reset or aborted, hence we wait only for
     # FAULT.
+    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
     state_response = wait_for_obsstate(
-        command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
+        subarray_device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
     )
     if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
         # Allocation failed. Raise an exception and let the client decide how
@@ -399,8 +400,9 @@ def deallocate_resources(subarray: domain.SubArray,
 
     # Wait for obsState transition to signify success or failure. A resource
     # release command cannot be reset or aborted, hence we wait only for FAULT
+    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
     state_response = wait_for_obsstate(
-        command.device, target_state=ObsState.EMPTY, error_states=[ObsState.FAULT]
+        subarray_device, target_state=ObsState.EMPTY, error_states=[ObsState.FAULT]
     )
     if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
         raise ObsStateError(state_response.final_state)
