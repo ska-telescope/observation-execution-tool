@@ -200,6 +200,10 @@ def test_allocate_resources_successful_allocation(mock_read_fn, mock_execute_fn)
 
     assert resources == allocated
 
+    # command is sent to CentralNode; obsState is read on SubArrayNode
+    assert mock_execute_fn.call_args[0][0].device == SKA_MID_CENTRAL_NODE_FDQN
+    assert mock_read_fn.call_args[0][0].device == SKA_SUB_ARRAY_NODE_1_FDQN
+
     mock_execute_fn.assert_called_once()
     assert mock_read_fn.call_count == 3
 
@@ -320,6 +324,11 @@ def test_deallocate_resources_raises_exception_when_error_state_encountered(
         _ = observingtasks.deallocate_resources(subarray, release_all=True)
 
     mock_execute_fn.assert_called_once()
+
+    # command is sent to CentralNode; obsState is read on SubArrayNode
+    assert mock_execute_fn.call_args[0][0].device == SKA_MID_CENTRAL_NODE_FDQN
+    assert mock_read_fn.call_args[0][0].device == SKA_SUB_ARRAY_NODE_1_FDQN
+
     assert mock_read_fn.call_count == 3
 
 
@@ -342,6 +351,12 @@ def test_release_resources_successful_default_deallocation(mock_execute_fn, mock
     assert not subarray.resources.dishes
 
     mock_execute_fn.assert_called_once()
+
+    # command is sent to CentralNode; obsState is read on SubArrayNode
+    assert mock_execute_fn.call_args[0][0].device == SKA_MID_CENTRAL_NODE_FDQN
+    assert mock_read_fn.call_args[0][0].device == SKA_SUB_ARRAY_NODE_1_FDQN
+
+    # IDLE -> EMPTY = 2 reads
     assert mock_read_fn.call_count == 2
 
 
@@ -852,3 +867,7 @@ def test_assign_resources_from_cdm(mock_execute_fn, mock_read_fn):
     # ... and verify the Command is as expected. This assertion checks both
     # command type and JSON, validating 1. and 2.
     assert command_returned == command_expected
+
+    # command is sent to CentralNode; obsState is read on SubArrayNode
+    assert mock_execute_fn.call_args[0][0].device == SKA_MID_CENTRAL_NODE_FDQN
+    assert mock_read_fn.call_args[0][0].device == SKA_SUB_ARRAY_NODE_1_FDQN
