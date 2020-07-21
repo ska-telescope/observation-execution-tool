@@ -27,7 +27,7 @@ FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 
-def main(sb_json, allocate_json, subarray_id=1, update_uids=True):
+def main(sb_json, allocate_json='', subarray_id=1, update_uids=True):
     """
     Allocate resources to a target sub-array using a Scheduling Block (SB).
 
@@ -46,26 +46,33 @@ def main(sb_json, allocate_json, subarray_id=1, update_uids=True):
         LOG.error(msg)
         raise IOError(msg)
 
-    if not os.path.isfile(allocate_json):
+    if not allocate_json:
+        cdm_allocation_request = ''
+    elif not os.path.isfile(allocate_json) :
         msg = f'CDM file not found: {allocate_json}'
         LOG.error(msg)
         raise IOError(msg)
+    else:
+        cdm_allocation_request: AssignResourcesRequest = cdm_CODEC.load_from_file(AssignResourcesRequest, allocate_json)
 
     pdm_allocation_request: SBDefinition = pdm_CODEC.load_from_file(SBDefinition, sb_json)
-    cdm_allocation_request: AssignResourcesRequest = cdm_CODEC.load_from_file(AssignResourcesRequest, allocate_json)
+
 
     # Configure PDM DishAllocation to the equivalent CDM DishAllocation
     pdm_dish = pdm_allocation_request.dish_allocations
     cdm_dish = convert_dishallocation(pdm_dish)
     LOG.info(f'Setting dish : {cdm_dish.receptor_ids} ')
-    cdm_allocation_request.dish = cdm_dish
 
     # Configure PDM SDPConfiguration to the equivalent CDM SDPConfiguration
     pdm_sdp_config = pdm_allocation_request.sdp_configuration
     cdm_sdp_config = convert_sdpconfiguration(pdm_sdp_config, pdm_allocation_request.field_configurations)
     LOG.info(f'Setting SDP configuration : {cdm_sdp_config.sdp_id} ')
-    cdm_allocation_request.sdp_config = cdm_sdp_config
 
+    if isinstance(cdm_allocation_request,AssignResourcesRequest):
+        cdm_allocation_request.dish = cdm_dish
+        cdm_allocation_request.sdp_config = cdm_sdp_config
+    else:
+        cdm_allocation_request =  AssignResourcesRequest(subarray_id, cdm_dish, cdm_sdp_config)
     # In order to rerun the same SBI multiple times, we must update the IDs
     # otherwise SDP complains about duplicate SBI ids being resourced.
     # The following workaround is a temporary measure. In production a new SBI
@@ -231,3 +238,4 @@ def convert_channels(pdm_config: pdm_Channel) -> cdm_Channel:
         freq_max=pdm_config.freq_max,
         link_map=pdm_config.link_map
     )
+
