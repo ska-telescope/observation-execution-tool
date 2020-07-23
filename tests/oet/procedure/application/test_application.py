@@ -7,7 +7,7 @@ import unittest.mock as mock
 import pytest
 
 from oet.procedure.application.application import ScriptExecutionService, ProcedureSummary, \
-    PrepareProcessCommand, StartProcessCommand
+    PrepareProcessCommand, StartProcessCommand, AbortProcessCommand
 from oet.procedure.domain import Procedure, ProcedureInput, ProcedureState
 
 
@@ -197,3 +197,36 @@ def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
         returned = service.summarise()
 
         assert returned == expected
+
+
+def test_ses_abort_calls_process_manager_function_and_returns_summary():
+    """
+    Verify that ScriptExecutionService.start() calls the appropriate domain
+    object methods for starting process execution and returns the expected
+    summary object
+    """
+    script_uri = 'test://test.py'
+    cmd = AbortProcessCommand(process_uid=123)
+    procedure = Procedure(script_uri)
+    procedures = {123: procedure}
+    expected = ProcedureSummary(id=123, script_uri=procedure.script_uri,
+                                script_args=procedure.script_args,
+                                state=procedure.state)
+
+    with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
+        # get the mock ProcessManager instance
+        instance = mock_pm.return_value
+        # the manager's procedures attribute holds created procedures and is
+        # used for retrieval
+        instance.procedures = procedures
+
+        service = ScriptExecutionService()
+        returned = service.abort(cmd)
+
+        # service should call run() and return the summary for the executed
+        # procedure
+        instance.abort.assert_called_once_with(123)
+        assert returned == expected
+        # we don't validate or modify procedure state, so this should still be
+        # READY rather than RUNNING
+        assert returned.state == ProcedureState.READY

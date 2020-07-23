@@ -24,6 +24,7 @@ class ProcedureState(enum.Enum):
     """
     READY = enum.auto()
     RUNNING = enum.auto()
+    Abort = enum.auto()
 
 
 @dataclasses.dataclass
@@ -100,6 +101,20 @@ class Procedure(multiprocessing.Process):
         self.state = ProcedureState.RUNNING
         super().start()
 
+    def abort(self):
+        """
+        Abort Procedure execution.
+
+        This calls the run() method in a new child process. Set Procedure state here
+        to record state within the parent process. Procedure state is then inherited by
+        the child process.
+        """
+        if self.state is not ProcedureState.RUNNING:
+            raise Exception(f'Invalidate procedure state for run: {self.state}')
+
+        self.state = ProcedureState.Abort
+        super().terminate()
+
 
 class ProcessManager:
     """
@@ -170,6 +185,26 @@ class ProcessManager:
                 self.procedure_complete.notify_all()
 
         self._pool.apply_async(_wait_for_process, (procedure,), {}, callback, callback)
+
+    def abort(self, process_id: int):
+        """
+        abort a running Procedure.
+
+        This abort execution of the script .
+
+        :param process_id: ID of Procedure to execute
+        :return:
+        """
+        if not self.running:
+            raise ValueError(f'Cannot abort PID {process_id}: procedure is not running')
+
+        try:
+            procedure = self.procedures[process_id]
+        except KeyError as exc:
+            raise ValueError(f'Process {process_id} not found') from exc
+
+        procedure.abort()
+        self.running = None
 
 
 def _wait_for_process(process, **_):

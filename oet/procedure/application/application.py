@@ -47,6 +47,17 @@ class ProcedureSummary:
     state: domain.ProcedureState
 
 
+@dataclasses.dataclass
+class AbortProcessCommand:
+    """
+    AbortProcessCommand is the input argument dataclass for the
+    ScriptExecutionService Abort command. It holds the references required to
+    Abort a script process along with any late-binding runtime
+    arguments the script may require.
+    """
+    process_uid: int
+
+
 class ScriptExecutionService:
     """
     ScriptExecutionService provides the high-level interface and facade for
@@ -119,3 +130,13 @@ class ScriptExecutionService:
             raise ValueError(f'Process IDs not found: {missing_pids}')
 
         return [self._create_summary(pid) for pid in pids]
+
+    def abort(self, cmd: AbortProcessCommand) -> ProcedureSummary:
+        """
+        Abort execution of a Start procedure.
+
+        :param cmd: dataclass argument capturing the execution arguments
+        :return:
+        """
+        self._process_host.abort(cmd.process_uid)
+        return self._create_summary(cmd.process_uid)
