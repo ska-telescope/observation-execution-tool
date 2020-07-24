@@ -5,6 +5,7 @@ import multiprocessing
 from unittest.mock import MagicMock
 
 import pytest
+import time
 
 from oet.procedure.domain import Procedure, ProcedureInput, ProcedureState, ProcessManager
 
@@ -28,6 +29,21 @@ def fail_script(tmpdir):
     script_path.write("""
 def main(*args, **kwargs):
     raise Exception('oops!')
+""")
+    return f'file://{str(script_path)}'
+
+
+@pytest.fixture
+def abort_script(tmpdir):
+    """
+    Pytest fixture to return a path to a script file
+    """
+    script_path = tmpdir.join("abort.py")
+    script_path.write("""
+import time
+
+def main(*args, **kwargs):
+    time.sleep(60)
 """)
     return f'file://{str(script_path)}'
 
@@ -305,7 +321,7 @@ def test_process_manager_removes_references_to_completed_procedures(manager, scr
     manager.run(pid, run_args=ProcedureInput())
     with manager.procedure_complete:
         manager.procedure_complete.wait(1)
-    assert manager.running is None
+    assert pid not in manager.procedures
 
 
 def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_script):
@@ -317,7 +333,7 @@ def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_sc
     manager.run(pid, run_args=ProcedureInput())
     with manager.procedure_complete:
         manager.procedure_complete.wait(1)
-    assert pid not in manager.procedures
+    assert manager.running is None
 
 
 def test_process_manager_removes_references_on_script_failure(manager, fail_script):
@@ -350,6 +366,67 @@ def test_process_manager_run_fails_on_process_that_is_already_running(manager, s
     manager.run(pid, run_args=ProcedureInput())
     with pytest.raises(ValueError):
         manager.run(pid, run_args=ProcedureInput())
+    with manager.procedure_complete:
+        manager.procedure_complete.wait(1)
+
+
+def test_process_manager_abort_terminates_the_process(manager, abort_script):
+    """
+    Verify that ProcessManager sets running procedure attribute to None
+    when script is aborted
+    """
+    pid = manager.create(abort_script, init_args=ProcedureInput())
+    manager.run(pid, run_args=ProcedureInput())
+    manager.abort(pid)
+    with manager.procedure_complete:
+        manager.procedure_complete.wait(1)
+    active_children = multiprocessing.active_children()
+    assert not active_children
+
+
+def test_process_manager_sets_running_to_none_on_abort(manager, abort_script):
+    """
+    Verify that ProcessManager sets running procedure attribute to None
+    when script is aborted
+    """
+    pid = manager.create(abort_script, init_args=ProcedureInput())
+    manager.run(pid, run_args=ProcedureInput())
+    manager.abort(pid)
+    with manager.procedure_complete:
+        manager.procedure_complete.wait(1)
+    assert manager.running is None
+
+
+def test_process_manager_removes_references_on_abort(manager, abort_script):
+    """
+    Verify that ProcessManager removes an aborted procedure from
+    the procedures list
+    """
+    pid = manager.create(abort_script, init_args=ProcedureInput())
+    manager.run(pid, run_args=ProcedureInput())
+    manager.abort(pid)
+    with manager.procedure_complete:
+        manager.procedure_complete.wait(1)
+    assert pid not in manager.procedures
+
+
+def test_process_manager_abort_fails_on_invalid_pid(manager):
+    """
+    Verify that an exception is raised when abort() is requested for an invalid
+    PID
+    """
+    with pytest.raises(ValueError):
+        manager.abort(321)
+
+
+def test_process_manager_abort_fails_on_process_that_is_not_running(manager, script_path):
+    """
+    Verify that an exception is raised when requesting abort() for a procedure
+    that is not running
+    """
+    pid = manager.create(script_path, init_args=ProcedureInput())
+    with pytest.raises(ValueError):
+        manager.abort(pid)
 
 
 def test_scan_id_persists_between_executions(script_that_increments_and_returns_scan_id):
