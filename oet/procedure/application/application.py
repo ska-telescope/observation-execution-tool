@@ -48,11 +48,11 @@ class ProcedureSummary:
 
 
 @dataclasses.dataclass
-class AbortProcessCommand:
+class StopProcessCommand:
     """
-    AbortProcessCommand is the input argument dataclass for the
-    ScriptExecutionService Abort command. It holds the references required to
-    Abort a script process along with any late-binding runtime
+    StopProcessCommand is the input argument dataclass for the
+    ScriptExecutionService Stop command. It holds the references required to
+    Stop a script process along with any late-binding runtime
     arguments the script may require.
     """
     process_uid: int
@@ -131,12 +131,12 @@ class ScriptExecutionService:
 
         return [self._create_summary(pid) for pid in pids]
 
-    def abort(self, cmd: AbortProcessCommand) -> ProcedureSummary:
+    def stop(self, cmd: StopProcessCommand) -> ProcedureSummary:
         """
-        Abort execution of a Start procedure.
+        Stop execution of a running procedure.
 
         :param cmd: dataclass argument capturing the execution arguments
         :return:
         """
         self._process_host.abort(cmd.process_uid)
-        return self._create_summary(cmd.process_uid)
+

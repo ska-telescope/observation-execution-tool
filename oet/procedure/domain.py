@@ -172,17 +172,17 @@ class ProcessManager:
 
         self._pool.apply_async(_wait_for_process, (procedure,), {}, callback, callback)
 
-    def abort(self, process_id):
+    def stop(self, process_id):
         """
-        Abort a running Procedure.
+        stop a running Procedure.
 
-        This aborts execution of a currently running script.
+        This stops execution of a currently running script.
 
-        :param process_id: ID of Procedure to abort
+        :param process_id: ID of Procedure to stop
         :return:
         """
         if self.running is None:
-            raise ValueError(f'Cannot abort PID {process_id}: procedure is not running')
+            raise ValueError(f'Cannot stop PID {process_id}: procedure is not running')
 
         try:
             procedure = self.procedures[process_id]

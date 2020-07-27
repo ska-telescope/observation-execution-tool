@@ -383,60 +383,60 @@ def test_process_manager_run_fails_on_process_that_is_already_running(manager, s
         manager.run(pid, run_args=ProcedureInput())
 
 
-def test_process_manager_abort_terminates_the_process(manager, abort_script):
+def test_process_manager_stop_terminates_the_process(manager, abort_script):
     """
     Verify that ProcessManager sets running procedure attribute to None
-    when script is aborted
+    when script is stopped
     """
     pid = manager.create(abort_script, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
-    manager.abort(pid)
+    manager.stop(pid)
     wait_for_process_to_complete(manager)
     active_children = multiprocessing.active_children()
     assert not active_children
 
 
-def test_process_manager_sets_running_to_none_on_abort(manager, abort_script):
+def test_process_manager_sets_running_to_none_on_stop(manager, abort_script):
     """
     Verify that ProcessManager sets running procedure attribute to None
-    when script is aborted
+    when script is stopped
     """
     pid = manager.create(abort_script, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
-    manager.abort(pid)
+    manager.stop(pid)
     wait_for_process_to_complete(manager)
     assert manager.running is None
 
 
-def test_process_manager_removes_references_on_abort(manager, abort_script):
+def test_process_manager_removes_references_on_stop(manager, abort_script):
     """
-    Verify that ProcessManager removes an aborted procedure from
+    Verify that ProcessManager removes an stopped procedure from
     the procedures list
     """
     pid = manager.create(abort_script, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
-    manager.abort(pid)
+    manager.stop(pid)
     wait_for_process_to_complete(manager)
     assert pid not in manager.procedures
 
 
-def test_process_manager_abort_fails_on_invalid_pid(manager):
+def test_process_manager_stop_fails_on_invalid_pid(manager):
     """
-    Verify that an exception is raised when abort() is requested for an invalid
+    Verify that an exception is raised when stop() is requested for an invalid
     PID
     """
     with pytest.raises(ValueError):
-        manager.abort(321)
+        manager.stop(321)
 
 
-def test_process_manager_abort_fails_on_process_that_is_not_running(manager, script_path):
+def test_process_manager_stop_fails_on_process_that_is_not_running(manager, script_path):
     """
-    Verify that an exception is raised when requesting abort() for a procedure
+    Verify that an exception is raised when requesting stop() for a procedure
     that is not running
     """
     pid = manager.create(script_path, init_args=ProcedureInput())
     with pytest.raises(ValueError):
-        manager.abort(pid)
+        manager.stop(pid)
 
 
 def test_scan_id_persists_between_executions(script_that_increments_and_returns_scan_id):
