@@ -246,3 +246,24 @@ def test_start_execute_sends_correct_script_args_when_user_provides_arguments():
     request_payload = last_request.json()
     assert 'script_args' in request_payload
     assert request_payload['script_args'] == expected_script_args
+
+
+def test_stop_procedure_sends_correct_command():
+    """Check that the correct command is sent in the payload"""
+    procedure_id = 1
+
+    # create a mock requests object
+    with requests_mock.Mocker() as mock_server:
+        mock_server.put(f'{PROCEDURES_URI}/1', json={},
+                        status_code=HTTPStatus.OK)
+
+        adapter = RestAdapter(PROCEDURES_URI)
+        adapter.stop(procedure_id)
+
+        last_request = mock_server.last_request
+
+    assert last_request.method == 'PUT'
+    request_payload = last_request.json()
+    assert 'state' in request_payload
+    assert request_payload['state'] == 'STOP'
+

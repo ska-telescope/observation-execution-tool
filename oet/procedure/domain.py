@@ -24,6 +24,7 @@ class ProcedureState(enum.Enum):
     """
     READY = enum.auto()
     RUNNING = enum.auto()
+    STOP = enum.auto()
 
 
 @dataclasses.dataclass

@@ -144,6 +144,19 @@ class RestClientUI:
         procedure = self._client.start(number, run_args=run_args)
         return self._tabulate([procedure])
 
+    def stop(self, number) -> str:
+        """
+        Stop a specified Procedure.
+
+        This will stop the execution of a currently running procedure
+        with the specified ID.
+
+        :param number: ID of the procedure to stop
+        :return: Empty table entry
+        """
+        self._client.stop(number)
+        return self._tabulate([])
+
 
 class RestAdapter:
     """A simple CLI REST client using python-fire for the option parsing"""
@@ -242,6 +255,25 @@ class RestAdapter:
         if response.status_code == HTTPStatus.OK:
             return ProcedureSummary.from_json(response_json['procedure'])
         raise Exception(response_json['error'])
+
+    def stop(self, number):
+        """
+        Stop the specified Procedure.
+
+        :param number: ID of script to stop
+        :return:
+        """
+        url = f'{self.server_url}/{number}'
+
+        request_json = {
+            'state': 'STOP'
+        }
+        LOG.debug('Stop payload: %s', request_json)
+
+        response = requests.put(url, json=request_json)
+        response_json = response.json()
+        if response.status_code != HTTPStatus.OK:
+            raise Exception(response_json['error'])
 
 
 def main():
