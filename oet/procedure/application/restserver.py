@@ -114,14 +114,23 @@ def update_procedure(procedure_id: int):
 
     old_state = summary.state
     new_state = domain.ProcedureState[flask.request.json.get('state', summary.state.name)]
-    if old_state is domain.ProcedureState.READY and new_state is domain.ProcedureState.RUNNING:
+    if old_state is domain.ProcedureState.RUNNING and new_state is domain.ProcedureState.STOP:
+        cmd = application.StopProcessCommand(procedure_id)
+        try:
+            SERVICE.stop(cmd)
+            msg = f'Successfully stopped procedure with Id {procedure_id} '
+        except Exception as exc:
+            flask.abort(500, exc)
+        return flask.jsonify({'procedure': msg}), 200
+    elif old_state is domain.ProcedureState.READY and new_state is domain.ProcedureState.RUNNING:
         cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
         try:
             summary = SERVICE.start(cmd)
         except Exception as exc:
             flask.abort(500, exc)
-
-    return flask.jsonify({'procedure': make_public_summary(summary)})
+        return flask.jsonify({'procedure': make_public_summary(summary)})
+    else:
+        return flask.jsonify({'procedure': make_public_summary(summary)})
 
 
 def make_public_summary(procedure: application.ProcedureSummary):
