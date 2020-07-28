@@ -472,11 +472,16 @@ def wait_for_value(attribute: Attribute, target_values: Iterable[Any], key=lambd
     :param key: function to process each attribute value before comparison
     :return: Attribute value read from device (one of target_values)
     """
+    LOGGER.info(f'Waiting for {attribute} state in: {target_values}')
     while True:
         response = EXECUTOR.read(attribute)
         processed = key(response)
+        LOGGER.info(f'Processed state: {processed} (type={type(processed)}')
         if processed in target_values:
             return processed
+        LOGGER.info(f'{processed} not in {target_values}')
+        import time
+        time.sleep(1)
 
 
 # TODO: 1. implement timeout functionality 2. return value to use Either pattern
@@ -507,7 +512,8 @@ def wait_for_obsstate(
     obstates_union.append(target_state)
     # obsState values do not need processing so the optional 'key' argument to
     # wait_for_value is left unset
-    final_state = wait_for_value(attribute, obstates_union)
+    final_state = wait_for_value(attribute, obstates_union,
+                                 key=cast_tango_obsstate_to_oet_obstate)
 
     if final_state != target_state:
         LOGGER.warning('%s state expected to go to %s but instead went to %s',
@@ -516,6 +522,10 @@ def wait_for_obsstate(
 
     LOGGER.info('%s reached target state %s', attribute.name, target_state)
     return ObsStateResponse(WAIT_FOR_STATE_SUCCESS_RESPONSE, final_state)
+
+
+def cast_tango_obsstate_to_oet_obstate(other):
+    return ObsState[other.name]
 
 
 def execute_configure_command(command: Command):
