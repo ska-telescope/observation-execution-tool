@@ -80,6 +80,10 @@ START_PROCESS_RESPONSE = {
     }
 }
 
+STOP_PROCESS_RESPONSE = {
+    "abort_message": "Successfully stopped script with ID 1"
+}
+
 
 def test_json_payload_for_list_all_procedures_is_empty():
     """Ensure the payload for list does not exist"""
@@ -254,7 +258,7 @@ def test_stop_procedure_sends_correct_command():
 
     # create a mock requests object
     with requests_mock.Mocker() as mock_server:
-        mock_server.put(f'{PROCEDURES_URI}/1', json={},
+        mock_server.put(f'{PROCEDURES_URI}/1', json=STOP_PROCESS_RESPONSE,
                         status_code=HTTPStatus.OK)
 
         adapter = RestAdapter(PROCEDURES_URI)

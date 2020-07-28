@@ -154,8 +154,8 @@ class RestClientUI:
         :param number: ID of the procedure to stop
         :return: Empty table entry
         """
-        self._client.stop(number)
-        return self._tabulate([])
+        response = self._client.stop(number)
+        return response
 
 
 class RestAdapter:
@@ -272,8 +272,9 @@ class RestAdapter:
 
         response = requests.put(url, json=request_json)
         response_json = response.json()
-        if response.status_code != HTTPStatus.OK:
-            raise Exception(response_json['error'])
+        if response.status_code == HTTPStatus.OK:
+            return response_json['abort_message']
+        raise Exception(response_json['error'])
 
 
 def main():
