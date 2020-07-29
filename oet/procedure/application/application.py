@@ -131,12 +131,12 @@ class ScriptExecutionService:
 
         return [self._create_summary(pid) for pid in pids]
 
-    def stop(self, cmd: StopProcessCommand) -> ProcedureSummary:
+    def stop(self, cmd: StopProcessCommand):
         """
         Stop execution of a running procedure.
 
         :param cmd: dataclass argument capturing the execution arguments
         :return:
         """
-        self._process_host.abort(cmd.process_uid)
+        self._process_host.stop(cmd.process_uid)
 
