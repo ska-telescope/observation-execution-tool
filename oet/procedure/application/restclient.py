@@ -159,6 +159,9 @@ class RestClientUI:
             running_procedures = [p for p in self._client.list() if p.state == 'RUNNING']
             if not running_procedures:
                 return 'No procedures to stop'
+            if len(running_procedures) > 1:
+                return 'WARNING: More than one procedure is running. ' \
+                       'Specify ID of the procedure to stop.'
             number = running_procedures[0].id
         response = self._client.stop(number)
         return response
