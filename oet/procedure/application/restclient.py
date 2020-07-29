@@ -144,16 +144,22 @@ class RestClientUI:
         procedure = self._client.start(number, run_args=run_args)
         return self._tabulate([procedure])
 
-    def stop(self, number) -> str:
+    def stop(self, number=None) -> str:
         """
         Stop a specified Procedure.
 
         This will stop the execution of a currently running procedure
-        with the specified ID.
+        with the specified ID.If no procedure ID is declared, the first
+        procedure with running status will be stopped.
 
         :param number: ID of the procedure to stop
         :return: Empty table entry
         """
+        if number is None:
+            running_procedures = [p for p in self._client.list() if p.state == 'RUNNING']
+            if not running_procedures:
+                return 'No procedures to stop'
+            number = running_procedures[0].id
         response = self._client.stop(number)
         return response
 
