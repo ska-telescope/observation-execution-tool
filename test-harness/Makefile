@@ -12,7 +12,7 @@ all: test
 # The following steps copy across useful output to this volume which can
 # then be extracted to form the CI summary for the test procedure.
 test:
-	cd /app && python setup.py test | tee setup_py_test.stdout || true
+	cd /app && python setup.py test | tee setup_py_test.stdout
 	if [ -d /build ]; then \
 		mkdir -p /build/reports; \
 		mv /app/setup_py_test.stdout /build; \
