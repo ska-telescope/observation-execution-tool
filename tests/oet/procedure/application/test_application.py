@@ -214,4 +214,4 @@ def test_ses_stop_calls_process_manager_function():
         service.stop(cmd)
 
         # service should call stop()
-        instance.abort.assert_called_once_with(cmd.process_uid)
+        instance.stop.assert_called_once_with(cmd.process_uid)
