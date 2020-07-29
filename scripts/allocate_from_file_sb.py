@@ -47,7 +47,7 @@ def main(sb_json, allocate_json='', subarray_id=1, update_uids=True):
         raise IOError(msg)
 
     if not allocate_json:
-        cdm_allocation_request = ''
+        cdm_allocation_request = AssignResourcesRequest(subarray_id, None, None)
     elif not os.path.isfile(allocate_json) :
         msg = f'CDM file not found: {allocate_json}'
         LOG.error(msg)
@@ -56,7 +56,6 @@ def main(sb_json, allocate_json='', subarray_id=1, update_uids=True):
         cdm_allocation_request: AssignResourcesRequest = cdm_CODEC.load_from_file(AssignResourcesRequest, allocate_json)
 
     pdm_allocation_request: SBDefinition = pdm_CODEC.load_from_file(SBDefinition, sb_json)
-
 
     # Configure PDM DishAllocation to the equivalent CDM DishAllocation
     pdm_dish = pdm_allocation_request.dish_allocations
@@ -68,11 +67,9 @@ def main(sb_json, allocate_json='', subarray_id=1, update_uids=True):
     cdm_sdp_config = convert_sdpconfiguration(pdm_sdp_config, pdm_allocation_request.field_configurations)
     LOG.info(f'Setting SDP configuration : {cdm_sdp_config.sdp_id} ')
 
-    if isinstance(cdm_allocation_request,AssignResourcesRequest):
-        cdm_allocation_request.dish = cdm_dish
-        cdm_allocation_request.sdp_config = cdm_sdp_config
-    else:
-        cdm_allocation_request =  AssignResourcesRequest(subarray_id, cdm_dish, cdm_sdp_config)
+    cdm_allocation_request.dish = cdm_dish
+    cdm_allocation_request.sdp_config = cdm_sdp_config
+
     # In order to rerun the same SBI multiple times, we must update the IDs
     # otherwise SDP complains about duplicate SBI ids being resourced.
     # The following workaround is a temporary measure. In production a new SBI
