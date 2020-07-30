@@ -41,8 +41,9 @@ def abort_script(tmpdir):
     script_path.write("""
 import time
 
-def main(*args, **kwargs):
-    time.sleep(60)
+def main(queue, procedure):
+    time.sleep(2)
+    queue.put(procedure.pid)
 """)
     return f'file://{str(script_path)}'
 
@@ -107,12 +108,12 @@ def process_cleanup(manager):
         wait_for_process_to_complete(manager)
 
 
-def wait_for_process_to_complete(manager):
+def wait_for_process_to_complete(manager, timeout=1):
     """
     Wait for script execution to complete and process to finish
     """
     with manager.procedure_complete:
-        manager.procedure_complete.wait(1)
+        manager.procedure_complete.wait(timeout)
 
 
 def test_procedure_input_accepts_expected_constructor_values():
@@ -385,15 +386,15 @@ def test_process_manager_run_fails_on_process_that_is_already_running(manager, s
 
 def test_process_manager_stop_terminates_the_process(manager, abort_script):
     """
-    Verify that ProcessManager sets running procedure attribute to None
-    when script is stopped
+    Verify that ProcessManager stops a script execution
     """
     pid = manager.create(abort_script, init_args=ProcedureInput())
-    manager.run(pid, run_args=ProcedureInput())
+    created = manager.procedures[pid]
+    queue = multiprocessing.Queue()
+    manager.run(pid, run_args=ProcedureInput(queue, created))
     manager.stop(pid)
-    wait_for_process_to_complete(manager)
-    active_children = multiprocessing.active_children()
-    assert not active_children
+    wait_for_process_to_complete(manager, timeout=3)
+    assert queue.empty()
 
 
 def test_process_manager_sets_running_to_none_on_stop(manager, abort_script):
