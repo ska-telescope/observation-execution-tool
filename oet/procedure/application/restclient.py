@@ -104,9 +104,9 @@ class RestClientUI:
 
         Example:
 
-            oet create file://path/to/script.py 'hello' --verbose=true
+            oet create file:///path/to/script.py 'hello' --verbose=true
 
-        :param script_uri: script URI, e.g., file://test.py
+        :param script_uri: script URI, e.g., file:///test.py
         :param args: script positional arguments
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.
@@ -127,7 +127,7 @@ class RestClientUI:
 
         Example:
 
-            oet start 3 'hello' --verbose=true
+            oet start --pid=3 'hello' --verbose=true
 
         :param pid: ID of the procedure to start
         :param args: late-binding position arguments for script
