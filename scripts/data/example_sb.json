@@ -102,7 +102,7 @@
         "dependencies": [{
           "pb_id": "pb-mvp01-20200325-00001",
           "type": ["visibilities"]
-        }],
+        }]
       },
       {
         "id": "pb-mvp01-20200325-00004",
@@ -115,7 +115,7 @@
         "dependencies":[{
           "type":["calibration"],
           "pb_id":"pb-mvp01-20200325-00003"
-        }],
+        }]
       }
     ]
   },
