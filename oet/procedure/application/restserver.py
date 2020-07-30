@@ -115,14 +115,18 @@ def update_procedure(procedure_id: int):
     old_state = summary.state
     new_state = domain.ProcedureState[flask.request.json.get('state', summary.state.name)]
 
-    if old_state is domain.ProcedureState.RUNNING and new_state is domain.ProcedureState.STOP:
-        cmd = application.StopProcessCommand(procedure_id)
-        try:
-            SERVICE.stop(cmd)
-            msg = f'Successfully stopped script with ID {procedure_id} '
+    if new_state is domain.ProcedureState.STOP:
+        if old_state is domain.ProcedureState.RUNNING:
+            cmd = application.StopProcessCommand(procedure_id)
+            try:
+                SERVICE.stop(cmd)
+                msg = f'Successfully stopped script with ID {procedure_id} '
+                return flask.jsonify({'abort_message': msg})
+            except Exception as exc:
+                flask.abort(500, exc)
+        else:
+            msg = f'Cannot stop script with ID {procedure_id}: Script is not running'
             return flask.jsonify({'abort_message': msg})
-        except Exception as exc:
-            flask.abort(500, exc)
 
     elif old_state is domain.ProcedureState.READY and new_state is domain.ProcedureState.RUNNING:
         cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
