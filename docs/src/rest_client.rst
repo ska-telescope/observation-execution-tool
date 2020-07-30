@@ -29,7 +29,7 @@ via the ``server-url`` argument, or set session-wide by setting the
 
 By default, the client assumes it is operating within a SKAMPI environment
 and attempts to connect to a REST server using the default REST service name
-of http://rest-oet-release-name:5000/api/v1.0/procedures. If running the OET
+of http://oet-rest:5000/api/v1.0/procedures. If running the OET
 client within SKAMPI via the oet-ssh or oet-jupyter services, the
 ``OET_REST_URI`` variable is automatically set.
 
@@ -49,19 +49,27 @@ The methods available through the REST Client map closely to the
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 | list               | server-url    | See note above                             | **List procedures**                 |
 |                    +---------------+--------------------------------------------+-------------------------------------+
-|                    | number        | None                                       | Return info on the collection of all|
+|                    | pid           | None                                       | Return info on the collection of all|
 |                    |               |                                            | loaded and running procedures, or   |
-|                    |               |                                            | info on the one specified by number |
+|                    |               |                                            | info on the one specified by        |
+|                    |               |                                            | process ID (pid)                    |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 | start              | server-url    | See note above                             | **Start a Procedure Executing**     |
 |                    +---------------+--------------------------------------------+                                     |
-|                    | number        | None                                       | Start a process executing           |
-|                    +---------------+--------------------------------------------+ the procedure specified by number   |
-|                    | args          | None                                       | or, if none is specified start      |
-|                    +---------------+--------------------------------------------+ the last one loaded.                |
+|                    | pid           | None                                       | Start a process executing           |
+|                    +---------------+--------------------------------------------+ the procedure specified by process  |
+|                    | args          | None                                       | ID (pid) or, if none is specified   |
+|                    +---------------+--------------------------------------------+ start the last one loaded.          |
 |                    | kwargs        | None                                       |                                     |
 |                    |               |                                            | Only one procedure can be executing |
 |                    |               |                                            | at any time                         |
++--------------------+---------------+--------------------------------------------+-------------------------------------+
+| stop               | server-url    | See note above                             | **Stop Procedure Execution**        |
+|                    +---------------+--------------------------------------------+                                     |
+|                    | pid           | None                                       | Stop a running process executing    |
+|                    |               |                                            | the procedure specified by process  |
+|                    |               |                                            | ID (pid) or, if none is specified,  |
+|                    |               |                                            | stop the currently running process  |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to 
@@ -117,7 +125,7 @@ giving: ::
 
 Alternatively, we could check the state of procedure 2 by typing: ::
 
-  $ oet list 2
+  $ oet list --pid=2
 
 giving: ::
 
@@ -129,7 +137,7 @@ Now that we have our procedures loaded we can start one of them running.
 At this point we supply the index number of the procedure to run, and
 some runtime arguments to pass to it if required. ::
 
-  $ oet start 2 'bob' --simulate=false
+  $ oet start --pid=2 'bob' --simulate=false
  
 giving: ::
 
