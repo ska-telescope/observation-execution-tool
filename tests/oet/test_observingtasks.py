@@ -440,6 +440,21 @@ def test_wait_for_obsstate_returns_target_state(mock_read_fn):
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
+def test_wait_for_value_raises_type_error_for_non_matching_types(mock_read_fn):
+    """
+    Verify wait_for_value raises TypeError if attribute type and
+    target type do not match
+    """
+    mock_read_fn.side_effect = [1, 2, 3, 4]
+
+    attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
+
+    with pytest.raises(TypeError):
+        _ = observingtasks.wait_for_value(attribute, target_states)
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
 def test_wait_for_obsstate_returns_error_state(mock_read_fn):
     """
     Verify wait_for_obsstate stops waiting for the device target obsState when
