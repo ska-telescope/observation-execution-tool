@@ -472,16 +472,16 @@ def wait_for_value(attribute: Attribute, target_values: Iterable[Any], key=lambd
     :param key: function to process each attribute value before comparison
     :return: Attribute value read from device (one of target_values)
     """
-    LOGGER.info(f'Waiting for {attribute} state in: {target_values}')
-    while True:
-        response = EXECUTOR.read(attribute)
-        processed = key(response)
-        LOGGER.info(f'Processed state: {processed} (type={type(processed)}')
-        if processed in target_values:
-            return processed
-        LOGGER.info(f'{processed} not in {target_values}')
-        import time
-        time.sleep(1)
+    response = EXECUTOR.read(attribute)
+    processed = key(response)
+    if all(isinstance(value, type(processed)) for value in target_values):
+        while True:
+            if processed in target_values:
+                return processed
+            response = EXECUTOR.read(attribute)
+            processed = key(response)
+    else:
+        raise TypeError('Attribute type does not match type of target values')
 
 
 # TODO: 1. implement timeout functionality 2. return value to use Either pattern
