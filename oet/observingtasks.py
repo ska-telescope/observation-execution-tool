@@ -763,4 +763,4 @@ def get_end_sb_command(subarray: domain.SubArray) -> Command:
     :return: the OET Command
     """
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
-    return Command(subarray_node_fqdn, 'End')
+    return Command(subarray_node_fqdn, 'EndSB')
