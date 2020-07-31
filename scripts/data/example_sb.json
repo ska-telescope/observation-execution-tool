@@ -8,10 +8,10 @@
       "targets": {
         "my science target": {
           "type": "sidereal",
-          "name": "a UMi B",
+          "name": "Polaris Australis",
           "system": "ICRS",
-          "RA": "02:30:41.63",
-          "dec": "+89:15:38.1"
+          "RA": "21:08:47.92",
+          "dec": "-88:57:22.9"
         }
       }
     },
@@ -19,10 +19,10 @@
       "targets": {
         "my calibrator target": {
           "type": "sidereal",
-          "name": "a UMi Aa",
+          "name": "Polaris Australis",
           "system": "ICRS",
-          "RA": "02:31:49.09",
-          "dec": "+89:15:50.8"
+          "RA": "21:08:47.92",
+          "dec": "-88:57:22.9"
         }
       }
     }
@@ -150,7 +150,7 @@
   ],
   "cspConfigurations": [
     {
-      "id": "jeff",
+      "id": "sbi-mvp01-20200325-00001-science_A",
       "fsp": [
       {
         "fspID": 1,
