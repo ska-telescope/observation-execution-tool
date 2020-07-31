@@ -640,7 +640,7 @@ def test_get_end_sb_command():
     subarray = SubArray(1)
     cmd = observingtasks.get_end_sb_command(subarray)
     assert cmd.device == SKA_SUB_ARRAY_NODE_1_FDQN
-    assert cmd.command_name == 'End'
+    assert cmd.command_name == 'EndSB'
     assert not cmd.args
     assert not cmd.kwargs
 
