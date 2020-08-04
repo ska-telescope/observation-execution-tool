@@ -546,12 +546,12 @@ def test_scan_calls_correct_observing_task():
     mock_module.scan.assert_called_once_with(subarray)
 
 
-def test_end_sb_calls_correct_observing_task():
+def test_end_calls_correct_observing_task():
     """
     Confirm that the 'end SB' command calls the correct observing task exactly
     once.
     """
     subarray = SubArray(1)
     with mock.patch('oet.domain.observingtasks') as mock_module:
-        subarray.end_sb()
-    mock_module.end_sb.assert_called_once_with(subarray)
+        subarray.end()
+    mock_module.end.assert_called_once_with(subarray)

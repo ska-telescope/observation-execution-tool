@@ -736,13 +736,13 @@ def scan(subarray: domain.SubArray):
         raise ObsStateError(state_response_2.final_state)
 
 
-def end_sb(subarray: domain.SubArray):
+def end(subarray: domain.SubArray):
     """
-    Send the 'end SB' command to the SubArrayNode, marking the end of the
+    Send the 'end' command to the SubArrayNode, marking the end of the
     current observation.
     :param subarray: the subarray to command
     """
-    command = get_end_sb_command(subarray)
+    command = get_end_command(subarray)
     _ = EXECUTOR.execute(command)
 
     state_response = wait_for_obsstate(
@@ -754,13 +754,13 @@ def end_sb(subarray: domain.SubArray):
         raise ObsStateError(state_response.final_state)
 
 
-def get_end_sb_command(subarray: domain.SubArray) -> Command:
+def get_end_command(subarray: domain.SubArray) -> Command:
     """
     Return an OET Command that, when passed to a TangoExecutor, would call
-    SubArrayNode.EndSB().
+    SubArrayNode.End().
 
     :param subarray: the SubArray to control
     :return: the OET Command
     """
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
-    return Command(subarray_node_fqdn, 'EndSB')
+    return Command(subarray_node_fqdn, 'End')

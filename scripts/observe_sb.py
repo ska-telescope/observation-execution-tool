@@ -159,10 +159,10 @@ def main(sb_json, configure_json, subarray_id=1):
         LOG.info(f'Starting scan {scan_id}')
         subarray.scan()
 
-    # All scans are complete. Observations are concluded with an 'end SB'
+    # All scans are complete. Observations are concluded with an 'end'
     # command.
     LOG.info(f'End scheduling block: {sched_block.id}')
-    subarray.end_sb()
+    subarray.end()
 
     LOG.info('Observation script complete')
 

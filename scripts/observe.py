@@ -46,6 +46,6 @@ def main(configuration, scan_duration, subarray_id=1, repeat=1, process_json=Tru
         subarray.scan()
 
     LOG.info('End scheduling block')
-    subarray.end_sb()
+    subarray.end()
 
     LOG.info('Observation script complete')

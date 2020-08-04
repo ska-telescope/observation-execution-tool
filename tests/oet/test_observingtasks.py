@@ -633,12 +633,12 @@ def test_subarray_scan_raises_exception_when_error_state_encountered(mock_execut
     assert mock_read_fn.call_count == 4
 
 
-def test_get_end_sb_command():
+def test_get_end_command():
     """
     Verify that a 'end SB' Command is targeted and structured correctly.
     """
     subarray = SubArray(1)
-    cmd = observingtasks.get_end_sb_command(subarray)
+    cmd = observingtasks.get_end_command(subarray)
     assert cmd.device == SKA_SUB_ARRAY_NODE_1_FDQN
     assert cmd.command_name == 'EndSB'
     assert not cmd.args
@@ -647,7 +647,7 @@ def test_get_end_sb_command():
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_end_sb_calls_tango_executor(mock_execute_fn, mock_read_fn):
+def test_end_calls_tango_executor(mock_execute_fn, mock_read_fn):
     """
     Test that the 'end SB' command calls the target Tango device once only.
     """
@@ -657,16 +657,16 @@ def test_end_sb_calls_tango_executor(mock_execute_fn, mock_read_fn):
     ]
 
     subarray = SubArray(1)
-    observingtasks.end_sb(subarray)
-    cmd = observingtasks.get_end_sb_command(subarray)
+    observingtasks.end(subarray)
+    cmd = observingtasks.get_end_command(subarray)
     mock_execute_fn.assert_called_once_with(cmd)
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_end_sb_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
+def test_end_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
     """
-    Verify that the SubArray.end_sb command waits for the device obsstate
+    Verify that the SubArray.end command waits for the device obsstate
     to transition back to IDLE before returning.
     """
     # obsState will be READY for the first three reads, then IDLE
@@ -675,7 +675,7 @@ def test_end_sb_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
     ]
 
     subarray = domain.SubArray(1)
-    observingtasks.end_sb(subarray)
+    observingtasks.end(subarray)
 
     # command arg validation is the subject of another test
     mock_execute_fn.assert_called_with(mock.ANY)
@@ -689,9 +689,9 @@ def test_end_sb_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_end_sb_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
+def test_end_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
     """
-    Verify that the SubArray.end_sb raises an exception when obsState goes to error state
+    Verify that the SubArray.end raises an exception when obsState goes to error state
     """
     mock_read_fn.side_effect = [
         ObsState.READY, ObsState.READY, ObsState.READY, ObsState.FAULT
@@ -699,7 +699,7 @@ def test_end_sb_raises_exception_when_error_state_encountered(mock_execute_fn, m
 
     subarray = domain.SubArray(1)
     with pytest.raises(ObsStateError):
-        observingtasks.end_sb(subarray)
+        observingtasks.end(subarray)
 
     expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
     mock_read_fn.assert_called_with(expected_attr)

@@ -279,7 +279,7 @@ from an interactive session and so has main().
        # All scans are complete. Observations are concluded with an 'end SB'
        # command.
        LOG.info(f'End scheduling block: {sched_block.id}')
-       subarray.end_sb()
+       subarray.end()
 
        LOG.info('Observation script complete')
 

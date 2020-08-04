@@ -436,12 +436,12 @@ class SubArray:
         """
         observingtasks.scan(self)
 
-    def end_sb(self):
+    def end(self):
         """
         End Scheduling Block, marking the end of the active observing
         sequence.
         """
-        observingtasks.end_sb(self)
+        observingtasks.end(self)
 
 
 # this import needs to be here, at the end of the file, to work around a
