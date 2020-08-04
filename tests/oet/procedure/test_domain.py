@@ -33,6 +33,22 @@ def main(*args, **kwargs):
 
 
 @pytest.fixture
+def abort_script(tmpdir):
+    """
+    Pytest fixture to return a path to a script file
+    """
+    script_path = tmpdir.join("abort.py")
+    script_path.write("""
+import time
+
+def main(queue, procedure):
+    time.sleep(2)
+    queue.put(procedure.pid)
+""")
+    return f'file://{str(script_path)}'
+
+
+@pytest.fixture
 def script_with_queue_path(tmpdir):
     """
     Pytest fixture to return a path to a script with main() which takes
@@ -78,6 +94,26 @@ def manager():
     Pytest fixture to return a prepared ProcessManager
     """
     return ProcessManager()
+
+
+@pytest.fixture
+def process_cleanup(manager):
+    """
+    Pytest fixture for waiting for Procedure process to finish before
+    moving to next test. Should be used in tests where manager.run()
+    is called but wait_for_process_to_complete() is not called
+    """
+    yield
+    if multiprocessing.active_children():
+        wait_for_process_to_complete(manager)
+
+
+def wait_for_process_to_complete(manager, timeout=1):
+    """
+    Wait for script execution to complete and process to finish
+    """
+    with manager.procedure_complete:
+        manager.procedure_complete.wait(timeout)
 
 
 def test_procedure_input_accepts_expected_constructor_values():
@@ -230,7 +266,7 @@ def test_process_manager_create_captures_initialisation_arguments(manager, scrip
     assert created.script_args['init'] == expected
 
 
-def test_calling_process_manager_run_sets_run_args_on_procedure(manager, script_path):
+def test_calling_process_manager_run_sets_run_args_on_procedure(manager, script_path, process_cleanup):
     """
     Verify that the arguments to ProcessManager run() are captured and stored on the
     procedure instance
@@ -242,7 +278,7 @@ def test_calling_process_manager_run_sets_run_args_on_procedure(manager, script_
     assert created.script_args['run'] == expected
 
 
-def test_process_manager_run_changes_state_of_procedure_to_running(manager, script_path):
+def test_process_manager_run_changes_state_of_procedure_to_running(manager, script_path, process_cleanup):
     """
     Verify that procedure state changes when ProcessManager starts
     procedure execution
@@ -253,7 +289,7 @@ def test_process_manager_run_changes_state_of_procedure_to_running(manager, scri
     assert manager.procedures[pid].state == ProcedureState.RUNNING
 
 
-def test_process_manager_run_executes_procedure_start(manager):
+def test_process_manager_run_executes_procedure_start(manager, process_cleanup):
     """
     Verify that a call to ProcessManager run() executes Procedure.start() instead of Procedure.run()
     This confirms that Procedure will execute in a child process.
@@ -264,7 +300,7 @@ def test_process_manager_run_executes_procedure_start(manager):
     procedure.start.assert_called_once()
 
 
-def test_process_manager_run_sets_running_procedure(manager, tmpdir):
+def test_process_manager_run_sets_running_procedure(manager, tmpdir, process_cleanup):
     """
     Verify that ProcessManager sets the running procedure attribute
     appropriately when run() is called
@@ -291,8 +327,7 @@ def test_process_manager_sets_running_to_none_when_process_completes(manager, sc
     """
     pid = manager.create(script_path, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
-    with manager.procedure_complete:
-        manager.procedure_complete.wait(1)
+    wait_for_process_to_complete(manager)
     assert manager.running is None
 
 
@@ -303,9 +338,8 @@ def test_process_manager_removes_references_to_completed_procedures(manager, scr
     """
     pid = manager.create(script_path, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
-    with manager.procedure_complete:
-        manager.procedure_complete.wait(1)
-    assert manager.running is None
+    wait_for_process_to_complete(manager)
+    assert pid not in manager.procedures
 
 
 def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_script):
@@ -315,9 +349,8 @@ def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_sc
     """
     pid = manager.create(fail_script, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
-    with manager.procedure_complete:
-        manager.procedure_complete.wait(1)
-    assert pid not in manager.procedures
+    wait_for_process_to_complete(manager)
+    assert manager.running is None
 
 
 def test_process_manager_removes_references_on_script_failure(manager, fail_script):
@@ -327,8 +360,7 @@ def test_process_manager_removes_references_on_script_failure(manager, fail_scri
     """
     pid = manager.create(fail_script, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
-    with manager.procedure_complete:
-        manager.procedure_complete.wait(1)
+    wait_for_process_to_complete(manager)
     assert pid not in manager.procedures
 
 
@@ -341,7 +373,7 @@ def test_process_manager_run_fails_on_invalid_pid(manager):
         manager.run(321, run_args=ProcedureInput())
 
 
-def test_process_manager_run_fails_on_process_that_is_already_running(manager, script_path):
+def test_process_manager_run_fails_on_process_that_is_already_running(manager, script_path, process_cleanup):
     """
     Verify that an exception is raised when requesting run() for a procedure
     that is already running
@@ -350,6 +382,62 @@ def test_process_manager_run_fails_on_process_that_is_already_running(manager, s
     manager.run(pid, run_args=ProcedureInput())
     with pytest.raises(ValueError):
         manager.run(pid, run_args=ProcedureInput())
+
+
+def test_process_manager_stop_terminates_the_process(manager, abort_script):
+    """
+    Verify that ProcessManager stops a script execution
+    """
+    pid = manager.create(abort_script, init_args=ProcedureInput())
+    created = manager.procedures[pid]
+    queue = multiprocessing.Queue()
+    manager.run(pid, run_args=ProcedureInput(queue, created))
+    manager.stop(pid)
+    wait_for_process_to_complete(manager, timeout=3)
+    assert queue.empty()
+
+
+def test_process_manager_sets_running_to_none_on_stop(manager, abort_script):
+    """
+    Verify that ProcessManager sets running procedure attribute to None
+    when script is stopped
+    """
+    pid = manager.create(abort_script, init_args=ProcedureInput())
+    manager.run(pid, run_args=ProcedureInput())
+    manager.stop(pid)
+    wait_for_process_to_complete(manager)
+    assert manager.running is None
+
+
+def test_process_manager_removes_references_on_stop(manager, abort_script):
+    """
+    Verify that ProcessManager removes an stopped procedure from
+    the procedures list
+    """
+    pid = manager.create(abort_script, init_args=ProcedureInput())
+    manager.run(pid, run_args=ProcedureInput())
+    manager.stop(pid)
+    wait_for_process_to_complete(manager)
+    assert pid not in manager.procedures
+
+
+def test_process_manager_stop_fails_on_invalid_pid(manager):
+    """
+    Verify that an exception is raised when stop() is requested for an invalid
+    PID
+    """
+    with pytest.raises(ValueError):
+        manager.stop(321)
+
+
+def test_process_manager_stop_fails_on_process_that_is_not_running(manager, script_path):
+    """
+    Verify that an exception is raised when requesting stop() for a procedure
+    that is not running
+    """
+    pid = manager.create(script_path, init_args=ProcedureInput())
+    with pytest.raises(ValueError):
+        manager.stop(pid)
 
 
 def test_scan_id_persists_between_executions(script_that_increments_and_returns_scan_id):
@@ -363,15 +451,13 @@ def test_scan_id_persists_between_executions(script_that_increments_and_returns_
     pid = manager.create(script_uri=script_that_increments_and_returns_scan_id,
                          init_args=ProcedureInput())
     manager.run(pid, run_args=run_args)
-    with manager.procedure_complete:
-        manager.procedure_complete.wait(1)
+    wait_for_process_to_complete(manager)
     scan_id = queue.get(timeout=1)
 
     pid = manager.create(script_uri=script_that_increments_and_returns_scan_id,
                          init_args=ProcedureInput())
     manager.run(pid, run_args=run_args)
-    with manager.procedure_complete:
-        manager.procedure_complete.wait(1)
+    wait_for_process_to_complete(manager)
     next_scan_id = queue.get(timeout=1)
 
     assert next_scan_id == scan_id + 1

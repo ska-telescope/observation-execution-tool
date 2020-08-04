@@ -74,7 +74,7 @@ class RestClientUI:
         """
         if server_url is None:
             server_url = os.getenv('OET_REST_URI',
-                                   'http://rest-oet-release-name:5000/api/v1.0/procedures')
+                                   'http://oet-rest:5000/api/v1.0/procedures')
         self._client = RestAdapter(server_url)
 
     @staticmethod
@@ -83,17 +83,17 @@ class RestClientUI:
         headers = ['ID', 'URI', 'Script', 'State']
         return tabulate.tabulate(table_rows, headers)
 
-    def list(self, number=None) -> str:
+    def list(self, pid=None) -> str:
         """
         List procedures registered on the targeted server.
 
         This command has an optional arguments: a numeric procedure ID to list.
         If no ID is specified, all procedures will be listed.
 
-        :param number: (optional) IDs of procedure to list
+        :param pid: (optional) IDs of procedure to list
         :return: Table entries for requested procedure(s)
         """
-        procedures = self._client.list(number)
+        procedures = self._client.list(pid)
         return self._tabulate(procedures)
 
     def create(self, script_uri: str, *args, **kwargs) -> str:
@@ -104,9 +104,9 @@ class RestClientUI:
 
         Example:
 
-            oet create file://path/to/script.py 'hello' --verbose=true
+            oet create file:///path/to/script.py 'hello' --verbose=true
 
-        :param script_uri: script URI, e.g., file://test.py
+        :param script_uri: script URI, e.g., file:///test.py
         :param args: script positional arguments
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.
@@ -115,7 +115,7 @@ class RestClientUI:
         procedure = self._client.create(script_uri, init_args=init_args)
         return self._tabulate([procedure])
 
-    def start(self, *args, number=None, **kwargs) -> str:
+    def start(self, *args, pid=None, **kwargs) -> str:
         """
         Start a specified Procedure.
 
@@ -127,22 +127,44 @@ class RestClientUI:
 
         Example:
 
-            oet start 3 'hello' --verbose=true
+            oet start --pid=3 'hello' --verbose=true
 
-        :param number: ID of the procedure to start
+        :param pid: ID of the procedure to start
         :param args: late-binding position arguments for script
         :param kwargs: late-binding kwargs for script
         :return: Table entry for running procedure
         """
-        if number is None:
+        if pid is None:
             procedures = self._client.list()
             if not procedures:
                 return 'No procedures to start'
-            number = procedures[-1].id
+            pid = procedures[-1].id
 
         run_args = dict(args=args, kwargs=kwargs)
-        procedure = self._client.start(number, run_args=run_args)
+        procedure = self._client.start(pid, run_args=run_args)
         return self._tabulate([procedure])
+
+    def stop(self, pid=None) -> str:
+        """
+        Stop a specified Procedure.
+
+        This will stop the execution of a currently running procedure
+        with the specified ID.If no procedure ID is declared, the first
+        procedure with running status will be stopped.
+
+        :param pid: ID of the procedure to stop
+        :return: Empty table entry
+        """
+        if pid is None:
+            running_procedures = [p for p in self._client.list() if p.state == 'RUNNING']
+            if not running_procedures:
+                return 'No procedures to stop'
+            if len(running_procedures) > 1:
+                return 'WARNING: More than one procedure is running. ' \
+                       'Specify ID of the procedure to stop.'
+            pid = running_procedures[0].id
+        response = self._client.stop(pid)
+        return response
 
 
 class RestAdapter:
@@ -156,18 +178,18 @@ class RestAdapter:
         """
         self.server_url = server_url
 
-    def list(self, number: Optional[int] = None) -> List[ProcedureSummary]:
+    def list(self, pid: Optional[int] = None) -> List[ProcedureSummary]:
         """
         List procedures known to the OET.
 
         This command accepts an optional numeric procedure ID. If no ID is
         specified, all procedures will be listed.
 
-        :param number: (optional) ID of procedure to list
+        :param pid: (optional) ID of procedure to list
         :return: List of ProcedureSummary instances
         """
-        if number is not None:
-            url = f'{self.server_url}/{number}'
+        if pid is not None:
+            url = f'{self.server_url}/{pid}'
             response = requests.get(url)
             procedure_json = response.json()['procedure']
             return [ProcedureSummary.from_json(procedure_json)]
@@ -209,7 +231,7 @@ class RestAdapter:
             return ProcedureSummary.from_json(response_json['procedure'])
         raise Exception(response_json['error'])
 
-    def start(self, number, run_args=None) -> ProcedureSummary:
+    def start(self, pid, run_args=None) -> ProcedureSummary:
         """
         Start the specified Procedure.
 
@@ -220,11 +242,11 @@ class RestAdapter:
 
             run_args={args=[1,2,3], kwargs=dict(kw1=2, kw3='abc')}
 
-        :param number: ID of script to execute
+        :param pid: ID of script to execute
         :param run_args: late-binding script arguments
         :return: Summary of running procedure.
         """
-        url = f'{self.server_url}/{number}'
+        url = f'{self.server_url}/{pid}'
 
         if run_args is None:
             run_args = dict(args=[], kwargs={})
@@ -241,6 +263,26 @@ class RestAdapter:
         response_json = response.json()
         if response.status_code == HTTPStatus.OK:
             return ProcedureSummary.from_json(response_json['procedure'])
+        raise Exception(response_json['error'])
+
+    def stop(self, pid):
+        """
+        Stop the specified Procedure.
+
+        :param pid: ID of script to stop
+        :return:
+        """
+        url = f'{self.server_url}/{pid}'
+
+        request_json = {
+            'state': 'STOP'
+        }
+        LOG.debug('Stop payload: %s', request_json)
+
+        response = requests.put(url, json=request_json)
+        response_json = response.json()
+        if response.status_code == HTTPStatus.OK:
+            return response_json['abort_message']
         raise Exception(response_json['error'])
 
 

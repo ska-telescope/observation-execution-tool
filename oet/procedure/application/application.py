@@ -47,6 +47,17 @@ class ProcedureSummary:
     state: domain.ProcedureState
 
 
+@dataclasses.dataclass
+class StopProcessCommand:
+    """
+    StopProcessCommand is the input argument dataclass for the
+    ScriptExecutionService Stop command. It holds the references required to
+    Stop a script process along with any late-binding runtime
+    arguments the script may require.
+    """
+    process_uid: int
+
+
 class ScriptExecutionService:
     """
     ScriptExecutionService provides the high-level interface and facade for
@@ -119,3 +130,13 @@ class ScriptExecutionService:
             raise ValueError(f'Process IDs not found: {missing_pids}')
 
         return [self._create_summary(pid) for pid in pids]
+
+    def stop(self, cmd: StopProcessCommand):
+        """
+        Stop execution of a running procedure.
+
+        :param cmd: dataclass argument capturing the execution arguments
+        :return:
+        """
+        self._process_host.stop(cmd.process_uid)
+

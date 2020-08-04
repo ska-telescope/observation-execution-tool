@@ -24,6 +24,7 @@ class ProcedureState(enum.Enum):
     """
     READY = enum.auto()
     RUNNING = enum.auto()
+    STOP = enum.auto()
 
 
 @dataclasses.dataclass
@@ -170,6 +171,28 @@ class ProcessManager:
                 self.procedure_complete.notify_all()
 
         self._pool.apply_async(_wait_for_process, (procedure,), {}, callback, callback)
+
+    def stop(self, process_id):
+        """
+        stop a running Procedure.
+
+        This stops execution of a currently running script.
+
+        :param process_id: ID of Procedure to stop
+        :return:
+        """
+        if self.running is None:
+            raise ValueError(f'Cannot stop PID {process_id}: procedure is not running')
+
+        try:
+            procedure = self.procedures[process_id]
+        except KeyError as exc:
+            raise ValueError(f'Process {process_id} not found') from exc
+
+        if procedure.is_alive():
+            procedure.terminate()
+            # join any potentially zombie process, allowing it to clean up
+            multiprocessing.active_children()
 
 
 def _wait_for_process(process, **_):

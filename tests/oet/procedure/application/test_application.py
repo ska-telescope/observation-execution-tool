@@ -7,7 +7,7 @@ import unittest.mock as mock
 import pytest
 
 from oet.procedure.application.application import ScriptExecutionService, ProcedureSummary, \
-    PrepareProcessCommand, StartProcessCommand
+    PrepareProcessCommand, StartProcessCommand, StopProcessCommand
 from oet.procedure.domain import Procedure, ProcedureInput, ProcedureState
 
 
@@ -197,3 +197,21 @@ def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
         returned = service.summarise()
 
         assert returned == expected
+
+
+def test_ses_stop_calls_process_manager_function():
+    """
+    Verify that ScriptExecutionService.stop() calls the appropriate domain
+    object methods for stopping process execution """
+
+    cmd = StopProcessCommand(process_uid=3)
+
+    with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
+        # get the mock ProcessManager instance
+        instance = mock_pm.return_value
+
+        service = ScriptExecutionService()
+        service.stop(cmd)
+
+        # service should call stop()
+        instance.stop.assert_called_once_with(cmd.process_uid)
