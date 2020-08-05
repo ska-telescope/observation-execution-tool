@@ -293,8 +293,9 @@ def allocate_resources(subarray: domain.SubArray,
     # response: List[int] = EXECUTOR.execute(command)
     response = EXECUTOR.execute(command)
     # wait for state
+    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
     state_response = wait_for_obsstate(
-        command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
+        subarray_device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
     )
     if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
         raise ObsStateError(state_response.final_state)
@@ -334,8 +335,9 @@ def allocate_resources_from_file(
     # Wait for obsState transition to signify success or failure. A resource
     # allocation command cannot be reset or aborted, hence we wait only for
     # FAULT.
+    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
     state_response = wait_for_obsstate(
-        command.device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
+        subarray_device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
     )
     if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
         raise ObsStateError(state_response.final_state)
