@@ -635,7 +635,7 @@ def test_subarray_scan_raises_exception_when_error_state_encountered(mock_execut
 
 def test_get_end_command():
     """
-    Verify that a 'end SB' Command is targeted and structured correctly.
+    Verify that a 'end' Command is targeted and structured correctly.
     """
     subarray = SubArray(1)
     cmd = observingtasks.get_end_command(subarray)
@@ -649,7 +649,7 @@ def test_get_end_command():
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_end_calls_tango_executor(mock_execute_fn, mock_read_fn):
     """
-    Test that the 'end SB' command calls the target Tango device once only.
+    Test that the 'end' command calls the target Tango device once only.
     """
     # prime the obsState transitions, otherwise it will never end.
     mock_read_fn.side_effect = [
@@ -700,6 +700,82 @@ def test_end_raises_exception_when_error_state_encountered(mock_execute_fn, mock
     subarray = domain.SubArray(1)
     with pytest.raises(ObsStateError):
         observingtasks.end(subarray)
+
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+    mock_execute_fn.assert_called_once()
+
+    # task should keep reading obsState until device goes to FAULT
+    assert mock_read_fn.call_count == 4
+
+
+def test_get_abort_command():
+    """
+    Verify that a 'abort' Command is targeted and structured correctly.
+    """
+    subarray = SubArray(1)
+    cmd = observingtasks.get_abort_command(subarray)
+    assert cmd.device == SKA_SUB_ARRAY_NODE_1_FDQN
+    assert cmd.command_name == 'Abort'
+    assert not cmd.args
+    assert not cmd.kwargs
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_abort_calls_tango_executor(mock_execute_fn, mock_read_fn):
+    """
+    Test that the 'abort' command calls the target Tango device once only.
+    """
+    # prime the obsState transitions, otherwise it will never end.
+    mock_read_fn.side_effect = [
+        ObsState.ABORTING, ObsState.ABORTING, ObsState.ABORTING, ObsState.ABORTED
+    ]
+
+    subarray = SubArray(1)
+    observingtasks.abort(subarray)
+    cmd = observingtasks.get_abort_command(subarray)
+    mock_execute_fn.assert_called_once_with(cmd)
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_abort_returns_when_obsstate_is_aborted(mock_execute_fn, mock_read_fn):
+    """
+    Verify that the SubArray.abort command waits for the device obsstate
+    to transition back to aborted before returning.
+    """
+    # obsState will be ABORTING for the first three reads, then ABORTED
+    mock_read_fn.side_effect = [
+        ObsState.ABORTING, ObsState.ABORTING, ObsState.ABORTING, ObsState.ABORTED
+    ]
+
+    subarray = domain.SubArray(1)
+    observingtasks.abort(subarray)
+
+    # command arg validation is the subject of another test
+    mock_execute_fn.assert_called_with(mock.ANY)
+
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+
+    # task should keep reading obsState until device is ABORTED
+    assert mock_read_fn.call_count == 4
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_abort_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
+    """
+    Verify that the SubArray.end raises an exception when obsState goes to error state
+    """
+    mock_read_fn.side_effect = [
+        ObsState.ABORTING, ObsState.ABORTING, ObsState.ABORTING, ObsState.FAULT
+    ]
+
+    subarray = domain.SubArray(1)
+    with pytest.raises(ObsStateError):
+        observingtasks.abort(subarray)
 
     expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
     mock_read_fn.assert_called_with(expected_attr)

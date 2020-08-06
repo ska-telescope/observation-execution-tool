@@ -443,6 +443,11 @@ class SubArray:
         """
         observingtasks.end(self)
 
+    def abort(self):
+        """
+        Abort sub-array activity
+        """
+        observingtasks.abort(self)
 
 # this import needs to be here, at the end of the file, to work around a
 # circular import. This is just a temporary measure; if we introduce command
