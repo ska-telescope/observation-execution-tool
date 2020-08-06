@@ -886,3 +886,79 @@ def test_assign_resources_from_cdm(mock_execute_fn, mock_read_fn):
     # command is sent to CentralNode; obsState is read on SubArrayNode
     assert mock_execute_fn.call_args[0][0].device == SKA_MID_CENTRAL_NODE_FDQN
     assert mock_read_fn.call_args[0][0].device == SKA_SUB_ARRAY_NODE_1_FDQN
+
+
+def test_get_obsreset_command():
+    """
+    Verify that a 'ObsReset' Command is targeted and structured correctly.
+    """
+    subarray = SubArray(1)
+    cmd = observingtasks.get_obsreset_command(subarray)
+    assert cmd.device == SKA_SUB_ARRAY_NODE_1_FDQN
+    assert cmd.command_name == 'ObsReset'
+    assert not cmd.args
+    assert not cmd.kwargs
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_obsreset_calls_tango_executor(mock_execute_fn, mock_read_fn):
+    """
+    Test that the 'ObsReset' command calls the target Tango device once only.
+    """
+    # prime the obsState transitions, otherwise it will never end.
+    mock_read_fn.side_effect = [
+        ObsState.READY, ObsState.READY, ObsState.IDLE
+    ]
+
+    subarray = SubArray(1)
+    observingtasks.obsreset(subarray)
+    cmd = observingtasks.get_obsreset_command(subarray)
+    mock_execute_fn.assert_called_once_with(cmd)
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_obsreset_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
+    """
+    Verify that obsreset command waits for the device obsstate
+    to transition back to IDLE before returning.
+    """
+    # obsState will be READY for the first three reads, then IDLE
+    mock_read_fn.side_effect = [
+        ObsState.RESETTING, ObsState.RESETTING, ObsState.IDLE, ObsState.RESETTING
+    ]
+
+    subarray = domain.SubArray(1)
+    observingtasks.obsreset(subarray)
+
+    # command arg validation is the subject of another test
+    mock_execute_fn.assert_called_with(mock.ANY)
+
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+
+    # task should keep reading obsState until device is IDLE
+    assert mock_read_fn.call_count == 3
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_obsreset_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
+    """
+    Verify that the SubArray.end raises an exception when obsState goes to error state
+    """
+    mock_read_fn.side_effect = [
+        ObsState.RESETTING, ObsState.RESETTING, ObsState.ABORTING, ObsState.ABORTED
+    ]
+
+    subarray = domain.SubArray(1)
+    with pytest.raises(ObsStateError):
+        observingtasks.end(subarray)
+
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+    mock_execute_fn.assert_called_once()
+
+    # task should keep reading obsState until device goes to ABORTING
+    assert mock_read_fn.call_count == 3
