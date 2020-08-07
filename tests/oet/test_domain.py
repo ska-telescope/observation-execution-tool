@@ -557,6 +557,17 @@ def test_end_calls_correct_observing_task():
     mock_module.end.assert_called_once_with(subarray)
 
 
+def test_abort_calls_correct_observing_task():
+    """
+    Confirm that the 'subarray abort' command calls the correct observing task exactly
+    once.
+    """
+    subarray = SubArray(1)
+    with mock.patch('oet.domain.observingtasks') as mock_module:
+        subarray.abort()
+    mock_module.abort.assert_called_once_with(subarray)
+
+
 def test_reset_calls_correct_observing_task():
     """
     Confirm that the reset command calls the correct observing task exactly

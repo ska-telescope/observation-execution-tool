@@ -443,6 +443,12 @@ class SubArray:
         """
         observingtasks.end(self)
 
+    def abort(self):
+        """
+        Abort sub-array activity
+        """
+        observingtasks.abort(self)
+
     def reset(self):
         """
         Reset the SubArray from ABORTED or FAULT state to IDLE.
