@@ -449,6 +449,13 @@ class SubArray:
         """
         observingtasks.abort(self)
 
+    def reset(self):
+        """
+        Reset the SubArray from ABORTED or FAULT state to IDLE.
+        """
+        observingtasks.obsreset(self)
+
+
 # this import needs to be here, at the end of the file, to work around a
 # circular import. This is just a temporary measure; if we introduce command
 # registration and a command executor (to allow simulation at the observing
