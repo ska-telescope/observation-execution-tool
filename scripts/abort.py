@@ -13,7 +13,7 @@ FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 
-def main(subarray_id=1):
+def main(subarray_id=1, *args, **kwargs):
     """
     Send the 'abort' command to the SubArrayNode, halt the subarray
     activity.
@@ -22,6 +22,12 @@ def main(subarray_id=1):
     :return:
     """
     LOG.info(f'Running abort script in OS process {os.getpid()}')
+
+    if args:
+        LOG.warning('Got unexpected positional args: %s', args)
+    if kwargs:
+        LOG.warning('Got unexpected named args: %s', kwargs)
+
     LOG.info(f'Called with main(subarray_id={subarray_id})')
 
     subarray = SubArray(subarray_id)
@@ -30,7 +36,5 @@ def main(subarray_id=1):
 
     subarray.abort()
 
-    LOG.info('End scheduling block')
-    subarray.end()
-
     LOG.info('Observation script complete')
+
