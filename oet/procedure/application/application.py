@@ -10,6 +10,8 @@ import typing
 
 from .. import domain
 
+ABORT_SCRIPT_URI = 'file:///scripts/abort.py'
+
 
 @dataclasses.dataclass
 class PrepareProcessCommand:
@@ -67,8 +69,9 @@ class ScriptExecutionService:
     independent Python child process.
     """
 
-    def __init__(self):
+    def __init__(self, script_uri: str = ABORT_SCRIPT_URI):
         self._process_host = domain.ProcessManager()
+        self._abort_script_uri = script_uri
 
     def _create_summary(self, pid: int) -> ProcedureSummary:
         """
@@ -138,5 +141,33 @@ class ScriptExecutionService:
         :param cmd: dataclass argument capturing the execution arguments
         :return:
         """
+
+        subarray_id = self._get_subarray_id(cmd.process_uid)
         self._process_host.stop(cmd.process_uid)
 
+        # preparing a second script
+        procedure = domain.Procedure(self._abort_script_uri)
+        prepare_cmd = PrepareProcessCommand(script_uri=procedure.script_uri,
+                                            init_args=domain.ProcedureInput())
+        procedure_summary = self.prepare(prepare_cmd)
+
+        # starting a script
+        run_args = domain.ProcedureInput(subarray_id=subarray_id)
+        run_cmd = StartProcessCommand(process_uid=procedure_summary.id,
+                                      run_args=run_args)
+        summary = self.start(run_cmd)
+        return summary
+
+    def _get_subarray_id(self, pid: int):
+        """
+        Return a Subarray id for given procedure ID.
+
+        :param pid: Procedure ID to summarise
+        :return: subarray id
+        """
+        procedure_summary = self.summarise(pids=[pid])[0]
+        run_dict = procedure_summary.script_args['run']
+        run_kwargs = run_dict.kwargs
+        if 'subarray_id' not in run_kwargs:
+            raise ValueError(f'Subarray Id not found')
+        return run_kwargs['subarray_id']

@@ -11,6 +11,22 @@ from oet.procedure.application.application import ScriptExecutionService, Proced
 from oet.procedure.domain import Procedure, ProcedureInput, ProcedureState
 
 
+@pytest.fixture
+def abort_script(tmpdir):
+    """
+    Pytest fixture to return a path to a script file
+    """
+    script_path = tmpdir.join("abort.py")
+    script_path.write("""
+import time
+
+def main(queue, procedure):
+    time.sleep(2)
+    queue.put(procedure.pid)
+""")
+    return f'file://{str(script_path)}'
+
+
 def create_empty_procedure_summary(procedure_id: int, script_uri: str):
     """
     Utility function to create a null procedure summary. The returned
@@ -199,19 +215,93 @@ def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
         assert returned == expected
 
 
-def test_ses_stop_calls_process_manager_function():
+def test_ses_stop_calls_process_manager_function(abort_script):
     """
     Verify that ScriptExecutionService.stop() calls the appropriate domain
-    object methods for stopping process execution """
+    object methods for stopping process execution and prepare a new script
+    to abort subarray activity"""
 
-    cmd = StopProcessCommand(process_uid=3)
+    run_args = ProcedureInput(subarray_id=2)
+
+    # Create Stop Procedure
+    procedure_stop = Procedure('test://a')
+    procedure_stop.script_args['run'] = run_args
+
+    # Create secondary Procedure
+    procedure = Procedure(abort_script)
+    procedure.script_args['run'] = run_args
+
+    # list of Procedures
+    procedures = {1: procedure, 3: procedure_stop}
+
+    # expected Result
+    expected = ProcedureSummary(id=1, script_uri=procedure.script_uri,
+                                script_args=procedure.script_args,
+                                state=procedure.state)
+
+    cmd_stop = StopProcessCommand(process_uid=3)
+    cmd_create = PrepareProcessCommand(script_uri=abort_script, init_args=ProcedureInput())
+    cmd_run = StartProcessCommand(process_uid=1, run_args=run_args)
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
-
-        service = ScriptExecutionService()
-        service.stop(cmd)
+        instance.create.return_value = 1
+        instance.procedures = procedures
+        service = ScriptExecutionService(script_uri=abort_script)
+        returned = service.stop(cmd_stop)
 
         # service should call stop()
-        instance.stop.assert_called_once_with(cmd.process_uid)
+        instance.stop.assert_called_once_with(cmd_stop.process_uid)
+        instance.create.assert_called_once_with(cmd_create.script_uri,
+                                                init_args=cmd_create.init_args)
+        instance.run.assert_called_once_with(cmd_run.process_uid,
+                                             run_args=cmd_run.run_args)
+        assert returned == expected
+
+
+def test_ses_get_subarray_id_for_requested_pid():
+    """
+     Verify that the private method _get_subarray_id returns
+     subarray id correctly
+     """
+    procedure = Procedure('test://a')
+    run_args = ProcedureInput(subarray_id=2)
+    procedure.script_args['run'] = run_args
+    procedures = {1: procedure}
+    process_summary = ProcedureSummary(id=1, script_uri=procedure.script_uri,
+                                       script_args=procedure.script_args,
+                                       state=procedure.state)
+    expected = [process_summary]
+
+    with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
+        # get the mock ProcessManager instance
+        instance = mock_pm.return_value
+        # the manager's procedures attribute holds created procedures and is
+        # used for retrieval
+        instance.procedures = procedures
+
+        service = ScriptExecutionService()
+        returned = service._get_subarray_id(1) # pylint: disable=protected-access
+
+        assert returned == expected[0].script_args['run'].kwargs['subarray_id']
+
+
+def test_ses_get_subarray_id__fails_on_missing_subarray_id():
+    """
+    Verify that an exception is raised when subarray id is missing for requested
+    PID
+    """
+    procedure = Procedure('test://a')
+    procedures = {1: procedure}
+
+    with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
+        # get the mock ProcessManager instance
+        instance = mock_pm.return_value
+        # the manager's procedures attribute holds created procedures and is
+        # used for retrieval
+        instance.procedures = procedures
+
+        service = ScriptExecutionService()
+        with pytest.raises(ValueError):
+            service._get_subarray_id(1) # pylint: disable=protected-access
