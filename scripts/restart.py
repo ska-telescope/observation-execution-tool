@@ -1,5 +1,5 @@
 """
-Example script for resetting sub-array. Resetting will keep allocated dishes.
+Example script for restarting sub-array. Restarting will deallocate all dishes.
 """
 import logging
 import os
@@ -14,17 +14,17 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 def main(subarray_id, *args, **kwargs):
     """
-    Reset SubArray. SubArray state should be IDLE if reset is successful.
+    Restart SubArray. SubArray state should be EMPTY if restart is successful.
     """
-    LOG.info(f'Running SubArray reset script in OS process {os.getpid()}')
+    LOG.info(f'Running SubArray restart script in OS process {os.getpid()}')
 
     if args:
         LOG.warning('Got unexpected positional args: %s', args)
     if kwargs:
         LOG.warning('Got unexpected named args: %s', kwargs)
 
-    LOG.info(f'Executing reset...')
+    LOG.info(f'Executing restart...')
     subarray = SubArray(subarray_id)
-    subarray.reset()
+    subarray.restart()
 
-    LOG.info('SubArray reset script complete')
+    LOG.info('SubArray restart script complete')
