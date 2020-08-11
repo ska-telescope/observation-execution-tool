@@ -58,7 +58,7 @@ class StopProcessCommand:
     arguments the script may require.
     """
     process_uid: int
-
+    stop_args: domain.ProcedureInput
 
 class ScriptExecutionService:
     """
@@ -141,22 +141,25 @@ class ScriptExecutionService:
         :param cmd: dataclass argument capturing the execution arguments
         :return:
         """
+        stop_kwargs = cmd.stop_args.kwargs
+        if 'abort' in stop_kwargs and stop_kwargs['abort']:
+            subarray_id = self._get_subarray_id(cmd.process_uid)
+            self._process_host.stop(cmd.process_uid)
 
-        subarray_id = self._get_subarray_id(cmd.process_uid)
-        self._process_host.stop(cmd.process_uid)
+            # preparing a second script
+            procedure = domain.Procedure(self._abort_script_uri)
+            prepare_cmd = PrepareProcessCommand(script_uri=procedure.script_uri,
+                                                init_args=domain.ProcedureInput())
+            procedure_summary = self.prepare(prepare_cmd)
 
-        # preparing a second script
-        procedure = domain.Procedure(self._abort_script_uri)
-        prepare_cmd = PrepareProcessCommand(script_uri=procedure.script_uri,
-                                            init_args=domain.ProcedureInput())
-        procedure_summary = self.prepare(prepare_cmd)
+            # starting a script
+            run_args = domain.ProcedureInput(subarray_id=subarray_id)
+            run_cmd = StartProcessCommand(process_uid=procedure_summary.id,
+                                          run_args=run_args)
+            summary = self.start(run_cmd)
+            return summary
+        return self._process_host.stop(cmd.process_uid)
 
-        # starting a script
-        run_args = domain.ProcedureInput(subarray_id=subarray_id)
-        run_cmd = StartProcessCommand(process_uid=procedure_summary.id,
-                                      run_args=run_args)
-        summary = self.start(run_cmd)
-        return summary
 
     def _get_subarray_id(self, pid: int):
         """

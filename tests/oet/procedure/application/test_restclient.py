@@ -270,4 +270,3 @@ def test_stop_procedure_sends_correct_command():
     request_payload = last_request.json()
     assert 'state' in request_payload
     assert request_payload['state'] == 'STOP'
-

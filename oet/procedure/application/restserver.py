@@ -107,17 +107,16 @@ def update_procedure(procedure_id: int):
         flask.abort(400)
     script_args = flask.request.json.get('script_args', {})
 
-    run_dict = script_args.get('run', {})
-    run_args = run_dict.get('args', [])
-    run_kwargs = run_dict.get('kwargs', {})
-    procedure_input = domain.ProcedureInput(*run_args, **run_kwargs)
-
     old_state = summary.state
     new_state = domain.ProcedureState[flask.request.json.get('state', summary.state.name)]
 
     if new_state is domain.ProcedureState.STOP:
         if old_state is domain.ProcedureState.RUNNING:
-            cmd = application.StopProcessCommand(procedure_id)
+            stop_dict = script_args.get('stop', {})
+            stop_args = stop_dict.get('args', [])
+            stop_kwargs = stop_dict.get('kwargs', {})
+            procedure_input = domain.ProcedureInput(*stop_args, **stop_kwargs)
+            cmd = application.StopProcessCommand(procedure_id,stop_args=procedure_input)
             try:
                 SERVICE.stop(cmd)
                 msg = f'Successfully stopped script with ID {procedure_id} '
@@ -129,6 +128,10 @@ def update_procedure(procedure_id: int):
             return flask.jsonify({'abort_message': msg})
 
     elif old_state is domain.ProcedureState.READY and new_state is domain.ProcedureState.RUNNING:
+        run_dict = script_args.get('run', {})
+        run_args = run_dict.get('args', [])
+        run_kwargs = run_dict.get('kwargs', {})
+        procedure_input = domain.ProcedureInput(*run_args, **run_kwargs)
         cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
         try:
             summary = SERVICE.start(cmd)

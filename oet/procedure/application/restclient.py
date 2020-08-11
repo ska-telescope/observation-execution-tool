@@ -12,8 +12,8 @@ import logging
 from http import HTTPStatus
 from typing import Dict, List, Optional
 
-import fire
 import os
+import fire
 import requests
 import tabulate
 
@@ -144,7 +144,7 @@ class RestClientUI:
         procedure = self._client.start(pid, run_args=run_args)
         return self._tabulate([procedure])
 
-    def stop(self, pid=None) -> str:
+    def stop(self, pid=None, *args, **kwargs) -> str:
         """
         Stop a specified Procedure.
 
@@ -153,6 +153,8 @@ class RestClientUI:
         procedure with running status will be stopped.
 
         :param pid: ID of the procedure to stop
+        :param args: late-binding position arguments for script
+        :param kwargs: late-binding kwargs for script
         :return: Empty table entry
         """
         if pid is None:
@@ -163,7 +165,8 @@ class RestClientUI:
                 return 'WARNING: More than one procedure is running. ' \
                        'Specify ID of the procedure to stop.'
             pid = running_procedures[0].id
-        response = self._client.stop(pid)
+        stop_args = dict(args=args, kwargs=kwargs)
+        response = self._client.stop(pid, stop_args=stop_args)
         return response
 
 
@@ -265,7 +268,7 @@ class RestAdapter:
             return ProcedureSummary.from_json(response_json['procedure'])
         raise Exception(response_json['error'])
 
-    def stop(self, pid):
+    def stop(self, pid, stop_args=None):
         """
         Stop the specified Procedure.
 
@@ -274,7 +277,13 @@ class RestAdapter:
         """
         url = f'{self.server_url}/{pid}'
 
+        if stop_args is None:
+            stop_args = dict(args=[], kwargs={})
+
         request_json = {
+            'script_args': {
+                'stop': stop_args
+            },
             'state': 'STOP'
         }
         LOG.debug('Stop payload: %s', request_json)

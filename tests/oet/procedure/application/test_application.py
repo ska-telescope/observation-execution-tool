@@ -218,8 +218,8 @@ def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
 def test_ses_stop_calls_process_manager_function(abort_script):
     """
     Verify that ScriptExecutionService.stop() calls the appropriate domain
-    object methods for stopping process execution and prepare a new script
-    to abort subarray activity"""
+    object methods for stopping process execution , prepare a new abort
+    script and execute it to abort subarray activity"""
 
     run_args = ProcedureInput(subarray_id=2)
 
@@ -239,7 +239,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
                                 script_args=procedure.script_args,
                                 state=procedure.state)
 
-    cmd_stop = StopProcessCommand(process_uid=3)
+    cmd_stop = StopProcessCommand(process_uid=3, stop_args=ProcedureInput(abort=True))
     cmd_create = PrepareProcessCommand(script_uri=abort_script, init_args=ProcedureInput())
     cmd_run = StartProcessCommand(process_uid=1, run_args=run_args)
 
@@ -258,6 +258,26 @@ def test_ses_stop_calls_process_manager_function(abort_script):
         instance.run.assert_called_once_with(cmd_run.process_uid,
                                              run_args=cmd_run.run_args)
         assert returned == expected
+
+
+def test_ses_stop_calls_process_manager_function_with_no_script_execution():
+    """
+    Verify that ScriptExecutionService.stop() calls the appropriate domain
+    object methods for stopping process execution without executing abort
+    python script.
+    """
+
+    cmd = StopProcessCommand(process_uid=3, stop_args=ProcedureInput())
+
+    with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
+        # get the mock ProcessManager instance
+        instance = mock_pm.return_value
+
+        service = ScriptExecutionService()
+        service.stop(cmd)
+
+        # service should call stop()
+        instance.stop.assert_called_once_with(cmd.process_uid)
 
 
 def test_ses_get_subarray_id_for_requested_pid():
@@ -282,7 +302,7 @@ def test_ses_get_subarray_id_for_requested_pid():
         instance.procedures = procedures
 
         service = ScriptExecutionService()
-        returned = service._get_subarray_id(1) # pylint: disable=protected-access
+        returned = service._get_subarray_id(1)  # pylint: disable=protected-access
 
         assert returned == expected[0].script_args['run'].kwargs['subarray_id']
 
@@ -304,4 +324,4 @@ def test_ses_get_subarray_id__fails_on_missing_subarray_id():
 
         service = ScriptExecutionService()
         with pytest.raises(ValueError):
-            service._get_subarray_id(1) # pylint: disable=protected-access
+            service._get_subarray_id(1)  # pylint: disable=protected-access
