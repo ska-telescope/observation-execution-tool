@@ -1038,3 +1038,78 @@ def test_obsreset_raises_exception_when_error_state_encountered(mock_execute_fn,
 
     # task should keep reading obsState until device goes to ABORTING
     assert mock_read_fn.call_count == 3
+
+
+def test_get_restart_command():
+    """
+    Verify that a 'restart' Command is targeted and structured correctly.
+    """
+    subarray = SubArray(1)
+    cmd = observingtasks.get_restart_command(subarray)
+    assert cmd.device == SKA_SUB_ARRAY_NODE_1_FDQN
+    assert cmd.command_name == 'Restart'
+    assert not cmd.args
+    assert not cmd.kwargs
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_restart_calls_tango_executor(mock_execute_fn, mock_read_fn):
+    """
+    Test that the 'restart' command calls the target Tango device once only.
+    """
+    # prime the obsState transitions, otherwise it will never end.
+    mock_read_fn.side_effect = [
+        ObsState.RESTARTING, ObsState.RESTARTING, ObsState.EMPTY
+    ]
+
+    subarray = SubArray(1)
+    observingtasks.restart(subarray)
+    cmd = observingtasks.get_restart_command(subarray)
+    mock_execute_fn.assert_called_once_with(cmd)
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_restart_returns_when_obsstate_is_restarted(mock_execute_fn, mock_read_fn):
+    """
+    Verify that the SubArray.restart command waits for the device obsstate
+    to transition back to empty before returning.
+    """
+    mock_read_fn.side_effect = [
+        ObsState.RESTARTING, ObsState.RESTARTING, ObsState.EMPTY, ObsState.RESOURCING
+    ]
+
+    subarray = domain.SubArray(1)
+    observingtasks.restart(subarray)
+
+    # command arg validation is the subject of another test
+    mock_execute_fn.assert_called_with(mock.ANY)
+
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+
+    assert mock_read_fn.call_count == 3
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_restart_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
+    """
+    Verify that the SubArray.restart raises an exception when obsState goes to error state
+    """
+    mock_read_fn.side_effect = [
+        ObsState.RESTARTING, ObsState.RESTARTING, ObsState.RESTARTING, ObsState.FAULT
+    ]
+
+    subarray = domain.SubArray(1)
+    with pytest.raises(ObsStateError):
+        observingtasks.abort(subarray)
+
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+    mock_execute_fn.assert_called_once()
+
+    # task should keep reading obsState until device goes to FAULT
+    assert mock_read_fn.call_count == 4
+

@@ -455,6 +455,12 @@ class SubArray:
         """
         observingtasks.obsreset(self)
 
+    def restart(self):
+        """
+        Reset the SubArray from ABORTED or FAULT state to EMPTY.
+        """
+        observingtasks.restart(self)
+
 
 # this import needs to be here, at the end of the file, to work around a
 # circular import. This is just a temporary measure; if we introduce command

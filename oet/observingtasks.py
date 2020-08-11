@@ -767,6 +767,7 @@ def get_end_command(subarray: domain.SubArray) -> Command:
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     return Command(subarray_node_fqdn, 'End')
 
+
 def abort(subarray: domain.SubArray):
     """
     Send the 'abort' command to the SubArrayNode, halt the subarray
@@ -826,3 +827,34 @@ def get_obsreset_command(subarray: domain.SubArray) -> Command:
     """
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     return Command(subarray_node_fqdn, 'ObsReset')
+
+
+def restart(subarray: domain.SubArray):
+    """
+    Send the 'restart' command to the SubArrayNode which sets
+    the SubArrayNode from ABORTED or FAULT state to EMPTY.
+    :param subarray: the subarray to command
+    """
+
+    command = get_restart_command(subarray)
+    _ = EXECUTOR.execute(command)
+
+    state_response = wait_for_obsstate(
+        command.device,
+        target_state=ObsState.EMPTY,
+        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
+    )
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise ObsStateError(state_response.final_state)
+
+
+def get_restart_command(subarray: domain.SubArray) -> Command:
+    """
+    Return an OET Command that, when passed to a TangoExecutor, would call
+    SubArrayNode.Restart().
+
+    :param subarray: the SubArray to control
+    :return: the OET Command
+    """
+    subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
+    return Command(subarray_node_fqdn, 'Restart')
