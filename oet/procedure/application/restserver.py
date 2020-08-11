@@ -119,7 +119,10 @@ def update_procedure(procedure_id: int):
             cmd = application.StopProcessCommand(procedure_id,stop_args=procedure_input)
             try:
                 SERVICE.stop(cmd)
-                msg = f'Successfully stopped script with ID {procedure_id} '
+                if cmd.stop_args.kwargs and cmd.stop_args.kwargs['abort']:
+                    msg = f'Successfully stopped script with ID {procedure_id} and aborted subarray activity '
+                else:
+                    msg =  f'Successfully stopped script with ID {procedure_id} '
                 return flask.jsonify({'abort_message': msg})
             except Exception as exc:
                 flask.abort(500, exc)
