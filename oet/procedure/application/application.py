@@ -10,7 +10,7 @@ import typing
 
 from .. import domain
 
-ABORT_SCRIPT_URI = 'file:///scripts/abort.py'
+ABORT_SCRIPT_URI = 'file:///app/scripts/abort.py'
 
 
 @dataclasses.dataclass
