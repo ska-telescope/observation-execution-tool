@@ -68,10 +68,10 @@ The methods available through the REST Client map closely to the
 |                    +---------------+--------------------------------------------+                                     |
 |                    | pid           | None                                       | Stop a running process executing    |
 |                    +---------------+--------------------------------------------+ the procedure specified by process  |
-|                    | is_abort      | False                                      | ID (pid) or, if none is specified,  |
+|                    | run_abort     | False                                      | ID (pid) or, if none is specified,  |
 |                    |               |                                            | stop the currently running process. |
 |                    |               |                                            |                                     |
-|                    |               |                                            | If is_abort flag is True, OET will  |
+|                    |               |                                            | If run_abort flag is True, OET will |
 |                    |               |                                            | send Abort command to the SubArray  |
 |                    |               |                                            | as part of script termination.      |                           |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
