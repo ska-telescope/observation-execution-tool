@@ -193,6 +193,9 @@ class ProcessManager:
             procedure.terminate()
             # join any potentially zombie process, allowing it to clean up
             multiprocessing.active_children()
+            # set running to None here instead of waiting for run() callback
+            # so that abort script can be started while callback does clean-up
+            self.running = None
 
 
 def _wait_for_process(process, **_):
