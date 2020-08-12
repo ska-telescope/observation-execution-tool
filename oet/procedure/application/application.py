@@ -58,7 +58,7 @@ class StopProcessCommand:
     arguments the script may require.
     """
     process_uid: int
-    stop_args: domain.ProcedureInput
+
 
 class ScriptExecutionService:
     """
@@ -134,15 +134,17 @@ class ScriptExecutionService:
 
         return [self._create_summary(pid) for pid in pids]
 
-    def stop(self, cmd: StopProcessCommand):
+    def stop(self, cmd: StopProcessCommand, is_abort=False):
         """
         Stop execution of a running procedure.
 
         :param cmd: dataclass argument capturing the execution arguments
+        :param is_abort:flag is to decide execution of abort script if it's
+        value is true
         :return:
         """
-        stop_kwargs = cmd.stop_args.kwargs
-        if 'abort' in stop_kwargs and stop_kwargs['abort']:
+
+        if is_abort:
             subarray_id = self._get_subarray_id(cmd.process_uid)
             self._process_host.stop(cmd.process_uid)
 
@@ -158,8 +160,9 @@ class ScriptExecutionService:
                                           run_args=run_args)
             summary = self.start(run_cmd)
             return summary
-        return self._process_host.stop(cmd.process_uid)
-
+        else:
+            self._process_host.stop(cmd.process_uid)
+            return self.summarise()
 
     def _get_subarray_id(self, pid: int):
         """

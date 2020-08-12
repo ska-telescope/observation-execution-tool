@@ -112,14 +112,11 @@ def update_procedure(procedure_id: int):
 
     if new_state is domain.ProcedureState.STOP:
         if old_state is domain.ProcedureState.RUNNING:
-            stop_dict = script_args.get('stop', {})
-            stop_args = stop_dict.get('args', [])
-            stop_kwargs = stop_dict.get('kwargs', {})
-            procedure_input = domain.ProcedureInput(*stop_args, **stop_kwargs)
-            cmd = application.StopProcessCommand(procedure_id,stop_args=procedure_input)
+            is_abort = flask.request.json.get('abort', False)
+            cmd = application.StopProcessCommand(procedure_id)
             try:
-                SERVICE.stop(cmd)
-                if cmd.stop_args.kwargs and cmd.stop_args.kwargs['abort']:
+                result = SERVICE.stop(cmd, is_abort)
+                if not isinstance(result,list):
                     msg = f'Successfully stopped script with ID {procedure_id} and aborted subarray activity '
                 else:
                     msg =  f'Successfully stopped script with ID {procedure_id} '

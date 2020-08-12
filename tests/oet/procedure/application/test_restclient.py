@@ -83,7 +83,8 @@ START_PROCESS_RESPONSE = {
 STOP_PROCESS_RESPONSE = {
     "abort_message": "Successfully stopped script with ID 1"
 }
-STOP_PROCESS_AND_ABORT_SUBARRAY_RESPONSE = {
+
+STOP_PROCESS_AND_ABORT_SUBARRAY_ACTIVITI_RESPONSE = {
     "abort_message": "Successfully stopped script with ID 1 and aborted subarray activity"
 }
 
@@ -271,25 +272,27 @@ def test_stop_procedure_sends_correct_command():
     assert last_request.method == 'PUT'
     request_payload = last_request.json()
     assert 'state' in request_payload
+    assert request_payload['abort'] == False
     assert request_payload['state'] == 'STOP'
 
 
 def test_stop_procedure_sends_command_with_abort_true():
     """Check that the correct command is sent in the payload"""
     procedure_id = 1
-    user_stop_args = dict(args=[], kwargs=dict(abort=True))
+    is_abort=True
 
     # create a mock requests object
     with requests_mock.Mocker() as mock_server:
-        mock_server.put(f'{PROCEDURES_URI}/1', json=STOP_PROCESS_AND_ABORT_SUBARRAY_RESPONSE,
+        mock_server.put(f'{PROCEDURES_URI}/1', json=STOP_PROCESS_AND_ABORT_SUBARRAY_ACTIVITI_RESPONSE,
                         status_code=HTTPStatus.OK)
 
         adapter = RestAdapter(PROCEDURES_URI)
-        adapter.stop(procedure_id, user_stop_args)
+        adapter.stop(procedure_id, is_abort)
 
         last_request = mock_server.last_request
 
     assert last_request.method == 'PUT'
     request_payload = last_request.json()
     assert 'state' in request_payload
+    assert request_payload['abort'] == True
     assert request_payload['state'] == 'STOP'

@@ -239,7 +239,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
                                 script_args=procedure.script_args,
                                 state=procedure.state)
 
-    cmd_stop = StopProcessCommand(process_uid=3, stop_args=ProcedureInput(abort=True))
+    cmd_stop = StopProcessCommand(process_uid=3)
     cmd_create = PrepareProcessCommand(script_uri=abort_script, init_args=ProcedureInput())
     cmd_run = StartProcessCommand(process_uid=1, run_args=run_args)
 
@@ -249,7 +249,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
         instance.create.return_value = 1
         instance.procedures = procedures
         service = ScriptExecutionService(script_uri=abort_script)
-        returned = service.stop(cmd_stop)
+        returned = service.stop(cmd_stop, is_abort=True)
 
         # service should call stop()
         instance.stop.assert_called_once_with(cmd_stop.process_uid)
@@ -266,13 +266,11 @@ def test_ses_stop_calls_process_manager_function_with_no_script_execution():
     object methods for stopping process execution without executing abort
     python script.
     """
-
-    cmd = StopProcessCommand(process_uid=3, stop_args=ProcedureInput())
+    cmd = StopProcessCommand(process_uid=3)
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
-
         service = ScriptExecutionService()
         service.stop(cmd)
 
