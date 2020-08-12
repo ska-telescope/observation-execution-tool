@@ -27,7 +27,7 @@ FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 
-def main(sb_json, allocate_json='', subarray_id=1, update_uids=True):
+def main(sb_json, allocate_json=None, subarray_id=1, update_uids=True):
     """
     Allocate resources to a target sub-array using a Scheduling Block (SB).
 
@@ -38,8 +38,8 @@ def main(sb_json, allocate_json='', subarray_id=1, update_uids=True):
     :return:
     """
     LOG.info(f'Running allocate script in OS process {os.getpid()}')
-    LOG.info(
-        f'Called with main(sb_json={sb_json}, configuration={allocate_json}, subarray_id={subarray_id}, update_uids={update_uids}')
+    LOG.info(f'Called with main(sb_json={sb_json}, configuration={allocate_json}, '
+             f'subarray_id={subarray_id}, update_uids={update_uids}')
 
     if not os.path.isfile(sb_json):
         msg = f'SB file not found: {sb_json}'
@@ -48,7 +48,7 @@ def main(sb_json, allocate_json='', subarray_id=1, update_uids=True):
 
     if not allocate_json:
         cdm_allocation_request = AssignResourcesRequest(subarray_id, None, None)
-    elif not os.path.isfile(allocate_json) :
+    elif not os.path.isfile(allocate_json):
         msg = f'CDM file not found: {allocate_json}'
         LOG.error(msg)
         raise IOError(msg)

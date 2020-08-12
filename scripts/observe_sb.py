@@ -35,7 +35,8 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 # v4 csp is sourced from the SB
 #
 
-def main(sb_json, configure_json, subarray_id=1):
+
+def main(sb_json, configure_json=None, subarray_id=1):
     """
     Observe using a Scheduling Block (SB) and template CDM file.
 
@@ -53,14 +54,17 @@ def main(sb_json, configure_json, subarray_id=1):
         LOG.error(msg)
         raise IOError(msg)
 
-    if not os.path.isfile(configure_json):
-        msg = f'CDM file not found: {configure_json}'
-        LOG.error(msg)
-        raise IOError(msg)
+    if not configure_json:
+        cdm_config = ConfigureRequest()
+    else:
+        if not os.path.isfile(configure_json):
+            msg = f'CDM file not found: {configure_json}'
+            LOG.error(msg)
+            raise IOError(msg)
+        cdm_config: ConfigureRequest = cdm_CODEC.load_from_file(ConfigureRequest, configure_json)
 
-    # Potentially call these within a try ... except block
+    # Potentially call CODEC.load_from_file within a try ... except block
     sched_block: SBDefinition = pdm_CODEC.load_from_file(SBDefinition, sb_json)
-    cdm_config: ConfigureRequest = cdm_CODEC.load_from_file(ConfigureRequest, configure_json)
 
     subarray = SubArray(subarray_id)
 
