@@ -217,41 +217,63 @@ def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
 
 def test_ses_stop_calls_process_manager_function(abort_script):
     """
-    Verify that ScriptExecutionService.stop() calls the appropriate domain
-    object methods for stopping process execution , prepare a new abort
-    script and execute it to abort subarray activity"""
-
+    Verify that ScriptExecutionService.stop() calls the appropriate
+    ProcessManager methods to stop process execution, then prepares and
+    starts a new Process running the abort script.
+    """
+    # Test script/procedures will target sub-array 2
     run_args = ProcedureInput(subarray_id=2)
 
-    # Create Stop Procedure
-    procedure_stop = Procedure('test://a')
-    procedure_stop.script_args['run'] = run_args
+    # Create Procedure representing the script to be stopped
+    procedure_to_stop = Procedure('test://a')
+    procedure_to_stop.script_args['run'] = run_args
 
-    # Create secondary Procedure
-    procedure = Procedure(abort_script)
-    procedure.script_args['run'] = run_args
+    # Create second Procedure to represent the Process running the
+    # post-termination abort script
+    abort_procedure = Procedure(abort_script)
+    abort_procedure.script_args['run'] = run_args
 
-    # list of Procedures
-    procedures = {1: procedure, 3: procedure_stop}
+    # PID of new abort Process will be 123
+    abort_pid = 123
+    # PID of running script
+    running_pid = 3
 
-    # expected Result
-    expected = ProcedureSummary(id=1, script_uri=procedure.script_uri,
-                                script_args=procedure.script_args,
-                                state=procedure.state)
+    # Prepare a dict of PIDs to Procedures that we can use to mock the internal
+    # data structure held by ProcessManager. This dict is read by the SES when
+    # when summarising the prepared and running processes.
+    process_manager_procedures = {
+        running_pid: procedure_to_stop
+    }
 
-    cmd_stop = StopProcessCommand(process_uid=3)
+    # When SES.stop() is called, the SES should stop the current process,
+    # prepare a process for the abort script, then set the abort process
+    # running..
+    cmd_stop = StopProcessCommand(process_uid=running_pid)
     cmd_create = PrepareProcessCommand(script_uri=abort_script, init_args=ProcedureInput())
-    cmd_run = StartProcessCommand(process_uid=1, run_args=run_args)
+    cmd_run = StartProcessCommand(process_uid=abort_pid, run_args=run_args)
+
+    # .. before returning a summary of the running abort Process
+    expected = [ProcedureSummary(id=abort_pid, script_uri=abort_procedure.script_uri,
+                                 script_args=abort_procedure.script_args,
+                                 state=abort_procedure.state)]
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
-        # get the mock ProcessManager instance
+        # get the mock ProcessManager instance, preparing it for SES access
         instance = mock_pm.return_value
-        instance.create.return_value = 1
-        instance.procedures = procedures
-        service = ScriptExecutionService(script_uri=abort_script)
-        returned = service.stop(cmd_stop, is_abort=True)
+        instance.procedures = process_manager_procedures
 
-        # service should call stop()
+        def create_abort(*args, **kwargs):
+            # The real .create() function would add the abort procedure to its
+            # internal data structure when called
+            process_manager_procedures[abort_pid] = abort_procedure
+            return abort_pid
+        instance.create.side_effect = create_abort
+
+        service = ScriptExecutionService(abort_script_uri=abort_script)
+        returned = service.stop(cmd_stop, run_abort=True)
+
+        # service should call stop -> create -> run, then return list containing
+        # summary
         instance.stop.assert_called_once_with(cmd_stop.process_uid)
         instance.create.assert_called_once_with(cmd_create.script_uri,
                                                 init_args=cmd_create.init_args)
@@ -260,22 +282,43 @@ def test_ses_stop_calls_process_manager_function(abort_script):
         assert returned == expected
 
 
-def test_ses_stop_calls_process_manager_function_with_no_script_execution():
+def test_ses_stop_calls_process_manager_function_with_no_script_execution(abort_script):
     """
     Verify that ScriptExecutionService.stop() calls the appropriate domain
     object methods for stopping process execution without executing abort
     python script.
     """
-    cmd = StopProcessCommand(process_uid=3)
+    # PID of running process
+    running_pid = 123
+
+    # Test script/procedures will target sub-array 2
+    run_args = ProcedureInput(subarray_id=2)
+
+    # Create Procedure representing the script to be stopped
+    procedure_to_stop = Procedure('test://a')
+    procedure_to_stop.script_args['run'] = run_args
+
+    # Prepare a dict of PIDs to Procedures that we can use to mock the internal
+    # data structure held by ProcessManager.
+    process_manager_procedures = {
+        running_pid: procedure_to_stop
+    }
+
+    cmd = StopProcessCommand(process_uid=running_pid)
+    # returned summary list should be empty if abort script is bypassed
+    expected = []
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
-        # get the mock ProcessManager instance
+        # get the mock ProcessManager instance, preparing it for SES access
         instance = mock_pm.return_value
-        service = ScriptExecutionService()
-        service.stop(cmd)
+        instance.procedures = process_manager_procedures
 
-        # service should call stop()
-        instance.stop.assert_called_once_with(cmd.process_uid)
+        service = ScriptExecutionService(abort_script_uri=abort_script)
+        returned = service.stop(cmd, run_abort=False)
+
+        # service should call stop() and return empty list
+        instance.stop.assert_called_once_with(running_pid)
+        assert returned == expected
 
 
 def test_ses_get_subarray_id_for_requested_pid():
@@ -305,7 +348,7 @@ def test_ses_get_subarray_id_for_requested_pid():
         assert returned == expected[0].script_args['run'].kwargs['subarray_id']
 
 
-def test_ses_get_subarray_id__fails_on_missing_subarray_id():
+def test_ses_get_subarray_id_fails_on_missing_subarray_id():
     """
     Verify that an exception is raised when subarray id is missing for requested
     PID

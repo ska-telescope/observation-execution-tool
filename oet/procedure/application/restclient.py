@@ -144,7 +144,7 @@ class RestClientUI:
         procedure = self._client.start(pid, run_args=run_args)
         return self._tabulate([procedure])
 
-    def stop(self, pid=None, is_abort=False) -> str:
+    def stop(self, pid=None, run_abort=True) -> str:
         """
         Stop a specified Procedure.
 
@@ -153,8 +153,8 @@ class RestClientUI:
         procedure with running status will be stopped.
 
         :param pid: ID of the procedure to stop
-        :param is_abort: Flag is used to execute abort script if its value
-         is true else it will just stop the execution of the process
+        :param run_abort: If True (default), executes abort script once running
+            script has terminated
         :return: Empty table entry
         """
         if pid is None:
@@ -165,7 +165,7 @@ class RestClientUI:
                 return 'WARNING: More than one procedure is running. ' \
                        'Specify ID of the procedure to stop.'
             pid = running_procedures[0].id
-        response = self._client.stop(pid, is_abort)
+        response = self._client.stop(pid, run_abort=run_abort)
         return response
 
 
@@ -267,19 +267,19 @@ class RestAdapter:
             return ProcedureSummary.from_json(response_json['procedure'])
         raise Exception(response_json['error'])
 
-    def stop(self, pid, is_abort=False):
+    def stop(self, pid, run_abort=True):
         """
         Stop the specified Procedure.
 
         :param pid: ID of script to stop
-        :param is_abort: Flag is used to execute abort script if its value
-         is true else it will just stop the execution of the process
+        :param run_abort: If True (default), executes abort script once running
+            script has terminated
         :return: success/failure message
         """
         url = f'{self.server_url}/{pid}'
 
         request_json = {
-            'abort': is_abort,
+            'abort': run_abort,
             'state': 'STOP'
         }
         LOG.debug('Stop payload: %s', request_json)

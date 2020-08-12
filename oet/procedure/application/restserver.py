@@ -112,14 +112,17 @@ def update_procedure(procedure_id: int):
 
     if new_state is domain.ProcedureState.STOP:
         if old_state is domain.ProcedureState.RUNNING:
-            is_abort = flask.request.json.get('abort', False)
+            run_abort = flask.request.json.get('abort')
             cmd = application.StopProcessCommand(procedure_id)
             try:
-                result = SERVICE.stop(cmd, is_abort)
-                if not isinstance(result,list):
+                result = SERVICE.stop(cmd, run_abort)
+                # result is list of process summaries started in response to abort
+                # If script was stopped and no post-termination abort script was run,
+                # the result list will be empty.
+                if result:
                     msg = f'Successfully stopped script with ID {procedure_id} and aborted subarray activity '
                 else:
-                    msg =  f'Successfully stopped script with ID {procedure_id} '
+                    msg = f'Successfully stopped script with ID {procedure_id}'
                 return flask.jsonify({'abort_message': msg})
             except Exception as exc:
                 flask.abort(500, exc)
