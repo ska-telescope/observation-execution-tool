@@ -12,7 +12,7 @@ FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 
-def main(subarray_id, *args, **kwargs):
+def main(subarray_id=1, *args, **kwargs):
     """
     Reset SubArray. SubArray state should be IDLE if reset is successful.
     """
