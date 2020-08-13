@@ -555,6 +555,18 @@ def execute_configure_command(command: Command):
     #      ABORTING. We don't know how long the SubArrayNode will remain in
     #      the transient ABORTING state so we also wait for ABORTED.
     #   3. Operation failed: obsState transitions to FAULT.
+
+    # First wait for CONFIGURING because when reconfiguring SubArray,
+    # starting state is already READY
+    obsstate_response = wait_for_obsstate(
+        command.device,
+        target_state=ObsState.CONFIGURING,
+        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
+    )
+
+    if obsstate_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise ObsStateError(obsstate_response.final_state)
+
     obsstate_response = wait_for_obsstate(
         command.device,
         target_state=ObsState.READY,
