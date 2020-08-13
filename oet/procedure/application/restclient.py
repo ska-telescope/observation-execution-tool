@@ -17,6 +17,7 @@ import fire
 import requests
 import tabulate
 
+logging.basicConfig(level=logging.DEBUG)
 LOG = logging.getLogger(__name__)
 
 
@@ -96,7 +97,7 @@ class RestClientUI:
         procedures = self._client.list(pid)
         return self._tabulate(procedures)
 
-    def create(self, script_uri: str, *args, **kwargs) -> str:
+    def create(self, script_uri: str, *args, subarray_id=1, **kwargs) -> str:
         """
         Create a new Procedure.
 
@@ -108,9 +109,11 @@ class RestClientUI:
 
         :param script_uri: script URI, e.g., file:///test.py
         :param args: script positional arguments
+        :param subarray_id: Sub-array controlled by this OET instance
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.
         """
+        kwargs['subarray_id'] = subarray_id
         init_args = dict(args=args, kwargs=kwargs)
         procedure = self._client.create(script_uri, init_args=init_args)
         return self._tabulate([procedure])
@@ -165,7 +168,7 @@ class RestClientUI:
                 return 'WARNING: More than one procedure is running. ' \
                        'Specify ID of the procedure to stop.'
             pid = running_procedures[0].id
-        response = self._client.stop(pid, run_abort=run_abort)
+        response = self._client.stop(pid, run_abort)
         return response
 
 

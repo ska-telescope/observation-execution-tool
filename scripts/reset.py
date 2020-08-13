@@ -1,6 +1,7 @@
 """
 Example script for resetting sub-array. Resetting will keep allocated dishes.
 """
+import functools
 import logging
 import os
 
@@ -12,9 +13,21 @@ FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 
-def main(subarray_id=1, *args, **kwargs):
+def main():
+    raise NotImplementedError('init not called')
+
+
+def init(subarray_id: int):
+    global main
+    main = functools.partial(_main, subarray_id)
+    LOG.info(f'Script bound to sub-array {subarray_id}')
+
+
+def _main(subarray_id: int, *args, **kwargs):
     """
     Reset SubArray. SubArray state should be IDLE if reset is successful.
+
+    :param subarray_id: numeric subarray ID
     """
     LOG.info(f'Running SubArray reset script in OS process {os.getpid()}')
 

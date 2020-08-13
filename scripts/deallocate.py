@@ -1,6 +1,7 @@
 """
 Example script for resource deallocation
 """
+import functools
 import logging
 import os
 
@@ -12,7 +13,17 @@ FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 
-def main(subarray_id=1):
+def main():
+    raise NotImplementedError('init not called')
+
+
+def init(subarray_id: int):
+    global main
+    main = functools.partial(_main, subarray_id)
+    LOG.info(f'Script bound to sub-array {subarray_id}')
+
+
+def _main(subarray_id: int):
     """
     Deallocate sub-array resources.
 
