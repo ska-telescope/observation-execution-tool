@@ -42,10 +42,11 @@ The methods available through the REST Client map closely to the
 | create             | server-url    | See note above                             | **Prepare a new procedure**         |
 |                    +---------------+--------------------------------------------+                                     |
 |                    | script-uri    | None                                       | Load the requested script and       |
-|                    +---------------+--------------------------------------------+ prepare it for execution            |
+|                    +---------------+--------------------------------------------+ prepare it for execution.           |
 |                    | args          | None                                       |                                     |
-|                    +---------------+--------------------------------------------+                                     |
-|                    | kwargs        | None                                       |                                     |
+|                    +---------------+--------------------------------------------+ Arguments provided here are passed  |
+|                    | kwargs        | --subarray_id=1                            | to the script init function, if     |
+|                    |               |                                            | defined                             |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 | list               | server-url    | See note above                             | **List procedures**                 |
 |                    +---------------+--------------------------------------------+-------------------------------------+
@@ -67,9 +68,13 @@ The methods available through the REST Client map closely to the
 | stop               | server-url    | See note above                             | **Stop Procedure Execution**        |
 |                    +---------------+--------------------------------------------+                                     |
 |                    | pid           | None                                       | Stop a running process executing    |
-|                    |               |                                            | the procedure specified by process  |
-|                    |               |                                            | ID (pid) or, if none is specified,  |
-|                    |               |                                            | stop the currently running process  |
+|                    +---------------+--------------------------------------------+ the procedure specified by process  |
+|                    | run_abort     | True                                       | ID (pid) or, if none is specified,  |
+|                    |               |                                            | stop the currently running process. |
+|                    |               |                                            |                                     |
+|                    |               |                                            | If run_abort flag is True, OET will |
+|                    |               |                                            | send Abort command to the SubArray  |
+|                    |               |                                            | as part of script termination.      |                           |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to 
@@ -168,18 +173,17 @@ full observation, e.g.,::
   oet start
 
   # create process for resource allocation script
-  oet create file:///scripts/allocate_from_file.py
-  oet start scripts/example_allocate.json --subarray_id=1
+  oet create file:///scripts/allocate_from_file_sb.py --subarray_id=3
+  oet start scripts/example_sb.json
 
   # create process for configure/scan script
-  oet create file:///scripts/observe.py
-  # run the script, specifying configuration JSON to applied followed by a
-  # 10 second scan. Set process_json to False if JSON should be passed through
-  # directly to TMC (possibly required for new SDP schema)
-  oet start scripts/example_configure.json 10 --subarray_id=1 --repeat=1 --process_json=True
+  oet create file:///scripts/observe_sb.py --subarray_id=3
+  # run the script, specifying scheduling block JSON which defines
+  # the configurations, and the order and number of scans
+  oet start scripts/example_sb.json
 
   # create process for resource deallocation script
-  oet create file:///scripts/deallocate.py
+  oet create file:///scripts/deallocate.py --subarray_id=3
   # run with no arguments, which requests deallocation of all resources
   oet start
 

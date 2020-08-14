@@ -1,24 +1,27 @@
 """
 Example script for SB-driven observation resource allocation from file
 """
+import functools
 import logging
 import os
+
 from ska.cdm.messages.central_node.assign_resources import AssignResourcesRequest
-from ska.cdm.messages.central_node.assign_resources import SDPConfiguration as cdm_SDPConfiguration
-from ska.cdm.messages.central_node.assign_resources import ScanType as cdm_ScanType, Channel as cdm_Channel
+from ska.cdm.messages.central_node.assign_resources import DishAllocation as cdm_DishAllocation
 from ska.cdm.messages.central_node.assign_resources import \
     ProcessingBlockConfiguration as cdm_ProcessingBlockConfiguration, \
     PbDependency as cdm_PbDependency, SDPWorkflow as cdm_SDPWorkflow
-from ska.cdm.messages.central_node.assign_resources import DishAllocation as cdm_DishAllocation
+from ska.cdm.messages.central_node.assign_resources import SDPConfiguration as cdm_SDPConfiguration
+from ska.cdm.messages.central_node.assign_resources import ScanType as cdm_ScanType, Channel as cdm_Channel
 from ska.cdm.schemas import CODEC as cdm_CODEC
-from ska.pdm.entities.sdp.sdp_configuration import SDPConfiguration as pdm_SDPConfiguration
-from ska.pdm.entities.sdp.scan_type import ScanType as pdm_ScanType, Channel as pdm_Channel
-from ska.pdm.entities.sdp.processing_block import ProcessingBlock as pdm_ProcessingBlock, \
-    PbDependency as pdm_PbDependency, Workflow as pdm_Workflow
 from ska.pdm.entities.dish_allocation import DishAllocation as pdm_DishAllocation
 from ska.pdm.entities.sb_definition import SBDefinition
+from ska.pdm.entities.sdp.processing_block import ProcessingBlock as pdm_ProcessingBlock, \
+    PbDependency as pdm_PbDependency, Workflow as pdm_Workflow
+from ska.pdm.entities.sdp.scan_type import ScanType as pdm_ScanType, Channel as pdm_Channel
+from ska.pdm.entities.sdp.sdp_configuration import SDPConfiguration as pdm_SDPConfiguration
 from ska.pdm.schemas import CODEC as pdm_CODEC
 from skuid.client import SkuidClient
+
 from oet import observingtasks
 
 LOG = logging.getLogger(__name__)
@@ -27,19 +30,30 @@ FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 
-def main(sb_json, allocate_json=None, subarray_id=1, update_uids=True):
+def main(*args, **kwargs):
+    LOG.warning('Deprecated! Calling main before sub-array is bound will be removed for PI9')
+    _main(*args, **kwargs)
+
+
+def init(subarray_id: int):
+    global main
+    main = functools.partial(_main, subarray_id)
+    LOG.info(f'Script bound to sub-array {subarray_id}')
+
+
+def _main(subarray_id: int, sb_json, allocate_json='', update_uids=True):
     """
     Allocate resources to a target sub-array using a Scheduling Block (SB).
 
+    :param subarray_id: numeric subarray ID
     :param sb_json: file containing SB in JSON format
     :param allocate_json: name of configuration file
-    :param subarray_id: numeric subarray ID
     :param update_uids: True if UIDs should be updated
     :return:
     """
     LOG.info(f'Running allocate script in OS process {os.getpid()}')
-    LOG.info(f'Called with main(sb_json={sb_json}, configuration={allocate_json}, '
-             f'subarray_id={subarray_id}, update_uids={update_uids}')
+    LOG.info(
+        f'Called with main(sb_json={sb_json}, configuration={allocate_json}, subarray_id={subarray_id}, update_uids={update_uids}')
 
     if not os.path.isfile(sb_json):
         msg = f'SB file not found: {sb_json}'
@@ -48,7 +62,7 @@ def main(sb_json, allocate_json=None, subarray_id=1, update_uids=True):
 
     if not allocate_json:
         cdm_allocation_request = AssignResourcesRequest(subarray_id, None, None)
-    elif not os.path.isfile(allocate_json):
+    elif not os.path.isfile(allocate_json) :
         msg = f'CDM file not found: {allocate_json}'
         LOG.error(msg)
         raise IOError(msg)

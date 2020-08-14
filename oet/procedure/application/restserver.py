@@ -107,20 +107,22 @@ def update_procedure(procedure_id: int):
         flask.abort(400)
     script_args = flask.request.json.get('script_args', {})
 
-    run_dict = script_args.get('run', {})
-    run_args = run_dict.get('args', [])
-    run_kwargs = run_dict.get('kwargs', {})
-    procedure_input = domain.ProcedureInput(*run_args, **run_kwargs)
-
     old_state = summary.state
     new_state = domain.ProcedureState[flask.request.json.get('state', summary.state.name)]
 
     if new_state is domain.ProcedureState.STOP:
         if old_state is domain.ProcedureState.RUNNING:
+            run_abort = flask.request.json.get('abort')
             cmd = application.StopProcessCommand(procedure_id)
             try:
-                SERVICE.stop(cmd)
-                msg = f'Successfully stopped script with ID {procedure_id} '
+                result = SERVICE.stop(cmd, run_abort)
+                # result is list of process summaries started in response to abort
+                # If script was stopped and no post-termination abort script was run,
+                # the result list will be empty.
+                if result:
+                    msg = f'Successfully stopped script with ID {procedure_id} and aborted subarray activity '
+                else:
+                    msg = f'Successfully stopped script with ID {procedure_id}'
                 return flask.jsonify({'abort_message': msg})
             except Exception as exc:
                 flask.abort(500, exc)
@@ -129,6 +131,10 @@ def update_procedure(procedure_id: int):
             return flask.jsonify({'abort_message': msg})
 
     elif old_state is domain.ProcedureState.READY and new_state is domain.ProcedureState.RUNNING:
+        run_dict = script_args.get('run', {})
+        run_args = run_dict.get('args', [])
+        run_kwargs = run_dict.get('kwargs', {})
+        procedure_input = domain.ProcedureInput(*run_args, **run_kwargs)
         cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
         try:
             summary = SERVICE.start(cmd)
