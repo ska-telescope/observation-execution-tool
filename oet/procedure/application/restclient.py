@@ -17,7 +17,6 @@ import fire
 import requests
 import tabulate
 
-logging.basicConfig(level=logging.DEBUG)
 LOG = logging.getLogger(__name__)
 
 
