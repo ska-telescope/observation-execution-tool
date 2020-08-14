@@ -45,8 +45,9 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 #
 
 
-def main():
-    raise NotImplementedError('init not called')
+def main(*args, **kwargs):
+    LOG.warning('Deprecated! Calling main before sub-array is bound will be removed for PI9')
+    _main(*args, **kwargs)
 
 
 def init(subarray_id: int):
