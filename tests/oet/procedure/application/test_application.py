@@ -222,21 +222,18 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     starts a new Process running the abort script.
     """
     # Test script/procedures will target sub-array 2
-    run_args = ProcedureInput(subarray_id=2)
+    subarray_id = 4
+    # PID of running script
+    running_pid = 50
+    # PID of new abort Process will be 123
+    abort_pid = 123
 
     # Create Procedure representing the script to be stopped
-    procedure_to_stop = Procedure('test://a')
-    procedure_to_stop.script_args['run'] = run_args
+    procedure_to_stop = Procedure('test://a', subarray_id=subarray_id)
 
     # Create second Procedure to represent the Process running the
     # post-termination abort script
-    abort_procedure = Procedure(abort_script)
-    abort_procedure.script_args['run'] = run_args
-
-    # PID of new abort Process will be 123
-    abort_pid = 123
-    # PID of running script
-    running_pid = 3
+    abort_procedure = Procedure(abort_script, subarray_id=subarray_id)
 
     # Prepare a dict of PIDs to Procedures that we can use to mock the internal
     # data structure held by ProcessManager. This dict is read by the SES when
@@ -249,8 +246,8 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     # prepare a process for the abort script, then set the abort process
     # running..
     cmd_stop = StopProcessCommand(process_uid=running_pid)
-    cmd_create = PrepareProcessCommand(script_uri=abort_script, init_args=ProcedureInput())
-    cmd_run = StartProcessCommand(process_uid=abort_pid, run_args=run_args)
+    cmd_create = PrepareProcessCommand(script_uri=abort_script, init_args=abort_procedure.script_args['init'])
+    cmd_run = StartProcessCommand(process_uid=abort_pid, run_args=abort_procedure.script_args['run'])
 
     # .. before returning a summary of the running abort Process
     expected = [ProcedureSummary(id=abort_pid, script_uri=abort_procedure.script_uri,
@@ -292,11 +289,11 @@ def test_ses_stop_calls_process_manager_function_with_no_script_execution(abort_
     running_pid = 123
 
     # Test script/procedures will target sub-array 2
-    run_args = ProcedureInput(subarray_id=2)
+    init_args = ProcedureInput(subarray_id=2)
 
     # Create Procedure representing the script to be stopped
     procedure_to_stop = Procedure('test://a')
-    procedure_to_stop.script_args['run'] = run_args
+    procedure_to_stop.script_args['init'] = init_args
 
     # Prepare a dict of PIDs to Procedures that we can use to mock the internal
     # data structure held by ProcessManager.
@@ -326,11 +323,14 @@ def test_ses_get_subarray_id_for_requested_pid():
      Verify that the private method _get_subarray_id returns
      subarray id correctly
      """
+    subarray_id = 123
+    process_pid = 456
+
     procedure = Procedure('test://a')
-    run_args = ProcedureInput(subarray_id=2)
-    procedure.script_args['run'] = run_args
-    procedures = {1: procedure}
-    process_summary = ProcedureSummary(id=1, script_uri=procedure.script_uri,
+    init_args = ProcedureInput(subarray_id=subarray_id)
+    procedure.script_args['init'] = init_args
+    procedures = {process_pid: procedure}
+    process_summary = ProcedureSummary(id=process_pid, script_uri=procedure.script_uri,
                                        script_args=procedure.script_args,
                                        state=procedure.state)
     expected = [process_summary]
@@ -343,9 +343,9 @@ def test_ses_get_subarray_id_for_requested_pid():
         instance.procedures = procedures
 
         service = ScriptExecutionService()
-        returned = service._get_subarray_id(1)  # pylint: disable=protected-access
+        returned = service._get_subarray_id(process_pid)  # pylint: disable=protected-access
 
-        assert returned == expected[0].script_args['run'].kwargs['subarray_id']
+        assert returned == expected[0].script_args['init'].kwargs['subarray_id']
 
 
 def test_ses_get_subarray_id_fails_on_missing_subarray_id():
