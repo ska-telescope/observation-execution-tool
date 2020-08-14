@@ -29,7 +29,7 @@ CREATE_SUMMARY = ProcedureSummary(
     state=domain.ProcedureState.READY
 )
 
-ABORT_JSON = dict(state="STOP")
+ABORT_JSON = dict(state="STOP", abort=True)
 
 # Valid JSON struct for starting a prepared procedure
 RUN_JSON = dict(script_uri="test:///test.py",
@@ -224,18 +224,48 @@ def test_put_procedure_calls_run_on_execution_service(client):
         assert_json_equal_to_procedure_summary(RUN_SUMMARY, response_json['procedure'])
 
 
+def test_put_procedure_calls_stop_on_execution_service_and_executes_abort_script(client):
+    """
+    Verify that the appropriate ScriptExecutionService methods are called
+    when a valid 'stop Procedure' PUT request is received
+    """
+    expected_response = 'Successfully stopped script with ID 1 and aborted subarray activity '
+    cmd = StopProcessCommand(process_uid=RUN_SUMMARY.id)
+
+    with mock.patch('oet.procedure.application.restserver.SERVICE') as mock_service:
+        mock_service.summarise.return_value = [RUN_SUMMARY]
+        # list containing summary of abort process is returned when abort
+        # script is running
+        mock_service.stop.return_value = [RUN_SUMMARY]
+
+        response = client.put(RUN_ENDPOINT, json=ABORT_JSON)
+        response_json = response.get_json()
+
+        mock_service.stop.assert_called_once_with(cmd, True)
+        assert 'abort_message' in response_json
+        assert response_json['abort_message'] == expected_response
+
+
 def test_put_procedure_calls_stop_on_execution_service(client):
     """
     Verify that the appropriate ScriptExecutionService methods are called
     when a valid 'stop Procedure' PUT request is received
     """
+    expected_response = 'Successfully stopped script with ID 1'
     cmd = StopProcessCommand(process_uid=RUN_SUMMARY.id)
+
     with mock.patch('oet.procedure.application.restserver.SERVICE') as mock_service:
-        mock_service.summarise = mock.MagicMock(return_value=[RUN_SUMMARY])
-        mock_stop = mock.MagicMock(return_value=None)
-        mock_service.stop = mock_stop
-        _ = client.put(RUN_ENDPOINT, json=ABORT_JSON)
-        mock_stop.assert_called_once_with(cmd)
+        mock_service.summarise.return_value = [RUN_SUMMARY]
+        # empty list returned if post-termination process is not started
+        mock_service.stop.return_value = []
+
+        # PUT request should pick up default run_abort=True
+        response = client.put(RUN_ENDPOINT, json=dict(state="STOP", abort=False))
+        response_json = response.get_json()
+
+        mock_service.stop.assert_called_once_with(cmd, False)
+        assert 'abort_message' in response_json
+        assert response_json['abort_message'] == expected_response
 
 
 def test_put_procedure_does_not_start_a_procedure_unless_new_state_is_running(client):
@@ -266,4 +296,3 @@ def test_put_procedure_returns_procedure_summary(client):
     response_json = response.get_json()
     assert 'procedure' in response_json
     assert_json_equal_to_procedure_summary(CREATE_SUMMARY, response_json['procedure'])
-
