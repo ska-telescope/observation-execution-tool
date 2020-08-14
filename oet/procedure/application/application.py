@@ -166,15 +166,17 @@ class ScriptExecutionService:
             return []
 
         # prepare second script
-        procedure = domain.Procedure(self._abort_script_uri)
-        prepare_cmd = PrepareProcessCommand(script_uri=procedure.script_uri,
-                                            init_args=domain.ProcedureInput())
+        prepare_cmd = PrepareProcessCommand(
+            script_uri=self._abort_script_uri,
+            init_args=domain.ProcedureInput(subarray_id=subarray_id)
+        )
         procedure_summary = self.prepare(prepare_cmd)
 
-        # starting a script
-        run_args = domain.ProcedureInput(subarray_id=subarray_id)
-        run_cmd = StartProcessCommand(process_uid=procedure_summary.id,
-                                      run_args=run_args)
+        # start the second script
+        run_cmd = StartProcessCommand(
+            process_uid=procedure_summary.id,
+            run_args=domain.ProcedureInput()
+        )
         summary = self.start(run_cmd)
         return [summary]
 
@@ -186,8 +188,8 @@ class ScriptExecutionService:
         :return: subarray id
         """
         procedure_summary = self.summarise(pids=[pid])[0]
-        run_dict = procedure_summary.script_args['run']
-        run_kwargs = run_dict.kwargs
-        if 'subarray_id' not in run_kwargs:
+        init_dict = procedure_summary.script_args['init']
+        init_kwargs = init_dict.kwargs
+        if 'subarray_id' not in init_kwargs:
             raise ValueError(f'Subarray Id not found')
-        return run_kwargs['subarray_id']
+        return init_kwargs['subarray_id']
