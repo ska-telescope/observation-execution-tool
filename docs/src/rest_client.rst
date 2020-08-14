@@ -172,17 +172,17 @@ full observation, e.g.,::
   oet start
 
   # create process for resource allocation script
-  oet create file:///scripts/allocate_from_file_sb.py
-  oet start scripts/example_sb.json --subarray_id=1
+  oet create file:///scripts/allocate_from_file_sb.py --subarray_id=3
+  oet start scripts/example_sb.json
 
   # create process for configure/scan script
-  oet create file:///scripts/observe_sb.py
+  oet create file:///scripts/observe_sb.py --subarray_id=3
   # run the script, specifying scheduling block JSON which defines
   # the configurations, and the order and number of scans
-  oet start scripts/example_sb.json --subarray_id=1
+  oet start scripts/example_sb.json
 
   # create process for resource deallocation script
-  oet create file:///scripts/deallocate.py
+  oet create file:///scripts/deallocate.py --subarray_id=3
   # run with no arguments, which requests deallocation of all resources
   oet start
 
