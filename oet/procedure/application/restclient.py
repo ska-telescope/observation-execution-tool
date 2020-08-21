@@ -12,8 +12,8 @@ import logging
 from http import HTTPStatus
 from typing import Dict, List, Optional
 
-import fire
 import os
+import fire
 import requests
 import tabulate
 
@@ -96,7 +96,7 @@ class RestClientUI:
         procedures = self._client.list(pid)
         return self._tabulate(procedures)
 
-    def create(self, script_uri: str, *args, **kwargs) -> str:
+    def create(self, script_uri: str, *args, subarray_id=1, **kwargs) -> str:
         """
         Create a new Procedure.
 
@@ -108,9 +108,11 @@ class RestClientUI:
 
         :param script_uri: script URI, e.g., file:///test.py
         :param args: script positional arguments
+        :param subarray_id: Sub-array controlled by this OET instance
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.
         """
+        kwargs['subarray_id'] = subarray_id
         init_args = dict(args=args, kwargs=kwargs)
         procedure = self._client.create(script_uri, init_args=init_args)
         return self._tabulate([procedure])
@@ -144,7 +146,7 @@ class RestClientUI:
         procedure = self._client.start(pid, run_args=run_args)
         return self._tabulate([procedure])
 
-    def stop(self, pid=None) -> str:
+    def stop(self, pid=None, run_abort=True) -> str:
         """
         Stop a specified Procedure.
 
@@ -153,6 +155,8 @@ class RestClientUI:
         procedure with running status will be stopped.
 
         :param pid: ID of the procedure to stop
+        :param run_abort: If True (default), executes abort script once running
+            script has terminated
         :return: Empty table entry
         """
         if pid is None:
@@ -163,7 +167,7 @@ class RestClientUI:
                 return 'WARNING: More than one procedure is running. ' \
                        'Specify ID of the procedure to stop.'
             pid = running_procedures[0].id
-        response = self._client.stop(pid)
+        response = self._client.stop(pid, run_abort)
         return response
 
 
@@ -265,16 +269,19 @@ class RestAdapter:
             return ProcedureSummary.from_json(response_json['procedure'])
         raise Exception(response_json['error'])
 
-    def stop(self, pid):
+    def stop(self, pid, run_abort=True):
         """
         Stop the specified Procedure.
 
         :param pid: ID of script to stop
-        :return:
+        :param run_abort: If True (default), executes abort script once running
+            script has terminated
+        :return: success/failure message
         """
         url = f'{self.server_url}/{pid}'
 
         request_json = {
+            'abort': run_abort,
             'state': 'STOP'
         }
         LOG.debug('Stop payload: %s', request_json)

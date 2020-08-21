@@ -65,6 +65,8 @@ class Procedure(multiprocessing.Process):
         self.id = None  # pylint:disable=invalid-name
 
         self.user_module = ModuleFactory.get_module(script_uri)
+        if hasattr(self.user_module, 'init'):
+            self.user_module.init(*args, **kwargs)
 
         self.script_uri = script_uri
         self.script_args: typing.Dict[str, ProcedureInput] = dict(init=init_args,
@@ -193,6 +195,9 @@ class ProcessManager:
             procedure.terminate()
             # join any potentially zombie process, allowing it to clean up
             multiprocessing.active_children()
+            # set running to None here instead of waiting for run() callback
+            # so that abort script can be started while callback does clean-up
+            self.running = None
 
 
 def _wait_for_process(process, **_):
@@ -271,11 +276,14 @@ class ModuleFactory:
         :param _: URI. Will be ignored.
         :return:
         """
+        def init(*_, **__):
+            pass
 
         def main(*_, **__):
             pass
 
         user_module = types.ModuleType('user_module')
         user_module.main = main
+        user_module.init = init
 
         return user_module

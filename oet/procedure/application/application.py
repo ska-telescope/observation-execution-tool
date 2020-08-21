@@ -10,6 +10,8 @@ import typing
 
 from .. import domain
 
+ABORT_SCRIPT_URI = 'file:///app/scripts/abort.py'
+
 
 @dataclasses.dataclass
 class PrepareProcessCommand:
@@ -67,8 +69,21 @@ class ScriptExecutionService:
     independent Python child process.
     """
 
-    def __init__(self):
+    def __init__(self, abort_script_uri: str = ABORT_SCRIPT_URI):
+        """
+        Create a new ScriptExecutionService.
+
+        The .stop() method of this ScriptExecutionService can run a second
+        script once the current process has been terminated. By default, this
+        second script calls SubArrayNode.abort() to halt further activities
+        on the sub-array controlled by the terminated script. To run a
+        different script, define the script URI in the abort_script_uri
+        argument to this constructor.
+
+        :param abort_script_uri: URI of post-termination script
+        """
         self._process_host = domain.ProcessManager()
+        self._abort_script_uri = abort_script_uri
 
     def _create_summary(self, pid: int) -> ProcedureSummary:
         """
@@ -131,12 +146,50 @@ class ScriptExecutionService:
 
         return [self._create_summary(pid) for pid in pids]
 
-    def stop(self, cmd: StopProcessCommand):
+    def stop(self,
+             cmd: StopProcessCommand,
+             run_abort=True) -> typing.List[ProcedureSummary]:
         """
-        Stop execution of a running procedure.
+        Stop execution of a running procedure, optionally running a
+        second script once the first process has terminated.
 
         :param cmd: dataclass argument capturing the execution arguments
+        :param run_abort: runs post-termination abort script when True
         :return:
         """
+        subarray_id = self._get_subarray_id(cmd.process_uid)
         self._process_host.stop(cmd.process_uid)
 
+        # exit early if not instructed to run post-termination script
+        if not run_abort:
+            # Did not start a new process so return empty list
+            return []
+
+        # prepare second script
+        prepare_cmd = PrepareProcessCommand(
+            script_uri=self._abort_script_uri,
+            init_args=domain.ProcedureInput(subarray_id=subarray_id)
+        )
+        procedure_summary = self.prepare(prepare_cmd)
+
+        # start the second script
+        run_cmd = StartProcessCommand(
+            process_uid=procedure_summary.id,
+            run_args=domain.ProcedureInput()
+        )
+        summary = self.start(run_cmd)
+        return [summary]
+
+    def _get_subarray_id(self, pid: int):
+        """
+        Return a Subarray id for given procedure ID.
+
+        :param pid: Procedure ID to summarise
+        :return: subarray id
+        """
+        procedure_summary = self.summarise(pids=[pid])[0]
+        init_dict = procedure_summary.script_args['init']
+        init_kwargs = init_dict.kwargs
+        if 'subarray_id' not in init_kwargs:
+            raise ValueError(f'Subarray Id not found')
+        return init_kwargs['subarray_id']
