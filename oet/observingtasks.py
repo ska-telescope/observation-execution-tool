@@ -115,7 +115,6 @@ TANGO_REGISTRY = TangoRegistry()
 # function.
 EXECUTOR = TangoExecutor()
 
-
 def convert_assign_resources_response(response: str) -> domain.ResourceAllocation:
     """
     Convert the Tango response from CentralNode.AssignResources() to an OET
@@ -289,11 +288,14 @@ def allocate_resources(subarray: domain.SubArray,
     :return: the resources that were successfully allocated to the sub-array
     """
     command = get_allocate_resources_command(subarray, resources)
+    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
+    attribute = Attribute(subarray_device, 'obsState')
+    _ = EXECUTOR.subscribe_event(attribute)
+
     # requires variable annotations in Python > 3.5
     # response: List[int] = EXECUTOR.execute(command)
     response = EXECUTOR.execute(command)
     # wait for state
-    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
     state_response = wait_for_obsstate(
         subarray_device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
     )
@@ -330,12 +332,14 @@ def allocate_resources_from_file(
     )
 
     command = get_allocate_resources_command(subarray, resources, template_request)
+    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
+    attribute = Attribute(subarray_device, 'obsState')
+    _ = EXECUTOR.subscribe_event(attribute)
     response = EXECUTOR.execute(command)
 
     # Wait for obsState transition to signify success or failure. A resource
     # allocation command cannot be reset or aborted, hence we wait only for
     # FAULT.
-    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
     state_response = wait_for_obsstate(
         subarray_device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
     )
@@ -360,12 +364,14 @@ def assign_resources_from_cdm(
     resources = domain.ResourceAllocation()
 
     command = get_allocate_resources_command(subarray, resources, request)
+    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
+    attribute = Attribute(subarray_device, 'obsState')
+    _ = EXECUTOR.subscribe_event(attribute)
     response = EXECUTOR.execute(command)
 
     # Wait for obsState transition to signify success or failure. A resource
     # allocation command cannot be reset or aborted, hence we wait only for
     # FAULT.
-    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
     state_response = wait_for_obsstate(
         subarray_device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
     )
@@ -398,11 +404,14 @@ def deallocate_resources(subarray: domain.SubArray,
         raise ValueError('Either release_all or resources must be defined')
 
     command = get_release_resources_command(subarray, release_all, resources)
+
+    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
+    attribute = Attribute(subarray_device, 'obsState')
+    _ = EXECUTOR.subscribe_event(attribute)
     EXECUTOR.execute(command)
 
     # Wait for obsState transition to signify success or failure. A resource
     # release command cannot be reset or aborted, hence we wait only for FAULT
-    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
     state_response = wait_for_obsstate(
         subarray_device, target_state=ObsState.EMPTY, error_states=[ObsState.FAULT]
     )
@@ -462,7 +471,7 @@ def get_configure_subarray_command(subarray: domain.SubArray,
     return Command(subarray_node_fqdn, 'Configure', request_json)
 
 
-def wait_for_value(attribute: Attribute, target_values: Iterable[Any], key=lambda _: _) -> Any:
+def wait_for_value(attribute: Attribute, target_values: Iterable[Any], timeout=6, key=lambda _: _) -> Any:
     """
     Block until a Tango device attribute has reached one of target values.
 
@@ -474,13 +483,13 @@ def wait_for_value(attribute: Attribute, target_values: Iterable[Any], key=lambd
     :param key: function to process each attribute value before comparison
     :return: Attribute value read from device (one of target_values)
     """
-    response = EXECUTOR.read(attribute)
+    response = EXECUTOR.read_event(timeout)
     processed = key(response)
     if all(isinstance(value, type(processed)) for value in target_values):
         while True:
             if processed in target_values:
                 return processed
-            response = EXECUTOR.read(attribute)
+            response = EXECUTOR.read_event(timeout)
             processed = key(response)
     else:
         raise TypeError('Attribute type does not match type of target values')
@@ -544,6 +553,8 @@ def execute_configure_command(command: Command):
     :param command: Command to execute
     :return:
     """
+    attribute = Attribute(command.device, 'obsState')
+    _ = EXECUTOR.subscribe_event(attribute)
     # Python convention is to label unused variables as _
     _ = EXECUTOR.execute(command)
 
@@ -704,6 +715,9 @@ def scan(subarray: domain.SubArray):
     # increment scan ID
     SCAN_ID_GENERATOR.next()
 
+    attribute = Attribute(command.device, 'obsState')
+    _ = EXECUTOR.subscribe_event(attribute)
+
     _ = EXECUTOR.execute(command)
 
     # In the ADR-8 state model, scanning is signified by the SubArrayNode
@@ -745,6 +759,9 @@ def end(subarray: domain.SubArray):
     :param subarray: the subarray to command
     """
     command = get_end_command(subarray)
+    attribute = Attribute(command.device, 'obsState')
+    _ = EXECUTOR.subscribe_event(attribute)
+
     _ = EXECUTOR.execute(command)
 
     state_response = wait_for_obsstate(
@@ -776,6 +793,9 @@ def abort(subarray: domain.SubArray):
     """
 
     command = get_abort_command(subarray)
+    attribute = Attribute(command.device, 'obsState')
+    _ = EXECUTOR.subscribe_event(attribute)
+
     _ = EXECUTOR.execute(command)
 
     state_response = wait_for_obsstate(
@@ -806,6 +826,10 @@ def obsreset(subarray: domain.SubArray):
     :param subarray: the subarray to command
     """
     command = get_obsreset_command(subarray)
+
+    attribute = Attribute(command.device, 'obsState')
+    _ = EXECUTOR.subscribe_event(attribute)
+
     _ = EXECUTOR.execute(command)
 
     state_response = wait_for_obsstate(
@@ -837,6 +861,10 @@ def restart(subarray: domain.SubArray):
     """
 
     command = get_restart_command(subarray)
+
+    attribute = Attribute(command.device, 'obsState')
+    _ = EXECUTOR.subscribe_event(attribute)
+
     _ = EXECUTOR.execute(command)
 
     state_response = wait_for_obsstate(

@@ -128,6 +128,26 @@ def test_tango_executor_calls_single_arg_command_correctly():
     mock_device_proxy.command_inout.assert_called_once_with('command', cmd_param=1)
 
 
+# def test_tango_executor_calls_subscribe_event_correctly():
+#     """
+#     Check that the TangoExecutor correctly invokes device server commands that
+#     require a scalar argument.
+#     """
+#     import tango
+#     mock_device_proxy = Mock()
+#     attr = Attribute('device', 'name')
+#     result = []
+#
+#     def handle_state_change(evt):
+#         result.append(evt)
+#
+#     with patch.object(TangoDeviceProxyFactory, '__call__', return_value=mock_device_proxy):
+#         executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
+#         executor.subscribe_event(attr)
+#
+#     # single-valued arg should be unpacked
+#     mock_device_proxy.subscribe_event.assert_called_once_with(attr.name, tango.EventType.CHANGE_EVENT, TangoExecutor.handle_state_change)
+
 def test_tango_executor_calls_multi_arg_command_correctly():
     """
     Check that the TangoExecutor correctly invokes device server commands that
@@ -177,7 +197,6 @@ def test_tango_read_only_creates_one_device_proxy_per_device():
     with patch.object(TangoDeviceProxyFactory, '__call__', return_value=Mock()) as mock_call:
         executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
         executor.read(attr)
-
     mock_call.assert_called_once_with('device')
 
 
@@ -297,3 +316,5 @@ def test_remote_scan_id_set_backing():
         expected = [98, 99, 100]
         actual = [generator.next() for _ in range(3)]
         assert actual == expected
+
+
