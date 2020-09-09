@@ -736,6 +736,44 @@ def get_end_command(subarray: domain.SubArray) -> Command:
     return Command(subarray_node_fqdn, 'End')
 
 
+def _call_and_wait_for_obsstate(command: Command,
+                                wait_states: Iterable[Tuple[ObsState, List[ObsState]]],
+                                device_to_monitor: str = None):
+    """
+    Send a command and block until obsState has transitioned to the requested
+    state(s).
+
+    The target obsState sequence is expressed in the format
+
+        (target state, [failure state, ...])
+
+    where target_state is the happy path obsState to wait for. ObsStateError
+    is raised if obsState transitions to any of the failure states.
+
+    For example, wait_states=[(READY, [FAILED]), (IDLE, [FAILED])] would wait
+    for the obsState to transition through READY to IDLE, raising an exception
+    if obsState transitions to FAILED.
+
+    :param command: command to execute
+    :param wait_states: obsState transition sequence
+    :param device_to_monitor: optional device for obsState monitoring.
+    """
+    if device_to_monitor is None:
+        device_to_monitor = command.device
+
+    _ = EXECUTOR.execute(command)
+
+    for target_state, error_states in wait_states:
+        state_response = wait_for_obsstate(
+            device_to_monitor,
+            target_state=target_state,
+            error_states=error_states
+        )
+        if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+            raise ObsStateError(state_response.final_state)
+
+
+# TODO AT2-578 REFACTOR
 def abort(subarray: domain.SubArray):
     """
     Send the 'abort' command to the SubArrayNode, halt the subarray
