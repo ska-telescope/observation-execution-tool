@@ -9,7 +9,7 @@ the API of the devices they are controlling.
 import enum
 import logging
 from datetime import timedelta
-from typing import Optional, Any, NamedTuple, Iterable
+from typing import Optional, Any, NamedTuple, Iterable, List, Tuple
 
 import marshmallow
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
@@ -279,6 +279,7 @@ def get_release_resources_command(subarray: domain.SubArray,
     return Command(central_node_fqdn, 'ReleaseResources', request_json)
 
 
+# TODO AT2-578 REFACTOR
 def allocate_resources(subarray: domain.SubArray,
                        resources: domain.ResourceAllocation) -> domain.ResourceAllocation:
     """
@@ -398,16 +399,12 @@ def deallocate_resources(subarray: domain.SubArray,
         raise ValueError('Either release_all or resources must be defined')
 
     command = get_release_resources_command(subarray, release_all, resources)
-    EXECUTOR.execute(command)
 
-    # Wait for obsState transition to signify success or failure. A resource
-    # release command cannot be reset or aborted, hence we wait only for FAULT
-    subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
-    state_response = wait_for_obsstate(
-        subarray_device, target_state=ObsState.EMPTY, error_states=[ObsState.FAULT]
+    _call_and_wait_for_obsstate(
+        command,
+        [(ObsState.EMPTY, [ObsState.FAULT])],
+        device_to_monitor=TANGO_REGISTRY.get_subarray_node(subarray)
     )
-    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(state_response.final_state)
 
     if release_all:
         resources = subarray.resources
@@ -544,38 +541,14 @@ def execute_configure_command(command: Command):
     :param command: Command to execute
     :return:
     """
-    # Python convention is to label unused variables as _
-    _ = EXECUTOR.execute(command)
 
-    # In the ADR-8 state model, sub-array configuration completes via one of
-    # three paths:
-    #
-    #   1. Successful configuration: obsState transitions to READY
-    #   2. Operation aborted (behind our back!): obsState transitions to
-    #      ABORTING. We don't know how long the SubArrayNode will remain in
-    #      the transient ABORTING state so we also wait for ABORTED.
-    #   3. Operation failed: obsState transitions to FAULT.
-
-    # First wait for CONFIGURING because when reconfiguring SubArray,
-    # starting state is already READY
-    obsstate_response = wait_for_obsstate(
-        command.device,
-        target_state=ObsState.CONFIGURING,
-        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
+    _call_and_wait_for_obsstate(
+        command,
+        [(ObsState.READY, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
     )
 
-    if obsstate_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(obsstate_response.final_state)
 
-    obsstate_response = wait_for_obsstate(
-        command.device,
-        target_state=ObsState.READY,
-        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
-    )
-    if obsstate_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(obsstate_response.final_state)
-
-
+# TODO AT2-578 REFACTOR - this has already been modified to use the new command
 def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfiguration):
     """
     Configure a sub-array using the given domain SubArrayConfiguration.
@@ -704,6 +677,7 @@ def get_scan_command(subarray: domain.SubArray) -> Command:
     return Command(subarray_node_fqdn, 'Scan', request_json)
 
 
+# TODO AT2-578 REFACTOR - this has already been modified to use the new command
 def scan(subarray: domain.SubArray):
     """
     Execute a scan.
@@ -715,8 +689,6 @@ def scan(subarray: domain.SubArray):
 
     # increment scan ID
     SCAN_ID_GENERATOR.next()
-
-    _ = EXECUTOR.execute(command)
 
     # In the ADR-8 state model, scanning is signified by the SubArrayNode
     # obsState transitioning from READY to SCANNING, and then back to READY.
@@ -732,40 +704,24 @@ def scan(subarray: domain.SubArray):
     #      ABORTING. We don't know how long the SubArrayNode will remain in
     #      the transient ABORTING state so we also wait for ABORTED.
     #   2. Operation failed: obsState transitions to FAULT.
-
-    state_response_1 = wait_for_obsstate(
-        command.device,
-        target_state=ObsState.SCANNING,
-        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
+    _call_and_wait_for_obsstate(
+        command,
+        [(ObsState.SCANNING, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]),
+         (ObsState.READY, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
     )
-    if state_response_1.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(state_response_1.final_state)
-
-    state_response_2 = wait_for_obsstate(
-        command.device,
-        target_state=ObsState.READY,
-        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
-    )
-    if state_response_2.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(state_response_2.final_state)
 
 
+# TODO AT2-578 REFACTOR - this has already been modified to use the new command
 def end(subarray: domain.SubArray):
     """
     Send the 'end' command to the SubArrayNode, marking the end of the
     current observation.
     :param subarray: the subarray to command
     """
-    command = get_end_command(subarray)
-    _ = EXECUTOR.execute(command)
-
-    state_response = wait_for_obsstate(
-        command.device,
-        target_state=ObsState.IDLE,
-        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
+    _call_and_wait_for_obsstate(
+        get_end_command(subarray),
+        [(ObsState.IDLE, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
     )
-    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(state_response.final_state)
 
 
 def get_end_command(subarray: domain.SubArray) -> Command:
@@ -811,6 +767,7 @@ def get_abort_command(subarray: domain.SubArray) -> Command:
     return Command(subarray_node_fqdn, 'Abort')
 
 
+# TODO AT2-578 REFACTOR
 def obsreset(subarray: domain.SubArray):
     """
     Send the 'ObsReset' command to the SubArrayNode, which resets
@@ -840,7 +797,7 @@ def get_obsreset_command(subarray: domain.SubArray) -> Command:
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     return Command(subarray_node_fqdn, 'ObsReset')
 
-
+# TODO AT2-578 REFACTOR
 def restart(subarray: domain.SubArray):
     """
     Send the 'restart' command to the SubArrayNode which sets

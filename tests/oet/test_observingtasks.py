@@ -1,24 +1,24 @@
 """
 Unit tests for the oet.observingtasks module
 """
-# import datetime
-import unittest.mock as mock
-
 import os
+import unittest.mock as mock
+from typing import List
+
 import pytest
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
 import ska.cdm.messages.central_node.release_resources as cdm_release
 import ska.cdm.messages.subarray_node.configure as cdm_configure
 from astropy.coordinates import SkyCoord
+from ska.cdm import schemas
 from ska.cdm.messages.subarray_node.configure import ConfigureRequest
 from ska.cdm.schemas import CODEC
-from ska.cdm import schemas
 
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
-from oet.observingtasks import ObsState, ObsStateError
 from oet.domain import Dish, DishAllocation, ResourceAllocation, SKAMid, SubArray
+from oet.observingtasks import ObsState, ObsStateError
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
 SKA_SUB_ARRAY_NODE_1_FDQN = 'ska_mid/tm_subarray_node/1'
@@ -308,6 +308,7 @@ def test_deallocate_resources_enforces_boolean_release_all_argument():
         _ = observingtasks.deallocate_resources(subarray, release_all=1, resources=resources)
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_deallocate_resources_raises_exception_when_error_state_encountered(
@@ -332,6 +333,7 @@ def test_deallocate_resources_raises_exception_when_error_state_encountered(
     assert mock_read_fn.call_count == 3
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_release_resources_successful_default_deallocation(mock_execute_fn, mock_read_fn):
@@ -360,6 +362,7 @@ def test_release_resources_successful_default_deallocation(mock_execute_fn, mock
     assert mock_read_fn.call_count == 2
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_release_resources_successful_specified_deallocation(mock_execute_fn, mock_read_fn):
@@ -477,6 +480,7 @@ def test_wait_for_obsstate_returns_error_state(mock_read_fn):
     assert mock_read_fn.call_count == 4
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_execute_configure_command_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn):
@@ -502,6 +506,7 @@ def test_execute_configure_command_returns_when_obsstate_is_ready(mock_execute_f
     assert mock_read_fn.call_count == 4
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_execute_configure_command_raises_exception_when_error_state_encountered(
@@ -521,6 +526,7 @@ def test_execute_configure_command_raises_exception_when_error_state_encountered
     mock_execute_fn.assert_called_once()
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks, 'execute_configure_command')
 def test_configure(mock_execute_fn):
     """
@@ -587,11 +593,12 @@ def test_get_scan_request_populates_cdm_object_correctly():
     assert request.scan_id == 123
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn):
     """
-    Verify that the SubArray.configure command waits for the device obsstate
+    Verify that the SubArray.scan command waits for the device obsstate
     to transition back to READY before returning.
     """
     # obsState will be SCANNING for the first three reads, then READY
@@ -600,7 +607,7 @@ def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read
     ]
 
     subarray = domain.SubArray(1)
-    subarray.scan()
+    observingtasks.scan(subarray)
 
     mock_execute_fn.assert_called_with(mock.ANY)
 
@@ -608,28 +615,6 @@ def test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read
     mock_read_fn.assert_called_with(expected_attr)
 
     # task should keep reading obsState until device is READY
-    assert mock_read_fn.call_count == 4
-
-
-@mock.patch.object(observingtasks.EXECUTOR, 'read')
-@mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_subarray_scan_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
-    """
-    Verify that the SubArray.configure command waits for the device obsstate
-    to transition back to READY before returning.
-    """
-    # obsState will be SCANNING for the first three reads, then READY
-    mock_read_fn.side_effect = [
-        ObsState.SCANNING, ObsState.SCANNING, ObsState.SCANNING, ObsState.FAULT
-    ]
-
-    subarray = domain.SubArray(1)
-    with pytest.raises(ObsStateError):
-        subarray.scan()
-
-    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
-    mock_read_fn.assert_called_with(expected_attr)
-    mock_execute_fn.assert_called_once()
     assert mock_read_fn.call_count == 4
 
 
@@ -645,6 +630,7 @@ def test_get_end_command():
     assert not cmd.kwargs
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_end_calls_tango_executor(mock_execute_fn, mock_read_fn):
@@ -662,6 +648,7 @@ def test_end_calls_tango_executor(mock_execute_fn, mock_read_fn):
     mock_execute_fn.assert_called_once_with(cmd)
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_end_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
@@ -687,6 +674,7 @@ def test_end_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
     assert mock_read_fn.call_count == 4
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_end_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
@@ -721,6 +709,7 @@ def test_get_abort_command():
     assert not cmd.kwargs
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_abort_calls_tango_executor(mock_execute_fn, mock_read_fn):
@@ -738,6 +727,7 @@ def test_abort_calls_tango_executor(mock_execute_fn, mock_read_fn):
     mock_execute_fn.assert_called_once_with(cmd)
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_abort_returns_when_obsstate_is_aborted(mock_execute_fn, mock_read_fn):
@@ -763,6 +753,53 @@ def test_abort_returns_when_obsstate_is_aborted(mock_execute_fn, mock_read_fn):
     assert mock_read_fn.call_count == 4
 
 
+def validate_call_and_wait_for_obsstate_args(mock_fn: mock.MagicMock,
+                                             command_name: str,
+                                             command_device: str,
+                                             happy_path: List[ObsState]):
+    """
+    Helper function for testing observing tasks that call
+    _call_and_wait_for_obsstate.
+
+    :param mock_fn: mock _call_and_wait_for_obsstate function
+    :param command_name: command that should be called
+    :param command_device: device command should be sent to
+    :param happy_path: happy path sequence of ObsStates
+    :return:
+    """
+    # verify fn called exactly once
+    assert mock_fn.call_count == 1
+
+    # get call args from that call
+    cmd, wait_states = mock_fn.call_args_list[0][0]
+
+    # assert expected command called on expected device
+    assert cmd.command_name == command_name
+    assert cmd.device == command_device
+
+    # assert happy path states are as expected
+    assert happy_path == [happy for happy, _ in wait_states]
+
+
+# TODO AT2-578 REFACTOR - this shows how a refactored unit tests could look
+@mock.patch.object(observingtasks, '_call_and_wait_for_obsstate')
+def test_end_defines_obsstate_transitions_correctly(mock_fn):
+    """
+    Verify that the end observing task defines the correct command and
+    happy path target obsStates.
+    """
+    subarray = SubArray(1)
+    observingtasks.end(subarray)
+
+    validate_call_and_wait_for_obsstate_args(
+        mock_fn,                    # pass in mock function used for this test
+        'End',                      # 'end' command is requested
+        SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
+        [ObsState.IDLE],            # happy path sequence is IDLE
+    )
+
+
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_abort_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
@@ -976,6 +1013,7 @@ def test_get_obsreset_command():
     assert not cmd.kwargs
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_obsreset_calls_tango_executor(mock_execute_fn, mock_read_fn):
@@ -993,6 +1031,7 @@ def test_obsreset_calls_tango_executor(mock_execute_fn, mock_read_fn):
     mock_execute_fn.assert_called_once_with(cmd)
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_obsreset_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
@@ -1018,6 +1057,7 @@ def test_obsreset_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn):
     assert mock_read_fn.call_count == 3
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_obsreset_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
@@ -1052,6 +1092,7 @@ def test_get_restart_command():
     assert not cmd.kwargs
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_restart_calls_tango_executor(mock_execute_fn, mock_read_fn):
@@ -1069,6 +1110,7 @@ def test_restart_calls_tango_executor(mock_execute_fn, mock_read_fn):
     mock_execute_fn.assert_called_once_with(cmd)
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_restart_returns_when_obsstate_is_restarted(mock_execute_fn, mock_read_fn):
@@ -1092,6 +1134,7 @@ def test_restart_returns_when_obsstate_is_restarted(mock_execute_fn, mock_read_f
     assert mock_read_fn.call_count == 3
 
 
+# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 def test_restart_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
@@ -1113,3 +1156,59 @@ def test_restart_raises_exception_when_error_state_encountered(mock_execute_fn, 
     # task should keep reading obsState until device goes to FAULT
     assert mock_read_fn.call_count == 4
 
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_call_and_wait_for_state_waits_for_target_states(mock_execute_fn, mock_read_fn):
+    """
+    Test that the call_and_wait_for_state function waits for the requested
+    states in the specified sequence.
+    """
+    mock_read_fn.side_effect = [
+        ObsState.IDLE, ObsState.EMPTY, ObsState.RESOURCING, ObsState.EMPTY, ObsState.IDLE
+    ]
+
+    # Test command to call SubArrayNode.Foo()
+    cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
+
+    # This task waits for, in sequence, RESOURCING then IDLE.
+    observingtasks._call_and_wait_for_obsstate(
+        cmd,
+        [(ObsState.RESOURCING, []),
+         (ObsState.IDLE, [])]
+    )
+
+    # SubArrayNode.Foo() should just have been called once
+    mock_execute_fn.assert_called_once()
+    # SubArrayNode.obsState should be read as we didn't specify an override device
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+    # obsState should have been read 5 times until IDLE was reached
+    assert mock_read_fn.call_count == 5
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'read')
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+def test_call_and_wait_for_state_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
+    """
+    Verify that call_and_wait_for_state raises an exception when an error
+    state is encountered.
+    """
+    # obsState will be SCANNING for the first three reads, then FAULT
+    mock_read_fn.side_effect = [
+        ObsState.SCANNING, ObsState.SCANNING, ObsState.SCANNING, ObsState.FAULT
+    ]
+
+    # Test command to call SubArrayNode.Foo()
+    cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
+
+    with pytest.raises(ObsStateError):
+        observingtasks._call_and_wait_for_obsstate(
+            cmd,
+            [(ObsState.READY, [ObsState.FAULT])]
+        )
+
+    expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    mock_read_fn.assert_called_with(expected_attr)
+    mock_execute_fn.assert_called_once()
+    assert mock_read_fn.call_count == 4
