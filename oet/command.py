@@ -11,6 +11,7 @@ import logging
 import os
 import multiprocessing
 from queue import Queue
+from typing import Dict
 
 import tango
 
@@ -105,9 +106,7 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         """
         self._proxy_factory = proxy_factory
 
-        # ideally we'd add type hints but we're still on Python 3.5 at the time of writing
-        # self.device_proxies: typing.Dict[str, DeviceProxy] = {}
-        self._device_proxies = {}
+        self._device_proxies: Dict[str, tango.DeviceProxy] = {}
 
         self.queue = Queue(maxsize=0)
 
@@ -154,7 +153,7 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
 
     def handle_state_change(self, event):
         """
-        callback method tiggered when subscribe event called
+        callback method triggered when subscribe event called
         successfully
 
         :param event:
@@ -169,7 +168,7 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         :param timeout: duration to read event
         :return:
          """
-        return self.queue.get(timeout)
+        return self.queue.get(timeout=timeout)
 
     def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
         # It takes time to construct and connect a device proxy to the remote

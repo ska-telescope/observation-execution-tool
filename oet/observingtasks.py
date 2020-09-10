@@ -480,17 +480,18 @@ def wait_for_value(attribute: Attribute, target_values: Iterable[Any], timeout=6
 
     :param attribute: device to query
     :param target_values: target ObsState to wait for
+    :param timeout: timeout to how long to wait for change event
     :param key: function to process each attribute value before comparison
     :return: Attribute value read from device (one of target_values)
     """
-    response = EXECUTOR.read_event(timeout)
-    processed = key(response)
+    response = EXECUTOR.read_event(timeout=timeout)
+    processed = key(response.attr_value)
     if all(isinstance(value, type(processed)) for value in target_values):
         while True:
             if processed in target_values:
                 return processed
-            response = EXECUTOR.read_event(timeout)
-            processed = key(response)
+            response = EXECUTOR.read_event(timeout=timeout)
+            processed = key(response.attr_value)
     else:
         raise TypeError('Attribute type does not match type of target values')
 

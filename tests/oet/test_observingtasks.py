@@ -6,6 +6,7 @@ import unittest.mock as mock
 
 import os
 import pytest
+import tango
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
 import ska.cdm.messages.central_node.release_resources as cdm_release
 import ska.cdm.messages.subarray_node.configure as cdm_configure
@@ -30,8 +31,10 @@ CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_suc
 VALID_ASSIGN_STARTSCAN_REQUEST = '{"id": 123}'
 
 
-def creat_event_based_queue(evt_list):
-    for evt in evt_list:
+def creat_event_based_queue(obsstate_list):
+    for obsstate in obsstate_list:
+        evt = mock.MagicMock(spec_set=tango.EventData)
+        evt.attr_value = obsstate
         observingtasks.EXECUTOR.handle_state_change(evt)
 
 
@@ -372,10 +375,9 @@ def test_release_resources_successful_default_deallocation(mock_subscribe_event_
     assert mock_read_fn.call_count == 2
 
 
-@mock.patch.object(observingtasks.EXECUTOR, 'read_event')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 @mock.patch.object(observingtasks.EXECUTOR, 'subscribe_event')
-def test_release_resources_successful_specified_deallocation(mock_subscribe_event_fn, mock_execute_fn, mock_read_fn):
+def test_release_resources_successful_specified_deallocation(mock_subscribe_event_fn, mock_execute_fn):
     """
     Verify that the ResourceAllocation state of a SubArray object is updated
     when resources are released from a sub-array.
@@ -383,9 +385,6 @@ def test_release_resources_successful_specified_deallocation(mock_subscribe_even
     state_list = [ObsState.IDLE, ObsState.EMPTY]
     creat_event_based_queue(state_list)
 
-    mock_read_fn.side_effect = [
-        ObsState.IDLE, ObsState.EMPTY
-    ]
     subarray = SubArray(1)
     resources = ResourceAllocation(dishes=[Dish(1), Dish(2)])
     subarray.resources = resources
@@ -396,7 +395,7 @@ def test_release_resources_successful_specified_deallocation(mock_subscribe_even
 
     mock_execute_fn.assert_called_once()
     mock_subscribe_event_fn.assert_called_once()
-    assert mock_read_fn.call_count == 2
+    assert observingtasks.EXECUTOR.queue.empty()
 
 
 def test_configure_subarray_forms_correct_request():
