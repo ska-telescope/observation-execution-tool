@@ -280,6 +280,31 @@ def get_release_resources_command(subarray: domain.SubArray,
 
 
 # TODO AT2-578 REFACTOR
+def return_allocated_resources(command: Command, subarray_device: str) -> domain.ResourceAllocation:
+    """
+    Return the allocated resources
+    
+    :param command: the command to execute
+    :param subarray_device: The device to query
+    :return: the resources that were successfully allocated to the sub-array
+    """
+    # response: List[int] = EXECUTOR.execute(command)
+    response = EXECUTOR.execute(command)
+    # Wait for obsState transition to signify success or failure. A resource
+    # allocation command cannot be reset or aborted, hence we wait only for
+    # FAULT.
+    # TODO further refactor this as per AT2-578
+    state_response = wait_for_obsstate(
+        subarray_device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
+    )
+    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+        raise ObsStateError(state_response.final_state)
+    # end TODO
+    allocated = convert_assign_resources_response(response)
+    subarray.resources += allocated
+    return allocated
+
+# TODO AT2-578 REFACTOR
 def allocate_resources(subarray: domain.SubArray,
                        resources: domain.ResourceAllocation) -> domain.ResourceAllocation:
     """
@@ -290,19 +315,9 @@ def allocate_resources(subarray: domain.SubArray,
     :return: the resources that were successfully allocated to the sub-array
     """
     command = get_allocate_resources_command(subarray, resources)
-    # requires variable annotations in Python > 3.5
-    # response: List[int] = EXECUTOR.execute(command)
-    response = EXECUTOR.execute(command)
-    # wait for state
     subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
-    state_response = wait_for_obsstate(
-        subarray_device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
-    )
-    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(state_response.final_state)
-    allocated = convert_assign_resources_response(response)
-    subarray.resources += allocated
-    return allocated
+    return return_allocated_resources(command, subarray_device)
+
 
 
 def allocate_resources_from_file(
@@ -331,20 +346,8 @@ def allocate_resources_from_file(
     )
 
     command = get_allocate_resources_command(subarray, resources, template_request)
-    response = EXECUTOR.execute(command)
-
-    # Wait for obsState transition to signify success or failure. A resource
-    # allocation command cannot be reset or aborted, hence we wait only for
-    # FAULT.
     subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
-    state_response = wait_for_obsstate(
-        subarray_device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
-    )
-    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(state_response.final_state)
-    allocated = convert_assign_resources_response(response)
-    subarray.resources += allocated
-    return allocated
+    return return_allocated_resources(command, subarray_device)
 
 
 def assign_resources_from_cdm(
@@ -359,25 +362,10 @@ def assign_resources_from_cdm(
     """
     subarray = domain.SubArray(subarray_id)
     resources = domain.ResourceAllocation()
-
-    command = get_allocate_resources_command(subarray, resources, request)
-    response = EXECUTOR.execute(command)
-
-    # Wait for obsState transition to signify success or failure. A resource
-    # allocation command cannot be reset or aborted, hence we wait only for
-    # FAULT.
     subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
-    state_response = wait_for_obsstate(
-        subarray_device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
-    )
-    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        # Allocation failed. Raise an exception and let the client decide how
-        # to handle the failure (retry, abort, reset, etc.).
-        raise ObsStateError(state_response.final_state)
+    command = get_allocate_resources_command(subarray, resources, request)
 
-    allocated = convert_assign_resources_response(response)
-    subarray.resources += allocated
-    return allocated
+    return return_allocated_resources(command, subarray_device)
 
 
 def deallocate_resources(subarray: domain.SubArray,
@@ -738,7 +726,7 @@ def get_end_command(subarray: domain.SubArray) -> Command:
 
 def _call_and_wait_for_obsstate(command: Command,
                                 wait_states: Iterable[Tuple[ObsState, List[ObsState]]],
-                                device_to_monitor: str = None):
+                                device_to_monitor: str = None) -> List[int]:
     """
     Send a command and block until obsState has transitioned to the requested
     state(s).
@@ -757,11 +745,12 @@ def _call_and_wait_for_obsstate(command: Command,
     :param command: command to execute
     :param wait_states: obsState transition sequence
     :param device_to_monitor: optional device for obsState monitoring.
+    :return: Command response
     """
     if device_to_monitor is None:
         device_to_monitor = command.device
 
-    _ = EXECUTOR.execute(command)
+    response = EXECUTOR.execute(command)
 
     for target_state, error_states in wait_states:
         state_response = wait_for_obsstate(
@@ -771,6 +760,8 @@ def _call_and_wait_for_obsstate(command: Command,
         )
         if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
             raise ObsStateError(state_response.final_state)
+
+    return response
 
 
 # TODO AT2-578 REFACTOR
@@ -782,15 +773,11 @@ def abort(subarray: domain.SubArray):
     """
 
     command = get_abort_command(subarray)
-    _ = EXECUTOR.execute(command)
-
-    state_response = wait_for_obsstate(
-        command.device,
-        target_state=ObsState.ABORTED,
-        error_states=[ObsState.FAULT]
+    _call_and_wait_for_obsstate(
+        command, 
+        [(ObsState.ABORTED,
+        [ObsState.FAULT])]
     )
-    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(state_response.final_state)
 
 
 def get_abort_command(subarray: domain.SubArray) -> Command:
@@ -813,15 +800,11 @@ def obsreset(subarray: domain.SubArray):
     :param subarray: the subarray to command
     """
     command = get_obsreset_command(subarray)
-    _ = EXECUTOR.execute(command)
-
-    state_response = wait_for_obsstate(
-        command.device,
-        target_state=ObsState.IDLE,
-        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
+    _call_and_wait_for_obsstate(
+        command, 
+        [(ObsState.IDLE,
+        [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
     )
-    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(state_response.final_state)
 
 
 def get_obsreset_command(subarray: domain.SubArray) -> Command:
@@ -844,15 +827,11 @@ def restart(subarray: domain.SubArray):
     """
 
     command = get_restart_command(subarray)
-    _ = EXECUTOR.execute(command)
-
-    state_response = wait_for_obsstate(
-        command.device,
-        target_state=ObsState.EMPTY,
-        error_states=[ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]
+    _call_and_wait_for_obsstate(
+        command, 
+        [(ObsState.EMPTY,
+        [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
     )
-    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(state_response.final_state)
 
 
 def get_restart_command(subarray: domain.SubArray) -> Command:
