@@ -280,7 +280,9 @@ def get_release_resources_command(subarray: domain.SubArray,
 
 
 # TODO AT2-578 REFACTOR
-def return_allocated_resources(command: Command, subarray_device: str) -> domain.ResourceAllocation:
+def return_allocated_resources(
+                    command: Command, 
+                    subarray_device: str) -> domain.ResourceAllocation:
     """
     Return the allocated resources
     
@@ -288,18 +290,14 @@ def return_allocated_resources(command: Command, subarray_device: str) -> domain
     :param subarray_device: The device to query
     :return: the resources that were successfully allocated to the sub-array
     """
-    # response: List[int] = EXECUTOR.execute(command)
-    response = EXECUTOR.execute(command)
     # Wait for obsState transition to signify success or failure. A resource
     # allocation command cannot be reset or aborted, hence we wait only for
     # FAULT.
-    # TODO further refactor this as per AT2-578
-    state_response = wait_for_obsstate(
-        subarray_device, target_state=ObsState.IDLE, error_states=[ObsState.FAULT]
+    response = _call_and_wait_for_obsstate(
+        command,
+        [(ObsState.IDLE, [ObsState.FAULT])],
+        device_to_monitor=subarry_device
     )
-    if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-        raise ObsStateError(state_response.final_state)
-    # end TODO
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
     return allocated
