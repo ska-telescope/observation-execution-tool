@@ -82,9 +82,9 @@ class FlaskWorker(EventBusWorker):
         self.flask.start()
 
     def shutdown(self) -> None:
+        requests.post('http://127.0.0.1:5000/api/v1.0/shutdown')
+        self.flask.join(timeout=3)
         super().shutdown()
-        requests.post('http://localhost:5000/seriouslykill')
-        self.flask.join()
 
 
 class ScriptExecutionServiceWorker(EventBusWorker):

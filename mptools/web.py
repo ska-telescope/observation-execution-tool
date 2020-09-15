@@ -35,8 +35,8 @@ def listen():
     return Response(stream(), mimetype='text/event-stream')
 
 
-@API.route('/seriouslykill', methods=['POST'])
-def seriouslykill():
+@API.route('/shutdown', methods=['POST'])
+def shutdown():
     func = request.environ.get('werkzeug.server.shutdown')
     if func is None:
         raise RuntimeError('Not running with the Werkzeug Server')
