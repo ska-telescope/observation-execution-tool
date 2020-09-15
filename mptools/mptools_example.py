@@ -6,6 +6,14 @@ import time
 import requests
 from pubsub import pub
 
+from oet.procedure.application.application import (
+    PrepareProcessCommand,
+    StartProcessCommand,
+    StopProcessCommand,
+    ScriptExecutionService
+)
+from oet.procedure.domain import ProcedureInput
+
 from mptools import (
     init_signals,
     default_signal_handler,
@@ -69,7 +77,8 @@ class FlaskWorker(EventBusWorker):
         # Call super startup, so we have pypubsub <-> event queue republishing
         super().startup()
         # start flask, using a thread as this is a blocking call.
-        self.flask = threading.Thread(target=web.app.run, kwargs=dict(host='0.0.0.0'))
+        app = web.create_app(None)
+        self.flask = threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'))
         self.flask.start()
 
     def shutdown(self) -> None:
@@ -79,38 +88,41 @@ class FlaskWorker(EventBusWorker):
 
 
 class ScriptExecutionServiceWorker(EventBusWorker):
-    def create(self, msg_src, request_id):
-        """
-        Function to simulate creation of a script.
+    def prepare(self, msg_src, request_id, cmd):
+        self.log(logging.DEBUG, 'Prepare procedure request %s: %s', request_id, cmd)
+        summary = self.ses.prepare(cmd)
+        self.log(logging.DEBUG, 'Prepare procedure %s result: %s', request_id, summary)
 
-        This function listens to UI request events, waits a few seconds to
-        simulate processing, then publishes an event to say that the script was
-        created.
-        """
-        def do_it():
-            self.log(logging.DEBUG, 'Starting script for request %s', request_id)
-            time.sleep(3)
-            self.log(logging.DEBUG, 'Script complete for request %s', request_id)
-            with self.lock:
-                self.counter += 1
-                status = f'Script {self.counter} created'
-            pub.sendMessage('script.lifecycle.started', request_id=request_id, status=status)
-            self.log(logging.DEBUG, 'Message published for request %s', request_id)
+        pub.sendMessage('script.lifecycle.created', request_id=request_id, result=summary)
 
-        t = threading.Thread(target=do_it)
-        t.start()
+    def start(self, msg_src, request_id, cmd):
+        self.log(logging.DEBUG, 'Start procedure request %s: %s', request_id, cmd)
+        summary = self.ses.start(cmd)
+        self.log(logging.DEBUG, 'Start procedure %s result: %s', request_id, summary)
+
+        pub.sendMessage('script.lifecycle.started', request_id=request_id, result=summary)
+
+    def list(self, msg_src, request_id, pids=None):
+        self.log(logging.DEBUG, 'List procedures for request %s', request_id)
+        summaries = self.ses.summarise(pids)
+        self.log(logging.DEBUG, 'List result: %s', summaries)
+
+        pub.sendMessage('script.pool.list', request_id=request_id, result=summaries)
 
     def startup(self):
         super().startup()
 
-        self.counter = 0
-        self.lock = threading.Lock()
+        self.ses = ScriptExecutionService()
 
         # this would wire up events to the corresponding SES methods
-        pub.subscribe(self.create, 'request.script.create')
+        pub.subscribe(self.prepare, 'request.script.create')
+        pub.subscribe(self.start, 'request.script.start')
+        pub.subscribe(self.list, 'request.script.list')
 
     def shutdown(self) -> None:
-        pub.unsubscribe(self.republish, pub.ALL_TOPICS)
+        pub.unsubscribe(self.prepare, pub.ALL_TOPICS)
+        pub.unsubscribe(self.start, pub.ALL_TOPICS)
+        pub.unsubscribe(self.list, pub.ALL_TOPICS)
         super().shutdown()
 
 

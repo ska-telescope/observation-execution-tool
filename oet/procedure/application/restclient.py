@@ -298,3 +298,7 @@ def main():
     Fire entry function to provide a CLI interface for REST client.
     """
     fire.Fire(RestClientUI)
+
+
+if __name__ == '__main__':
+    main()
