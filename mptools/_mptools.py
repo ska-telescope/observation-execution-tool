@@ -267,7 +267,7 @@ class TimerProcWorker(ProcWorker):
 class QueueProcWorker(ProcWorker):
     """
     QueueProcWorker is a ProcWorker that calls main_func with every item
-    received on a work queue.
+    received on its work queue.
     """
 
     def __init__(self,
@@ -278,29 +278,56 @@ class QueueProcWorker(ProcWorker):
                  work_q: MPQueue,
                  *args,
                  **kwargs):
+        """
+        Create a new QueueProcWorker.
+
+        The events and MPQueues passed to this constructor should be created
+        and managed within the scope of a MainContext context manager.
+
+        :param name: name of this worker
+        :param startup_event: event to trigger when startup is complete
+        :param shutdown_event: event to monitor for shutdown
+        :param event_q: outbox for posting messages to main context
+        :param work_q: inbox message queue for work messages
+        :param args: captures other anonymous arguments
+        :param kwargs: captures other keyword arguments
+        """
         super().__init__(name, startup_event, shutdown_event, event_q, *args, **kwargs)
         # work_q.owner = name
         self.work_q = work_q
 
-    def main_loop(self):
-        self.log(logging.DEBUG, "Entering QueueProcWorker.main_loop")
+    def main_loop(self) -> None:
+        """
+        main_loop delivers each event received on the work queue to the
+        main_func template method, while checking for shutdown notifications.
 
+        Event delivery will cease when the shutdown event is set or a special
+        sentinel message is sent.
+        """
+        self.log(logging.DEBUG, 'Entering QueueProcWorker.main_loop')
+
+        # stop processing as soon as the shutdown_event is set. When set, this
+        # breaks out of the while loop, thus ending main_loop and starting
+        # shutdown of this ProcWorker.
         while not self.shutdown_event.is_set():
-            # Get next work item. This call will return after the default
-            # safe_get timeout unless an item is in the queue.
+
+            # Get next work item. This call returns after the default safe_get
+            # timeout unless an item is in the queue.
             item = self.work_q.safe_get()
 
-            # No item received within timeout period
+            # Go back to the top of the while loop if no message was received
             if not item:
                 continue
 
-            # item received from queue
+            # ok - an item was received from queue
             self.log(logging.DEBUG, f"QueueProcWorker.main_loop received '{item}' message")
+            # if item is the sentinel message, break to exit out of main_loop
+            # and start shutdown
             if item == "END":
-                # Sentinel message - end main loop
                 break
+
+            # otherwise call main function with the queue item
             else:
-                # otherwise call main function with the queue item
                 self.main_func(item)
 
 
@@ -333,12 +360,42 @@ class Proc:
     """
     Proc represents a child process of a MainContext.
 
-    Proc arranges for a ProcWorker to execute in a new child process. Proc is
-    responsible for managing the lifecycle of the child process.
+    Proc instances live within the scope of a MainContext instance and in the
+    same Python interpreter process as the MainContext. Procs are the
+    MainContext's link to the ProcWorkers which run in separate Python
+    interpreters. Every ProcWorker running in a child process is associated
+    with one Proc.
+
+    Each Proc is responsible for bootstrapping its ProcWorker and managing its
+    lifecycle. Proc arranges for an instance of the ProcWorker class passed as
+    a constructor argument to be initialised and start running in a new child
+    Python interpreter. Proc checks that the ProcWorker has started
+    successfully by checking the status of a multiprocessing Event passed to
+    the ProcWorker as a constructor argument, which should be set by the
+    ProcWorker on successful startup. If ProcWorker startup does not complete
+    successfully and the event is left unset, Proc will forcibly terminate the
+    child process and report the error.
+
+    Proc is able to terminate its associated ProcWorker, first by giving the
+    ProcWorker chance to co-operatively exit by setting the shutdown event. If
+    the ProcWorker does not respond by exiting within the grace period set by
+    Proc.SHUTDOWN_WAIT_SECS, Proc will forcibly terminate the ProcWorker's
+    process.
+
+    Proc ensures that the shutdown event and MPQueues it receives are passed
+    through to the ProcWorker. Note that by default only one shutdown event is
+    created by the MainContext, so setting the shutdown event triggers
+    shutdown in all ProcWorkers!
+
+    Proc does not contain any business logic or application-specific code,
+    which should be contained in the ProcWorker - or more likely, a class that
+    extends ProcWorker.
     """
-    # Start-up grace time before giving up and terminating the ProcWorker
+    # Start-up grace time before Proc gives up and terminates the ProcWorker
     STARTUP_WAIT_SECS = 3.0
-    # Grace time from setting shutdown event to Shutdown grace time before terminating
+
+    # Grace time allowed from Proc setting the shutdown event to Proc forcibly
+    # terminating the ProcWorker
     SHUTDOWN_WAIT_SECS = 3.0
 
     def __init__(self,
@@ -355,26 +412,44 @@ class Proc:
 
         self.name = name
 
-        # Store the shutdown event which is shared with the MainContext and all other Procs
+        # Keep hold of the shutdown event so that we can share it with our
+        # ProcWorker, and at some point set it to commence shutdown. Note that
+        # this shutdown event is shared with the MainContext and all other
+        # Procs - and hence, with their ProcWorkers too.
         self.shutdown_event = shutdown_event
-        # But this proc provides the context for the startup event, set by the
-        # ProcWorker to indicate that startup is complete.
+
+        # Create an event that will be set by the ProcWorker to indicate when
+        # startup is complete.
         self.startup_event = mp.Event()
 
-        # Arrange for the ProcWorker constructor helper function to
+        # Prepare a new multiprocessing Process that will, when started, cause
+        # proc_worker_wrapper (the ProcWorker constructor helper function) to
+        # run in a new Process. This will create the ProcWorker instance to be
+        # created in a new child Python process. As the ProcWorker runs in an
+        # independent Python interpreter, communication with this Proc is only
+        # possible via the queues and events passed to it in this call.
         self.proc = mp.Process(
             target=proc_worker_wrapper,
             name=name,
             args=(worker_class, name, self.startup_event, shutdown_event, event_q, *args),
             kwargs=dict(logging_config=logging_config)
         )
-        self.log(logging.DEBUG, f"Proc.__init__ starting : {name}")
+
+        # At this point the mp.Process has been prepared, but it's not yet
+        # running. Calling start() will cause the new interpreter to be
+        # launched and the ProcWorker to start executing. If the ProcWorker
+        # starts successfully, it will set the startup event.
+        self.log(logging.DEBUG, 'Proc.__init__ starting: %s', name)
         self.proc.start()
         started = self.startup_event.wait(timeout=Proc.STARTUP_WAIT_SECS)
-        self.log(logging.DEBUG, f"Proc.__init__ starting : {name} got {started}")
+        self.log(logging.DEBUG, 'Proc.__init__ starting: %s got %s', name, started)
+
+        # If the event remains unset, startup failed (or we didn't wait long
+        # enough - we're assuming STARTUP_WAIT_SECS is sufficient!), in which
+        # case terminate the process and raise an exception.
         if not started:
             self.terminate()
-            raise RuntimeError(f"Process {name} failed to startup after {Proc.STARTUP_WAIT_SECS} seconds")
+            raise RuntimeError(f'Process {name} failed to startup after {Proc.STARTUP_WAIT_SECS} seconds')
 
     def full_stop(self, wait_time=SHUTDOWN_WAIT_SECS) -> None:
         """
@@ -388,7 +463,7 @@ class Proc:
 
         :param wait_time: grace time before sending SIGTERM signals
         """
-        self.log(logging.DEBUG, f"Proc.full_stop stopping : {self.name}")
+        self.log(logging.DEBUG, 'Proc.full_stop stopping: %s', self.name)
         self.shutdown_event.set()
         self.proc.join(wait_time)
         if self.proc.is_alive():
@@ -416,16 +491,19 @@ class Proc:
                 break
 
         if self.proc.is_alive():
-            self.log(logging.ERROR, f"Proc.terminate failed to terminate {self.name} after {attempt} attempts")
+            self.log(logging.ERROR, 'Proc.terminate failed to terminate %s after %s attempts', self.name, attempt)
             return False
         else:
-            self.log(logging.INFO, f"Proc.terminate terminated {self.name} after {max_retries - attempt} attempt(s)")
+            self.log(logging.INFO, 'Proc.terminate terminated %s after %s attempt(s)', self.name, max_retries - attempt)
             return True
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Context manager that halts ProcWorker when the Proc falls out of scope.
+        """
         self.full_stop()
         return not exc_type
 
