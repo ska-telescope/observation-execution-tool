@@ -9,7 +9,7 @@ import multiprocessing
 import typing
 from multiprocessing.dummy import Pool
 from typing import Optional
-
+import traceback
 import enum
 import types
 
@@ -60,6 +60,8 @@ class Procedure(multiprocessing.Process):
     def __init__(self, script_uri: str, *args,
                  scan_counter: Optional[multiprocessing.Value] = None, **kwargs):
         multiprocessing.Process.__init__(self)
+        self.mp_queue = multiprocessing.Queue()
+        self._process_status = None
         init_args = ProcedureInput(*args, **kwargs)
 
         self.id = None  # pylint:disable=invalid-name
@@ -82,12 +84,16 @@ class Procedure(multiprocessing.Process):
         This calls the main() method of the target script.
         """
         # set shared scan ID backing store, if provided
-        if self._scan_counter:
-            SCAN_ID_GENERATOR.backing = self._scan_counter
+        try:
+            if self._scan_counter:
+                SCAN_ID_GENERATOR.backing = self._scan_counter
 
-        args = self.script_args['run'].args
-        kwargs = self.script_args['run'].kwargs
-        self.user_module.main(*args, **kwargs)
+            args = self.script_args['run'].args
+            kwargs = self.script_args['run'].kwargs
+            self.user_module.main(*args, **kwargs)
+        except Exception as e:
+            tb = traceback.format_exc()
+            self.mp_queue.put((e, tb))
 
     def start(self):
         """
@@ -102,6 +108,12 @@ class Procedure(multiprocessing.Process):
 
         self.state = ProcedureState.RUNNING
         super().start()
+
+    @property
+    def process_status(self):
+        if not self.mp_queue.empty():
+            self._process_status = self.mp_queue.get()
+        return self._process_status
 
 
 class ProcessManager:
@@ -164,15 +176,23 @@ class ProcessManager:
 
         self.running = procedure
         procedure.script_args['run'] = run_args
+        print("before", procedure, procedure.is_alive())
         procedure.start()
+        print("during", procedure, procedure.is_alive())
 
         def callback(*_):
+            if procedure.process_status:
+                error, traceback = procedure.process_status
+                print('Inside Process Manager: Error received from child process', traceback)
+            else:
+                print("Inside Process Manager: Successfully executed child process")
             self.running = None
             del self.procedures[process_id]
             with self.procedure_complete:
                 self.procedure_complete.notify_all()
 
         self._pool.apply_async(_wait_for_process, (procedure,), {}, callback, callback)
+        print("join", procedure, procedure.is_alive())
 
     def stop(self, process_id):
         """
@@ -276,6 +296,7 @@ class ModuleFactory:
         :param _: URI. Will be ignored.
         :return:
         """
+
         def init(*_, **__):
             pass
 
