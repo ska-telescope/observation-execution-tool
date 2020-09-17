@@ -28,7 +28,7 @@ def _main(subarray_id: int):
     announce(f'Running event bus script in OS process {os.getpid()}')
 
     for i in range(10):
-        announce(f'i={i}')
+        announce(f'executing scan {i}/10')
         time.sleep(1)
 
     announce('Script complete')

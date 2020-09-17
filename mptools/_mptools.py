@@ -125,6 +125,29 @@ def init_signals(shutdown_event, int_handler, term_handler):
 # -- Worker Process classes
 
 class ProcWorker:
+    """
+    ProcWorker is a template class for code that should execute in a child
+    Python interpreter process.
+
+    ProcWorker contains the standard boilerplate code required to set up a
+    well behaved child process. It handles starting the process, connecting
+    signal handlers, signalling the parent that startup completed, etc.
+    ProcWorker does not contain any business logic, which should be defined
+    in a subclass of ProcWorker.
+
+    The core ProcWorker template method main_loop, which is the method called
+    once startup is complete and main execution begins. In ProcWorker this
+    method is left blank and should be overridden by the class extending
+    ProcWorker. Once the main_loop method is complete, the ProcWorker is
+    shutdown.
+
+    MPTools provides some ProcWorker subclasses with main_loop implementations
+    that provide different kinds of behaviour. For instance,
+
+    - TimerProcWorker.main_loop has code calls a function on a fixed cadence;
+    - QueueProcWorker.main_loop has code that gets items from a queue, calling
+      a function with every item received.
+    """
     # Number of times terminate is retried before
     MAX_TERMINATE_CALLED = 3
 
@@ -141,10 +164,7 @@ class ProcWorker:
                  *args,
                  logging_config: dict = None):
         """
-        ProcWorker is a template class for code that should operate in a child
-        process.
-
-        ProcWorker
+        Create a new ProcWorker.
 
         :param name: name of this worker
         :param startup_event: event to set on startup completion
@@ -282,7 +302,10 @@ class QueueProcWorker(ProcWorker):
         Create a new QueueProcWorker.
 
         The events and MPQueues passed to this constructor should be created
-        and managed within the scope of a MainContext context manager.
+        and managed within the scope of a MainContext context manager and
+        shared with other ProcWorkers, so that there is shared communication
+        queues and a common mechanism for indicating when shutdown is
+        required.
 
         :param name: name of this worker
         :param startup_event: event to trigger when startup is complete
