@@ -353,6 +353,34 @@ def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_sc
     assert manager.running is None
 
 
+def test_process_manager_capture_stacktrace_on_script_failure(manager, fail_script, procedure):
+    """
+    Verify that ProcessManager capture stacktrace when script execution fails
+    """
+    pid = manager.create(fail_script, init_args=ProcedureInput())
+    manager.run(pid, run_args=ProcedureInput())
+    wait_for_process_to_complete(manager)
+    assert manager.child_process_failure is not None
+    assert isinstance(manager.child_process_failure[0], Exception)
+    assert manager.child_process_failure[0].args == ("oops!",)
+    assert manager.running is None
+    assert pid not in manager.procedures
+    assert procedure.mp_queue.empty()
+
+
+def test_process_manager_does_not_capture_stacktrace_on_script_success(manager, script_path):
+    """
+    Verify that ProcessManager does not capture stacktrace when script execution is
+    successful
+    """
+    pid = manager.create(script_path, init_args=ProcedureInput())
+    manager.run(pid, run_args=ProcedureInput())
+    wait_for_process_to_complete(manager)
+    assert manager.child_process_failure is None
+    assert manager.running is None
+    assert pid not in manager.procedures
+
+
 def test_process_manager_removes_references_on_script_failure(manager, fail_script):
     """
     Verify that ProcessManager removes a failed procedure from

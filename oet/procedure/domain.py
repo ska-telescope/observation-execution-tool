@@ -131,6 +131,7 @@ class ProcessManager:
         self._procedure_factory = ProcedureFactory()
         self._pool = Pool()
         self._scan_id = multiprocessing.Value('i', 1)
+        self.child_process_failure = None
 
     def create(self, script_uri: str, *, init_args: ProcedureInput) -> int:
         """
@@ -182,7 +183,7 @@ class ProcessManager:
 
         def callback(*_):
             if procedure.process_status:
-                error, traceback = procedure.process_status
+                self.child_process_failure = procedure.process_status
                 print('Inside Process Manager: Error received from child process', traceback)
             else:
                 print("Inside Process Manager: Successfully executed child process")
