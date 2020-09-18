@@ -74,7 +74,7 @@ The methods available through the REST Client map closely to the
 |                    |               |                                            |                                     |
 |                    |               |                                            | If run_abort flag is True, OET will |
 |                    |               |                                            | send Abort command to the SubArray  |
-|                    |               |                                            | as part of script termination.      |                           |
+|                    |               |                                            | as part of script termination.      |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to 
