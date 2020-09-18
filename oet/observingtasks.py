@@ -754,7 +754,9 @@ def end(subarray: domain.SubArray):
     """
     Send the 'end' command to the SubArrayNode, marking the end of the
     current observation.
+
     :param subarray: the subarray to command
+    :return:
     """
     command = get_end_command(subarray)
     _ = EXECUTOR.execute(command)
@@ -784,7 +786,9 @@ def abort(subarray: domain.SubArray):
     """
     Send the 'abort' command to the SubArrayNode, halt the subarray
     activity.
+
     :param subarray: the subarray to command
+    :return:
     """
 
     command = get_abort_command(subarray)
@@ -815,7 +819,9 @@ def obsreset(subarray: domain.SubArray):
     """
     Send the 'ObsReset' command to the SubArrayNode, which resets
     the SubArrayNode state to IDLE.
+
     :param subarray: the subarray to command
+    :return:
     """
     command = get_obsreset_command(subarray)
     _ = EXECUTOR.execute(command)
@@ -845,7 +851,9 @@ def restart(subarray: domain.SubArray):
     """
     Send the 'restart' command to the SubArrayNode which sets
     the SubArrayNode from ABORTED or FAULT state to EMPTY.
+
     :param subarray: the subarray to command
+    :return:
     """
 
     command = get_restart_command(subarray)
