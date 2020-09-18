@@ -1,7 +1,5 @@
 .. _domain-guide:
 
-.. todo::
-    - Insert todo's here
 
 **********
 oet.domain
