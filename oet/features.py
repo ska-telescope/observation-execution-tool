@@ -22,9 +22,10 @@ class Features:
         return not self._use_pubsub
 
     @staticmethod
-    def create_from_config_files(*paths):
+    def create_from_config_files(*paths) -> 'Features':
         config = ConfigParser()
-        path_list = list(*paths)
-        config.read(path_list)
+        # config.read() requires an iterable of paths. The paths tuple is
+        # enough to satisfy this requirement.
+        config.read(paths)
 
-        return config
+        return Features(config)

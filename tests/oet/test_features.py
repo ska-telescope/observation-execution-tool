@@ -77,8 +77,6 @@ def test_can_read_config_file(tmpdir):
     with open(filename, 'w') as configfile:
         parser.write(configfile)
 
-    config = ConfigParser()
-    config.read(filename)
-    features = Features(config)
+    features = Features.create_from_config_files(filename)
 
     assert features.use_polling_to_read_tango_attributes is False
