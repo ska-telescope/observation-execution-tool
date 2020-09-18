@@ -177,23 +177,17 @@ class ProcessManager:
 
         self.running = procedure
         procedure.script_args['run'] = run_args
-        print("before", procedure, procedure.is_alive())
         procedure.start()
-        print("during", procedure, procedure.is_alive())
 
         def callback(*_):
             if procedure.process_status:
                 self.child_process_failure = procedure.process_status
-                print('Inside Process Manager: Error received from child process', traceback)
-            else:
-                print("Inside Process Manager: Successfully executed child process")
             self.running = None
             del self.procedures[process_id]
             with self.procedure_complete:
                 self.procedure_complete.notify_all()
 
         self._pool.apply_async(_wait_for_process, (procedure,), {}, callback, callback)
-        print("join", procedure, procedure.is_alive())
 
     def stop(self, process_id):
         """
