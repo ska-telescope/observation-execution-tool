@@ -17,6 +17,7 @@ import ska.cdm.messages.central_node.release_resources as cdm_release
 import ska.cdm.messages.subarray_node.configure as cdm_configure
 import ska.cdm.messages.subarray_node.scan as cdm_scan
 import ska.cdm.schemas as schemas
+import oet
 
 from . import domain
 from .command import Attribute, Command, SCAN_ID_GENERATOR, TangoExecutor
@@ -445,7 +446,31 @@ def get_configure_subarray_command(subarray: domain.SubArray,
     return Command(subarray_node_fqdn, 'Configure', request_json)
 
 
-def wait_for_value(attribute: Attribute, target_values: Iterable[Any], timeout=6, key=lambda _: _) -> Any:
+def wait_for_value(attribute: Attribute, target_values: Iterable[Any], key=lambda _: _) -> Any:
+    """
+    Block until a Tango device attribute has reached one of target values.
+
+    If defined, the optional 'key' function will be used to process the device
+    attribute value before comparison to the target value.
+
+    :param attribute: device to query
+    :param target_values: target ObsState to wait for
+    :param key: function to process each attribute value before comparison
+    :return: Attribute value read from device (one of target_values)
+    """
+    response = EXECUTOR.read(attribute)
+    processed = key(response)
+    if all(isinstance(value, type(processed)) for value in target_values):
+        while True:
+            if processed in target_values:
+                return processed
+            response = EXECUTOR.read(attribute)
+            processed = key(response)
+    else:
+        raise TypeError('Attribute type does not match type of target values')
+
+
+def wait_for_pubsub_value(attribute: Attribute, target_values: Iterable[Any], timeout=6, key=lambda _: _) -> Any:
     """
     Block until a Tango device attribute has reached one of target values.
 
@@ -458,19 +483,16 @@ def wait_for_value(attribute: Attribute, target_values: Iterable[Any], timeout=6
     :param key: function to process each attribute value before comparison
     :return: Attribute value read from device (one of target_values)
     """
-    # response = EXECUTOR.read(attribute)
     response = EXECUTOR.read_event(timeout=timeout)
     processed = key(response.attr_value)
     if all(isinstance(value, type(processed)) for value in target_values):
         while True:
             if processed in target_values:
                 return processed
-            # response = EXECUTOR.read(attribute)
-            EXECUTOR.read_event(timeout=timeout)
+            response = EXECUTOR.read_event(timeout=timeout)
             processed = key(response.attr_value)
     else:
         raise TypeError('Attribute type does not match type of target values')
-
 
 # TODO: 1. implement timeout functionality 2. return value to use Either pattern
 def wait_for_obsstate(
@@ -500,8 +522,12 @@ def wait_for_obsstate(
     obstates_union.append(target_state)
     # obsState values do not need processing so the optional 'key' argument to
     # wait_for_value is left unset
-    final_state = wait_for_value(attribute, obstates_union,
-                                 key=cast_tango_obsstate_to_oet_obstate)
+    if oet.FEATURES.use_pubsub_to_read_tango_attributes:
+        final_state = wait_for_pubsub_value(attribute, obstates_union,
+                                     key=cast_tango_obsstate_to_oet_obstate)
+    else:
+        final_state = wait_for_value(attribute, obstates_union,
+                                     key=cast_tango_obsstate_to_oet_obstate)
 
     if final_state != target_state:
         LOGGER.warning('%s state expected to go to %s but instead went to %s',
@@ -753,8 +779,9 @@ def _call_and_wait_for_obsstate(command: Command,
     if device_to_monitor is None:
         device_to_monitor = command.device
 
-    attribute = Attribute(device_to_monitor, 'obsState')
-    _ = EXECUTOR.subscribe_event(attribute)
+    if oet.FEATURES.use_pubsub_to_read_tango_attributes:
+        attribute = Attribute(device_to_monitor, 'obsState')
+        _ = EXECUTOR.subscribe_event(attribute)
 
     response = EXECUTOR.execute(command)
 
