@@ -16,11 +16,11 @@ class Features:
         self._use_pubsub = config_parser.getboolean('tango', 'read_via_pubsub', fallback=False)
 
     @property
-    def use_pubsub_to_read_tango_attributes(self):
+    def use_pubsub_to_read_tango_attributes(self) -> bool:
         return self._use_pubsub
 
     @property
-    def use_polling_to_read_tango_attributes(self):
+    def use_polling_to_read_tango_attributes(self) -> bool:
         return not self._use_pubsub
 
     @staticmethod

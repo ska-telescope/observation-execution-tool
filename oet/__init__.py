@@ -1,4 +1,5 @@
-#from .features import Features
-#import os.path
+import os.path
 
-#FEATURES = Features.create_from_config_files('oet.ini', os.path.exp)
+from .features import Features
+
+FEATURES = Features.create_from_config_files('oet.ini', os.path.expanduser('~/.oet.ini'))
