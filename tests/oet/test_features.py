@@ -9,7 +9,7 @@ from oet.features import Features
 
 def test_pubsub_feature_returns_true_when_enabled_in_file():
     """
-    Something here  for liz to do
+    Test to ensure that the 'use pubsub' toggle returns 'true' when enabled.
     """
 
     parser = ConfigParser()
@@ -22,7 +22,7 @@ def test_pubsub_feature_returns_true_when_enabled_in_file():
 
 def test_pubsub_feature_is_inverse_of_polling_feature():
     """
-    Liz to do
+    Test to ensure that when pubsub is enabled, polling is disabled
     """
 
     parser = ConfigParser()
@@ -37,7 +37,8 @@ def test_pubsub_feature_is_inverse_of_polling_feature():
 
 def test_polling_is_set_as_the_default_read_mechanism():
     """
-    Liz to do
+    Test to make sure that, in the absence of a config file, polling is set as the default
+    mechanism for reading from tango.
     """
     parser = ConfigParser()
     parser.read_dict({})
@@ -49,7 +50,9 @@ def test_polling_is_set_as_the_default_read_mechanism():
 
 def test_configparser_strings_are_converted_to_booleans():
     """
-    Liz to do - explain why we added this test here.
+    ConfigParser reads everything in as a string, which can lead to some odd behaviour when
+    converting 'False' to a boolean. Testing that all possible values for False are correctly
+    interpreted.
     """
 
     for options in ['false', 'False', 'no', 0]:
@@ -64,7 +67,7 @@ def test_configparser_strings_are_converted_to_booleans():
 
 def test_can_read_config_file(tmpdir):
     """
-    Testing that a specified config file can be read by oet
+    Testing that a specified config file can be read by OET
     """
 
     filename = tmpdir.mkdir("sub").join("blah.ini")

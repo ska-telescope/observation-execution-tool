@@ -1,14 +1,16 @@
 """
-Liz to write something meaningful here
+The features module contains code allowing the user to configure OET runtime behaviour at
+deployment time via a features toggle, such as reading via polling or pubsub, on or off. This can
+either be from a default .ini file, a .ini file provided by the user, or by setting defaults if no
+file is provided.
 """
 
 from configparser import ConfigParser
 
 
-
 class Features:
     """
-    explain the class here
+    The Features class represents the features that can be toggled.
     """
     def __init__(self, config_parser: ConfigParser):
         self._use_pubsub = config_parser.getboolean('tango', 'read_via_pubsub', fallback=False)
