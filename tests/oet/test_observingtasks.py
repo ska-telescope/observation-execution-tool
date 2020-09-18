@@ -4,7 +4,7 @@ Unit tests for the oet.observingtasks module
 import os
 import unittest.mock as mock
 from typing import List
-
+import tango
 import pytest
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
 import ska.cdm.messages.central_node.release_resources as cdm_release
@@ -28,6 +28,13 @@ CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["00
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
 CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_success": ["0001"]}}'
 VALID_ASSIGN_STARTSCAN_REQUEST = '{"id": 123}'
+
+
+def creat_event_based_queue(obsstate_list):
+    for obsstate in obsstate_list:
+        evt = mock.MagicMock(spec_set=tango.EventData)
+        evt.attr_value = obsstate
+        observingtasks.EXECUTOR.handle_state_change(evt)
 
 
 def test_tango_registry_returns_correct_url_for_ska_mid():
@@ -792,10 +799,10 @@ def test_end_defines_obsstate_transitions_correctly(mock_fn):
     observingtasks.end(subarray)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,                    # pass in mock function used for this test
-        'End',                      # 'end' command is requested
+        mock_fn,  # pass in mock function used for this test
+        'End',  # 'end' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.IDLE],            # happy path sequence is IDLE
+        [ObsState.IDLE],  # happy path sequence is IDLE
     )
 
 

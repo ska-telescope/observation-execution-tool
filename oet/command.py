@@ -10,7 +10,8 @@ the execution appears synchronous.
 import logging
 import os
 import multiprocessing
-
+from queue import Queue
+from typing import Dict
 import tango
 
 from skuid.client import SkuidClient
@@ -104,9 +105,9 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         """
         self._proxy_factory = proxy_factory
 
-        # ideally we'd add type hints but we're still on Python 3.5 at the time of writing
-        # self.device_proxies: typing.Dict[str, DeviceProxy] = {}
-        self._device_proxies = {}
+        self._device_proxies: Dict[str, tango.DeviceProxy] = {}
+
+        self.queue = Queue(maxsize=0)
 
     def execute(self, command: Command):
         """
@@ -136,14 +137,57 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         response = getattr(proxy, attribute.name)
         return response
 
+    def subscribe_event(self, attribute: Attribute):
+        """
+        subscribe event on a Tango device.
+
+        :param attribute: the attribute to subscribe
+        :return: the subscribe id
+        """
+
+        proxy = self._get_proxy(attribute.device)
+        LOGGER.debug('Reading attribute: %s/%s', attribute.device, attribute.name)
+        subscription_id = proxy.subscribe_event(attribute.name, tango.EventType.CHANGE_EVENT, self.handle_state_change)
+        return subscription_id
+
+    def handle_state_change(self, event):
+        """
+        callback method triggered when subscribe event called
+        successfully
+
+        :param event:
+        :return:
+        """
+        self.queue.put(event)
+
+    def read_event(self, timeout=6):
+        """
+        Read an event from the queue
+
+        :param timeout: duration to read event
+        :return:
+         """
+        return self.queue.get(timeout=timeout)
+
+    def unsubscribe_event(self, attribute: Attribute, event_id):
+        """
+           unsubscribe event on a Tango device.
+
+           :param attribute: the attribute to subscribe
+           :return: the subscribe id
+        """
+        proxy = self._get_proxy(attribute.device)
+        LOGGER.debug('Unsubscibe event: %s/%s', attribute.device, attribute.name)
+        proxy.unsubscribe_event(event_id)
+
     def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
         # It takes time to construct and connect a device proxy to the remote
         # device, so instances are cached
+
         if device_name not in self._device_proxies:
             proxy = self._proxy_factory(device_name)
             self._device_proxies[device_name] = proxy
         return self._device_proxies[device_name]
-
 
 class LocalScanIdGenerator:  # pylint: disable=too-few-public-methods
     """
@@ -198,6 +242,7 @@ class RemoteScanIdGenerator:  # pylint: disable=too-few-public-methods
         with self.backing.get_lock():
             self.backing.value = self.skuid_client.fetch_scan_id()
             return self.backing.value
+
 
 # hold scan ID generator at the module level
 if 'SKUID_URL' in os.environ:
