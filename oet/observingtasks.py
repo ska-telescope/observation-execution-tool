@@ -283,7 +283,7 @@ def get_release_resources_command(subarray: domain.SubArray,
 
 # TODO AT2-578 REFACTOR
 def return_allocated_resources(subarray: domain.SubArray,
-        command: Command, subarray_device: str) -> domain.ResourceAllocation:
+                               command: Command, subarray_device: str) -> domain.ResourceAllocation:
     """
     Return the allocated resources
     
@@ -484,6 +484,8 @@ def wait_for_pubsub_value(attribute: Attribute, target_values: Iterable[Any], ti
     :return: Attribute value read from device (one of target_values)
     """
     response = EXECUTOR.read_event(timeout=timeout)
+    if response.err:
+        EXECUTOR.unsubscribe_event(attribute)
     processed = key(response.attr_value)
     if all(isinstance(value, type(processed)) for value in target_values):
         while True:
@@ -493,6 +495,7 @@ def wait_for_pubsub_value(attribute: Attribute, target_values: Iterable[Any], ti
             processed = key(response.attr_value)
     else:
         raise TypeError('Attribute type does not match type of target values')
+
 
 # TODO: 1. implement timeout functionality 2. return value to use Either pattern
 def wait_for_obsstate(
@@ -524,7 +527,7 @@ def wait_for_obsstate(
     # wait_for_value is left unset
     if oet.FEATURES.use_pubsub_to_read_tango_attributes:
         final_state = wait_for_pubsub_value(attribute, obstates_union,
-                                     key=cast_tango_obsstate_to_oet_obstate)
+                                            key=cast_tango_obsstate_to_oet_obstate)
     else:
         final_state = wait_for_value(attribute, obstates_union,
                                      key=cast_tango_obsstate_to_oet_obstate)
