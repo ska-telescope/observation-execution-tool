@@ -308,32 +308,6 @@ def test_deallocate_resources_enforces_boolean_release_all_argument():
         _ = observingtasks.deallocate_resources(subarray, release_all=1, resources=resources)
 
 
-# TODO AT2-578 REFACTOR
-@mock.patch.object(observingtasks.EXECUTOR, 'read')
-@mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_deallocate_resources_raises_exception_when_error_state_encountered(
-        mock_execute_fn, mock_read_fn):
-    """
-    Verify that the boolean release_all argument is required.
-    """
-    mock_read_fn.side_effect = [
-        ObsState.RESOURCING, ObsState.RESOURCING, ObsState.FAULT
-    ]
-
-    subarray = SubArray(1)
-    with pytest.raises(ObsStateError):
-        _ = observingtasks.deallocate_resources(subarray, release_all=True)
-
-    mock_execute_fn.assert_called_once()
-
-    # command is sent to CentralNode; obsState is read on SubArrayNode
-    assert mock_execute_fn.call_args[0][0].device == SKA_MID_CENTRAL_NODE_FDQN
-    assert mock_read_fn.call_args[0][0].device == SKA_SUB_ARRAY_NODE_1_FDQN
-
-    assert mock_read_fn.call_count == 3
-
-
-# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks, '_call_and_wait_for_obsstate')
 def test_release_resources_successful_default_deallocation(mock_execute_fn):
     """
@@ -348,6 +322,7 @@ def test_release_resources_successful_default_deallocation(mock_execute_fn):
 
     assert not subarray.resources.dishes
     
+    # Test that _call_and_wait_for_obsstate was correctly invoked.
     validate_call_and_wait_for_obsstate_args(
             mock_execute_fn,
             'ReleaseResources',
@@ -356,7 +331,6 @@ def test_release_resources_successful_default_deallocation(mock_execute_fn):
     )
 
 
-# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks, '_call_and_wait_for_obsstate')
 def test_release_resources_successful_specified_deallocation(mock_execute_fn):
     """
@@ -371,7 +345,9 @@ def test_release_resources_successful_specified_deallocation(mock_execute_fn):
 
     assert not subarray.resources.dishes
 
-    mock_execute_fn.assert_called_once()
+    # Check that _call_and_wait_for_obsstate was invoked;
+    # prevous test tests for correct invocation
+    mock_execute_fn.assert_called_with(mock.ANY)
 
 
 def test_configure_subarray_forms_correct_request():
@@ -529,13 +505,6 @@ def test_call_and_wait_for_state_raises_exception_when_error_state_encountered(m
 # End move
 
 # TODO AT2-578 REFACTOR
-# Deleted test_execute_configure_command_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn)
-
-
-# TODO AT2-578 REFACTOR
-# Deleted test_execute_configure_command_raises_exception_when_error_state_encountered(
-
-# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks, 'execute_configure_command')
 def test_configure(mock_execute_fn):
     """
@@ -602,10 +571,6 @@ def test_get_scan_request_populates_cdm_object_correctly():
     assert request.scan_id == 123
 
 
-# TODO AT2-578 REFACTOR
-# Deleted test_subarray_scan_returns_when_obsstate_is_ready(mock_execute_fn, mock_read_fn)
-
-
 def test_get_end_command():
     """
     Verify that a 'end' Command is targeted and structured correctly.
@@ -618,19 +583,6 @@ def test_get_end_command():
     assert not cmd.kwargs
 
 
-# TODO AT2-578 REFACTOR
-
-# Replaced test_end_calls_tango_executor(mock_execute_fn, mock_read_fn):
-
-
-# TODO AT2-578 REFACTOR
-# Removed test_end_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn)
-
-
-# TODO AT2-578 REFACTOR
-# Removed test_end_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn)
-
-
 def test_get_abort_command():
     """
     Verify that a 'abort' Command is targeted and structured correctly.
@@ -641,14 +593,6 @@ def test_get_abort_command():
     assert cmd.command_name == 'Abort'
     assert not cmd.args
     assert not cmd.kwargs
-
-
-# TODO AT2-578 REFACTOR
-# Replaced test_abort_calls_tango_executor(mock_execute_fn, mock_read_fn)
-
-
-# TODO AT2-578 REFACTOR
-# Removed test_abort_returns_when_obsstate_is_aborted(mock_execute_fn, mock_read_fn)
 
 
 def validate_call_and_wait_for_obsstate_args(mock_fn: mock.MagicMock,
@@ -790,10 +734,6 @@ def test_subarray_scan_defines_obsstate_transitions_correctly(mock_fn):
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
         [ObsState.SCANNING,ObsState.READY],            # happy path sequence is SCANNING, READY
     )
-
-
-# TODO AT2-578 REFACTOR
-# Deleted test_abort_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn)
 
 
 @pytest.mark.skip('TBC: ProcessingBlock ID updates are no longer required')
@@ -987,18 +927,6 @@ def test_get_obsreset_command():
     assert not cmd.kwargs
 
 
-# TODO AT2-578 REFACTOR
-# Deleted test_obsreset_calls_tango_executor(mock_execute_fn, mock_read_fn)
-
-
-# TODO AT2-578 REFACTOR
-# Removed test_obsreset_returns_when_obsstate_is_idle(mock_execute_fn, mock_read_fn)
-
-
-# TODO AT2-578 REFACTOR
-# Remove test_obsreset_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn)
-
-
 def test_get_restart_command():
     """
     Verify that a 'restart' Command is targeted and structured correctly.
@@ -1010,15 +938,4 @@ def test_get_restart_command():
     assert not cmd.args
     assert not cmd.kwargs
 
-
-# TODO AT2-578 REFACTOR
-# Deleted test_restart_calls_tango_executor(mock_execute_fn, mock_read_fn)
-
-
-# TODO AT2-578 REFACTOR
-# Removed test_restart_returns_when_obsstate_is_restarted(mock_execute_fn, mock_read_fn)
-
-# TODO AT2-578 REFACTOR
-# Removed test_restart_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn)
-
-# Moved tests on new function _call_and_wait_for_state 
+# TODO test for return_allocated_resources
