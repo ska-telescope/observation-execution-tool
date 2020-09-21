@@ -354,7 +354,7 @@ def test_release_resources_successful_specified_deallocation(mock_execute_fn):
 
     # Check that _call_and_wait_for_obsstate was invoked;
     # prevous test tests for correct invocation
-    mock_execute_fn.assert_called_with(mock.ANY)
+    mock_execute_fn.assert_called()
 
 
 def test_configure_subarray_forms_correct_request():
@@ -464,12 +464,13 @@ def test_call_and_wait_for_state_waits_for_target_states(mock_execute_fn, mock_r
     mock_read_fn.side_effect = [
         ObsState.IDLE, ObsState.EMPTY, ObsState.RESOURCING, ObsState.EMPTY, ObsState.IDLE
     ]
+    mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
 
     # Test command to call SubArrayNode.Foo()
     cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
 
     # This task waits for, in sequence, RESOURCING then IDLE.
-    observingtasks._call_and_wait_for_obsstate(
+    response = observingtasks._call_and_wait_for_obsstate(
         cmd,
         [(ObsState.RESOURCING, []),
          (ObsState.IDLE, [])]
@@ -482,6 +483,8 @@ def test_call_and_wait_for_state_waits_for_target_states(mock_execute_fn, mock_r
     mock_read_fn.assert_called_with(expected_attr)
     # obsState should have been read 5 times until IDLE was reached
     assert mock_read_fn.call_count == 5
+    # _call_and_wait_for_obsstate should have returned CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
+    assert response == CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
@@ -511,7 +514,6 @@ def test_call_and_wait_for_state_raises_exception_when_error_state_encountered(m
     assert mock_read_fn.call_count == 4
 # End move
 
-# TODO AT2-578 REFACTOR
 @mock.patch.object(observingtasks, 'execute_configure_command')
 def test_configure(mock_execute_fn):
     """
@@ -630,7 +632,6 @@ def validate_call_and_wait_for_obsstate_args(mock_fn: mock.MagicMock,
     assert happy_path == [happy for happy, _ in wait_states]
 
 
-# TODO AT2-578 REFACTOR - this shows how a refactored unit tests could look
 @mock.patch.object(observingtasks, '_call_and_wait_for_obsstate')
 def test_end_defines_obsstate_transitions_correctly(mock_fn):
     """
@@ -648,7 +649,6 @@ def test_end_defines_obsstate_transitions_correctly(mock_fn):
     )
 
 
-# TODO AT2-578 REFACTOR - this shows how a refactored unit tests could look
 @mock.patch.object(observingtasks, '_call_and_wait_for_obsstate')
 def test_abort_defines_obsstate_transitions_correctly(mock_fn):
     """
@@ -666,7 +666,6 @@ def test_abort_defines_obsstate_transitions_correctly(mock_fn):
     )
 
 
-# TODO AT2-578 REFACTOR - this shows how a refactored unit tests could look
 @mock.patch.object(observingtasks, '_call_and_wait_for_obsstate')
 def test_obsreset_defines_obsstate_transitions_correctly(mock_fn):
     """
@@ -684,8 +683,6 @@ def test_obsreset_defines_obsstate_transitions_correctly(mock_fn):
     )
 
 
-
-# TODO AT2-578 REFACTOR - this shows how a refactored unit tests could look
 @mock.patch.object(observingtasks, '_call_and_wait_for_obsstate')
 def test_restart_defines_obsstate_transitions_correctly(mock_fn):
     """
@@ -703,9 +700,6 @@ def test_restart_defines_obsstate_transitions_correctly(mock_fn):
     )
 
 
-
-
-# TODO AT2-578 REFACTOR - this shows how a refactored unit tests could look
 @mock.patch.object(observingtasks, '_call_and_wait_for_obsstate')
 def test_execute_configure_command_defines_obsstate_transitions_correctly(mock_fn):
     """
@@ -723,9 +717,6 @@ def test_execute_configure_command_defines_obsstate_transitions_correctly(mock_f
     )
 
 
-
-
-# TODO AT2-578 REFACTOR - this shows how a refactored unit tests could look
 @mock.patch.object(observingtasks, '_call_and_wait_for_obsstate')
 def test_subarray_scan_defines_obsstate_transitions_correctly(mock_fn):
     """
@@ -858,9 +849,8 @@ def test_configure_from_cdm(mock_execute_fn):
     assert command_returned == command_expected
 
 
-@mock.patch.object(observingtasks.EXECUTOR, 'read')
-@mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_assign_resources_from_cdm(mock_execute_fn, mock_read_fn):
+@mock.patch.object(observingtasks, '_call_and_wait_for_obsstate')
+def test_assign_resources_from_cdm(mock_execute_fn,):
     """
     Verify that assign_resources_from_cdm requests resource allocation as
     expected.
@@ -882,9 +872,6 @@ def test_assign_resources_from_cdm(mock_execute_fn, mock_read_fn):
 
     # Load the CDM resource assignment request object from the test JSON file
     # on disk
-    mock_read_fn.side_effect = [
-        ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
-    ]
 
     cwd, _ = os.path.split(__file__)
     json_path = os.path.join(cwd, 'testfile_sample_assign.json')
@@ -919,7 +906,6 @@ def test_assign_resources_from_cdm(mock_execute_fn, mock_read_fn):
 
     # command is sent to CentralNode; obsState is read on SubArrayNode
     assert mock_execute_fn.call_args[0][0].device == SKA_MID_CENTRAL_NODE_FDQN
-    assert mock_read_fn.call_args[0][0].device == SKA_SUB_ARRAY_NODE_1_FDQN
 
 
 def test_get_obsreset_command():
@@ -944,5 +930,3 @@ def test_get_restart_command():
     assert cmd.command_name == 'Restart'
     assert not cmd.args
     assert not cmd.kwargs
-
-# TODO test for return_allocated_resources

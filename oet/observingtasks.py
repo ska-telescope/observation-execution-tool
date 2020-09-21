@@ -281,7 +281,9 @@ def get_release_resources_command(subarray: domain.SubArray,
     return Command(central_node_fqdn, 'ReleaseResources', request_json)
 
 
-# TODO AT2-578 REFACTOR
+# AT2-578 REFACTOR
+# Added helper function for allocate_resources, allocate_resources_from_file
+# and assign_resources_from_cdm
 def return_allocated_resources(
         command: Command,
         subarray: domain.SubArray,
@@ -305,8 +307,6 @@ def return_allocated_resources(
     subarray.resources += allocated
     return allocated
 
-
-# TODO AT2-578 REFACTOR
 def allocate_resources(subarray: domain.SubArray,
                        resources: domain.ResourceAllocation) -> domain.ResourceAllocation:
     """
@@ -573,7 +573,6 @@ def execute_configure_command(command: Command):
     )
 
 
-# TODO AT2-578 REFACTOR - this has already been modified to use the new command
 def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfiguration):
     """
     Configure a sub-array using the given domain SubArrayConfiguration.
@@ -702,7 +701,6 @@ def get_scan_command(subarray: domain.SubArray) -> Command:
     return Command(subarray_node_fqdn, 'Scan', request_json)
 
 
-# TODO AT2-578 REFACTOR - this has already been modified to use the new command
 def scan(subarray: domain.SubArray):
     """
     Execute a scan.
@@ -736,7 +734,6 @@ def scan(subarray: domain.SubArray):
     )
 
 
-# TODO AT2-578 REFACTOR - this has already been modified to use the new command
 def end(subarray: domain.SubArray):
     """
     Send the 'end' command to the SubArrayNode, marking the end of the
@@ -807,7 +804,6 @@ def _call_and_wait_for_obsstate(command: Command,
     return response
 
 
-# TODO AT2-578 REFACTOR
 def abort(subarray: domain.SubArray):
     """
     Send the 'abort' command to the SubArrayNode, halt the subarray
@@ -837,7 +833,6 @@ def get_abort_command(subarray: domain.SubArray) -> Command:
     return Command(subarray_node_fqdn, 'Abort')
 
 
-# TODO AT2-578 REFACTOR
 def obsreset(subarray: domain.SubArray):
     """
     Send the 'ObsReset' command to the SubArrayNode, which resets
@@ -866,7 +861,6 @@ def get_obsreset_command(subarray: domain.SubArray) -> Command:
     return Command(subarray_node_fqdn, 'ObsReset')
 
 
-# TODO AT2-578 REFACTOR
 def restart(subarray: domain.SubArray):
     """
     Send the 'restart' command to the SubArrayNode which sets
