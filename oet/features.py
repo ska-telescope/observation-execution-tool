@@ -29,5 +29,4 @@ class Features:
         # config.read() requires an iterable of paths. The paths tuple is
         # enough to satisfy this requirement.
         config.read(paths)
-
         return Features(config)
