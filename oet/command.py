@@ -177,8 +177,8 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         """
            unsubscribe event on a Tango device.
 
-           :param attribute: the attribute to subscribe
-           :return: the subscribe id
+           :param attribute: the attribute to unsubscribe
+           :return:
         """
         proxy = self._get_proxy(attribute.device)
         LOGGER.debug('Unsubscibe event: %s/%s', attribute.device, attribute.name)

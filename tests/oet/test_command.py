@@ -147,8 +147,7 @@ def test_tango_executor_calls_multi_arg_command_correctly():
 
 def test_tango_executor_calls_subscribe_event_correctly():
     """
-    Check that the TangoExecutor correctly invokes device server commands that
-    accept multiple arguments.
+    Check that the TangoExecutor correctly invokes subscribe event.
     :return:
     """
     mock_proxy = Mock()
@@ -158,13 +157,13 @@ def test_tango_executor_calls_subscribe_event_correctly():
         mock_proxy.subscribe_event.return_value = 12345
         executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
         resonse = executor.subscribe_event(attr)
+    mock_proxy.subscribe_event.assert_called_once()
     assert resonse == 12345
 
 
 def test_tango_executor_calls_subscribe_event_callback_correctly():
     """
-    Check that the TangoExecutor correctly invokes device server commands that
-    accept multiple arguments.
+    Check that the TangoExecutor correctly invokes subscribe event callback.
     :return:
     """
     mock_proxy = Mock()
@@ -181,8 +180,7 @@ def test_tango_executor_calls_subscribe_event_callback_correctly():
 
 def test_tango_executor_calls_unsubscribe_event_correctly():
     """
-    Check that the TangoExecutor correctly invokes device server commands that
-    accept multiple arguments.
+    Check that the TangoExecutor correctly invokes unsubscribe event.
     :return:
     """
     mock_proxy = Mock()
