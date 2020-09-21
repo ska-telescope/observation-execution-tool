@@ -84,11 +84,5 @@ def test_can_read_config_file(tmpdir):
 
     assert features.use_polling_to_read_tango_attributes is False
 
-def test_oet_ini_file_is_read_correctly():
-    """
-    testing that the oet.ini file provided is read correctly
-    """
-
-
 
 
