@@ -282,8 +282,10 @@ def get_release_resources_command(subarray: domain.SubArray,
 
 
 # TODO AT2-578 REFACTOR
-def return_allocated_resources(subarray: domain.SubArray,
-                               command: Command, subarray_device: str) -> domain.ResourceAllocation:
+def return_allocated_resources(
+        command: Command,
+        subarray: domain.SubArray,
+        subarray_device: str) -> domain.ResourceAllocation:
     """
     Return the allocated resources
     
@@ -316,7 +318,8 @@ def allocate_resources(subarray: domain.SubArray,
     """
     command = get_allocate_resources_command(subarray, resources)
     subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
-    return return_allocated_resources(subarray, command, subarray_device)
+
+    return return_allocated_resources(command, subarray, subarray_device)
 
 
 def allocate_resources_from_file(
@@ -346,7 +349,8 @@ def allocate_resources_from_file(
 
     command = get_allocate_resources_command(subarray, resources, template_request)
     subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
-    return return_allocated_resources(subarray, command, subarray_device)
+
+    return return_allocated_resources(command, subarray, subarray_device)
 
 
 def assign_resources_from_cdm(
@@ -364,7 +368,7 @@ def assign_resources_from_cdm(
     subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
     command = get_allocate_resources_command(subarray, resources, request)
 
-    return return_allocated_resources(subarray, command, subarray_device)
+    return return_allocated_resources(command, subarray, subarray_device)
 
 
 def deallocate_resources(subarray: domain.SubArray,
