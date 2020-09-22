@@ -474,32 +474,31 @@ def wait_for_value(attribute: Attribute, target_values: Iterable[Any], key=lambd
         raise TypeError('Attribute type does not match type of target values')
 
 
-def wait_for_pubsub_value(attribute: Attribute, target_values: Iterable[Any], timeout=6, key=lambda _: _) -> Any:
+def wait_for_pubsub_value(target_values: Iterable[Any], timeout=6, key=lambda _: _) -> Any:
     """
     Block until a Tango device attribute has reached one of target values.
 
     If defined, the optional 'key' function will be used to process the device
     attribute value before comparison to the target value.
 
-    :param attribute: device to query
     :param target_values: target ObsState to wait for
     :param timeout: timeout to how long to wait for change event
     :param key: function to process each attribute value before comparison
     :return: Attribute value read from device (one of target_values)
     """
-    try:
-        response = EXECUTOR.read_event(timeout=timeout)
-        if response.err:
-           return EXECUTOR.unsubscribe_event(attribute)
-    except Exception as e:
-        EXECUTOR.unsubscribe_event(attribute)
-        raise e
+    response = EXECUTOR.read_event(timeout=timeout)
+    if response.err:
+        # TODO: how to handle errors when subscribed? Fall to polling? Raise an exception?
+        raise Exception('Tango error')
     processed = key(response.attr_value)
     if all(isinstance(value, type(processed)) for value in target_values):
         while True:
             if processed in target_values:
                 return processed
             response = EXECUTOR.read_event(timeout=timeout)
+            if response.err:
+                # TODO: how to handle errors when subscribed? Fall to polling? Raise an exception?
+                raise Exception('Tango error')
             processed = key(response.attr_value)
     else:
         raise TypeError('Attribute type does not match type of target values')
@@ -509,7 +508,8 @@ def wait_for_pubsub_value(attribute: Attribute, target_values: Iterable[Any], ti
 def wait_for_obsstate(
         device: str,
         target_state: ObsState,
-        error_states: Iterable[ObsState]) -> ObsStateResponse:
+        error_states: Iterable[ObsState],
+        use_pubsub: bool = False) -> ObsStateResponse:
     #   timeout) -> Either[Left,Right]
     """
     Block until a Tango device attribute obsState has reached a target state or
@@ -521,7 +521,7 @@ def wait_for_obsstate(
     :param device: device to query
     :param target_state: target ObsState to wait for
     :param error_states: list of possible error ObsStates
-    :param key: function to process each attribute value before comparison
+    :param use_pubsub: subscribe to obsState change event instead of polling it
     :return: ObsState of the device (either target state or error state)
     """
     attribute = Attribute(device, 'obsState')
@@ -533,9 +533,8 @@ def wait_for_obsstate(
     obstates_union.append(target_state)
     # obsState values do not need processing so the optional 'key' argument to
     # wait_for_value is left unset
-    if oet.FEATURES.use_pubsub_to_read_tango_attributes:
-        final_state = wait_for_pubsub_value(attribute, obstates_union,
-                                            key=cast_tango_obsstate_to_oet_obstate)
+    if use_pubsub:
+        final_state = wait_for_pubsub_value(obstates_union, key=cast_tango_obsstate_to_oet_obstate)
     else:
         final_state = wait_for_value(attribute, obstates_union,
                                      key=cast_tango_obsstate_to_oet_obstate)
@@ -787,20 +786,27 @@ def _call_and_wait_for_obsstate(command: Command,
     if device_to_monitor is None:
         device_to_monitor = command.device
 
-    if oet.FEATURES.use_pubsub_to_read_tango_attributes:
-        attribute = Attribute(device_to_monitor, 'obsState')
+    use_pubsub = oet.FEATURES.use_pubsub_to_read_tango_attributes
+    attribute = Attribute(device_to_monitor, 'obsState')
+    if use_pubsub:
         _ = EXECUTOR.subscribe_event(attribute)
 
-    response = EXECUTOR.execute(command)
+    try:
+        response = EXECUTOR.execute(command)
+        for target_state, error_states in wait_states:
+            state_response = wait_for_obsstate(
+                device_to_monitor,
+                target_state=target_state,
+                error_states=error_states,
+                use_pubsub=use_pubsub
+            )
+            if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+                raise ObsStateError(state_response.final_state)
 
-    for target_state, error_states in wait_states:
-        state_response = wait_for_obsstate(
-            device_to_monitor,
-            target_state=target_state,
-            error_states=error_states
-        )
-        if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-            raise ObsStateError(state_response.final_state)
+    finally:
+        # Always unsubscribe
+        if use_pubsub:
+            EXECUTOR.unsubscribe_event(attribute)
 
     return response
 

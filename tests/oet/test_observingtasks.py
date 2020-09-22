@@ -434,31 +434,12 @@ def test_wait_for_obsstate_returns_error_state_for_pub_sub():
     state_list = [ObsState.IDLE, ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.FAULT,
                   ObsState.RESTARTING]
     creat_event_based_queue(state_list)
-    with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=True)):
-        target_state = ObsState.READY
-        error_state = [ObsState.ABORTING, ObsState.FAULT]
-        state_response = observingtasks.wait_for_obsstate(
-            SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state
-        )
+    target_state = ObsState.READY
+    error_state = [ObsState.ABORTING, ObsState.FAULT]
+    state_response = observingtasks.wait_for_obsstate(
+        SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state, use_pubsub=True
+    )
     assert state_response.final_state == ObsState.FAULT
-
-
-@mock.patch.object(observingtasks.EXECUTOR, 'unsubscribe_event')
-def test_wait_for_obsstate_returns_error_and_call_unsubscribe_event_in_pub_sub(mock_unsubscribe_fn):
-    """
-    Verify wait_for_obsstate waits for the device obsState and get error object
-    and call unsubscribe event method
-    """
-    state_list = [ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE]
-    creat_event_based_queue_with_error_object(state_list)
-    with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=True)):
-        target_state = ObsState.IDLE
-        error_state = [ObsState.ABORTED, ObsState.FAULT]
-        state_response = observingtasks.wait_for_obsstate(
-            SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state
-        )
-    assert state_response.final_state != ObsState.IDLE
-    mock_unsubscribe_fn.assert_called_once()
 
 
 def test_wait_for_obsstate_returns_target_state_for_pub_sub():
@@ -467,42 +448,37 @@ def test_wait_for_obsstate_returns_target_state_for_pub_sub():
     """
     state_list = [ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE]
     creat_event_based_queue(state_list)
-    with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=True)):
-        target_state = ObsState.IDLE
-        error_state = [ObsState.ABORTED, ObsState.FAULT]
-        state_response = observingtasks.wait_for_obsstate(
-            SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state
-        )
+    target_state = ObsState.IDLE
+    error_state = [ObsState.ABORTED, ObsState.FAULT]
+    state_response = observingtasks.wait_for_obsstate(
+        SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state, use_pubsub=True
+    )
     assert state_response.final_state == ObsState.IDLE
 
 
-@mock.patch.object(observingtasks.EXECUTOR, 'unsubscribe_event')
-def test_wait_for_pubsub_value_raises_exception_for_empty_queue_in_pubsub(mock_unsubscribe_fn):
+def test_wait_for_pubsub_value_raises_exception_on_timeout():
     """
-    Verify wait_for_pubsub_value raises exception if queue is empty
+    Verify wait_for_pubsub_value raises exception if timeout occurs
     """
     with observingtasks.EXECUTOR.queue.mutex:
         observingtasks.EXECUTOR.queue.queue.clear()
-    attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
     target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
 
     with pytest.raises(Exception):
-        _ = observingtasks.wait_for_pubsub_value(attribute, target_states)
-    mock_unsubscribe_fn.assert_called_once()
+        _ = observingtasks.wait_for_pubsub_value(target_states, timeout=1)
 
 
 def test_wait_for_pubsub_value_raises_type_error_for_non_matching_types_in_pubsub():
     """
-    Verify wait_for_value raises TypeError if attribute type and
+    Verify wait_for_pubsub_value raises TypeError if attribute type and
     target type do not match
     """
     state_list = [1, 2, 3, 4]
     creat_event_based_queue(state_list)
-    attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
     target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
 
     with pytest.raises(TypeError):
-        _ = observingtasks.wait_for_pubsub_value(attribute, target_states)
+        _ = observingtasks.wait_for_pubsub_value(target_states)
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
@@ -567,7 +543,9 @@ def test_wait_for_obsstate_returns_error_state(mock_read_fn):
 
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 @mock.patch.object(observingtasks.EXECUTOR, 'subscribe_event')
-def test_call_and_wait_for_state_waits_for_target_states_for_pub_sub(mock_subscribe_event_fn, mock_execute_fn):
+@mock.patch.object(observingtasks.EXECUTOR, 'unsubscribe_event')
+def test_call_and_wait_for_state_waits_for_target_states_for_pub_sub(mock_subscribe_event_fn,
+                                                                     mock_unsubscribe_event_fn, mock_execute_fn):
     """
     Test that the call_and_wait_for_state function waits for the requested
     states in the specified sequence for pub/sub feature.
@@ -588,6 +566,7 @@ def test_call_and_wait_for_state_waits_for_target_states_for_pub_sub(mock_subscr
         )
 
     mock_subscribe_event_fn.assert_called_once()
+    mock_unsubscribe_event_fn.assert_called_once()
     # SubArrayNode.Foo() should just have been called once
     mock_execute_fn.assert_called_once()
     assert observingtasks.EXECUTOR.queue.empty()
@@ -595,7 +574,9 @@ def test_call_and_wait_for_state_waits_for_target_states_for_pub_sub(mock_subscr
 
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
 @mock.patch.object(observingtasks.EXECUTOR, 'subscribe_event')
+@mock.patch.object(observingtasks.EXECUTOR, 'unsubscribe_event')
 def test_call_and_wait_for_state_raises_exception_when_error_state_encountered_for_pub_sub(mock_subscribe_event_fn,
+                                                                                           mock_unsubscribe_event_fn,
                                                                                            mock_execute_fn):
     """
     Verify that call_and_wait_for_state raises an exception when an error
@@ -615,6 +596,7 @@ def test_call_and_wait_for_state_raises_exception_when_error_state_encountered_f
             )
 
     mock_subscribe_event_fn.assert_called_once()
+    mock_unsubscribe_event_fn.assert_called_once()
     mock_execute_fn.assert_called_once()
     assert observingtasks.EXECUTOR.queue.empty()
 
