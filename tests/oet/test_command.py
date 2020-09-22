@@ -161,6 +161,24 @@ def test_tango_executor_calls_subscribe_event_correctly():
     assert resonse == 12345
 
 
+def test_tango_executor_calls_read_event_correctly_check_queue_is_empty():
+    """
+        Check that the TangoExecutor correctly invokes read event.
+        :return:
+        """
+    mock_proxy = Mock()
+    attr = Attribute('device', 'name')
+
+    with patch.object(TangoDeviceProxyFactory, '__call__', return_value=mock_proxy):
+        executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
+        evt = mock_proxy.MagicMock(spec_set=tango.EventData)
+        evt.attr_value = 'resourcing'
+        executor.handle_state_change(evt)
+        result = executor.read_event(timeout=6)
+    assert result.attr_value == 'resourcing'
+    assert executor.queue.empty()
+
+
 def test_tango_executor_calls_subscribe_event_callback_correctly():
     """
     Check that the TangoExecutor correctly invokes subscribe event callback.
@@ -176,6 +194,7 @@ def test_tango_executor_calls_subscribe_event_callback_correctly():
         executor.handle_state_change(evt)
         result = executor.read_event(timeout=6)
     assert result.attr_value == 'resourcing'
+    assert executor.queue.empty()
 
 
 def test_tango_executor_calls_unsubscribe_event_correctly():
@@ -190,7 +209,7 @@ def test_tango_executor_calls_unsubscribe_event_correctly():
         mock_proxy.subscribe_event.return_value = 12345
         response = executor.subscribe_event(attr)
         executor.unsubscribe_event(attr)
-    assert response==12345
+    assert response == 12345
     mock_proxy.unsubscribe_event.assert_called_once_with(response)
 
 

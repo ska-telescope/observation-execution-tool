@@ -31,6 +31,9 @@ VALID_ASSIGN_STARTSCAN_REQUEST = '{"id": 123}'
 
 
 def creat_event_based_queue(obsstate_list):
+    """Creating eventData object and storing objects
+       in the Queue
+    """
     with observingtasks.EXECUTOR.queue.mutex:
         observingtasks.EXECUTOR.queue.queue.clear()
     for obsstate in obsstate_list:
@@ -40,7 +43,10 @@ def creat_event_based_queue(obsstate_list):
         observingtasks.EXECUTOR.handle_state_change(evt)
 
 
-def creat_event_based_queue_with_error(obsstate_list):
+def creat_event_based_queue_with_error_object(obsstate_list):
+    """Creating eventData object with error and storing objects
+           in the Queue
+        """
     with observingtasks.EXECUTOR.queue.mutex:
         observingtasks.EXECUTOR.queue.queue.clear()
     for obsstate in obsstate_list:
@@ -51,6 +57,10 @@ def creat_event_based_queue_with_error(obsstate_list):
 
 
 def set_toggle_feature_value(pub_sub=False):
+    """
+    Method to set the feature toggle for enabling-
+    disabling pub sub functionality
+    """
     from configparser import ConfigParser
     from oet.features import Features
     parser = ConfigParser()
@@ -416,7 +426,7 @@ def test_configure_subarray_forms_correct_command():
     assert len(cmd.args) == 1
 
 
-def test_wait_for_obsstate_returns_error_state_for__pub_sub():
+def test_wait_for_obsstate_returns_error_state_for_pub_sub():
     """
     Verify wait_for_obsstate stops waiting for the device target obsState when
     error state is encountered
@@ -436,10 +446,11 @@ def test_wait_for_obsstate_returns_error_state_for__pub_sub():
 @mock.patch.object(observingtasks.EXECUTOR, 'unsubscribe_event')
 def test_wait_for_obsstate_returns_error_and_call_unsubscribe_event_in_pub_sub(mock_unsubscribe_fn):
     """
-    Verify wait_for_obsstate waits for the device obsState
+    Verify wait_for_obsstate waits for the device obsState and get error object
+    and call unsubscribe event method
     """
     state_list = [ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE]
-    creat_event_based_queue_with_error(state_list)
+    creat_event_based_queue_with_error_object(state_list)
     with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=True)):
         target_state = ObsState.IDLE
         error_state = [ObsState.ABORTED, ObsState.FAULT]
@@ -466,10 +477,9 @@ def test_wait_for_obsstate_returns_target_state_for_pub_sub():
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'unsubscribe_event')
-def test_wait_for_pubsub_value_raises_Exception_for_empty_queue_in_pubsub(mock_unsubscribe_fn):
+def test_wait_for_pubsub_value_raises_exception_for_empty_queue_in_pubsub(mock_unsubscribe_fn):
     """
-    Verify wait_for_value raises TypeError if attribute type and
-    target type do not match
+    Verify wait_for_pubsub_value raises exception if queue is empty
     """
     with observingtasks.EXECUTOR.queue.mutex:
         observingtasks.EXECUTOR.queue.queue.clear()
@@ -560,7 +570,7 @@ def test_wait_for_obsstate_returns_error_state(mock_read_fn):
 def test_call_and_wait_for_state_waits_for_target_states_for_pub_sub(mock_subscribe_event_fn, mock_execute_fn):
     """
     Test that the call_and_wait_for_state function waits for the requested
-    states in the specified sequence.
+    states in the specified sequence for pub/sub feature.
     """
     state_list = [ObsState.IDLE, ObsState.EMPTY, ObsState.RESOURCING, ObsState.EMPTY, ObsState.IDLE]
     creat_event_based_queue(state_list)
@@ -589,7 +599,7 @@ def test_call_and_wait_for_state_raises_exception_when_error_state_encountered_f
                                                                                            mock_execute_fn):
     """
     Verify that call_and_wait_for_state raises an exception when an error
-    state is encountered.
+    state is encountered for pub/sub feature.
     """
     # obsState will be SCANNING for the first three reads, then FAULT
     state_list = [ObsState.SCANNING, ObsState.SCANNING, ObsState.SCANNING, ObsState.FAULT]
