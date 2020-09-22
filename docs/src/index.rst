@@ -173,7 +173,7 @@ Currently the option toggles are:
 | read_via_pubsub   | Boolean | sets whether pubsub or     | False   |
 |                   |         | the alternative, polling,  |         |
 |                   |         | is used to read from tango |         |
-+-------------------+---------+--------------------------------------+
++-------------------+---------+----------------------------+---------+
 
 
 
