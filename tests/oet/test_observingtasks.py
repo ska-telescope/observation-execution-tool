@@ -465,7 +465,23 @@ def test_wait_for_obsstate_returns_target_state_for_pub_sub():
     assert state_response.final_state == ObsState.IDLE
 
 
-def test_wait_for_value_raises_type_error_for_non_matching_types_in_pubsub():
+@mock.patch.object(observingtasks.EXECUTOR, 'unsubscribe_event')
+def test_wait_for_pubsub_value_raises_Exception_for_empty_queue_in_pubsub(mock_unsubscribe_fn):
+    """
+    Verify wait_for_value raises TypeError if attribute type and
+    target type do not match
+    """
+    with observingtasks.EXECUTOR.queue.mutex:
+        observingtasks.EXECUTOR.queue.queue.clear()
+    attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+    target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
+
+    with pytest.raises(Exception):
+        _ = observingtasks.wait_for_pubsub_value(attribute, target_states)
+    mock_unsubscribe_fn.assert_called_once()
+
+
+def test_wait_for_pubsub_value_raises_type_error_for_non_matching_types_in_pubsub():
     """
     Verify wait_for_value raises TypeError if attribute type and
     target type do not match
