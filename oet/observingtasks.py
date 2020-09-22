@@ -490,18 +490,19 @@ def wait_for_pubsub_value(attribute: Attribute, target_values: Iterable[Any], ti
     try:
         response = EXECUTOR.read_event(timeout=timeout)
         if response.err:
-            EXECUTOR.unsubscribe_event(attribute)
-        processed = key(response.attr_value)
-        if all(isinstance(value, type(processed)) for value in target_values):
-            while True:
-                if processed in target_values:
-                    return processed
-                response = EXECUTOR.read_event(timeout=timeout)
-                processed = key(response.attr_value)
-        else:
-            raise TypeError('Attribute type does not match type of target values')
+           return EXECUTOR.unsubscribe_event(attribute)
     except Exception as e:
         EXECUTOR.unsubscribe_event(attribute)
+        raise e
+    processed = key(response.attr_value)
+    if all(isinstance(value, type(processed)) for value in target_values):
+        while True:
+            if processed in target_values:
+                return processed
+            response = EXECUTOR.read_event(timeout=timeout)
+            processed = key(response.attr_value)
+    else:
+        raise TypeError('Attribute type does not match type of target values')
 
 
 # TODO: 1. implement timeout functionality 2. return value to use Either pattern
