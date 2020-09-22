@@ -91,4 +91,5 @@ def test_default_config_file_is_read_if_present():
     Added to catch a bug found during code review
     """
 
-    assert oet.FEATURES.use_polling_to_read_tango_attributes is False
+    assert oet.FEATURES.use_polling_to_read_tango_attributes is True
+
