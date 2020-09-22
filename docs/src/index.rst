@@ -165,7 +165,7 @@ which can be editted by the user, or a user specified version of the file,
 located in the user's home directory. If for some reason no config file is 
 found, the toggles are set to their default values.
 
-Currently the option toggles are:
+Currently the toggle option are:
 
 +-------------------+---------+----------------------------+---------+
 | Toggle            | Type    | Description                | Default |
