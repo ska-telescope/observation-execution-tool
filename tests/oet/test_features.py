@@ -4,7 +4,7 @@ Unit tests for the features module
 
 from configparser import ConfigParser
 from oet.features import Features
-import os.path
+import oet
 
 
 def test_pubsub_feature_returns_true_when_enabled_in_file():
@@ -91,6 +91,4 @@ def test_default_config_file_is_read_if_present():
     Added to catch a bug found during code review
     """
 
-    features = Features.create_from_config_files('oet.ini', os.path.relpath('../../oet.ini'))
-
-    assert features.use_pubsub_to_read_tango_attributes is False
+    assert oet.FEATURES.use_polling_to_read_tango_attributes is False
