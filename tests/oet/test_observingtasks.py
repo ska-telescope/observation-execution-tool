@@ -31,28 +31,15 @@ VALID_ASSIGN_STARTSCAN_REQUEST = '{"id": 123}'
 
 
 def creat_event_based_queue(obsstate_list):
-    """Creating eventData object and storing objects
-       in the Queue
+    """Creating eventData object for each obsState and
+       storing objects in the Queue
     """
     with observingtasks.EXECUTOR.queue.mutex:
         observingtasks.EXECUTOR.queue.queue.clear()
     for obsstate in obsstate_list:
         evt = mock.MagicMock(spec_set=tango.EventData)
         evt.attr_value = obsstate
-        evt.err = None
-        observingtasks.EXECUTOR.handle_state_change(evt)
-
-
-def creat_event_based_queue_with_error_object(obsstate_list):
-    """Creating eventData object with error and storing objects
-           in the Queue
-        """
-    with observingtasks.EXECUTOR.queue.mutex:
-        observingtasks.EXECUTOR.queue.queue.clear()
-    for obsstate in obsstate_list:
-        evt = mock.MagicMock(spec_set=tango.EventData)
-        evt.attr_value = obsstate
-        evt.err = "Error in State"
+        evt.err = False
         observingtasks.EXECUTOR.handle_state_change(evt)
 
 
@@ -466,6 +453,21 @@ def test_wait_for_pubsub_value_raises_exception_on_timeout():
 
     with pytest.raises(Exception):
         _ = observingtasks.wait_for_pubsub_value(target_states, timeout=1)
+
+
+def test_wait_for_pubsub_value_raises_exception_on_event_error():
+    with observingtasks.EXECUTOR.queue.mutex:
+        observingtasks.EXECUTOR.queue.queue.clear()
+    target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
+
+    evt = mock.MagicMock(spec_set=tango.EventData)
+    evt.attr_value = None
+    evt.err = True
+    evt.errors = [mock.MagicMock(spec_set=tango.DevError)]
+    observingtasks.EXECUTOR.handle_state_change(evt)
+
+    with pytest.raises(Exception):
+        _ = observingtasks.wait_for_pubsub_value(target_states)
 
 
 def test_wait_for_pubsub_value_raises_type_error_for_non_matching_types_in_pubsub():
