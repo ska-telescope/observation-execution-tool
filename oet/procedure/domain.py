@@ -12,7 +12,7 @@ from typing import Optional
 
 import enum
 import types
-
+from datetime import datetime
 from oet.command import SCAN_ID_GENERATOR
 
 
@@ -72,7 +72,7 @@ class Procedure(multiprocessing.Process):
         self.script_args: typing.Dict[str, ProcedureInput] = dict(init=init_args,
                                                                   run=ProcedureInput())
         self.state = ProcedureState.READY
-
+        self.created_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
         self._scan_counter = scan_counter
 
     def run(self):

@@ -83,6 +83,7 @@ def create_procedure():
     procedure_input = domain.ProcedureInput(*init_args, **init_kwargs)
     prepare_cmd = application.PrepareProcessCommand(script_uri=script_uri,
                                                     init_args=procedure_input)
+
     summary = SERVICE.prepare(prepare_cmd)
 
     return flask.jsonify({'procedure': make_public_summary(summary)}), 201
@@ -161,6 +162,7 @@ def make_public_summary(procedure: application.ProcedureSummary):
         'uri': flask.url_for('api.get_procedure', procedure_id=procedure.id, _external=True),
         'script_uri': procedure.script_uri,
         'script_args': script_args,
+        'created_time': procedure.created_time,
         'state': procedure.state.name
     }
 

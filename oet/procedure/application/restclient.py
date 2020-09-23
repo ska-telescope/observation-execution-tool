@@ -31,6 +31,7 @@ class ProcedureSummary:
     uri: str
     script_uri: str
     script_args: dict
+    created_time: str
     state: str
 
     @staticmethod
@@ -47,6 +48,7 @@ class ProcedureSummary:
             uri=json['uri'],
             script_uri=json['script_uri'],
             script_args=json['script_args'],
+            created_time=json['created_time'],
             state=json['state']
         )
 
@@ -79,8 +81,8 @@ class RestClientUI:
 
     @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
-        table_rows = [(p.id, p.uri, p.script_uri, p.state) for p in procedures]
-        headers = ['ID', 'URI', 'Script', 'State']
+        table_rows = [(p.id, p.uri, p.script_uri, p.created_time, p.state) for p in procedures]
+        headers = ['ID', 'URI', 'Script', 'Created Time', 'State']
         return tabulate.tabulate(table_rows, headers)
 
     def list(self, pid=None) -> str:
