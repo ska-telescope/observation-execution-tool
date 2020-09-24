@@ -149,11 +149,14 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
 
         proxy = self._get_proxy(attribute.device)
         LOGGER.debug('Reading attribute: %s/%s', attribute.device, attribute.name)
-        self.event_id = proxy.subscribe_event(attribute.name, tango.EventType.CHANGE_EVENT, self.handle_state_change)
-        LOGGER.debug(f"{attribute.name} Subscribed to {tango.EventType.CHANGE_EVENT} (event id: {self.event_id})")
+        self.event_id = proxy.subscribe_event(attribute.name,
+                                              tango.EventType.CHANGE_EVENT,
+                                              self.handle_state_change)
+        LOGGER.debug("%s Subscribed to %s (event id: %d)", attribute.name,
+                     tango.EventType.CHANGE_EVENT, self.event_id)
         return self.event_id
 
-    def handle_state_change(self, event:tango.EventData):
+    def handle_state_change(self, event: tango.EventData):
         """
         callback method triggered when subscribe event called
         successfully

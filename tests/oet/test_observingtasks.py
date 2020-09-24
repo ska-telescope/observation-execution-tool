@@ -30,17 +30,27 @@ CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_suc
 VALID_ASSIGN_STARTSCAN_REQUEST = '{"id": 123}'
 
 
-def creat_event_based_queue(obsstate_list):
+def create_event_based_queue(obsstate_list):
     """Creating eventData object for each obsState and
        storing objects in the Queue
     """
     with observingtasks.EXECUTOR.queue.mutex:
         observingtasks.EXECUTOR.queue.queue.clear()
     for obsstate in obsstate_list:
-        evt = mock.MagicMock(spec_set=tango.EventData)
-        evt.attr_value = obsstate
-        evt.err = False
+        evt = create_event(obsstate.value, False)
         observingtasks.EXECUTOR.handle_state_change(evt)
+
+
+def create_event(value, err: bool):
+    """
+    Create event with given value and error state
+    """
+    evt = mock.MagicMock(spec_set=tango.EventData)
+    devattribute = mock.MagicMock(spec=tango.DeviceAttribute)
+    devattribute.value = value
+    evt.attr_value = devattribute
+    evt.err = err
+    return evt
 
 
 def set_toggle_feature_value(pub_sub=False):
@@ -420,7 +430,7 @@ def test_wait_for_obsstate_returns_error_state_for_pub_sub():
     """
     state_list = [ObsState.IDLE, ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.FAULT,
                   ObsState.RESTARTING]
-    creat_event_based_queue(state_list)
+    create_event_based_queue(state_list)
     target_state = ObsState.READY
     error_state = [ObsState.ABORTING, ObsState.FAULT]
     state_response = observingtasks.wait_for_obsstate(
@@ -434,7 +444,7 @@ def test_wait_for_obsstate_returns_target_state_for_pub_sub():
     Verify wait_for_obsstate waits for the device obsState
     """
     state_list = [ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE]
-    creat_event_based_queue(state_list)
+    create_event_based_queue(state_list)
     target_state = ObsState.IDLE
     error_state = [ObsState.ABORTED, ObsState.FAULT]
     state_response = observingtasks.wait_for_obsstate(
@@ -452,10 +462,15 @@ def test_wait_for_pubsub_value_raises_exception_on_timeout():
     target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
 
     with pytest.raises(Exception):
-        _ = observingtasks.wait_for_pubsub_value(target_states, timeout=1)
+        _ = observingtasks.wait_for_pubsub_value(target_states,
+                                                 key=observingtasks.parse_oet_obsstate_from_tango_eventdata,
+                                                 timeout=1)
 
 
 def test_wait_for_pubsub_value_raises_exception_on_event_error():
+    """
+    Verify wait_for_pubsub_value raises exception if event with an error is encountered
+    """
     with observingtasks.EXECUTOR.queue.mutex:
         observingtasks.EXECUTOR.queue.queue.clear()
     target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
@@ -475,12 +490,16 @@ def test_wait_for_pubsub_value_raises_type_error_for_non_matching_types_in_pubsu
     Verify wait_for_pubsub_value raises TypeError if attribute type and
     target type do not match
     """
-    state_list = [1, 2, 3, 4]
-    creat_event_based_queue(state_list)
+    with observingtasks.EXECUTOR.queue.mutex:
+        observingtasks.EXECUTOR.queue.queue.clear()
+    event_with_bad_value_type = create_event('Hello World', False)
+    observingtasks.EXECUTOR.handle_state_change(event_with_bad_value_type)
+
     target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
 
     with pytest.raises(TypeError):
-        _ = observingtasks.wait_for_pubsub_value(target_states)
+        _ = observingtasks.wait_for_pubsub_value(target_states,
+                                                 key=observingtasks.parse_oet_obsstate_from_tango_eventdata)
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
@@ -517,7 +536,8 @@ def test_wait_for_value_raises_type_error_for_non_matching_types(mock_read_fn):
     target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
 
     with pytest.raises(TypeError):
-        _ = observingtasks.wait_for_value(attribute, target_states)
+        _ = observingtasks.wait_for_value(attribute, target_states,
+                                          key=observingtasks.cast_tango_obsstate_to_oet_obstate)
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
@@ -547,13 +567,14 @@ def test_wait_for_obsstate_returns_error_state(mock_read_fn):
 @mock.patch.object(observingtasks.EXECUTOR, 'subscribe_event')
 @mock.patch.object(observingtasks.EXECUTOR, 'unsubscribe_event')
 def test_call_and_wait_for_state_waits_for_target_states_for_pub_sub(mock_subscribe_event_fn,
-                                                                     mock_unsubscribe_event_fn, mock_execute_fn):
+                                                                     mock_unsubscribe_event_fn,
+                                                                     mock_execute_fn):
     """
     Test that the call_and_wait_for_state function waits for the requested
     states in the specified sequence for pub/sub feature.
     """
     state_list = [ObsState.IDLE, ObsState.EMPTY, ObsState.RESOURCING, ObsState.EMPTY, ObsState.IDLE]
-    creat_event_based_queue(state_list)
+    create_event_based_queue(state_list)
     with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=True)):
         mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
 
@@ -561,7 +582,7 @@ def test_call_and_wait_for_state_waits_for_target_states_for_pub_sub(mock_subscr
         cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
 
         # This task waits for, in sequence, RESOURCING then IDLE.
-        response = observingtasks._call_and_wait_for_obsstate(
+        _ = observingtasks._call_and_wait_for_obsstate(
             cmd,
             [(ObsState.RESOURCING, []),
              (ObsState.IDLE, [])]
@@ -586,7 +607,7 @@ def test_call_and_wait_for_state_raises_exception_when_error_state_encountered_f
     """
     # obsState will be SCANNING for the first three reads, then FAULT
     state_list = [ObsState.SCANNING, ObsState.SCANNING, ObsState.SCANNING, ObsState.FAULT]
-    creat_event_based_queue(state_list)
+    create_event_based_queue(state_list)
     with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=True)):
         # Test command to call SubArrayNode.Foo()
         cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
@@ -636,13 +657,14 @@ def test_call_and_wait_for_state_waits_for_target_states(mock_execute_fn, mock_r
     mock_read_fn.assert_called_with(expected_attr)
     # obsState should have been read 5 times until IDLE was reached
     assert mock_read_fn.call_count == 5
-    # _call_and_wait_for_obsstate should have returned CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
+    # _call_and_wait_for_obsstate should return CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
     assert response == CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_call_and_wait_for_state_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
+def test_call_and_wait_for_state_raises_exception_when_error_state_encountered(mock_execute_fn,
+                                                                               mock_read_fn):
     """
     Verify that call_and_wait_for_state raises an exception when an error
     state is encountered.

@@ -8,9 +8,10 @@ the API of the devices they are controlling.
 """
 import enum
 import logging
-from datetime import timedelta
 from typing import Optional, Any, NamedTuple, Iterable, List, Tuple
+from datetime import timedelta
 
+import tango
 import marshmallow
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
 import ska.cdm.messages.central_node.release_resources as cdm_release
@@ -307,6 +308,7 @@ def return_allocated_resources(
     subarray.resources += allocated
     return allocated
 
+
 def allocate_resources(subarray: domain.SubArray,
                        resources: domain.ResourceAllocation) -> domain.ResourceAllocation:
     """
@@ -462,16 +464,11 @@ def wait_for_value(attribute: Attribute, target_values: Iterable[Any], key=lambd
     :param key: function to process each attribute value before comparison
     :return: Attribute value read from device (one of target_values)
     """
-    response = EXECUTOR.read(attribute)
-    processed = key(response)
-    if all(isinstance(value, type(processed)) for value in target_values):
-        while True:
-            if processed in target_values:
-                return processed
-            response = EXECUTOR.read(attribute)
-            processed = key(response)
-    else:
-        raise TypeError('Attribute type does not match type of target values')
+    while True:
+        response = EXECUTOR.read(attribute)
+        processed = key(response)
+        if processed in target_values:
+            return processed
 
 
 def wait_for_pubsub_value(target_values: Iterable[Any], timeout=6, key=lambda _: _) -> Any:
@@ -486,22 +483,14 @@ def wait_for_pubsub_value(target_values: Iterable[Any], timeout=6, key=lambda _:
     :param key: function to process each attribute value before comparison
     :return: Attribute value read from device (one of target_values)
     """
-    response = EXECUTOR.read_event(timeout=timeout)
-    if response.err:
-        # TODO: how to handle errors when subscribed? Fall to polling? Raise an exception?
-        raise Exception('Tango error')
-    processed = key(response.attr_value)
-    if all(isinstance(value, type(processed)) for value in target_values):
-        while True:
-            if processed in target_values:
-                return processed
-            response = EXECUTOR.read_event(timeout=timeout)
-            if response.err:
-                # TODO: how to handle errors when subscribed? Fall to polling? Raise an exception?
-                raise Exception('Tango error')
-            processed = key(response.attr_value)
-    else:
-        raise TypeError('Attribute type does not match type of target values')
+    while True:
+        response = EXECUTOR.read_event(timeout=timeout)
+        if response.err:
+            # TODO: how to handle errors when subscribed? Fall to polling? Raise an exception?
+            raise Exception('Tango error')
+        processed = key(response)
+        if processed in target_values:
+            return processed
 
 
 # TODO: 1. implement timeout functionality 2. return value to use Either pattern
@@ -534,7 +523,8 @@ def wait_for_obsstate(
     # obsState values do not need processing so the optional 'key' argument to
     # wait_for_value is left unset
     if use_pubsub:
-        final_state = wait_for_pubsub_value(obstates_union, key=cast_tango_obsstate_to_oet_obstate)
+        final_state = wait_for_pubsub_value(obstates_union,
+                                            key=parse_oet_obsstate_from_tango_eventdata)
     else:
         final_state = wait_for_value(attribute, obstates_union,
                                      key=cast_tango_obsstate_to_oet_obstate)
@@ -549,7 +539,31 @@ def wait_for_obsstate(
 
 
 def cast_tango_obsstate_to_oet_obstate(other):
-    return ObsState[other.name]
+    """
+    Cast the given parameter into OET ObsState (tango ObsState expected as input)
+
+    :param other: Object to be converted
+    :return: OET ObsState
+    """
+    try:
+        oet_obsstate = ObsState[other.name]
+        return oet_obsstate
+    except Exception as exeption:
+        raise TypeError(f'Could not convert attribute value to OET ObsState: {exeption}')
+
+
+def parse_oet_obsstate_from_tango_eventdata(event: tango.EventData) -> ObsState:
+    """
+    Parse OET ObsState from the value stored in tango EventData object
+
+    :param event: Tango EventData object
+    :return: OET ObsState
+    """
+    try:
+        oet_obsstate = ObsState(event.attr_value.value)
+        return oet_obsstate
+    except Exception as exception:
+        raise TypeError(f'Could not extract OET ObsState from EventData: {exception}')
 
 
 def execute_configure_command(command: Command):
@@ -789,6 +803,7 @@ def _call_and_wait_for_obsstate(command: Command,
     use_pubsub = oet.FEATURES.use_pubsub_to_read_tango_attributes
     attribute = Attribute(device_to_monitor, 'obsState')
     if use_pubsub:
+        LOGGER.info('Using pub/sub to track obsState of %s', device_to_monitor)
         _ = EXECUTOR.subscribe_event(attribute)
 
     try:
