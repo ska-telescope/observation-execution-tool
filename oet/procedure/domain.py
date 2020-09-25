@@ -8,10 +8,11 @@ import importlib.machinery
 import multiprocessing
 import typing
 from multiprocessing.dummy import Pool
-from typing import Optional
+from typing import Optional, Tuple, List
 import traceback
 import enum
 import types
+import time
 
 from oet.command import SCAN_ID_GENERATOR
 
@@ -19,12 +20,12 @@ from oet.command import SCAN_ID_GENERATOR
 class ProcedureState(enum.Enum):
     """
     Represents the script execution state.
-
-    Limited to either READY or RUNNING for this PI.
     """
     READY = enum.auto()
     RUNNING = enum.auto()
+    COMPLETED = enum.auto()
     STOP = enum.auto()
+    FAILED = enum.auto()
 
 
 @dataclasses.dataclass
@@ -51,6 +52,19 @@ class ProcedureInput:
         return '<ProcedureInput({})>'.format(', '.join((args, kwargs)))
 
 
+@dataclasses.dataclass
+class ProcedureHistory:
+    """
+    ProcedureHistory is a non-functional dataclass holding execution history of a Procedure.
+    """
+
+    def __init__(self):
+        self.execution_error: bool = False
+        self.script_history: List[Tuple[ProcedureState, float]] = []
+        self.exception = None
+        self.stacktrace = None
+
+
 class Procedure(multiprocessing.Process):
     """
     A Procedure is the OET representation of a Python script, its arguments,
@@ -60,8 +74,8 @@ class Procedure(multiprocessing.Process):
     def __init__(self, script_uri: str, *args,
                  scan_counter: Optional[multiprocessing.Value] = None, **kwargs):
         multiprocessing.Process.__init__(self)
-        self.mp_queue = multiprocessing.Queue()
-        self._process_status = None
+        self.stacktrace_queue = multiprocessing.Queue()
+        self.history = ProcedureHistory()
         init_args = ProcedureInput(*args, **kwargs)
 
         self.id = None  # pylint:disable=invalid-name
@@ -73,7 +87,7 @@ class Procedure(multiprocessing.Process):
         self.script_uri = script_uri
         self.script_args: typing.Dict[str, ProcedureInput] = dict(init=init_args,
                                                                   run=ProcedureInput())
-        self.state = ProcedureState.READY
+        self._change_state(ProcedureState.READY)
 
         self._scan_counter = scan_counter
 
@@ -91,9 +105,11 @@ class Procedure(multiprocessing.Process):
             args = self.script_args['run'].args
             kwargs = self.script_args['run'].kwargs
             self.user_module.main(*args, **kwargs)
-        except Exception as e:
+
+        except Exception:
+            self._change_state(ProcedureState.FAILED)
             tb = traceback.format_exc()
-            self.mp_queue.put((e, tb))
+            self.stacktrace_queue.put(tb)
 
     def start(self):
         """
@@ -106,14 +122,28 @@ class Procedure(multiprocessing.Process):
         if self.state is not ProcedureState.READY:
             raise Exception(f'Invalidate procedure state for run: {self.state}')
 
-        self.state = ProcedureState.RUNNING
+        self._change_state(ProcedureState.RUNNING)
         super().start()
 
-    @property
-    def process_status(self):
-        if not self.mp_queue.empty():
-            self._process_status = self.mp_queue.get()
-        return self._process_status
+    def terminate(self):
+        if self.state is not ProcedureState.RUNNING:
+            raise Exception(f'Invalidate procedure state for terminate: {self.state}')
+
+        self._change_state(ProcedureState.STOP)
+        super().terminate()
+
+    def update_process_exit_state(self):
+        if not self.stacktrace_queue.empty():
+            tb = self.stacktrace_queue.get()
+            self.history.execution_error = True
+            self.history.stacktrace = tb
+            self._change_state(ProcedureState.FAILED)
+        else:
+            self._change_state(ProcedureState.COMPLETED)
+
+    def _change_state(self, new_state: ProcedureState):
+        self.state = new_state
+        self.history.script_history.append((new_state, time.time()))
 
 
 class ProcessManager:
@@ -125,7 +155,7 @@ class ProcessManager:
 
     def __init__(self):
         self.procedures: typing.Dict[int, Procedure] = {}
-        self.running: typing.Optional[Procedure] = None
+        self.running: Optional[Procedure] = None
         self.procedure_complete = multiprocessing.Condition()
 
         self._procedure_factory = ProcedureFactory()
@@ -176,23 +206,15 @@ class ProcessManager:
 
         self.running = procedure
         procedure.script_args['run'] = run_args
-        print("before", procedure, procedure.is_alive())
         procedure.start()
-        print("during", procedure, procedure.is_alive())
 
         def callback(*_):
-            if procedure.process_status:
-                error, traceback = procedure.process_status
-                print('Inside Process Manager: Error received from child process', traceback)
-            else:
-                print("Inside Process Manager: Successfully executed child process")
+            procedure.update_process_exit_state()
             self.running = None
-            del self.procedures[process_id]
             with self.procedure_complete:
                 self.procedure_complete.notify_all()
 
         self._pool.apply_async(_wait_for_process, (procedure,), {}, callback, callback)
-        print("join", procedure, procedure.is_alive())
 
     def stop(self, process_id):
         """
