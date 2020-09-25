@@ -282,7 +282,7 @@ class RestAdapter:
 
         request_json = {
             'abort': run_abort,
-            'state': 'STOP'
+            'state': 'STOPPED'
         }
         LOG.debug('Stop payload: %s', request_json)
 

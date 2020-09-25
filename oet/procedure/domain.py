@@ -21,10 +21,10 @@ class ProcedureState(enum.Enum):
     """
     Represents the script execution state.
     """
-    READY = enum.auto()
+    CREATED = enum.auto()
     RUNNING = enum.auto()
     COMPLETED = enum.auto()
-    STOP = enum.auto()
+    STOPPED = enum.auto()
     FAILED = enum.auto()
 
 
@@ -56,13 +56,31 @@ class ProcedureInput:
 class ProcedureHistory:
     """
     ProcedureHistory is a non-functional dataclass holding execution history of a Procedure.
+
+    execution_error: indicates if an error happened during process execution
+    process_history: records time for each change of ProcedureState (list of tuples where
+    tuple contains the ProcedureState and time when state was changed to)
+    stacktrace: None unless execution_error is True in which case stores stacktrace from process
     """
 
     def __init__(self):
         self.execution_error: bool = False
-        self.script_history: List[Tuple[ProcedureState, float]] = []
-        self.exception = None
+        self.process_history: List[Tuple[ProcedureState, float]] = []
         self.stacktrace = None
+
+    def __eq__(self, other):
+        if not isinstance(other, ProcedureHistory):
+            return False
+        if self.execution_error == other.execution_error and \
+                self.process_history == other.process_history and \
+                self.stacktrace == other.stacktrace:
+            return True
+        return False
+
+    def __repr__(self):
+        p_history = ', '.join(['({!s}, {!r})'.format(s, t) for s, t in self.process_history])
+        return '<ProcessHistory(execution_error={}, process_history=[{}], ' \
+               'stacktrace={})>'.format(self.execution_error, p_history, self.stacktrace)
 
 
 class Procedure(multiprocessing.Process):
@@ -87,7 +105,7 @@ class Procedure(multiprocessing.Process):
         self.script_uri = script_uri
         self.script_args: typing.Dict[str, ProcedureInput] = dict(init=init_args,
                                                                   run=ProcedureInput())
-        self._change_state(ProcedureState.READY)
+        self._change_state(ProcedureState.CREATED)
 
         self._scan_counter = scan_counter
 
@@ -106,10 +124,10 @@ class Procedure(multiprocessing.Process):
             kwargs = self.script_args['run'].kwargs
             self.user_module.main(*args, **kwargs)
 
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             self._change_state(ProcedureState.FAILED)
-            tb = traceback.format_exc()
-            self.stacktrace_queue.put(tb)
+            stacktrace = traceback.format_exc()
+            self.stacktrace_queue.put(stacktrace)
 
     def start(self):
         """
@@ -119,7 +137,7 @@ class Procedure(multiprocessing.Process):
         to record state within the parent process. Procedure state is then inherited by
         the child process.
         """
-        if self.state is not ProcedureState.READY:
+        if self.state is not ProcedureState.CREATED:
             raise Exception(f'Invalidate procedure state for run: {self.state}')
 
         self._change_state(ProcedureState.RUNNING)
@@ -129,21 +147,26 @@ class Procedure(multiprocessing.Process):
         if self.state is not ProcedureState.RUNNING:
             raise Exception(f'Invalidate procedure state for terminate: {self.state}')
 
-        self._change_state(ProcedureState.STOP)
+        self._change_state(ProcedureState.STOPPED)
         super().terminate()
 
-    def update_process_exit_state(self):
-        if not self.stacktrace_queue.empty():
-            tb = self.stacktrace_queue.get()
-            self.history.execution_error = True
-            self.history.stacktrace = tb
-            self._change_state(ProcedureState.FAILED)
+    def update_process_exit_status(self):
+        """
+        Update procedure state at the end of script execution
+        """
+        if self.state == ProcedureState.RUNNING:
+            if not self.stacktrace_queue.empty():
+                self.history.execution_error = True
+                self.history.stacktrace = self.stacktrace_queue.get()
+                self._change_state(ProcedureState.FAILED)
+            else:
+                self._change_state(ProcedureState.COMPLETED)
         else:
-            self._change_state(ProcedureState.COMPLETED)
+            raise Exception(f'Invalidate procedure state for recording exit status: {self.state}')
 
     def _change_state(self, new_state: ProcedureState):
         self.state = new_state
-        self.history.script_history.append((new_state, time.time()))
+        self.history.process_history.append((new_state, time.time()))
 
 
 class ProcessManager:
@@ -209,7 +232,7 @@ class ProcessManager:
         procedure.start()
 
         def callback(*_):
-            procedure.update_process_exit_state()
+            procedure.update_process_exit_status()
             self.running = None
             with self.procedure_complete:
                 self.procedure_complete.notify_all()
