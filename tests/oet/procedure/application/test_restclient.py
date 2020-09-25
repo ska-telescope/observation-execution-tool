@@ -25,6 +25,7 @@ CREATE_PROCESS_RESPONSE = {
             }
         },
         "script_uri": "file:///path/to/observing_script.py",
+        "created_time": "2020-09-23T14:50:07",
         "state": "READY",
         "uri": "http://localhost:5000/api/v1.0/procedures/2"
     }
@@ -51,6 +52,7 @@ LIST_PROCEDURES_POSITIVE_RESPONSE = {
                 }
             },
             "script_uri": "file:///path/to/observing_script.py",
+            "created_time": "2020-09-23T14:50:07",
             "state": "RUNNING",
             "uri": "http://localhost:5000/api/v1.0/procedures/1"
         }
@@ -75,6 +77,7 @@ START_PROCESS_RESPONSE = {
             }
         },
         "script_uri": "file:///path/to/observing_script.py",
+        "created_time": "2020-09-23T14:50:07",
         "state": "RUNNING",
         "uri": "http://localhost:5000/api/v1.0/procedures/1"
     }

@@ -27,18 +27,20 @@ def main(queue, procedure):
     return f'file://{str(script_path)}'
 
 
-def create_empty_procedure_summary(procedure_id: int, script_uri: str):
+def create_empty_procedure_summary(procedure_id: int, script_uri: str, created_time: str):
     """
     Utility function to create a null procedure summary. The returned
     procedure defines zero script arguments.
 
     :param procedure_id: procedure ID
     :param script_uri: path to script
+    :param created_time: Procedure creation time
     :return: corresponding ProcedureSummary object
     """
     return ProcedureSummary(id=procedure_id,
                             script_uri=script_uri,
                             script_args={'init': ProcedureInput(), 'run': ProcedureInput()},
+                            created_time=created_time,
                             state=ProcedureState.READY)
 
 
@@ -64,6 +66,7 @@ def test_ses_create_summary_returns_expected_object():
     procedures = {123: procedure}
     expected = ProcedureSummary(id=123, script_uri=procedure.script_uri,
                                 script_args=procedure.script_args,
+                                created_time=procedure.created_time,
                                 state=procedure.state)
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
         instance = mock_pm.return_value
@@ -84,6 +87,7 @@ def test_ses_prepare_calls_process_manager_method_and_returns_summary_for_create
     procedures = {123: procedure}
     expected = ProcedureSummary(id=123, script_uri=procedure.script_uri,
                                 script_args=procedure.script_args,
+                                created_time=procedure.created_time,
                                 state=procedure.state)
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
@@ -115,6 +119,7 @@ def test_ses_start_calls_process_manager_function_and_returns_summary():
     procedures = {123: procedure}
     expected = ProcedureSummary(id=123, script_uri=procedure.script_uri,
                                 script_args=procedure.script_args,
+                                created_time=procedure.created_time,
                                 state=procedure.state)
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
@@ -147,8 +152,8 @@ def test_ses_summarise_returns_summaries_for_requested_pids():
     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
 
     expected = [
-        create_empty_procedure_summary(1, 'test://a'),
-        create_empty_procedure_summary(3, 'test://c')
+        create_empty_procedure_summary(1, 'test://a', procedure_a.created_time),
+        create_empty_procedure_summary(3, 'test://c', procedure_a.created_time)
     ]
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
@@ -197,9 +202,9 @@ def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
 
     expected = [
-        create_empty_procedure_summary(1, 'test://a'),
-        create_empty_procedure_summary(2, 'test://b'),
-        create_empty_procedure_summary(3, 'test://c')
+        create_empty_procedure_summary(1, 'test://a', procedure_a.created_time),
+        create_empty_procedure_summary(2, 'test://b', procedure_b.created_time),
+        create_empty_procedure_summary(3, 'test://c', procedure_c.created_time)
     ]
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
@@ -252,6 +257,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     # .. before returning a summary of the running abort Process
     expected = [ProcedureSummary(id=abort_pid, script_uri=abort_procedure.script_uri,
                                  script_args=abort_procedure.script_args,
+                                 created_time=abort_procedure.created_time,
                                  state=abort_procedure.state)]
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
@@ -332,6 +338,7 @@ def test_ses_get_subarray_id_for_requested_pid():
     procedures = {process_pid: procedure}
     process_summary = ProcedureSummary(id=process_pid, script_uri=procedure.script_uri,
                                        script_args=procedure.script_args,
+                                       created_time=procedure.created_time,
                                        state=procedure.state)
     expected = [process_summary]
 
