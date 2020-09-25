@@ -273,7 +273,7 @@ def test_stop_procedure_sends_correct_command():
     request_payload = last_request.json()
     assert 'state' in request_payload
     assert request_payload['abort'] is True
-    assert request_payload['state'] == 'STOP'
+    assert request_payload['state'] == 'STOPPED'
 
 
 def test_stop_procedure_sends_command_with_abort_true():
@@ -296,4 +296,4 @@ def test_stop_procedure_sends_command_with_abort_true():
     request_payload = last_request.json()
     assert 'state' in request_payload
     assert request_payload['abort'] is True
-    assert request_payload['state'] == 'STOP'
+    assert request_payload['state'] == 'STOPPED'

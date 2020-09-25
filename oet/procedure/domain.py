@@ -63,10 +63,12 @@ class ProcedureHistory:
     stacktrace: None unless execution_error is True in which case stores stacktrace from process
     """
 
-    def __init__(self):
-        self.execution_error: bool = False
-        self.process_history: List[Tuple[ProcedureState, float]] = []
-        self.stacktrace = None
+    def __init__(self, execution_error=False, process_history=None, stacktrace=None):
+        if process_history is None:
+            process_history = []
+        self.execution_error: bool = execution_error
+        self.process_history: List[Tuple[ProcedureState, float]] = process_history
+        self.stacktrace = stacktrace
 
     def __eq__(self, other):
         if not isinstance(other, ProcedureHistory):
@@ -138,14 +140,14 @@ class Procedure(multiprocessing.Process):
         the child process.
         """
         if self.state is not ProcedureState.CREATED:
-            raise Exception(f'Invalidate procedure state for run: {self.state}')
+            raise Exception(f'Invalid procedure state for run: {self.state}')
 
         self._change_state(ProcedureState.RUNNING)
         super().start()
 
     def terminate(self):
         if self.state is not ProcedureState.RUNNING:
-            raise Exception(f'Invalidate procedure state for terminate: {self.state}')
+            raise Exception(f'Invalid procedure state for terminate: {self.state}')
 
         self._change_state(ProcedureState.STOPPED)
         super().terminate()
