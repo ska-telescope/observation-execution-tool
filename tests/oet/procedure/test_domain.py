@@ -6,7 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from oet.procedure.domain import Procedure, ProcedureInput, ProcedureState, ProcessManager
+from oet.procedure.domain import Procedure, ProcedureInput, \
+    ProcedureHistory, ProcedureState, ProcessManager
 
 
 @pytest.fixture
@@ -138,6 +139,29 @@ def test_procedure_input_eq_works_as_expected():
     assert pi1 != object()
 
 
+def test_procedure_history_default_values_are_as_expected():
+    """
+    Verify that ProcedureHistory default values are set as
+    expected if not provided.
+    """
+    procedure_history = ProcedureHistory()
+    assert not procedure_history.execution_error
+    assert procedure_history.process_history == []
+    assert procedure_history.stacktrace is None
+
+
+def test_procedure_history_eq_works_as_expected():
+    """
+    Verify ProcedureHistory equality
+    """
+    ph1 = ProcedureHistory()
+    ph2 = ProcedureHistory()
+    ph3 = ProcedureHistory(True, [(ProcedureState.CREATED, 1601053634.9669704)])
+    assert ph1 == ph2
+    assert ph1 != ph3
+    assert ph1 != object()
+
+
 def test_id_of_a_new_procedure_is_none(procedure):
     """
     Verify that the ID of a new procedure is unset
@@ -145,11 +169,11 @@ def test_id_of_a_new_procedure_is_none(procedure):
     assert procedure.id is None
 
 
-def test_state_of_a_new_procedure_is_ready(procedure):
+def test_state_of_a_new_procedure_is_created(procedure):
     """
-    Verify that the state of a new procedure is READY
+    Verify that the state of a new procedure is CREATED
     """
-    assert procedure.state == ProcedureState.READY
+    assert procedure.state == ProcedureState.CREATED
 
 
 def test_procedure_start_sets_state_to_running(procedure):
@@ -170,6 +194,19 @@ def test_procedure_run_executes_user_script(script_with_queue_path):
     procedure.run()
     assert queue.qsize() == 1
     assert queue.get() is None
+
+
+def test_procedure_run_catches_and_stores_script_exception(fail_script):
+    """
+    Verify that run() catches an exception thrown in a script and places
+    it in the stacktrace queue
+    """
+    procedure = Procedure(script_uri=fail_script)
+    procedure.run()
+    try:
+        procedure.stacktrace_queue.get(timeout=1)
+    except Exception:  # pylint: disable=broad-except
+        pytest.fail('Stacktrace not found in queue')
 
 
 def test_procedure_start_executes_user_script_in_child_process(script_with_queue_path):
@@ -223,6 +260,25 @@ def test_procedure_init_raises_exception_on_script_file_not_found():
         _ = Procedure(script_uri=script_uri)
 
 
+def test_procedure_terminate_sets_state_to_stopped(procedure):
+    """
+    Verify that procedure terminate changes to STOPPED
+    when terminate() is called
+    """
+    procedure.start()
+    procedure.terminate()
+    assert procedure.state == ProcedureState.STOPPED
+
+
+def test_procedure_terminate_not_allowed_if_process_is_not_running(procedure):
+    """
+    Verify that procedure raises an exception if process to terminate
+    is not in RUNNING state
+    """
+    with pytest.raises(Exception):
+        procedure.terminate()
+
+
 def test_no_procedures_running_on_a_new_process_manager(manager):
     """
     Verify that a new ProcessManager has no running procedure
@@ -266,7 +322,9 @@ def test_process_manager_create_captures_initialisation_arguments(manager, scrip
     assert created.script_args['init'] == expected
 
 
-def test_calling_process_manager_run_sets_run_args_on_procedure(manager, script_path, process_cleanup):
+def test_calling_process_manager_run_sets_run_args_on_procedure(manager,
+                                                                script_path,
+                                                                process_cleanup):
     """
     Verify that the arguments to ProcessManager run() are captured and stored on the
     procedure instance
@@ -278,13 +336,15 @@ def test_calling_process_manager_run_sets_run_args_on_procedure(manager, script_
     assert created.script_args['run'] == expected
 
 
-def test_process_manager_run_changes_state_of_procedure_to_running(manager, script_path, process_cleanup):
+def test_process_manager_run_changes_state_of_procedure_to_running(manager,
+                                                                   script_path,
+                                                                   process_cleanup):
     """
     Verify that procedure state changes when ProcessManager starts
     procedure execution
     """
     pid = manager.create(script_path, init_args=ProcedureInput())
-    assert manager.procedures[pid].state == ProcedureState.READY
+    assert manager.procedures[pid].state == ProcedureState.CREATED
     manager.run(pid, run_args=ProcedureInput())
     assert manager.procedures[pid].state == ProcedureState.RUNNING
 
@@ -331,15 +391,15 @@ def test_process_manager_sets_running_to_none_when_process_completes(manager, sc
     assert manager.running is None
 
 
-def test_process_manager_removes_references_to_completed_procedures(manager, script_path):
+def test_process_manager_updates_state_of_completed_procedures(manager, script_path):
     """
-    Verify that ProcessManager removes a completed procedure from
-    the procedures list
+    Verify that ProcessManager updates procedure state to COMPLETED when finished
+    successfully
     """
     pid = manager.create(script_path, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
     wait_for_process_to_complete(manager)
-    assert pid not in manager.procedures
+    assert manager.procedures[pid].state == ProcedureState.COMPLETED
 
 
 def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_script):
@@ -353,7 +413,7 @@ def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_sc
     assert manager.running is None
 
 
-def test_process_manager_removes_references_on_script_failure(manager, fail_script):
+def test_process_manager_updates_procedure_state_on_script_failure(manager, fail_script):
     """
     Verify that ProcessManager removes a failed procedure from
     the procedures list
@@ -361,7 +421,7 @@ def test_process_manager_removes_references_on_script_failure(manager, fail_scri
     pid = manager.create(fail_script, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
     wait_for_process_to_complete(manager)
-    assert pid not in manager.procedures
+    assert manager.procedures[pid].state == ProcedureState.FAILED
 
 
 def test_process_manager_run_fails_on_invalid_pid(manager):
@@ -373,7 +433,9 @@ def test_process_manager_run_fails_on_invalid_pid(manager):
         manager.run(321, run_args=ProcedureInput())
 
 
-def test_process_manager_run_fails_on_process_that_is_already_running(manager, script_path, process_cleanup):
+def test_process_manager_run_fails_on_process_that_is_already_running(manager,
+                                                                      script_path,
+                                                                      process_cleanup):
     """
     Verify that an exception is raised when requesting run() for a procedure
     that is already running
@@ -409,7 +471,7 @@ def test_process_manager_sets_running_to_none_on_stop(manager, abort_script):
     assert manager.running is None
 
 
-def test_process_manager_removes_references_on_stop(manager, abort_script):
+def test_process_manager_updates_procedure_state_on_stop(manager, abort_script):
     """
     Verify that ProcessManager removes an stopped procedure from
     the procedures list
@@ -418,7 +480,7 @@ def test_process_manager_removes_references_on_stop(manager, abort_script):
     manager.run(pid, run_args=ProcedureInput())
     manager.stop(pid)
     wait_for_process_to_complete(manager)
-    assert pid not in manager.procedures
+    assert manager.procedures[pid].state == ProcedureState.STOPPED
 
 
 def test_process_manager_stop_fails_on_invalid_pid(manager):

@@ -27,10 +27,10 @@ CREATE_SUMMARY = ProcedureSummary(
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b')},
     created_time= '2020-09-23T14:50:07',
-    state=domain.ProcedureState.READY
+    state=domain.ProcedureState.CREATED
 )
 
-ABORT_JSON = dict(state="STOP", abort=True)
+ABORT_JSON = dict(state="STOPPED", abort=True)
 
 # Valid JSON struct for starting a prepared procedure
 RUN_JSON = dict(script_uri="test:///test.py",
@@ -262,7 +262,7 @@ def test_put_procedure_calls_stop_on_execution_service(client):
         mock_service.stop.return_value = []
 
         # PUT request should pick up default run_abort=True
-        response = client.put(RUN_ENDPOINT, json=dict(state="STOP", abort=False))
+        response = client.put(RUN_ENDPOINT, json=dict(state="STOPPED", abort=False))
         response_json = response.get_json()
 
         mock_service.stop.assert_called_once_with(cmd, False)

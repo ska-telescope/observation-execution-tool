@@ -41,7 +41,7 @@ def create_empty_procedure_summary(procedure_id: int, script_uri: str, created_t
                             script_uri=script_uri,
                             script_args={'init': ProcedureInput(), 'run': ProcedureInput()},
                             created_time=created_time,
-                            state=ProcedureState.READY)
+                            state=ProcedureState.CREATED)
 
 
 def test_ses_create_summary_returns_empty_list_when_no_procedures_present():
@@ -138,7 +138,7 @@ def test_ses_start_calls_process_manager_function_and_returns_summary():
         assert returned == expected
         # we don't validate or modify procedure state, so this should still be
         # READY rather than RUNNING
-        assert returned.state == ProcedureState.READY
+        assert returned.state == ProcedureState.CREATED
 
 
 def test_ses_summarise_returns_summaries_for_requested_pids():
