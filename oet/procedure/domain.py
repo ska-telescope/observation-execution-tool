@@ -6,18 +6,20 @@ OS processes, process supervisors, signal handlers, etc.
 import dataclasses
 import importlib.machinery
 import multiprocessing
-import typing
 from multiprocessing.dummy import Pool
-from typing import Optional, Tuple, List
+import typing
 import traceback
 import enum
 import types
 import time
 import logging
+from collections import OrderedDict
 
 from oet.command import SCAN_ID_GENERATOR
 
 LOGGER = logging.getLogger(__name__)
+
+PROCEDURE_QUEUE_MAX_LENGTH = 10
 
 
 class ProcedureState(enum.Enum):
@@ -70,7 +72,7 @@ class ProcedureHistory:
         if process_history is None:
             process_history = []
         self.execution_error: bool = execution_error
-        self.process_history: List[Tuple[ProcedureState, float]] = process_history
+        self.process_history: typing.List[typing.Tuple[ProcedureState, float]] = process_history
         self.stacktrace = stacktrace
 
     def __eq__(self, other):
@@ -95,7 +97,7 @@ class Procedure(multiprocessing.Process):
     """
 
     def __init__(self, script_uri: str, *args,
-                 scan_counter: Optional[multiprocessing.Value] = None, **kwargs):
+                 scan_counter: typing.Optional[multiprocessing.Value] = None, **kwargs):
         multiprocessing.Process.__init__(self)
         self.stacktrace_queue = multiprocessing.Queue()
         self.history = ProcedureHistory()
@@ -129,8 +131,8 @@ class Procedure(multiprocessing.Process):
             kwargs = self.script_args['run'].kwargs
             self.user_module.main(*args, **kwargs)
 
-        except Exception as e:  # pylint: disable=broad-except
-            LOGGER.debug('Process terminated unexpectedly. Excpetion caught: %s', e)
+        except Exception as exception:  # pylint: disable=broad-except
+            LOGGER.debug('Process terminated unexpectedly. Exception caught: %s', exception)
             self._change_state(ProcedureState.FAILED)
             stacktrace = traceback.format_exc()
             self.stacktrace_queue.put(stacktrace)
@@ -168,7 +170,7 @@ class Procedure(multiprocessing.Process):
             else:
                 self._change_state(ProcedureState.COMPLETED)
         else:
-            raise Exception(f'Invalidate procedure state for recording exit status: {self.state}')
+            raise Exception(f'Invalid procedure state for recording exit status: {self.state}')
 
     def _change_state(self, new_state: ProcedureState):
         self.state = new_state
@@ -183,8 +185,8 @@ class ProcessManager:
     """
 
     def __init__(self):
-        self.procedures: typing.Dict[int, Procedure] = {}
-        self.running: Optional[Procedure] = None
+        self.procedures: typing.OrderedDict[int, Procedure] = OrderedDict()
+        self.running: typing.Optional[Procedure] = None
         self.procedure_complete = multiprocessing.Condition()
 
         self._procedure_factory = ProcedureFactory()
@@ -210,6 +212,10 @@ class ProcessManager:
         procedure = self._procedure_factory.create(script_uri, *init_args.args,
                                                    scan_counter=self._scan_id, **init_args.kwargs)
         procedure.id = pid
+
+        # Delete oldest procedure if procedure limit reached
+        if len(self.procedures) == PROCEDURE_QUEUE_MAX_LENGTH:
+            self.procedures.popitem(last=False)
 
         self.procedures[pid] = procedure
 

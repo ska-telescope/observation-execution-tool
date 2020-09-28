@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from oet.procedure.domain import Procedure, ProcedureInput, \
-    ProcedureHistory, ProcedureState, ProcessManager
+    ProcedureHistory, ProcedureState, ProcessManager, PROCEDURE_QUEUE_MAX_LENGTH
 
 
 @pytest.fixture
@@ -206,6 +206,7 @@ def test_procedure_run_catches_and_stores_script_exception(fail_script):
     try:
         procedure.stacktrace_queue.get(timeout=1)
     except Exception:  # pylint: disable=broad-except
+        # test should not raise an exception, so fail if it does
         pytest.fail('Stacktrace not found in queue')
 
 
@@ -309,6 +310,27 @@ def test_process_manager_create_adds_new_procedure(manager, script_path):
     len_before = len(manager.procedures)
     manager.create(script_path, init_args=ProcedureInput())
     assert len(manager.procedures) == len_before + 1
+
+
+def test_process_manager_create_removes_oldest_procedure_on_max_procedures(manager, script_path):
+    """
+    Verify that ProcessManager removes the oldest procedure when the maximum number of
+    saved procedures is reached
+    """
+    manager.procedures.clear()
+    max_procedures = PROCEDURE_QUEUE_MAX_LENGTH
+    for _ in range(len(manager.procedures), max_procedures):
+        manager.create(script_path, init_args=ProcedureInput())
+
+    assert len(manager.procedures) == max_procedures
+    assert 1 in manager.procedures
+
+    # adding procedure should not increase the number of procedures
+    # and should remove the oldest procedure (with ID 1)
+    manager.create(script_path, init_args=ProcedureInput())
+
+    assert len(manager.procedures) == max_procedures
+    assert 1 not in manager.procedures
 
 
 def test_process_manager_create_captures_initialisation_arguments(manager, script_path):
