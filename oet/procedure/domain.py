@@ -13,8 +13,11 @@ import traceback
 import enum
 import types
 import time
+import logging
 
 from oet.command import SCAN_ID_GENERATOR
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ProcedureState(enum.Enum):
@@ -126,7 +129,8 @@ class Procedure(multiprocessing.Process):
             kwargs = self.script_args['run'].kwargs
             self.user_module.main(*args, **kwargs)
 
-        except Exception:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-except
+            LOGGER.debug('Process terminated unexpectedly. Excpetion caught: %s', e)
             self._change_state(ProcedureState.FAILED)
             stacktrace = traceback.format_exc()
             self.stacktrace_queue.put(stacktrace)
@@ -201,6 +205,8 @@ class ProcessManager:
         else:
             pid = max(self.procedures.keys()) + 1
 
+        LOGGER.debug('Creating Procedure with pid %d and script_uri %s', pid, script_uri)
+
         procedure = self._procedure_factory.create(script_uri, *init_args.args,
                                                    scan_counter=self._scan_id, **init_args.kwargs)
         procedure.id = pid
@@ -228,6 +234,8 @@ class ProcessManager:
             procedure = self.procedures[process_id]
         except KeyError as exc:
             raise ValueError(f'Process {process_id} not found') from exc
+
+        LOGGER.debug('Starting Procedure %d', process_id)
 
         self.running = procedure
         procedure.script_args['run'] = run_args
@@ -257,6 +265,8 @@ class ProcessManager:
             procedure = self.procedures[process_id]
         except KeyError as exc:
             raise ValueError(f'Process {process_id} not found') from exc
+
+        LOGGER.debug('Stopping Procedure %d', process_id)
 
         if procedure.is_alive():
             procedure.terminate()
