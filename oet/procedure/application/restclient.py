@@ -17,7 +17,10 @@ import fire
 import requests
 import tabulate
 
-LOG = logging.getLogger(__name__)
+from ska.logging import configure_logging
+
+configure_logging()
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -227,7 +230,7 @@ class RestAdapter:
                 'init': init_args,
             }
         }
-        LOG.debug('Create payload: %s', request_json)
+        LOGGER.debug('Create payload: %s', request_json)
 
         response = requests.post(self.server_url, json=request_json)
         response_json = response.json()
@@ -261,7 +264,7 @@ class RestAdapter:
             },
             'state': 'RUNNING'
         }
-        LOG.debug('Start payload: %s', request_json)
+        LOGGER.debug('Start payload: %s', request_json)
 
         response = requests.put(url, json=request_json)
         response_json = response.json()
@@ -284,7 +287,7 @@ class RestAdapter:
             'abort': run_abort,
             'state': 'STOP'
         }
-        LOG.debug('Stop payload: %s', request_json)
+        LOGGER.debug('Stop payload: %s', request_json)
 
         response = requests.put(url, json=request_json)
         response_json = response.json()
@@ -298,3 +301,6 @@ def main():
     Fire entry function to provide a CLI interface for REST client.
     """
     fire.Fire(RestClientUI)
+
+if __name__ == '__main__':
+    main()
