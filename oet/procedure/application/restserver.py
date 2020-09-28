@@ -5,6 +5,7 @@ import flask
 
 from . import application
 from .. import domain
+import json
 
 # Blueprint for the REST API
 API = flask.Blueprint('api', __name__)
@@ -85,7 +86,6 @@ def create_procedure():
                                                     init_args=procedure_input)
 
     summary = SERVICE.prepare(prepare_cmd)
-
     return flask.jsonify({'procedure': make_public_summary(summary)}), 201
 
 
@@ -157,12 +157,16 @@ def make_public_summary(procedure: application.ProcedureSummary):
     """
     script_args = {method_name: {'args': method_args.args, 'kwargs': method_args.kwargs}
                    for method_name, method_args in procedure.script_args.items()}
-
+    procedure_history = {'execution_error': procedure.history.execution_error,
+                         'process_history': [{'state': item[0].name, 'created_time': item[1]} for item in
+                                             procedure.history.process_history],
+                         'stacktrace': procedure.history.stacktrace
+                         }
     return {
         'uri': flask.url_for('api.get_procedure', procedure_id=procedure.id, _external=True),
         'script_uri': procedure.script_uri,
         'script_args': script_args,
-        'created_time': procedure.created_time,
+        'history': procedure_history,
         'state': procedure.state.name
     }
 

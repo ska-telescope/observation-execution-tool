@@ -16,7 +16,7 @@ import os
 import fire
 import requests
 import tabulate
-
+import datetime
 LOG = logging.getLogger(__name__)
 
 
@@ -31,7 +31,7 @@ class ProcedureSummary:
     uri: str
     script_uri: str
     script_args: dict
-    created_time: str
+    history:dict
     state: str
 
     @staticmethod
@@ -48,7 +48,7 @@ class ProcedureSummary:
             uri=json['uri'],
             script_uri=json['script_uri'],
             script_args=json['script_args'],
-            created_time=json['created_time'],
+            history=json['history'],
             state=json['state']
         )
 
@@ -81,8 +81,8 @@ class RestClientUI:
 
     @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
-        table_rows = [(p.id, p.uri, p.script_uri, p.created_time, p.state) for p in procedures]
-        headers = ['ID', 'URI', 'Script', 'Created Time', 'State']
+        table_rows = [(p.id, p.script_uri, [datetime.datetime.fromtimestamp(i['created_time']).strftime('%Y-%m-%d %H:%M:%S') for i in p.history['process_history'] if i['state']==p.state][0] , p.state) for p in procedures]
+        headers = ['ID', 'Script', 'Created Time', 'State']
         return tabulate.tabulate(table_rows, headers)
 
     def list(self, pid=None) -> str:

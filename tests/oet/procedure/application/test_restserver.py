@@ -26,7 +26,7 @@ CREATE_SUMMARY = ProcedureSummary(
     id=1,
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b')},
-    created_time= '2020-09-23T14:50:07',
+    history=domain.ProcedureHistory(),
     state=domain.ProcedureState.CREATED
 )
 
@@ -35,7 +35,7 @@ ABORT_JSON = dict(state="STOPPED", abort=True)
 # Valid JSON struct for starting a prepared procedure
 RUN_JSON = dict(script_uri="test:///test.py",
                 script_args={'run': dict(args=(4, 5, 6), kwargs=dict(kw3='c', kw4='d'))},
-                created_time= '2020-09-23T14:50:07', state="RUNNING")
+                history=domain.ProcedureHistory(), state="RUNNING")
 
 # object expected to be returned when the procedure is executed
 RUN_SUMMARY = ProcedureSummary(
@@ -43,7 +43,7 @@ RUN_SUMMARY = ProcedureSummary(
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b'),
                  'run': domain.ProcedureInput(4, 5, 6, kw3='c', kw4='d')},
-    created_time= '2020-09-23T14:50:07',
+    history=domain.ProcedureHistory(),
     state=domain.ProcedureState.RUNNING
 )
 
