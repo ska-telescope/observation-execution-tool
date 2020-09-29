@@ -27,7 +27,7 @@ def main(queue, procedure):
     return f'file://{str(script_path)}'
 
 
-def create_empty_procedure_summary(procedure_id: int, script_uri: str):
+def create_empty_procedure_summary(procedure_id: int, script_uri: str, history: ProcedureHistory):
     """
     Utility function to create a null procedure summary. The returned
     procedure defines zero script arguments.
@@ -40,7 +40,7 @@ def create_empty_procedure_summary(procedure_id: int, script_uri: str):
     return ProcedureSummary(id=procedure_id,
                             script_uri=script_uri,
                             script_args={'init': ProcedureInput(), 'run': ProcedureInput()},
-                            history=ProcedureHistory(),
+                            history=history,
                             state=ProcedureState.CREATED)
 
 
@@ -87,7 +87,7 @@ def test_ses_prepare_calls_process_manager_method_and_returns_summary_for_create
     procedures = {123: procedure}
     expected = ProcedureSummary(id=123, script_uri=procedure.script_uri,
                                 script_args=procedure.script_args,
-                                created_time=procedure.history,
+                                history=procedure.history,
                                 state=procedure.state)
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
@@ -152,8 +152,8 @@ def test_ses_summarise_returns_summaries_for_requested_pids():
     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
 
     expected = [
-        create_empty_procedure_summary(1, 'test://a'),
-        create_empty_procedure_summary(3, 'test://c')
+        create_empty_procedure_summary(1, 'test://a', procedure_a.history),
+        create_empty_procedure_summary(3, 'test://c', procedure_c.history)
     ]
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
@@ -202,9 +202,9 @@ def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
 
     expected = [
-        create_empty_procedure_summary(1, 'test://a'),
-        create_empty_procedure_summary(2, 'test://b'),
-        create_empty_procedure_summary(3, 'test://c')
+        create_empty_procedure_summary(1, 'test://a', procedure_a.history),
+        create_empty_procedure_summary(2, 'test://b', procedure_b.history),
+        create_empty_procedure_summary(3, 'test://c', procedure_c.history)
     ]
 
     with mock.patch('oet.procedure.application.application.domain.ProcessManager') as mock_pm:
