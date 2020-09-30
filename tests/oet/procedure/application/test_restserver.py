@@ -26,7 +26,9 @@ CREATE_SUMMARY = ProcedureSummary(
     id=1,
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b')},
-    history=domain.ProcedureHistory(),
+    history=domain.ProcedureHistory(execution_error=False,
+                                    process_history=[(domain.ProcedureState.CREATED, 1601295086.129294)],
+                                    stacktrace=None),
     state=domain.ProcedureState.CREATED
 )
 
@@ -35,7 +37,9 @@ ABORT_JSON = dict(state="STOPPED", abort=True)
 # Valid JSON struct for starting a prepared procedure
 RUN_JSON = dict(script_uri="test:///test.py",
                 script_args={'run': dict(args=(4, 5, 6), kwargs=dict(kw3='c', kw4='d'))},
-                history=domain.ProcedureHistory(), state="RUNNING")
+                history=domain.ProcedureHistory(execution_error=False,
+                                                process_history=[(domain.ProcedureState.RUNNING, 1601295086.129294)],
+                                                stacktrace=None), state="RUNNING")
 
 # object expected to be returned when the procedure is executed
 RUN_SUMMARY = ProcedureSummary(
@@ -43,7 +47,9 @@ RUN_SUMMARY = ProcedureSummary(
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b'),
                  'run': domain.ProcedureInput(4, 5, 6, kw3='c', kw4='d')},
-    history=domain.ProcedureHistory(),
+    history=domain.ProcedureHistory(execution_error=False,
+                                    process_history=[(domain.ProcedureState.RUNNING, 1601295086.129294)],
+                                    stacktrace=None),
     state=domain.ProcedureState.RUNNING
 )
 
@@ -66,6 +72,11 @@ def assert_json_equal_to_procedure_summary(summary: ProcedureSummary, summary_js
         assert i.args == tuple(arg_dict['args'])
         assert i.kwargs == arg_dict['kwargs']
     assert summary_json['state'] == summary.state.name
+    assert summary_json['history']['execution_error'] == summary.history.execution_error
+    assert summary_json['history']['stacktrace'] == summary.history.stacktrace
+    for i,item in enumerate(summary_json['history']['process_history']):
+        assert item['state'] == summary.history.process_history[i][0].name
+        assert item['created_time'] == summary.history.process_history[i][1]
 
 
 @pytest.fixture

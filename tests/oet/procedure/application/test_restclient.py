@@ -96,7 +96,7 @@ START_PROCESS_RESPONSE = {
             "execution_error": False,
             "process_history": [{
                 "created_time": 1601303225.8702714,
-                "state": "CREATED"
+                "state": "RUNNING"
             }]
         },
         "state": "RUNNING",

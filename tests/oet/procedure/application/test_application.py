@@ -251,8 +251,10 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     # prepare a process for the abort script, then set the abort process
     # running..
     cmd_stop = StopProcessCommand(process_uid=running_pid)
-    cmd_create = PrepareProcessCommand(script_uri=abort_script, init_args=abort_procedure.script_args['init'])
-    cmd_run = StartProcessCommand(process_uid=abort_pid, run_args=abort_procedure.script_args['run'])
+    cmd_create = PrepareProcessCommand(script_uri=abort_script,
+                                       init_args=abort_procedure.script_args['init'])
+    cmd_run = StartProcessCommand(process_uid=abort_pid,
+                                  run_args=abort_procedure.script_args['run'])
 
     # .. before returning a summary of the running abort Process
     expected = [ProcedureSummary(id=abort_pid, script_uri=abort_procedure.script_uri,

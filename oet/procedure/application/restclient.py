@@ -13,10 +13,11 @@ from http import HTTPStatus
 from typing import Dict, List, Optional
 
 import os
+import datetime
 import fire
 import requests
 import tabulate
-import datetime
+
 LOG = logging.getLogger(__name__)
 
 
@@ -31,7 +32,7 @@ class ProcedureSummary:
     uri: str
     script_uri: str
     script_args: dict
-    history:dict
+    history: dict
     state: str
 
     @staticmethod
@@ -81,8 +82,12 @@ class RestClientUI:
 
     @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
-        table_rows = [(p.id, p.script_uri, [datetime.datetime.fromtimestamp(i['created_time']).strftime('%Y-%m-%d %H:%M:%S') for i in p.history['process_history'] if i['created_time'] and i['state']==p.state][0] , p.state) for p in procedures]
-        headers = ['ID', 'Script', 'Created Time', 'State']
+        table_rows = [(p.id, p.script_uri,
+                       [datetime.datetime.fromtimestamp(i['created_time']).strftime('%Y-%m-%d '
+                                                                                    '%H:%M:%S')
+                        for i in p.history['process_history'] if i['created_time'] and i[
+                            'state'] == p.state][0], p.state) for p in procedures]
+        headers = ['ID', 'Script', 'Creation Time', 'State']
         return tabulate.tabulate(table_rows, headers)
 
     def list(self, pid=None) -> str:
@@ -300,6 +305,3 @@ def main():
     Fire entry function to provide a CLI interface for REST client.
     """
     fire.Fire(RestClientUI)
-
-if  __name__ == '__main__':
-     main()

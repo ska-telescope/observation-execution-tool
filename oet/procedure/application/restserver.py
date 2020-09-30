@@ -5,7 +5,6 @@ import flask
 
 from . import application
 from .. import domain
-import json
 
 # Blueprint for the REST API
 API = flask.Blueprint('api', __name__)
@@ -121,7 +120,8 @@ def update_procedure(procedure_id: int):
                 # If script was stopped and no post-termination abort script was run,
                 # the result list will be empty.
                 if result:
-                    msg = f'Successfully stopped script with ID {procedure_id} and aborted subarray activity '
+                    msg = f'Successfully stopped script with ID {procedure_id} and ' \
+                          f'aborted subarray activity '
                 else:
                     msg = f'Successfully stopped script with ID {procedure_id}'
                 return flask.jsonify({'abort_message': msg})
@@ -158,8 +158,8 @@ def make_public_summary(procedure: application.ProcedureSummary):
     script_args = {method_name: {'args': method_args.args, 'kwargs': method_args.kwargs}
                    for method_name, method_args in procedure.script_args.items()}
     procedure_history = {'execution_error': procedure.history.execution_error,
-                         'process_history': [{'state': item[0].name, 'created_time': item[1]} for item in
-                                             procedure.history.process_history],
+                         'process_history': [{'state': item[0].name, 'created_time': item[1]}
+                                             for item in procedure.history.process_history],
                          'stacktrace': procedure.history.stacktrace
                          }
     return {

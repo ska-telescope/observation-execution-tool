@@ -1,11 +1,10 @@
 """
 Unit tests for the features module
 """
-
+import os.path
 from configparser import ConfigParser
 from oet.features import Features
 import oet
-import os.path
 
 
 def test_pubsub_feature_returns_true_when_enabled_in_file():
