@@ -69,8 +69,19 @@ Procedures are defined as JSON objects with the following fields:
 |             |            |      }                                                               |
 |             |            |    }                                                                 |
 +-------------+------------+----------------------------------------------------------------------+
-| state       | str        | Script execution state: currently limited to either READY or         |
-|             |            | RUNNING.                                                             |
+| state       | str        | Script execution state: CREATED, RUNNING, STOPPED, COMPLETED,        |
+|             |            | FAILED.                                                              |
++-------------+------------+----------------------------------------------------------------------+
+| history     | object     | history contains a Dict of process_history and stacktrace.           |
+|             |            |                                                                      |
+|             |            | process_history which contains a Dict of ProcedureStates and         |
+|             |            | timestamps for each state (e.g. {'CREATED': 18392174.543,            |
+|             |            | 'RUNNING': 18392143.546, 'COMPLETED': 183925456.744}).               |
+|             |            |                                                                      |
+|             |            | stacktrace which is None on default and will be populated with       |
+|             |            | the stacktrace from the script if script execution raises an         |
+|             |            | exception.                                                           |
+|             |            |                                                                      |
 +-------------+------------+----------------------------------------------------------------------+
 
 Below is a JSON representation of an example procedure resource. This resource
@@ -80,7 +91,7 @@ and its initialisation method called with two arguments (e.g, the script init
 function was called as
 ``init(subarray=1, sb_uri=’file:///path/to/scheduling_block_123.json’)``. The
 script is ready to execute but is not yet executing, as shown by its state
-being `READY``::
+being `CREATED``::
 
     {
         "script_args": {
@@ -97,7 +108,13 @@ being `READY``::
           }
         },
         "script_uri": "file:///path/to/observing_script.py",
-        "state": "READY",
+        "history": {
+            "process_history": {
+                 "CREATED": 1601463545.7789776
+                },
+            "stacktrace": null
+            },
+        "state": "CREATED",
         "uri": "http://localhost:5000/api/v1.0/procedures/1"
     }
 
@@ -139,7 +156,13 @@ execution::
           }
         },
         "script_uri": "file:///path/to/observing_script.py",
-        "state": "READY",
+        "history": {
+            "process_history": {
+                "CREATED": 1601463545.7789776
+                },
+            "stacktrace": null
+        },
+        "state": "CREATED",
         "uri": "http://localhost:5000/api/v1.0/procedures/2"
       }
     }
@@ -177,7 +200,13 @@ resource_allocation.py, and procedure #2 that will run observing_script.py::
             }
           },
           "script_uri": "file:///path/to/resource_allocation.py",
-          "state": "READY",
+          "history": {
+              "process_history": {
+                   "CREATED": 1601463545.7789776
+                },
+              "stacktrace": null
+		  },
+          "state": "CREATED",
           "uri": "http://localhost:5000/api/v1.0/procedures/1"
         },
         {
@@ -195,7 +224,13 @@ resource_allocation.py, and procedure #2 that will run observing_script.py::
             }
           },
           "script_uri": "file:///path/to/observing_script.py",
-          "state": "READY",
+          "history": {
+               "process_history": {
+                   "CREATED": 1601463545.7789885
+                  },
+               "stacktrace": null
+          },
+          "state": "CREATED",
           "uri": "http://localhost:5000/api/v1.0/procedures/2"
         }
       ]
@@ -232,7 +267,13 @@ session below lists procedure #1::
           }
         },
         "script_uri": "file:///path/to/resource_allocation.py",
-        "state": "READY",
+        "history": {
+            "process_history": {
+                "CREATED": 1601463545.7789776
+                },
+            "stacktrace": null
+        },
+        "state": "CREATED",
         "uri": "http://localhost:5000/api/v1.0/procedures/1"
       }
     }
@@ -272,7 +313,15 @@ argument scan_duration=14::
           }
         },
         "script_uri": "file:///path/to/observing_script.py",
+        "history": {
+            "process_history": {
+                "CREATED": 1601463545.7789885,
+                "RUNNING": 1601463545.7789997
+             },
+            "stacktrace": null
+        }
         "state": "RUNNING",
         "uri": "http://localhost:5000/api/v1.0/procedures/2"
       }
     }
+
