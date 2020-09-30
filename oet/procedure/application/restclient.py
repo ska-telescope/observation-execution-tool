@@ -86,7 +86,7 @@ class RestClientUI:
                        [datetime.datetime.fromtimestamp(i['created_time']).strftime('%Y-%m-%d '
                                                                                     '%H:%M:%S')
                         for i in p.history['process_history'] if i['created_time'] and i[
-                            'state'] == p.state][0], p.state) for p in procedures]
+                            'state'] == 'CREATED'][0], p.state) for p in procedures]
         headers = ['ID', 'Script', 'Creation Time', 'State']
         return tabulate.tabulate(table_rows, headers)
 
