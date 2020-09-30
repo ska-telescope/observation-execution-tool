@@ -145,7 +145,7 @@ def test_procedure_history_default_values_are_as_expected():
     expected if not provided.
     """
     procedure_history = ProcedureHistory()
-    assert procedure_history.process_history == []
+    assert procedure_history.process_history == {}
     assert procedure_history.stacktrace is None
 
 
@@ -173,6 +173,14 @@ def test_state_of_a_new_procedure_is_created(procedure):
     Verify that the state of a new procedure is CREATED
     """
     assert procedure.state == ProcedureState.CREATED
+
+
+def test_creation_of_a_new_procedure_is_added_to_history(procedure):
+    """
+    Verify that the CREATED state and time are recorded in procedure's history
+    """
+    assert ProcedureState.CREATED in procedure.history.process_history
+    assert isinstance(procedure.history.process_history[ProcedureState.CREATED], float)
 
 
 def test_procedure_start_sets_state_to_running(procedure):
@@ -268,6 +276,18 @@ def test_procedure_terminate_sets_state_to_stopped(procedure):
     procedure.start()
     procedure.terminate()
     assert procedure.state == ProcedureState.STOPPED
+
+
+def test_procedure_terminate_records_state_in_history(procedure):
+    """
+    Verify that procedure terminate records STOPPED state in the history
+    """
+    procedure.start()
+    procedure.terminate()
+    assert ProcedureState.CREATED in procedure.history.process_history
+    assert isinstance(procedure.history.process_history[ProcedureState.CREATED], float)
+    assert ProcedureState.STOPPED in procedure.history.process_history
+    assert isinstance(procedure.history.process_history[ProcedureState.STOPPED], float)
 
 
 def test_procedure_terminate_not_allowed_if_process_is_not_running(procedure):
@@ -423,6 +443,25 @@ def test_process_manager_updates_state_of_completed_procedures(manager, script_p
     assert manager.procedures[pid].state == ProcedureState.COMPLETED
 
 
+def test_process_manager_updates_history_of_completed_procedures(manager, script_path):
+    """
+    Verify that ProcessManager updates procedure state to COMPLETED when finished
+    successfully
+    """
+    pid = manager.create(script_path, init_args=ProcedureInput())
+    manager.run(pid, run_args=ProcedureInput())
+    wait_for_process_to_complete(manager)
+    procedure = manager.procedures[pid]
+
+    assert ProcedureState.CREATED in procedure.history.process_history
+    assert isinstance(procedure.history.process_history[ProcedureState.CREATED], float)
+    assert ProcedureState.RUNNING in procedure.history.process_history
+    assert isinstance(procedure.history.process_history[ProcedureState.RUNNING], float)
+    assert ProcedureState.COMPLETED in procedure.history.process_history
+    assert isinstance(procedure.history.process_history[ProcedureState.COMPLETED], float)
+    assert procedure.history.stacktrace is None
+
+
 def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_script):
     """
     Verify that ProcessManager sets running procedure attribute to None
@@ -443,6 +482,24 @@ def test_process_manager_updates_procedure_state_on_script_failure(manager, fail
     manager.run(pid, run_args=ProcedureInput())
     wait_for_process_to_complete(manager)
     assert manager.procedures[pid].state == ProcedureState.FAILED
+
+
+def test_process_manager_updates_procedure_history_on_script_failure(manager, fail_script):
+    """
+    Verify that ProcessManager updates FAILED to procedure history when script fails
+    """
+    pid = manager.create(fail_script, init_args=ProcedureInput())
+    manager.run(pid, run_args=ProcedureInput())
+    wait_for_process_to_complete(manager)
+    procedure = manager.procedures[pid]
+
+    assert ProcedureState.CREATED in procedure.history.process_history
+    assert isinstance(procedure.history.process_history[ProcedureState.CREATED], float)
+    assert ProcedureState.RUNNING in procedure.history.process_history
+    assert isinstance(procedure.history.process_history[ProcedureState.RUNNING], float)
+    assert ProcedureState.FAILED in procedure.history.process_history
+    assert isinstance(procedure.history.process_history[ProcedureState.FAILED], float)
+    assert procedure.history.stacktrace is not None
 
 
 def test_process_manager_run_fails_on_invalid_pid(manager):

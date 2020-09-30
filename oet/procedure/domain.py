@@ -69,8 +69,8 @@ class ProcedureHistory:
 
     def __init__(self, process_history=None, stacktrace=None):
         if process_history is None:
-            process_history = []
-        self.process_history: typing.List[typing.Tuple[ProcedureState, float]] = process_history
+            process_history = OrderedDict()
+        self.process_history: typing.OrderedDict[ProcedureState, float] = process_history
         self.stacktrace = stacktrace
 
     def __eq__(self, other):
@@ -160,7 +160,7 @@ class Procedure(multiprocessing.Process):
         Change procedure state and record change in ProcedureHistory
         """
         self.state = new_state
-        self.history.process_history.append((new_state, time.time()))
+        self.history.process_history[new_state] = time.time()
 
 
 class ProcessManager:
