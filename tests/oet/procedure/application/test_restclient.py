@@ -27,7 +27,6 @@ CREATE_PROCESS_RESPONSE = {
         "script_uri": "file:///path/to/observing_script.py",
         "history": {
             "stacktrace": None,
-            "execution_error": False,
             "process_history": [{
                 "created_time": 1601303225.8702714,
                 "state": "CREATED"
@@ -61,7 +60,6 @@ LIST_PROCEDURES_POSITIVE_RESPONSE = {
             "script_uri": "file:///path/to/observing_script.py",
             "history": {
                 "stacktrace": None,
-                "execution_error": False,
                 "process_history": [{
                     "created_time": 1601303225.8702714,
                     "state": "CREATED"
@@ -93,7 +91,6 @@ START_PROCESS_RESPONSE = {
         "script_uri": "file:///path/to/observing_script.py",
         "history": {
             "stacktrace": None,
-            "execution_error": False,
             "process_history": [{
                 "created_time": 1601303225.8702714,
                 "state": "RUNNING"
