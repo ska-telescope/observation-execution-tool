@@ -62,32 +62,29 @@ class ProcedureHistory:
     """
     ProcedureHistory is a non-functional dataclass holding execution history of a Procedure.
 
-    execution_error: indicates if an error happened during process execution
     process_history: records time for each change of ProcedureState (list of tuples where
     tuple contains the ProcedureState and time when state was changed to)
     stacktrace: None unless execution_error is True in which case stores stacktrace from process
     """
 
-    def __init__(self, execution_error=False, process_history=None, stacktrace=None):
+    def __init__(self, process_history=None, stacktrace=None):
         if process_history is None:
             process_history = []
-        self.execution_error: bool = execution_error
         self.process_history: typing.List[typing.Tuple[ProcedureState, float]] = process_history
         self.stacktrace = stacktrace
 
     def __eq__(self, other):
         if not isinstance(other, ProcedureHistory):
             return False
-        if self.execution_error == other.execution_error and \
-                self.process_history == other.process_history and \
+        if self.process_history == other.process_history and \
                 self.stacktrace == other.stacktrace:
             return True
         return False
 
     def __repr__(self):
         p_history = ', '.join(['({!s}, {!r})'.format(s, t) for s, t in self.process_history])
-        return '<ProcessHistory(execution_error={}, process_history=[{}], ' \
-               'stacktrace={})>'.format(self.execution_error, p_history, self.stacktrace)
+        return '<ProcessHistory(process_history=[{}], ' \
+               'stacktrace={})>'.format(p_history, self.stacktrace)
 
 
 class Procedure(multiprocessing.Process):
@@ -159,6 +156,9 @@ class Procedure(multiprocessing.Process):
         super().terminate()
 
     def change_state(self, new_state: ProcedureState):
+        """
+        Change procedure state and record change in ProcedureHistory
+        """
         self.state = new_state
         self.history.process_history.append((new_state, time.time()))
 
@@ -234,12 +234,14 @@ class ProcessManager:
         procedure.start()
 
         def callback(*_):
-            if not procedure.stacktrace_queue.empty():
-                procedure.history.execution_error = True
-                procedure.history.stacktrace = procedure.stacktrace_queue.get()
-                procedure.change_state(ProcedureState.FAILED)
-            elif procedure.state is not ProcedureState.STOPPED:
-                procedure.change_state(ProcedureState.COMPLETED)
+            # If procedure was stopped, state does not need updated
+            if procedure.state is not ProcedureState.STOPPED:
+                # Check if an error occurred during process execution
+                if not procedure.stacktrace_queue.empty():
+                    procedure.history.stacktrace = procedure.stacktrace_queue.get()
+                    procedure.change_state(ProcedureState.FAILED)
+                else:
+                    procedure.change_state(ProcedureState.COMPLETED)
             self.running = None
             with self.procedure_complete:
                 self.procedure_complete.notify_all()

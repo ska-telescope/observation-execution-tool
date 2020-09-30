@@ -145,7 +145,6 @@ def test_procedure_history_default_values_are_as_expected():
     expected if not provided.
     """
     procedure_history = ProcedureHistory()
-    assert not procedure_history.execution_error
     assert procedure_history.process_history == []
     assert procedure_history.stacktrace is None
 
@@ -156,7 +155,7 @@ def test_procedure_history_eq_works_as_expected():
     """
     ph1 = ProcedureHistory()
     ph2 = ProcedureHistory()
-    ph3 = ProcedureHistory(True, [(ProcedureState.CREATED, 1601053634.9669704)])
+    ph3 = ProcedureHistory([(ProcedureState.CREATED, 1601053634.9669704)])
     assert ph1 == ph2
     assert ph1 != ph3
     assert ph1 != object()
