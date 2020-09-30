@@ -34,7 +34,8 @@ This workflow has been mapped to the following REST API:
 |             |                         | procedure. This can be used to      |
 |             |                         | start execution by setting the      |
 |             |                         | ‘state’ procedure attribute to      |
-|             |                         | ``RUNNING``.                        |
+|             |                         | ``RUNNING`` or stop execution by    |
+|             |                         | setting ‘state’ to ``STOPPED``.     |
 +-------------+-------------------------+-------------------------------------+
 
 Procedures are defined as JSON objects with the following fields:

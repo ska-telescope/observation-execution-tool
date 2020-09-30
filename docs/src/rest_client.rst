@@ -47,13 +47,17 @@ The methods available through the REST Client map closely to the
 |                    +---------------+--------------------------------------------+ Arguments provided here are passed  |
 |                    | kwargs        | --subarray_id=1                            | to the script init function, if     |
 |                    |               |                                            | defined                             |
+|                    |               |                                            |                                     |
+|                    |               |                                            | OET maintains record of 10 newest   |
+|                    |               |                                            | scripts which means creating 11th   |
+|                    |               |                                            | script will remove the oldest       |
+|                    |               |                                            | script from the record.             |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 | list               | server-url    | See note above                             | **List procedures**                 |
 |                    +---------------+--------------------------------------------+-------------------------------------+
-|                    | pid           | None                                       | Return info on the collection of all|
-|                    |               |                                            | loaded and running procedures, or   |
-|                    |               |                                            | info on the one specified by        |
-|                    |               |                                            | process ID (pid)                    |
+|                    | pid           | None                                       | Return info on the collection of 10 |
+|                    |               |                                            | newest procedures, or info on the   |
+|                    |               |                                            | one specified by process ID (pid)   |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 | start              | server-url    | See note above                             | **Start a Procedure Executing**     |
 |                    +---------------+--------------------------------------------+                                     |
