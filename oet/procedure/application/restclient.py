@@ -17,8 +17,6 @@ import fire
 import requests
 import tabulate
 
-from ska.logging import configure_logging
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -300,4 +298,3 @@ def main():
     Fire entry function to provide a CLI interface for REST client.
     """
     fire.Fire(RestClientUI)
-
