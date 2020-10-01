@@ -302,5 +302,3 @@ def main():
     """
     fire.Fire(RestClientUI)
 
-if __name__ == '__main__':
-    main()
