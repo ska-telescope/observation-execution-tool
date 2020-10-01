@@ -125,7 +125,7 @@ def update_procedure(procedure_id: int):
                 else:
                     msg = f'Successfully stopped script with ID {procedure_id}'
                 return flask.jsonify({'abort_message': msg})
-            except Exception as exc:
+            except Exception as exc: # pylint: disable=broad-except
                 flask.abort(500, exc)
         else:
             msg = f'Cannot stop script with ID {procedure_id}: Script is not running'
@@ -139,7 +139,7 @@ def update_procedure(procedure_id: int):
         cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
         try:
             summary = SERVICE.start(cmd)
-        except Exception as exc:
+        except Exception as exc: # pylint: disable=broad-except
             flask.abort(500, exc)
 
     return flask.jsonify({'procedure': make_public_summary(summary)})
@@ -159,7 +159,8 @@ def make_public_summary(procedure: application.ProcedureSummary):
                    for method_name, method_args in procedure.script_args.items()}
 
     procedure_history = {'process_history': {state.name: time
-                                             for state, time in procedure.history.process_history.items()},
+                                             for state, time in
+                                             procedure.history.process_history.items()},
                          'stacktrace': procedure.history.stacktrace
                          }
     return {
