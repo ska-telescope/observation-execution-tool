@@ -60,6 +60,7 @@ LIST_PROCEDURES_POSITIVE_RESPONSE = {
             "history": {
                 "stacktrace": None,
                 "process_history": {
+                    "CREATED": 1601303225.8234567,
                     "RUNNING": 1601303225.8702714
                 }
             },
@@ -90,6 +91,7 @@ START_PROCESS_RESPONSE = {
         "history": {
             "stacktrace": None,
             "process_history": {
+                "CREATED": 1601303225.8234567,
                 "RUNNING": 1601303225.8702714
             }
         },

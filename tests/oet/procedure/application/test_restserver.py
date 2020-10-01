@@ -20,11 +20,7 @@ ENDPOINT = 'procedures'
 
 # Valid JSON struct for creating a new procedure
 CREATE_JSON = dict(script_uri="test:///test.py",
-                   script_args={'init': dict(args=(1, 2, 3), kwargs=dict(kw1='a', kw2='b'))},
-                   history=domain.ProcedureHistory(process_history=OrderedDict([(domain.ProcedureState.CREATED,
-                                                                                 1601295086.129294)]),
-                                                   stacktrace=None)
-                   )
+                   script_args={'init': dict(args=(1, 2, 3), kwargs=dict(kw1='a', kw2='b'))})
 
 # object expected to be returned when creating the Procedure defined above
 CREATE_SUMMARY = ProcedureSummary(
@@ -42,9 +38,6 @@ ABORT_JSON = dict(state="STOPPED", abort=True)
 # Valid JSON struct for starting a prepared procedure
 RUN_JSON = dict(script_uri="test:///test.py",
                 script_args={'run': dict(args=(4, 5, 6), kwargs=dict(kw3='c', kw4='d'))},
-                history=domain.ProcedureHistory(process_history=OrderedDict([(domain.ProcedureState.RUNNING,
-                                                                              1601295086.129294)]),
-                                                stacktrace=None),
                 state="RUNNING")
 
 # object expected to be returned when the procedure is executed
@@ -53,7 +46,9 @@ RUN_SUMMARY = ProcedureSummary(
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b'),
                  'run': domain.ProcedureInput(4, 5, 6, kw3='c', kw4='d')},
-    history=domain.ProcedureHistory(process_history=OrderedDict([(domain.ProcedureState.RUNNING,
+    history=domain.ProcedureHistory(process_history=OrderedDict([(domain.ProcedureState.CREATED,
+                                                                  1601295086.129294),
+                                                                 (domain.ProcedureState.RUNNING,
                                                                   1601295086.129294)]),
                                     stacktrace=None),
     state=domain.ProcedureState.RUNNING
@@ -79,10 +74,10 @@ def assert_json_equal_to_procedure_summary(summary: ProcedureSummary, summary_js
         assert i.kwargs == arg_dict['kwargs']
     assert summary_json['state'] == summary.state.name
     assert summary_json['history']['stacktrace'] == summary.history.stacktrace
-    for key,val in summary.history.process_history.items():
+    for key, val in summary.history.process_history.items():
         assert key.name in summary_json['history']['process_history']
         assert val == summary_json['history']['process_history'][key.name]
-        assert isinstance(summary_json['history']['process_history'][key.name],float)
+        assert isinstance(summary_json['history']['process_history'][key.name], float)
 
 
 @pytest.fixture
