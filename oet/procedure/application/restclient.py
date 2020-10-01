@@ -13,6 +13,7 @@ from http import HTTPStatus
 from typing import Dict, List, Optional
 
 import os
+import datetime
 import fire
 import requests
 import tabulate
@@ -31,6 +32,7 @@ class ProcedureSummary:
     uri: str
     script_uri: str
     script_args: dict
+    history: dict
     state: str
 
     @staticmethod
@@ -47,6 +49,7 @@ class ProcedureSummary:
             uri=json['uri'],
             script_uri=json['script_uri'],
             script_args=json['script_args'],
+            history=json['history'],
             state=json['state']
         )
 
@@ -79,8 +82,12 @@ class RestClientUI:
 
     @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
-        table_rows = [(p.id, p.uri, p.script_uri, p.state) for p in procedures]
-        headers = ['ID', 'URI', 'Script', 'State']
+        table_rows = [(p.id, p.script_uri,
+                       datetime.datetime.fromtimestamp(p.history['process_states']
+                                                       ['CREATED']).strftime('%Y-%m-%d '
+                                                                             '%H:%M:%S'),
+                       p.state) for p in procedures]
+        headers = ['ID', 'Script', 'Creation Time', 'State']
         return tabulate.tabulate(table_rows, headers)
 
     def list(self, pid=None) -> str:
