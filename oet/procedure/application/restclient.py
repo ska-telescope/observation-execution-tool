@@ -19,7 +19,6 @@ import tabulate
 
 from ska.logging import configure_logging
 
-configure_logging()
 LOGGER = logging.getLogger(__name__)
 
 
