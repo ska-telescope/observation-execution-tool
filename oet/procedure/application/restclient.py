@@ -82,11 +82,8 @@ class RestClientUI:
 
     @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
-        table_rows = [(p.id, p.script_uri,
-                       [datetime.datetime.fromtimestamp(i['created_time']).strftime('%Y-%m-%d '
-                                                                                    '%H:%M:%S')
-                        for i in p.history['process_history'] if i['created_time'] and i[
-                            'state'] == 'CREATED'][0], p.state) for p in procedures]
+        table_rows = [(p.id, p.script_uri,datetime.datetime.fromtimestamp(p.history['process_history']['CREATED']).strftime('%Y-%m-%d '
+                                                                                    '%H:%M:%S') , p.state) for p in procedures]
         headers = ['ID', 'Script', 'Creation Time', 'State']
         return tabulate.tabulate(table_rows, headers)
 
@@ -305,3 +302,4 @@ def main():
     Fire entry function to provide a CLI interface for REST client.
     """
     fire.Fire(RestClientUI)
+

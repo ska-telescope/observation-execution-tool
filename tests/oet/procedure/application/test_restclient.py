@@ -27,12 +27,11 @@ CREATE_PROCESS_RESPONSE = {
         "script_uri": "file:///path/to/observing_script.py",
         "history": {
             "stacktrace": None,
-            "process_history": [{
-                "created_time": 1601303225.8702714,
-                "state": "CREATED"
-            }]
+            "process_history": {
+                "CREATED": 1601303225.8702714
+            }
         },
-        "state": "READY",
+        "state": "CREATED",
         "uri": "http://localhost:5000/api/v1.0/procedures/2"
     }
 }
@@ -60,10 +59,9 @@ LIST_PROCEDURES_POSITIVE_RESPONSE = {
             "script_uri": "file:///path/to/observing_script.py",
             "history": {
                 "stacktrace": None,
-                "process_history": [{
-                    "created_time": 1601303225.8702714,
-                    "state": "CREATED"
-                }]
+                "process_history": {
+                    "RUNNING": 1601303225.8702714
+                }
             },
             "state": "RUNNING",
             "uri": "http://localhost:5000/api/v1.0/procedures/1"
@@ -91,10 +89,9 @@ START_PROCESS_RESPONSE = {
         "script_uri": "file:///path/to/observing_script.py",
         "history": {
             "stacktrace": None,
-            "process_history": [{
-                "created_time": 1601303225.8702714,
-                "state": "RUNNING"
-            }]
+            "process_history": {
+                "RUNNING": 1601303225.8702714
+            }
         },
         "state": "RUNNING",
         "uri": "http://localhost:5000/api/v1.0/procedures/1"
