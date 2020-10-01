@@ -145,7 +145,7 @@ def test_procedure_history_default_values_are_as_expected():
     expected if not provided.
     """
     procedure_history = ProcedureHistory()
-    assert procedure_history.process_history == {}
+    assert procedure_history.process_states == {}
     assert procedure_history.stacktrace is None
 
 
@@ -179,8 +179,8 @@ def test_creation_of_a_new_procedure_is_added_to_history(procedure):
     """
     Verify that the CREATED state and time are recorded in procedure's history
     """
-    assert ProcedureState.CREATED in procedure.history.process_history
-    assert isinstance(procedure.history.process_history[ProcedureState.CREATED], float)
+    assert ProcedureState.CREATED in procedure.history.process_states
+    assert isinstance(procedure.history.process_states[ProcedureState.CREATED], float)
 
 
 def test_procedure_start_sets_state_to_running(procedure):
@@ -284,10 +284,10 @@ def test_procedure_terminate_records_state_in_history(procedure):
     """
     procedure.start()
     procedure.terminate()
-    assert ProcedureState.CREATED in procedure.history.process_history
-    assert isinstance(procedure.history.process_history[ProcedureState.CREATED], float)
-    assert ProcedureState.STOPPED in procedure.history.process_history
-    assert isinstance(procedure.history.process_history[ProcedureState.STOPPED], float)
+    assert ProcedureState.CREATED in procedure.history.process_states
+    assert isinstance(procedure.history.process_states[ProcedureState.CREATED], float)
+    assert ProcedureState.STOPPED in procedure.history.process_states
+    assert isinstance(procedure.history.process_states[ProcedureState.STOPPED], float)
 
 
 def test_procedure_terminate_not_allowed_if_process_is_not_running(procedure):
@@ -453,12 +453,12 @@ def test_process_manager_updates_history_of_completed_procedures(manager, script
     wait_for_process_to_complete(manager)
     procedure = manager.procedures[pid]
 
-    assert ProcedureState.CREATED in procedure.history.process_history
-    assert isinstance(procedure.history.process_history[ProcedureState.CREATED], float)
-    assert ProcedureState.RUNNING in procedure.history.process_history
-    assert isinstance(procedure.history.process_history[ProcedureState.RUNNING], float)
-    assert ProcedureState.COMPLETED in procedure.history.process_history
-    assert isinstance(procedure.history.process_history[ProcedureState.COMPLETED], float)
+    assert ProcedureState.CREATED in procedure.history.process_states
+    assert isinstance(procedure.history.process_states[ProcedureState.CREATED], float)
+    assert ProcedureState.RUNNING in procedure.history.process_states
+    assert isinstance(procedure.history.process_states[ProcedureState.RUNNING], float)
+    assert ProcedureState.COMPLETED in procedure.history.process_states
+    assert isinstance(procedure.history.process_states[ProcedureState.COMPLETED], float)
     assert procedure.history.stacktrace is None
 
 
@@ -493,12 +493,12 @@ def test_process_manager_updates_procedure_history_on_script_failure(manager, fa
     wait_for_process_to_complete(manager)
     procedure = manager.procedures[pid]
 
-    assert ProcedureState.CREATED in procedure.history.process_history
-    assert isinstance(procedure.history.process_history[ProcedureState.CREATED], float)
-    assert ProcedureState.RUNNING in procedure.history.process_history
-    assert isinstance(procedure.history.process_history[ProcedureState.RUNNING], float)
-    assert ProcedureState.FAILED in procedure.history.process_history
-    assert isinstance(procedure.history.process_history[ProcedureState.FAILED], float)
+    assert ProcedureState.CREATED in procedure.history.process_states
+    assert isinstance(procedure.history.process_states[ProcedureState.CREATED], float)
+    assert ProcedureState.RUNNING in procedure.history.process_states
+    assert isinstance(procedure.history.process_states[ProcedureState.RUNNING], float)
+    assert ProcedureState.FAILED in procedure.history.process_states
+    assert isinstance(procedure.history.process_states[ProcedureState.FAILED], float)
     assert procedure.history.stacktrace is not None
 
 

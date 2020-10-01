@@ -27,7 +27,7 @@ CREATE_SUMMARY = ProcedureSummary(
     id=1,
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b')},
-    history=domain.ProcedureHistory(process_history=OrderedDict([(domain.ProcedureState.CREATED,
+    history=domain.ProcedureHistory(process_states=OrderedDict([(domain.ProcedureState.CREATED,
                                                                   1601295086.129294)]),
                                     stacktrace=None),
     state=domain.ProcedureState.CREATED
@@ -46,7 +46,7 @@ RUN_SUMMARY = ProcedureSummary(
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b'),
                  'run': domain.ProcedureInput(4, 5, 6, kw3='c', kw4='d')},
-    history=domain.ProcedureHistory(process_history=OrderedDict([(domain.ProcedureState.CREATED,
+    history=domain.ProcedureHistory(process_states=OrderedDict([(domain.ProcedureState.CREATED,
                                                                   1601295086.129294),
                                                                  (domain.ProcedureState.RUNNING,
                                                                   1601295086.129294)]),
@@ -74,10 +74,10 @@ def assert_json_equal_to_procedure_summary(summary: ProcedureSummary, summary_js
         assert i.kwargs == arg_dict['kwargs']
     assert summary_json['state'] == summary.state.name
     assert summary_json['history']['stacktrace'] == summary.history.stacktrace
-    for key, val in summary.history.process_history.items():
-        assert key.name in summary_json['history']['process_history']
-        assert val == summary_json['history']['process_history'][key.name]
-        assert isinstance(summary_json['history']['process_history'][key.name], float)
+    for key, val in summary.history.process_states.items():
+        assert key.name in summary_json['history']['process_states']
+        assert val == summary_json['history']['process_states'][key.name]
+        assert isinstance(summary_json['history']['process_states'][key.name], float)
 
 
 @pytest.fixture

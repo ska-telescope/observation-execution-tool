@@ -62,28 +62,28 @@ class ProcedureHistory:
     """
     ProcedureHistory is a non-functional dataclass holding execution history of a Procedure.
 
-    process_history: records time for each change of ProcedureState (list of tuples where
+    process_states: records time for each change of ProcedureState (list of tuples where
     tuple contains the ProcedureState and time when state was changed to)
     stacktrace: None unless execution_error is True in which case stores stacktrace from process
     """
 
-    def __init__(self, process_history=None, stacktrace=None):
-        if process_history is None:
-            process_history = OrderedDict()
-        self.process_history: typing.OrderedDict[ProcedureState, float] = process_history
+    def __init__(self, process_states=None, stacktrace=None):
+        if process_states is None:
+            process_states = OrderedDict()
+        self.process_states: typing.OrderedDict[ProcedureState, float] = process_states
         self.stacktrace = stacktrace
 
     def __eq__(self, other):
         if not isinstance(other, ProcedureHistory):
             return False
-        if self.process_history == other.process_history and \
+        if self.process_states == other.process_states and \
                 self.stacktrace == other.stacktrace:
             return True
         return False
 
     def __repr__(self):
-        p_history = ', '.join(['({!s}, {!r})'.format(s, t) for s, t in self.process_history])
-        return '<ProcessHistory(process_history=[{}], ' \
+        p_history = ', '.join(['({!s}, {!r})'.format(s, t) for s, t in self.process_states])
+        return '<ProcessHistory(process_states=[{}], ' \
                'stacktrace={})>'.format(p_history, self.stacktrace)
 
 
@@ -160,7 +160,7 @@ class Procedure(multiprocessing.Process):
         Change procedure state and record change in ProcedureHistory
         """
         self.state = new_state
-        self.history.process_history[new_state] = time.time()
+        self.history.process_states[new_state] = time.time()
 
 
 class ProcessManager:

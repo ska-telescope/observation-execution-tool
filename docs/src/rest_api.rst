@@ -73,9 +73,9 @@ Procedures are defined as JSON objects with the following fields:
 | state       | str        | Script execution state: CREATED, RUNNING, STOPPED, COMPLETED,        |
 |             |            | FAILED.                                                              |
 +-------------+------------+----------------------------------------------------------------------+
-| history     | object     | history contains a Dict of process_history and stacktrace.           |
+| history     | object     | history contains a Dict of process_states and stacktrace.            |
 |             |            |                                                                      |
-|             |            | process_history which contains a Dict of ProcedureStates and         |
+|             |            | process_states which contains a Dict of ProcedureStates and          |
 |             |            | timestamps for each state (e.g. {'CREATED': 18392174.543,            |
 |             |            | 'RUNNING': 18392143.546, 'COMPLETED': 183925456.744}).               |
 |             |            |                                                                      |
@@ -110,7 +110,7 @@ being `CREATED``::
         },
         "script_uri": "file:///path/to/observing_script.py",
         "history": {
-            "process_history": {
+            "process_states": {
                  "CREATED": 1601463545.7789776
                 },
             "stacktrace": null
@@ -158,7 +158,7 @@ execution::
         },
         "script_uri": "file:///path/to/observing_script.py",
         "history": {
-            "process_history": {
+            "process_states": {
                 "CREATED": 1601463545.7789776
                 },
             "stacktrace": null
@@ -202,7 +202,7 @@ resource_allocation.py, and procedure #2 that will run observing_script.py::
           },
           "script_uri": "file:///path/to/resource_allocation.py",
           "history": {
-              "process_history": {
+              "process_states": {
                    "CREATED": 1601463545.7789776
                 },
               "stacktrace": null
@@ -226,7 +226,7 @@ resource_allocation.py, and procedure #2 that will run observing_script.py::
           },
           "script_uri": "file:///path/to/observing_script.py",
           "history": {
-               "process_history": {
+               "process_states": {
                    "CREATED": 1601463545.7789885
                   },
                "stacktrace": null
@@ -269,7 +269,7 @@ session below lists procedure #1::
         },
         "script_uri": "file:///path/to/resource_allocation.py",
         "history": {
-            "process_history": {
+            "process_states": {
                 "CREATED": 1601463545.7789776
                 },
             "stacktrace": null
@@ -315,7 +315,7 @@ argument scan_duration=14::
         },
         "script_uri": "file:///path/to/observing_script.py",
         "history": {
-            "process_history": {
+            "process_states": {
                 "CREATED": 1601463545.7789885,
                 "RUNNING": 1601463545.7789997
              },

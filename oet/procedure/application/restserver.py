@@ -158,9 +158,9 @@ def make_public_summary(procedure: application.ProcedureSummary):
     script_args = {method_name: {'args': method_args.args, 'kwargs': method_args.kwargs}
                    for method_name, method_args in procedure.script_args.items()}
 
-    procedure_history = {'process_history': {state.name: time
+    procedure_history = {'process_states': {state.name: time
                                              for state, time in
-                                             procedure.history.process_history.items()},
+                                             procedure.history.process_states.items()},
                          'stacktrace': procedure.history.stacktrace
                          }
     return {

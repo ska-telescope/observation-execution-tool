@@ -83,7 +83,7 @@ class RestClientUI:
     @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
         table_rows = [(p.id, p.script_uri,
-                       datetime.datetime.fromtimestamp(p.history['process_history']
+                       datetime.datetime.fromtimestamp(p.history['process_states']
                                                        ['CREATED']).strftime('%Y-%m-%d '
                                                                              '%H:%M:%S'),
                        p.state) for p in procedures]
