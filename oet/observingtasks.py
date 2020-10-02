@@ -802,8 +802,13 @@ def _call_and_wait_for_obsstate(command: Command,
     use_pubsub = oet.FEATURES.use_pubsub_to_read_tango_attributes
     attribute = Attribute(device_to_monitor, 'obsState')
     if use_pubsub:
-        LOGGER.info('Using pub/sub to track obsState of %s', device_to_monitor)
-        _ = EXECUTOR.subscribe_event(attribute)
+        try:
+            LOGGER.info('Using pub/sub to track obsState of %s', device_to_monitor)
+            _ = EXECUTOR.subscribe_event(attribute)
+        except tango.DevFailed:
+            LOGGER.warning('Could not subscribe to obsState of %s. Polling obsState instead.', device_to_monitor)
+            # If subscribing fails, fall back to polling
+            use_pubsub = False
 
     try:
         response = EXECUTOR.execute(command)

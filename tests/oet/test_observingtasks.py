@@ -624,8 +624,33 @@ def test_call_and_wait_for_state_raises_exception_when_error_state_encountered_f
     assert observingtasks.EXECUTOR.queue.empty()
 
 
-# AT2-578 REFACTOR - moved tests for new function
-# _call_and_wait_for_obsstate here
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+@mock.patch.object(observingtasks, 'wait_for_obsstate')
+@mock.patch.object(observingtasks.EXECUTOR, 'subscribe_event')
+def test_call_and_wait_for_state_falls_to_polling_if_subscribe_fails(mock_subscribe_event_fn,
+                                                                     mock_wait_for_obsstate_fn,
+                                                                     mock_execute_fn):
+    """
+    Verify that call_and_wait_for_state reverts to polling if subscribing to a device
+    gives DevFailed error.
+    """
+    with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=True)):
+        mock_subscribe_event_fn.side_effect = tango.DevFailed()
+        obs_response = mock.MagicMock(spec_set=observingtasks.ObsStateResponse)
+        obs_response.final_state = ObsState.IDLE
+        obs_response.response_msg = 'SUCCESS'
+        mock_wait_for_obsstate_fn.side_effect = obs_response
+        cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
+        observingtasks._call_and_wait_for_obsstate(cmd, [(ObsState.IDLE, [ObsState.FAULT])])
+
+    mock_subscribe_event_fn.assert_called_once()
+    mock_execute_fn.assert_called_once()
+
+    # Confirm wait_for_obsstate was called with pubsub=False even with environment variable set to True
+    mock_wait_for_obsstate_fn.assert_called_with(mock.ANY, error_states=mock.ANY,
+                                                 target_state=mock.ANY, use_pubsub=False)
+    assert observingtasks.EXECUTOR.queue.empty()
+
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
