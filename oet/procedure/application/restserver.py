@@ -83,8 +83,8 @@ def create_procedure():
     procedure_input = domain.ProcedureInput(*init_args, **init_kwargs)
     prepare_cmd = application.PrepareProcessCommand(script_uri=script_uri,
                                                     init_args=procedure_input)
-    summary = SERVICE.prepare(prepare_cmd)
 
+    summary = SERVICE.prepare(prepare_cmd)
     return flask.jsonify({'procedure': make_public_summary(summary)}), 201
 
 
@@ -110,7 +110,7 @@ def update_procedure(procedure_id: int):
     old_state = summary.state
     new_state = domain.ProcedureState[flask.request.json.get('state', summary.state.name)]
 
-    if new_state is domain.ProcedureState.STOP:
+    if new_state is domain.ProcedureState.STOPPED:
         if old_state is domain.ProcedureState.RUNNING:
             run_abort = flask.request.json.get('abort')
             cmd = application.StopProcessCommand(procedure_id)
@@ -120,17 +120,18 @@ def update_procedure(procedure_id: int):
                 # If script was stopped and no post-termination abort script was run,
                 # the result list will be empty.
                 if result:
-                    msg = f'Successfully stopped script with ID {procedure_id} and aborted subarray activity '
+                    msg = f'Successfully stopped script with ID {procedure_id} and ' \
+                          f'aborted subarray activity '
                 else:
                     msg = f'Successfully stopped script with ID {procedure_id}'
                 return flask.jsonify({'abort_message': msg})
-            except Exception as exc:
+            except Exception as exc: # pylint: disable=broad-except
                 flask.abort(500, exc)
         else:
             msg = f'Cannot stop script with ID {procedure_id}: Script is not running'
             return flask.jsonify({'abort_message': msg})
 
-    elif old_state is domain.ProcedureState.READY and new_state is domain.ProcedureState.RUNNING:
+    elif old_state is domain.ProcedureState.CREATED and new_state is domain.ProcedureState.RUNNING:
         run_dict = script_args.get('run', {})
         run_args = run_dict.get('args', [])
         run_kwargs = run_dict.get('kwargs', {})
@@ -138,7 +139,7 @@ def update_procedure(procedure_id: int):
         cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
         try:
             summary = SERVICE.start(cmd)
-        except Exception as exc:
+        except Exception as exc: # pylint: disable=broad-except
             flask.abort(500, exc)
 
     return flask.jsonify({'procedure': make_public_summary(summary)})
@@ -157,10 +158,16 @@ def make_public_summary(procedure: application.ProcedureSummary):
     script_args = {method_name: {'args': method_args.args, 'kwargs': method_args.kwargs}
                    for method_name, method_args in procedure.script_args.items()}
 
+    procedure_history = {'process_states': {state.name: time
+                                             for state, time in
+                                             procedure.history.process_states.items()},
+                         'stacktrace': procedure.history.stacktrace
+                         }
     return {
         'uri': flask.url_for('api.get_procedure', procedure_id=procedure.id, _external=True),
         'script_uri': procedure.script_uri,
         'script_args': script_args,
+        'history': procedure_history,
         'state': procedure.state.name
     }
 

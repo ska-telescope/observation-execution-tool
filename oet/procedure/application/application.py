@@ -46,6 +46,7 @@ class ProcedureSummary:
     id: int  # pylint: disable=invalid-name
     script_uri: str
     script_args: typing.Dict[str, domain.ProcedureInput]
+    history: domain.ProcedureHistory
     state: domain.ProcedureState
 
 
@@ -97,6 +98,7 @@ class ScriptExecutionService:
             id=pid,
             script_uri=procedure.script_uri,
             script_args=copy.deepcopy(procedure.script_args),
+            history=procedure.history,
             state=procedure.state
         )
         return summary

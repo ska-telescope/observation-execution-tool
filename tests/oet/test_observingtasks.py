@@ -13,7 +13,7 @@ from astropy.coordinates import SkyCoord
 from ska.cdm import schemas
 from ska.cdm.messages.subarray_node.configure import ConfigureRequest
 from ska.cdm.schemas import CODEC
-import oet
+
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
@@ -358,13 +358,13 @@ def test_release_resources_successful_default_deallocation(mock_execute_fn):
     subarray.deallocate()
 
     assert not subarray.resources.dishes
-
+    
     # Test that _call_and_wait_for_obsstate was correctly invoked.
     validate_call_and_wait_for_obsstate_args(
-        mock_execute_fn,
-        'ReleaseResources',
-        SKA_MID_CENTRAL_NODE_FDQN,
-        [ObsState.EMPTY]
+            mock_execute_fn,
+            'ReleaseResources',
+            SKA_MID_CENTRAL_NODE_FDQN,
+            [ObsState.EMPTY]
     )
 
 
@@ -690,8 +690,6 @@ def test_call_and_wait_for_state_raises_exception_when_error_state_encountered(m
     assert mock_read_fn.call_count == 4
 
 
-# End move
-
 @mock.patch.object(observingtasks, 'execute_configure_command')
 def test_configure(mock_execute_fn):
     """
@@ -820,10 +818,10 @@ def test_end_defines_obsstate_transitions_correctly(mock_fn):
     observingtasks.end(subarray)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,  # pass in mock function used for this test
-        'End',  # 'end' command is requested
+        mock_fn,                    # pass in mock function used for this test
+        'End',                      # 'end' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.IDLE],  # happy path sequence is IDLE
+        [ObsState.IDLE],            # happy path sequence is IDLE
     )
 
 
@@ -837,10 +835,10 @@ def test_abort_defines_obsstate_transitions_correctly(mock_fn):
     observingtasks.abort(subarray)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,  # pass in mock function used for this test
-        'Abort',  # 'abort' command is requested
+        mock_fn,                    # pass in mock function used for this test
+        'Abort',                      # 'abort' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.ABORTED],  # happy path sequence is ABORTED
+        [ObsState.ABORTED],            # happy path sequence is ABORTED
     )
 
 
@@ -854,10 +852,10 @@ def test_obsreset_defines_obsstate_transitions_correctly(mock_fn):
     observingtasks.obsreset(subarray)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,  # pass in mock function used for this test
-        'ObsReset',  # 'obsreset' command is requested
+        mock_fn,                    # pass in mock function used for this test
+        'ObsReset',                      # 'obsreset' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.IDLE],  # happy path sequence is IDLE
+        [ObsState.IDLE],            # happy path sequence is IDLE
     )
 
 
@@ -871,10 +869,10 @@ def test_restart_defines_obsstate_transitions_correctly(mock_fn):
     observingtasks.restart(subarray)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,  # pass in mock function used for this test
-        'Restart',  # 'restart' command is requested
+        mock_fn,                    # pass in mock function used for this test
+        'Restart',                      # 'restart' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.EMPTY],  # happy path sequence is EMPTY
+        [ObsState.EMPTY],            # happy path sequence is EMPTY
     )
 
 
@@ -888,10 +886,10 @@ def test_execute_configure_command_defines_obsstate_transitions_correctly(mock_f
     observingtasks.execute_configure_command(cmd)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,  # pass in mock function used for this test
-        'Configure',  # 'configure' command is requested
+        mock_fn,                    # pass in mock function used for this test
+        'Configure',                      # 'configure' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.READY],  # happy path sequence is READY
+        [ObsState.READY],            # happy path sequence is READY
     )
 
 
@@ -905,10 +903,10 @@ def test_subarray_scan_defines_obsstate_transitions_correctly(mock_fn):
     observingtasks.scan(subarray)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,  # pass in mock function used for this test
-        'Scan',  # 'scan' command is requested
+        mock_fn,                    # pass in mock function used for this test
+        'Scan',                      # 'scan' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.SCANNING, ObsState.READY],  # happy path sequence is SCANNING, READY
+        [ObsState.SCANNING,ObsState.READY],            # happy path sequence is SCANNING, READY
     )
 
 

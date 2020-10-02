@@ -13,6 +13,7 @@ from oet.procedure.application import restserver
 from oet.procedure.application.application import ProcedureSummary, PrepareProcessCommand, \
     StartProcessCommand, StopProcessCommand
 from oet.procedure.domain import ProcedureInput
+from collections import OrderedDict
 
 # Endpoint for the REST API
 ENDPOINT = 'procedures'
@@ -26,10 +27,13 @@ CREATE_SUMMARY = ProcedureSummary(
     id=1,
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b')},
-    state=domain.ProcedureState.READY
+    history=domain.ProcedureHistory(process_states=OrderedDict([(domain.ProcedureState.CREATED,
+                                                                  1601295086.129294)]),
+                                    stacktrace=None),
+    state=domain.ProcedureState.CREATED
 )
 
-ABORT_JSON = dict(state="STOP", abort=True)
+ABORT_JSON = dict(state="STOPPED", abort=True)
 
 # Valid JSON struct for starting a prepared procedure
 RUN_JSON = dict(script_uri="test:///test.py",
@@ -42,6 +46,11 @@ RUN_SUMMARY = ProcedureSummary(
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b'),
                  'run': domain.ProcedureInput(4, 5, 6, kw3='c', kw4='d')},
+    history=domain.ProcedureHistory(process_states=OrderedDict([(domain.ProcedureState.CREATED,
+                                                                  1601295086.129294),
+                                                                 (domain.ProcedureState.RUNNING,
+                                                                  1601295086.129294)]),
+                                    stacktrace=None),
     state=domain.ProcedureState.RUNNING
 )
 
@@ -64,6 +73,11 @@ def assert_json_equal_to_procedure_summary(summary: ProcedureSummary, summary_js
         assert i.args == tuple(arg_dict['args'])
         assert i.kwargs == arg_dict['kwargs']
     assert summary_json['state'] == summary.state.name
+    assert summary_json['history']['stacktrace'] == summary.history.stacktrace
+    for key, val in summary.history.process_states.items():
+        assert key.name in summary_json['history']['process_states']
+        assert val == summary_json['history']['process_states'][key.name]
+        assert isinstance(summary_json['history']['process_states'][key.name], float)
 
 
 @pytest.fixture
@@ -260,7 +274,7 @@ def test_put_procedure_calls_stop_on_execution_service(client):
         mock_service.stop.return_value = []
 
         # PUT request should pick up default run_abort=True
-        response = client.put(RUN_ENDPOINT, json=dict(state="STOP", abort=False))
+        response = client.put(RUN_ENDPOINT, json=dict(state="STOPPED", abort=False))
         response_json = response.get_json()
 
         mock_service.stop.assert_called_once_with(cmd, False)

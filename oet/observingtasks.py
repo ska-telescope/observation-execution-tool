@@ -286,9 +286,9 @@ def get_release_resources_command(subarray: domain.SubArray,
 # Added helper function for allocate_resources, allocate_resources_from_file
 # and assign_resources_from_cdm
 def return_allocated_resources(
-        command: Command,
-        subarray: domain.SubArray,
-        subarray_device: str) -> domain.ResourceAllocation:
+                    command: Command, 
+                    subarray: domain.SubArray,
+                    subarray_device: str) -> domain.ResourceAllocation:
     """
     Return the allocated resources
     
@@ -320,7 +320,6 @@ def allocate_resources(subarray: domain.SubArray,
     """
     command = get_allocate_resources_command(subarray, resources)
     subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
-
     return return_allocated_resources(command, subarray, subarray_device)
 
 
