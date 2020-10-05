@@ -208,7 +208,7 @@ def test_tango_executor_calls_unsubscribe_event_correctly():
         executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
         mock_proxy.subscribe_event.return_value = 12345
         response = executor.subscribe_event(attr)
-        executor.unsubscribe_event(attr)
+        executor.unsubscribe_event(attr,12345)
     assert response == 12345
     mock_proxy.unsubscribe_event.assert_called_once_with(response)
 

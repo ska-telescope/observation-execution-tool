@@ -804,7 +804,7 @@ def _call_and_wait_for_obsstate(command: Command,
     if use_pubsub:
         try:
             LOGGER.info('Using pub/sub to track obsState of %s', device_to_monitor)
-            _ = EXECUTOR.subscribe_event(attribute)
+            event_id = EXECUTOR.subscribe_event(attribute)
         except tango.DevFailed as df:
             LOGGER.warning('Could not subscribe to obsState of %s. OET expect LMC base class version 0.6.1.', device_to_monitor)
             raise df
@@ -824,7 +824,7 @@ def _call_and_wait_for_obsstate(command: Command,
     finally:
         # Always unsubscribe
         if use_pubsub:
-            EXECUTOR.unsubscribe_event(attribute)
+            EXECUTOR.unsubscribe_event(attribute, event_id)
 
     return response
 

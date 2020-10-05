@@ -109,7 +109,6 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
 
         # subscription
         self.queue = Queue(maxsize=0)
-        self.event_id = None
 
     def execute(self, command: Command):
         """
@@ -149,12 +148,12 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
 
         proxy = self._get_proxy(attribute.device)
         LOGGER.debug('Reading attribute: %s/%s', attribute.device, attribute.name)
-        self.event_id = proxy.subscribe_event(attribute.name,
+        event_id = proxy.subscribe_event(attribute.name,
                                               tango.EventType.CHANGE_EVENT,
                                               self.handle_state_change)
         LOGGER.debug("%s Subscribed to %s (event id: %d)", attribute.name,
-                     tango.EventType.CHANGE_EVENT, self.event_id)
-        return self.event_id
+                     tango.EventType.CHANGE_EVENT, event_id)
+        return event_id
 
     def handle_state_change(self, event: tango.EventData):
         """
@@ -176,16 +175,17 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
          """
         return self.queue.get() # TODO: 1. implement timeout functionality
 
-    def unsubscribe_event(self, attribute: Attribute):
+    def unsubscribe_event(self, attribute: Attribute, event_id:int):
         """
            unsubscribe event on a Tango device.
 
+           :param event_id: event subscribe id
            :param attribute: the attribute to unsubscribe
            :return:
         """
         proxy = self._get_proxy(attribute.device)
         LOGGER.debug('Unsubscibe event: %s/%s', attribute.device, attribute.name)
-        return proxy.unsubscribe_event(self.event_id)
+        return proxy.unsubscribe_event(event_id)
 
     def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
         # It takes time to construct and connect a device proxy to the remote
