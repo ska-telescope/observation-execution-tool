@@ -914,7 +914,7 @@ def test_execute_configure_command_defines_obsstate_transitions_correctly(mock_f
         mock_fn,                    # pass in mock function used for this test
         'Configure',                      # 'configure' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.READY],            # happy path sequence is READY
+        [ObsState.CONFIGURING, ObsState.READY],            # happy path sequence is CONFIGURING, READY
     )
 
 
@@ -931,7 +931,7 @@ def test_subarray_scan_defines_obsstate_transitions_correctly(mock_fn):
         mock_fn,                    # pass in mock function used for this test
         'Scan',                      # 'scan' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.SCANNING,ObsState.READY],            # happy path sequence is SCANNING, READY
+        [ObsState.SCANNING, ObsState.READY],            # happy path sequence is SCANNING, READY
     )
 
 
