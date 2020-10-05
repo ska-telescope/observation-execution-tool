@@ -80,7 +80,15 @@ The methods available through the REST Client map closely to the
 |                    |               |                                            | send Abort command to the SubArray  |
 |                    |               |                                            | as part of script termination.      |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
-
+| describe           | pid           | None                                       | **Investigate a procedure**         |
+|                    |               |                                            |                                     |
+|                    |               |                                            | Displays the call arguments, state  |
+|                    |               |                                            | history and, if the procedure       |
+|                    |               |                                            | failed, the stack trace of a        |
+|                    |               |                                            | specified process ID (pid). If no   | 
+|                    |               |                                            | pid is specified describe the last  |
+|                    |               |                                            | process created.                    |
++--------------------+---------------+--------------------------------------------+-------------------------------------+
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to 
 those specified by name e.g. --myparam=12. 
 
@@ -165,6 +173,28 @@ gives: ::
      1  file://test.py   2020-09-30 10:30:12  CREATED
      2  file://test2.py  2020-09-30 10:35:12  RUNNING
 
+A 'describe' command will give further detail on a procedure, no
+matter its state.::
+ 
+ $oet describe --pid=2
+
+giving: ::
+
+    ID  Script
+  ----  -------------------------------
+     2  file://test2.py
+ 
+  Time                        State
+  --------------------------  -------
+  2020-09-30 10:19:38.646475  CREATED
+  2020-09-30 10:35:12.605270  RUNNING
+  
+  Method    Arguments    Keyword Arguments
+  --------  -----------  -------------------
+  init      []           {'subarray_id': 1}
+  run       []           {}
+
+If the procedure failed, then the stack trace will also be displayed.
 
 Example session in a SKAMPI environment
 ---------------------------------------
