@@ -87,8 +87,55 @@ class RestClientUI:
                                                        ['CREATED']).strftime('%Y-%m-%d '
                                                                              '%H:%M:%S'),
                        p.state) for p in procedures]
+
         headers = ['ID', 'Script', 'Creation Time', 'State']
         return tabulate.tabulate(table_rows, headers)
+
+#    Note for Viivi - I initially had 3 separate static methods which I called in the describe
+#    method. I've since combined these into a single static method. Let me know if you prefer it
+#    as three separate methods
+
+    # @staticmethod
+    # def _title_for_describe(procedure: List[ProcedureSummary]) -> str:
+    #
+    #     table_rows = [(procedure[0].id, procedure[0].script_uri)]
+    #     headers = ['ID', 'Script']
+    #     return tabulate.tabulate(table_rows, headers)
+    #
+    # @staticmethod
+    # def _tabulate_states_for_describe(procedure: List[ProcedureSummary]) -> str:
+    #
+    #     table_rows = [(datetime.datetime.fromtimestamp(procedure[0].history['process_states']
+    #                                                    [s]).strftime('%Y-%m-%d %H:%M:%S.%f'), s)
+    #                   for s in procedure[0].history['process_states']]
+    #
+    #     table_rows.sort(key=lambda tup: tup[0])
+    #     headers = ['Time', 'State']
+    #     return tabulate.tabulate(table_rows, headers)
+
+    @staticmethod
+    def _tabulate_for_describe(procedure: List[ProcedureSummary]) -> str:
+
+        table_row_title = [(procedure[0].id, procedure[0].script_uri)]
+        headers_title = ['ID', 'Script']
+
+        table_rows_args = [(s, procedure[0].script_args[s]['args'],
+                            procedure[0].script_args[s]['kwargs'])
+                           for s in procedure[0].script_args]
+
+        headers_args = ['Method', 'Arguments', 'Keyword Arguments']
+
+        table_rows_states = [(datetime.datetime.fromtimestamp(procedure[0].
+                                                              history['process_states'][s]).
+                                                              strftime('%Y-%m-%d %H:%M:%S.%f'), s)
+                             for s in procedure[0].history['process_states']]
+
+        table_rows_states.sort(key=lambda tup: tup[0])
+        headers_states = ['Time', 'State']
+
+        return (tabulate.tabulate(table_row_title, headers_title) + "\n \n" +
+                tabulate.tabulate(table_rows_states, headers_states) + "\n \n" +
+                tabulate.tabulate(table_rows_args, headers_args))
 
     def list(self, pid=None) -> str:
         """
@@ -176,6 +223,38 @@ class RestClientUI:
             pid = running_procedures[0].id
         response = self._client.stop(pid, run_abort)
         return response
+
+    def describe(self, pid=None):
+        """
+        Display information on the specified procedure.
+
+        This will display the state history of a specified procedure, including with the
+        stack trace is the procedure failed. If no procedure ID is declared, the last
+        procedure to be created with be described.
+
+        :param pid: ID of procedure to describe
+        """
+
+        valid_procedure_ids = [p.id for p in self._client.list()]
+        if pid is None:
+            if not valid_procedure_ids:
+                return 'No procedures to investigate'
+
+            pid = valid_procedure_ids[-1]
+
+        if str(pid) not in valid_procedure_ids:
+            return 'WARNING: No valid procedure ID specified, ' \
+                   'Specify ID of the procedure under investigation'
+
+        procedure = self._client.list(pid)
+
+        if procedure[0].history['stacktrace'] is None:
+            return self._tabulate_for_describe(procedure)
+        else:
+            return (self._tabulate_for_describe(procedure) +
+                    "\n \n Stack Trace: \n" +
+                    "-"*13+"\n" +
+                    procedure[0].history['stacktrace'])
 
 
 class RestAdapter:
@@ -305,3 +384,7 @@ def main():
     Fire entry function to provide a CLI interface for REST client.
     """
     fire.Fire(RestClientUI)
+
+
+if __name__ == '__main__':
+    main()
