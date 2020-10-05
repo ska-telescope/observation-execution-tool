@@ -91,33 +91,11 @@ class RestClientUI:
         headers = ['ID', 'Script', 'Creation Time', 'State']
         return tabulate.tabulate(table_rows, headers)
 
-#    Note for Viivi - I initially had 3 separate static methods which I called in the describe
-#    method. I've since combined these into a single static method. Let me know if you prefer it
-#    as three separate methods
-
-    # @staticmethod
-    # def _title_for_describe(procedure: List[ProcedureSummary]) -> str:
-    #
-    #     table_rows = [(procedure[0].id, procedure[0].script_uri)]
-    #     headers = ['ID', 'Script']
-    #     return tabulate.tabulate(table_rows, headers)
-    #
-    # @staticmethod
-    # def _tabulate_states_for_describe(procedure: List[ProcedureSummary]) -> str:
-    #
-    #     table_rows = [(datetime.datetime.fromtimestamp(procedure[0].history['process_states']
-    #                                                    [s]).strftime('%Y-%m-%d %H:%M:%S.%f'), s)
-    #                   for s in procedure[0].history['process_states']]
-    #
-    #     table_rows.sort(key=lambda tup: tup[0])
-    #     headers = ['Time', 'State']
-    #     return tabulate.tabulate(table_rows, headers)
-
     @staticmethod
     def _tabulate_for_describe(procedure: List[ProcedureSummary]) -> str:
 
-        table_row_title = [(procedure[0].id, procedure[0].script_uri)]
-        headers_title = ['ID', 'Script']
+        table_row_title = [(procedure[0].id, procedure[0].script_uri, procedure[0].uri )]
+        headers_title = ['ID', 'Script', 'URI']
 
         table_rows_args = [(s, procedure[0].script_args[s]['args'],
                             procedure[0].script_args[s]['kwargs'])
@@ -133,9 +111,18 @@ class RestClientUI:
         table_rows_states.sort(key=lambda tup: tup[0])
         headers_states = ['Time', 'State']
 
-        return (tabulate.tabulate(table_row_title, headers_title) + "\n \n" +
-                tabulate.tabulate(table_rows_states, headers_states) + "\n \n" +
-                tabulate.tabulate(table_rows_args, headers_args))
+        if procedure[0].history['stacktrace'] is None:
+            return (tabulate.tabulate(table_row_title, headers_title) + "\n \n" +
+                    tabulate.tabulate(table_rows_states, headers_states) + "\n \n" +
+                    tabulate.tabulate(table_rows_args, headers_args))
+        else:
+
+            return (tabulate.tabulate(table_row_title, headers_title) + "\n \n" +
+                    tabulate.tabulate(table_rows_states, headers_states) + "\n \n" +
+                    tabulate.tabulate(table_rows_args, headers_args) +
+                    "\n \n Stack Trace: \n" +
+                    "-"*13+"\n" +
+                    procedure[0].history['stacktrace'])
 
     def list(self, pid=None) -> str:
         """
@@ -247,15 +234,7 @@ class RestClientUI:
                    'Specify ID of the procedure under investigation'
 
         procedure = self._client.list(pid)
-
-        if procedure[0].history['stacktrace'] is None:
-            return self._tabulate_for_describe(procedure)
-        else:
-            return (self._tabulate_for_describe(procedure) +
-                    "\n \n Stack Trace: \n" +
-                    "-"*13+"\n" +
-                    procedure[0].history['stacktrace'])
-
+        return self._tabulate_for_describe(procedure)
 
 class RestAdapter:
     """A simple CLI REST client using python-fire for the option parsing"""
