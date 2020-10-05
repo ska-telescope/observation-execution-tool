@@ -805,10 +805,9 @@ def _call_and_wait_for_obsstate(command: Command,
         try:
             LOGGER.info('Using pub/sub to track obsState of %s', device_to_monitor)
             _ = EXECUTOR.subscribe_event(attribute)
-        except tango.DevFailed:
-            LOGGER.warning('Could not subscribe to obsState of %s. Polling obsState instead.', device_to_monitor)
-            # If subscribing fails, fall back to polling
-            use_pubsub = False
+        except tango.DevFailed as df:
+            LOGGER.warning('Could not subscribe to obsState of %s. OET expect LMC base class version 0.6.1.', device_to_monitor)
+            raise df
 
     try:
         response = EXECUTOR.execute(command)
