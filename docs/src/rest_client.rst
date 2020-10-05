@@ -80,7 +80,7 @@ The methods available through the REST Client map closely to the
 |                    |               |                                            | send Abort command to the SubArray  |
 |                    |               |                                            | as part of script termination.      |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
-| describe           | pid           | None                                       |**Investigate a procedure**          |
+| describe           | pid           | None                                       | **Investigate a procedure**         |
 |                    |               |                                            |                                     |
 |                    |               |                                            | Displays the call arguments, state  |
 |                    |               |                                            | history and, if the procedure       |
@@ -180,9 +180,9 @@ matter its state.::
 
 giving: ::
 
-     ID  Script
+    ID  Script
   ----  -------------------------------
-      2  file://test2.py
+     2  file://test2.py
  
   Time                        State
   --------------------------  -------
