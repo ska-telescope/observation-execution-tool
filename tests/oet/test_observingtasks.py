@@ -453,18 +453,18 @@ def test_wait_for_obsstate_returns_target_state_for_pub_sub():
     assert state_response.final_state == ObsState.IDLE
 
 
-def test_wait_for_pubsub_value_raises_exception_on_timeout():
-    """
-    Verify wait_for_pubsub_value raises exception if timeout occurs
-    """
-    with observingtasks.EXECUTOR.queue.mutex:
-        observingtasks.EXECUTOR.queue.queue.clear()
-    target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
-
-    with pytest.raises(Exception):
-        _ = observingtasks.wait_for_pubsub_value(target_states,
-                                                 key=observingtasks.parse_oet_obsstate_from_tango_eventdata,
-                                                 timeout=1)
+# def test_wait_for_pubsub_value_raises_exception_on_timeout():
+#     """
+#     Verify wait_for_pubsub_value raises exception if timeout occurs
+#     """
+#     with observingtasks.EXECUTOR.queue.mutex:
+#         observingtasks.EXECUTOR.queue.queue.clear()
+#     target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
+#
+#     with pytest.raises(Exception):
+#         _ = observingtasks.wait_for_pubsub_value(target_states,
+#                                                  key=observingtasks.parse_oet_obsstate_from_tango_eventdata,
+#                                                  timeout=1)
 
 
 def test_wait_for_pubsub_value_raises_exception_on_event_error():

@@ -174,7 +174,7 @@ def test_tango_executor_calls_read_event_correctly_check_queue_is_empty():
         evt = mock_proxy.MagicMock(spec_set=tango.EventData)
         evt.attr_value = 'resourcing'
         executor.handle_state_change(evt)
-        result = executor.read_event(timeout=6)
+        result = executor.read_event()
     assert result.attr_value == 'resourcing'
     assert executor.queue.empty()
 
@@ -192,7 +192,7 @@ def test_tango_executor_calls_subscribe_event_callback_correctly():
         evt = mock_proxy.MagicMock(spec_set=tango.EventData)
         evt.attr_value = 'resourcing'
         executor.handle_state_change(evt)
-        result = executor.read_event(timeout=6)
+        result = executor.read_event()
     assert result.attr_value == 'resourcing'
     assert executor.queue.empty()
 

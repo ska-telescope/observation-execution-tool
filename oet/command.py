@@ -167,14 +167,14 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         LOGGER.debug(f"Event callback, type: {event.event}, error: {event.err}")
         self.queue.put(event)
 
-    def read_event(self, timeout=6) -> tango.EventData:
+    def read_event(self) -> tango.EventData:
         """
         Read an event from the queue
 
-        :param timeout: duration to read event
+        :param :
         :return:
          """
-        return self.queue.get(timeout=timeout)
+        return self.queue.get() # TODO: 1. implement timeout functionality
 
     def unsubscribe_event(self, attribute: Attribute):
         """

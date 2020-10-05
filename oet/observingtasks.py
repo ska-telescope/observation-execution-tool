@@ -470,7 +470,7 @@ def wait_for_value(attribute: Attribute, target_values: Iterable[Any], key=lambd
             return processed
 
 
-def wait_for_pubsub_value(target_values: Iterable[Any], timeout=6, key=lambda _: _) -> Any:
+def wait_for_pubsub_value(target_values: Iterable[Any], key=lambda _: _) -> Any:
     """
     Block until a Tango device attribute has reached one of target values.
 
@@ -478,12 +478,11 @@ def wait_for_pubsub_value(target_values: Iterable[Any], timeout=6, key=lambda _:
     attribute value before comparison to the target value.
 
     :param target_values: target ObsState to wait for
-    :param timeout: timeout to how long to wait for change event
     :param key: function to process each attribute value before comparison
     :return: Attribute value read from device (one of target_values)
     """
     while True:
-        response = EXECUTOR.read_event(timeout=timeout)
+        response = EXECUTOR.read_event()
         if response.err:
             # TODO: how to handle errors when subscribed? Fall to polling? Raise an exception?
             raise Exception('Tango error')
