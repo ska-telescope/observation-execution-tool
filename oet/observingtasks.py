@@ -582,7 +582,8 @@ def execute_configure_command(command: Command):
 
     _call_and_wait_for_obsstate(
         command,
-        [(ObsState.READY, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
+        [(ObsState.CONFIGURING, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]),
+         (ObsState.READY, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
     )
 
 
