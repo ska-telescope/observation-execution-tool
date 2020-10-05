@@ -167,7 +167,6 @@ def test_tango_executor_calls_read_event_correctly_check_queue_is_empty():
         :return:
         """
     mock_proxy = Mock()
-    attr = Attribute('device', 'name')
 
     with patch.object(TangoDeviceProxyFactory, '__call__', return_value=mock_proxy):
         executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
@@ -185,7 +184,6 @@ def test_tango_executor_calls_subscribe_event_callback_correctly():
     :return:
     """
     mock_proxy = Mock()
-    attr = Attribute('device', 'name')
 
     with patch.object(TangoDeviceProxyFactory, '__call__', return_value=mock_proxy):
         executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
@@ -208,7 +206,7 @@ def test_tango_executor_calls_unsubscribe_event_correctly():
         executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
         mock_proxy.subscribe_event.return_value = 12345
         response = executor.subscribe_event(attr)
-        executor.unsubscribe_event(attr,12345)
+        executor.unsubscribe_event(attr, 12345)
     assert response == 12345
     mock_proxy.unsubscribe_event.assert_called_once_with(response)
 

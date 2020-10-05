@@ -149,8 +149,8 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         proxy = self._get_proxy(attribute.device)
         LOGGER.debug('Reading attribute: %s/%s', attribute.device, attribute.name)
         event_id = proxy.subscribe_event(attribute.name,
-                                              tango.EventType.CHANGE_EVENT,
-                                              self.handle_state_change)
+                                         tango.EventType.CHANGE_EVENT,
+                                         self.handle_state_change)
         LOGGER.debug("%s Subscribed to %s (event id: %d)", attribute.name,
                      tango.EventType.CHANGE_EVENT, event_id)
         return event_id
@@ -173,9 +173,9 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         :param :
         :return:
          """
-        return self.queue.get() # TODO: 1. implement timeout functionality
+        return self.queue.get()  # TODO: 1. implement timeout functionality
 
-    def unsubscribe_event(self, attribute: Attribute, event_id:int):
+    def unsubscribe_event(self, attribute: Attribute, event_id: int):
         """
            unsubscribe event on a Tango device.
 
