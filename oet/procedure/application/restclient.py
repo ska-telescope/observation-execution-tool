@@ -8,12 +8,13 @@ script prepared in a prior 'create procedure' call, and to list all prepared
 and running procedures held in the remote server.
 """
 import dataclasses
+import datetime
 import logging
+import operator
+import os
 from http import HTTPStatus
 from typing import Dict, List, Optional
 
-import os
-import datetime
 import fire
 import requests
 import tabulate
@@ -98,7 +99,7 @@ class RestClientUI:
         headers_title = ['ID', 'Script', 'URI']
 
         table_rows_args = [(s, procedure[0].script_args[s]['args'],
-                            procedure[0].script_args[s]['kwargs'])
+                           procedure[0].script_args[s]['kwargs'])
                            for s in procedure[0].script_args]
 
         headers_args = ['Method', 'Arguments', 'Keyword Arguments']
@@ -108,21 +109,22 @@ class RestClientUI:
                                                               strftime('%Y-%m-%d %H:%M:%S.%f'), s)
                              for s in procedure[0].history['process_states']]
 
-        table_rows_states.sort(key=lambda tup: tup[0])
+        table_rows_states.sort(key=operator.itemgetter(0))
         headers_states = ['Time', 'State']
 
-        if procedure[0].history['stacktrace'] is None:
-            return (tabulate.tabulate(table_row_title, headers_title) + "\n \n" +
-                    tabulate.tabulate(table_rows_states, headers_states) + "\n \n" +
-                    tabulate.tabulate(table_rows_args, headers_args))
-        else:
+        # define default table sections...
+        table_sections = [
+            tabulate.tabulate(table_row_title, headers_title),
+            tabulate.tabulate(table_rows_states, headers_states),
+            tabulate.tabulate(table_rows_args, headers_args)
+        ]
 
-            return (tabulate.tabulate(table_row_title, headers_title) + "\n \n" +
-                    tabulate.tabulate(table_rows_states, headers_states) + "\n \n" +
-                    tabulate.tabulate(table_rows_args, headers_args) +
-                    "\n \n Stack Trace: \n" +
-                    "-"*13+"\n" +
-                    procedure[0].history['stacktrace'])
+        # .. and add stacktrace if present
+        stacktrace = procedure[0].history['stacktrace']
+        if stacktrace:
+            table_sections.append(f'Stack Trace:\n------------\n{stacktrace}')
+
+        return '\n\n'.join(table_sections)
 
     def list(self, pid=None) -> str:
         """
@@ -211,27 +213,26 @@ class RestClientUI:
         response = self._client.stop(pid, run_abort)
         return response
 
-    def describe(self, pid=None):
+    def describe(self, pid=None) -> str:
         """
         Display information on the specified procedure.
 
-        This will display the state history of a specified procedure, including with the
-        stack trace is the procedure failed. If no procedure ID is declared, the last
-        procedure to be created with be described.
+        This will display the state history of a specified procedure,
+        including the stack trace is the procedure failed. If no procedure ID
+        is declared, the last procedure to be created with be described.
 
         :param pid: ID of procedure to describe
         """
-
         valid_procedure_ids = [p.id for p in self._client.list()]
-        if pid is None:
-            if not valid_procedure_ids:
-                return 'No procedures to investigate'
+        if not valid_procedure_ids:
+            return 'No procedures to investigate'
 
+        if pid is None:
             pid = valid_procedure_ids[-1]
 
         if str(pid) not in valid_procedure_ids:
-            return 'WARNING: No valid procedure ID specified, ' \
-                   'Specify ID of the procedure under investigation'
+            return 'Error: No valid procedure ID specified. ' \
+                   'Specify ID of the procedure to describe.'
 
         procedure = self._client.list(pid)
         return self._tabulate_for_describe(procedure)
@@ -364,3 +365,9 @@ def main():
     Fire entry function to provide a CLI interface for REST client.
     """
     fire.Fire(RestClientUI)
+
+
+# This statement is included so that we can run this module and test the REST
+# client directly without installing the OET project
+if __name__ == '__main__':
+    main()
