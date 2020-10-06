@@ -80,13 +80,13 @@ The methods available through the REST Client map closely to the
 |                    |               |                                            | send Abort command to the SubArray  |
 |                    |               |                                            | as part of script termination.      |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
-| describe           | pid           | None                                       | **Investigate a procedure**         |
-|                    |               |                                            |                                     |
-|                    |               |                                            | Displays the call arguments, state  |
+| describe           | server-url    | See note above                             | **Investigate a procedure**         |
+|                    +---------------+--------------------------------------------+                                     |
+|                    | pid           | None                                       | Displays the call arguments, state  |
 |                    |               |                                            | history and, if the procedure       |
 |                    |               |                                            | failed, the stack trace of a        |
-|                    |               |                                            | specified process ID (pid). If no   | 
-|                    |               |                                            | pid is specified describe the last  |
+|                    |               |                                            | specified process ID (pid). If no   |
+|                    |               |                                            | pid is specified describe the last  | 
 |                    |               |                                            | process created.                    |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to 
@@ -180,9 +180,9 @@ matter its state.::
 
 giving: ::
 
-    ID  Script
-  ----  -------------------------------
-     2  file://test2.py
+    ID  Script           URI
+  ----  ---------------  ----------------------------------------- 
+     2  file://test2.py  http://0.0.0.0:5000/api/v1.0/procedures/2 
  
   Time                        State
   --------------------------  -------
