@@ -18,7 +18,7 @@ import fire
 import requests
 import tabulate
 
-LOG = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -234,7 +234,7 @@ class RestAdapter:
                 'init': init_args,
             }
         }
-        LOG.debug('Create payload: %s', request_json)
+        LOGGER.debug('Create payload: %s', request_json)
 
         response = requests.post(self.server_url, json=request_json)
         response_json = response.json()
@@ -268,7 +268,7 @@ class RestAdapter:
             },
             'state': 'RUNNING'
         }
-        LOG.debug('Start payload: %s', request_json)
+        LOGGER.debug('Start payload: %s', request_json)
 
         response = requests.put(url, json=request_json)
         response_json = response.json()
@@ -291,7 +291,7 @@ class RestAdapter:
             'abort': run_abort,
             'state': 'STOPPED'
         }
-        LOG.debug('Stop payload: %s', request_json)
+        LOGGER.debug('Stop payload: %s', request_json)
 
         response = requests.put(url, json=request_json)
         response_json = response.json()

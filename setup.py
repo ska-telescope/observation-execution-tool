@@ -42,7 +42,8 @@ setup(
         'requests',
         'tabulate',
         'skuid',
-        'ska-project-data-model-library'
+        'ska-project-data-model-library',
+        'ska-logging'
     ],
     setup_requires=[
         # dependency for `python setup.py test`

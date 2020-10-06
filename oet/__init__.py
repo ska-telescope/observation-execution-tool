@@ -1,6 +1,11 @@
 import os.path
+import logging
+
+from ska.logging import configure_logging
 
 from .features import Features
+
+configure_logging()
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
