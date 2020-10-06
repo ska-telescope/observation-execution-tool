@@ -157,3 +157,24 @@ REST server
 found in :doc:`rest_api`. Instructions on how to use the REST client
 can be found here: :doc:`rest_client`.
 
+Feature flags
+-------------
+Some of the OET behaviour is configurable at run time via a configuration file, 
+oet.ini. This can either be the default file, located in the project folder
+which can be editted by the user, or a user specified version of the file, 
+located in the user's home directory. If for some reason no config file is 
+found, the toggles are set to their default values ie. Polling.
+
+Currently the toggle option are:
+
++-------------------+---------+----------------------------+---------+
+| Toggle            | Type    | Description                | Default |
++===================+=========+============================+=========+
+| read_via_pubsub   | Boolean | sets whether pubsub or     | False   |
+|                   |         | the alternative, polling,  |         |
+|                   |         | is used to read from tango |         |
++-------------------+---------+----------------------------+---------+
+
+
+
+

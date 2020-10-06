@@ -4,7 +4,7 @@ Unit tests for the oet.observingtasks module
 import os
 import unittest.mock as mock
 from typing import List
-
+import tango
 import pytest
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
 import ska.cdm.messages.central_node.release_resources as cdm_release
@@ -28,6 +28,43 @@ CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE = '{"dish": {"receptorIDList_success": ["00
 CN_ASSIGN_RESOURCES_MALFORMED_RESPONSE = '{"foo": "bar"}'
 CN_ASSIGN_RESOURCES_PARTIAL_ALLOCATION_RESPONSE = '{"dish": {"receptorIDList_success": ["0001"]}}'
 VALID_ASSIGN_STARTSCAN_REQUEST = '{"id": 123}'
+
+
+def create_event_based_queue(obsstate_list):
+    """Creating eventData object for each obsState and
+       storing objects in the Queue
+    """
+    with observingtasks.EXECUTOR.queue.mutex:
+        observingtasks.EXECUTOR.queue.queue.clear()
+    for obsstate in obsstate_list:
+        evt = create_event(obsstate.value, False)
+        observingtasks.EXECUTOR.handle_state_change(evt)
+
+
+def create_event(value, err: bool):
+    """
+    Create event with given value and error state
+    """
+    evt = mock.MagicMock(spec_set=tango.EventData)
+    devattribute = mock.MagicMock(spec=tango.DeviceAttribute)
+    devattribute.value = value
+    evt.attr_value = devattribute
+    evt.err = err
+    return evt
+
+
+def set_toggle_feature_value(pub_sub=False):
+    """
+    Method to set the feature toggle for enabling-
+    disabling pub sub functionality
+    """
+    from configparser import ConfigParser
+    from oet.features import Features
+    parser = ConfigParser()
+    parser.read_dict({'tango': {'read_via_pubsub': pub_sub}
+                      })
+
+    return Features(parser)
 
 
 def test_tango_registry_returns_correct_url_for_ska_mid():
@@ -321,13 +358,13 @@ def test_release_resources_successful_default_deallocation(mock_execute_fn):
     subarray.deallocate()
 
     assert not subarray.resources.dishes
-    
+
     # Test that _call_and_wait_for_obsstate was correctly invoked.
     validate_call_and_wait_for_obsstate_args(
-            mock_execute_fn,
-            'ReleaseResources',
-            SKA_MID_CENTRAL_NODE_FDQN,
-            [ObsState.EMPTY]
+        mock_execute_fn,
+        'ReleaseResources',
+        SKA_MID_CENTRAL_NODE_FDQN,
+        [ObsState.EMPTY]
     )
 
 
@@ -386,21 +423,101 @@ def test_configure_subarray_forms_correct_command():
     assert len(cmd.args) == 1
 
 
+def test_wait_for_obsstate_returns_error_state_for_pub_sub():
+    """
+    Verify wait_for_obsstate stops waiting for the device target obsState when
+    error state is encountered
+    """
+    state_list = [ObsState.IDLE, ObsState.CONFIGURING, ObsState.CONFIGURING, ObsState.FAULT,
+                  ObsState.RESTARTING]
+    create_event_based_queue(state_list)
+    target_state = ObsState.READY
+    error_state = [ObsState.ABORTING, ObsState.FAULT]
+    state_response = observingtasks.wait_for_obsstate(
+        SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state, use_pubsub=True
+    )
+    assert state_response.final_state == ObsState.FAULT
+
+
+def test_wait_for_obsstate_returns_target_state_for_pub_sub():
+    """
+    Verify wait_for_obsstate waits for the device obsState
+    """
+    state_list = [ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE]
+    create_event_based_queue(state_list)
+    target_state = ObsState.IDLE
+    error_state = [ObsState.ABORTED, ObsState.FAULT]
+    state_response = observingtasks.wait_for_obsstate(
+        SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state, use_pubsub=True
+    )
+    assert state_response.final_state == ObsState.IDLE
+
+
+# def test_wait_for_pubsub_value_raises_exception_on_timeout():
+#     """
+#     Verify wait_for_pubsub_value raises exception if timeout occurs
+#     """
+#     with observingtasks.EXECUTOR.queue.mutex:
+#         observingtasks.EXECUTOR.queue.queue.clear()
+#     target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
+#
+#     with pytest.raises(Exception):
+#         _ = observingtasks.wait_for_pubsub_value(target_states,
+#                                                  key=observingtasks.parse_oet_obsstate_from_tango_eventdata,
+#                                                  timeout=1)
+
+
+def test_wait_for_pubsub_value_raises_exception_on_event_error():
+    """
+    Verify wait_for_pubsub_value raises exception if event with an error is encountered
+    """
+    with observingtasks.EXECUTOR.queue.mutex:
+        observingtasks.EXECUTOR.queue.queue.clear()
+    target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
+
+    evt = mock.MagicMock(spec_set=tango.EventData)
+    evt.attr_value = None
+    evt.err = True
+    evt.errors = [mock.MagicMock(spec_set=tango.DevError)]
+    observingtasks.EXECUTOR.handle_state_change(evt)
+
+    with pytest.raises(Exception):
+        _ = observingtasks.wait_for_pubsub_value(target_states)
+
+
+def test_wait_for_pubsub_value_raises_type_error_for_non_matching_types_in_pubsub():
+    """
+    Verify wait_for_pubsub_value raises TypeError if attribute type and
+    target type do not match
+    """
+    with observingtasks.EXECUTOR.queue.mutex:
+        observingtasks.EXECUTOR.queue.queue.clear()
+    event_with_bad_value_type = create_event('Hello World', False)
+    observingtasks.EXECUTOR.handle_state_change(event_with_bad_value_type)
+
+    target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
+
+    with pytest.raises(TypeError):
+        _ = observingtasks.wait_for_pubsub_value(target_states,
+                                                 key=observingtasks.parse_oet_obsstate_from_tango_eventdata)
+
+
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 def test_wait_for_obsstate_returns_target_state(mock_read_fn):
     """
     Verify wait_for_obsstate waits for the device obsState
     """
-    mock_read_fn.side_effect = [
-        ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
-    ]
+    with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=False)):
+        mock_read_fn.side_effect = [
+            ObsState.EMPTY, ObsState.RESOURCING, ObsState.IDLE, ObsState.IDLE
+        ]
 
-    attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
-    target_state = ObsState.IDLE
-    error_state = [ObsState.ABORTED, ObsState.FAULT]
-    state_response = observingtasks.wait_for_obsstate(
-        SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state
-    )
+        attribute = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
+        target_state = ObsState.IDLE
+        error_state = [ObsState.ABORTED, ObsState.FAULT]
+        state_response = observingtasks.wait_for_obsstate(
+            SKA_SUB_ARRAY_NODE_1_FDQN, target_state, error_state
+        )
 
     mock_read_fn.assert_called_with(attribute)
     assert state_response.final_state == ObsState.IDLE
@@ -419,7 +536,8 @@ def test_wait_for_value_raises_type_error_for_non_matching_types(mock_read_fn):
     target_states = [ObsState.ABORTED, ObsState.FAULT, ObsState.IDLE]
 
     with pytest.raises(TypeError):
-        _ = observingtasks.wait_for_value(attribute, target_states)
+        _ = observingtasks.wait_for_value(attribute, target_states,
+                                          key=observingtasks.cast_tango_obsstate_to_oet_obstate)
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
@@ -444,8 +562,81 @@ def test_wait_for_obsstate_returns_error_state(mock_read_fn):
     assert state_response.final_state == ObsState.FAULT
     assert mock_read_fn.call_count == 4
 
-# AT2-578 REFACTOR - moved tests for new function
-# _call_and_wait_for_obsstate here
+
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+@mock.patch.object(observingtasks.EXECUTOR, 'subscribe_event')
+@mock.patch.object(observingtasks.EXECUTOR, 'unsubscribe_event')
+def test_call_and_wait_for_state_waits_for_target_states_for_pub_sub(mock_subscribe_event_fn,
+                                                                     mock_unsubscribe_event_fn,
+                                                                     mock_execute_fn):
+    """
+    Test that the call_and_wait_for_state function waits for the requested
+    states in the specified sequence for pub/sub feature.
+    """
+    state_list = [ObsState.IDLE, ObsState.EMPTY, ObsState.RESOURCING, ObsState.EMPTY, ObsState.IDLE]
+    create_event_based_queue(state_list)
+    with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=True)):
+        mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
+
+        # Test command to call SubArrayNode.Foo()
+        cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
+
+        # This task waits for, in sequence, RESOURCING then IDLE.
+        _ = observingtasks._call_and_wait_for_obsstate(
+            cmd,
+            [(ObsState.RESOURCING, []),
+             (ObsState.IDLE, [])]
+        )
+
+    mock_subscribe_event_fn.assert_called_once()
+    mock_unsubscribe_event_fn.assert_called_once()
+    # SubArrayNode.Foo() should just have been called once
+    mock_execute_fn.assert_called_once()
+    assert observingtasks.EXECUTOR.queue.empty()
+
+
+@mock.patch.object(observingtasks.EXECUTOR, 'execute')
+@mock.patch.object(observingtasks.EXECUTOR, 'subscribe_event')
+@mock.patch.object(observingtasks.EXECUTOR, 'unsubscribe_event')
+def test_call_and_wait_for_state_raises_exception_when_error_state_encountered_for_pub_sub(mock_subscribe_event_fn,
+                                                                                           mock_unsubscribe_event_fn,
+                                                                                           mock_execute_fn):
+    """
+    Verify that call_and_wait_for_state raises an exception when an error
+    state is encountered for pub/sub feature.
+    """
+    # obsState will be SCANNING for the first three reads, then FAULT
+    state_list = [ObsState.SCANNING, ObsState.SCANNING, ObsState.SCANNING, ObsState.FAULT]
+    create_event_based_queue(state_list)
+    with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=True)):
+        # Test command to call SubArrayNode.Foo()
+        cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
+
+        with pytest.raises(ObsStateError):
+            observingtasks._call_and_wait_for_obsstate(
+                cmd,
+                [(ObsState.READY, [ObsState.FAULT])]
+            )
+
+    mock_subscribe_event_fn.assert_called_once()
+    mock_unsubscribe_event_fn.assert_called_once()
+    mock_execute_fn.assert_called_once()
+    assert observingtasks.EXECUTOR.queue.empty()
+
+
+def test_call_and_wait_for_state_raise_exception_if_subscribe_fails():
+    """
+    Verify that call_and_wait_for_state raise exception if subscribing to a device
+    gives DevFailed error.
+    """
+    with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=True)):
+        cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
+        with pytest.raises(tango.DevFailed):
+            observingtasks._call_and_wait_for_obsstate(
+                cmd,
+                [(ObsState.READY, [ObsState.FAULT])]
+            )
+
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
@@ -454,20 +645,21 @@ def test_call_and_wait_for_state_waits_for_target_states(mock_execute_fn, mock_r
     Test that the call_and_wait_for_state function waits for the requested
     states in the specified sequence.
     """
-    mock_read_fn.side_effect = [
-        ObsState.IDLE, ObsState.EMPTY, ObsState.RESOURCING, ObsState.EMPTY, ObsState.IDLE
-    ]
-    mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
+    with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=False)):
+        mock_read_fn.side_effect = [
+            ObsState.IDLE, ObsState.EMPTY, ObsState.RESOURCING, ObsState.EMPTY, ObsState.IDLE
+        ]
+        mock_execute_fn.return_value = CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
 
-    # Test command to call SubArrayNode.Foo()
-    cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
+        # Test command to call SubArrayNode.Foo()
+        cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
 
-    # This task waits for, in sequence, RESOURCING then IDLE.
-    response = observingtasks._call_and_wait_for_obsstate(
-        cmd,
-        [(ObsState.RESOURCING, []),
-         (ObsState.IDLE, [])]
-    )
+        # This task waits for, in sequence, RESOURCING then IDLE.
+        response = observingtasks._call_and_wait_for_obsstate(
+            cmd,
+            [(ObsState.RESOURCING, []),
+             (ObsState.IDLE, [])]
+        )
 
     # SubArrayNode.Foo() should just have been called once
     mock_execute_fn.assert_called_once()
@@ -476,36 +668,38 @@ def test_call_and_wait_for_state_waits_for_target_states(mock_execute_fn, mock_r
     mock_read_fn.assert_called_with(expected_attr)
     # obsState should have been read 5 times until IDLE was reached
     assert mock_read_fn.call_count == 5
-    # _call_and_wait_for_obsstate should have returned CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
+    # _call_and_wait_for_obsstate should return CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
     assert response == CN_ASSIGN_RESOURCES_SUCCESS_RESPONSE
 
 
 @mock.patch.object(observingtasks.EXECUTOR, 'read')
 @mock.patch.object(observingtasks.EXECUTOR, 'execute')
-def test_call_and_wait_for_state_raises_exception_when_error_state_encountered(mock_execute_fn, mock_read_fn):
+def test_call_and_wait_for_state_raises_exception_when_error_state_encountered(mock_execute_fn,
+                                                                               mock_read_fn):
     """
     Verify that call_and_wait_for_state raises an exception when an error
     state is encountered.
     """
-    # obsState will be SCANNING for the first three reads, then FAULT
-    mock_read_fn.side_effect = [
-        ObsState.SCANNING, ObsState.SCANNING, ObsState.SCANNING, ObsState.FAULT
-    ]
+    with mock.patch('oet.FEATURES', set_toggle_feature_value(pub_sub=False)):
+        # obsState will be SCANNING for the first three reads, then FAULT
+        mock_read_fn.side_effect = [
+            ObsState.SCANNING, ObsState.SCANNING, ObsState.SCANNING, ObsState.FAULT
+        ]
 
-    # Test command to call SubArrayNode.Foo()
-    cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
+        # Test command to call SubArrayNode.Foo()
+        cmd = observingtasks.Command(SKA_SUB_ARRAY_NODE_1_FDQN, 'Foo')
 
-    with pytest.raises(ObsStateError):
-        observingtasks._call_and_wait_for_obsstate(
-            cmd,
-            [(ObsState.READY, [ObsState.FAULT])]
-        )
+        with pytest.raises(ObsStateError):
+            observingtasks._call_and_wait_for_obsstate(
+                cmd,
+                [(ObsState.READY, [ObsState.FAULT])]
+            )
 
     expected_attr = command.Attribute(SKA_SUB_ARRAY_NODE_1_FDQN, 'obsState')
     mock_read_fn.assert_called_with(expected_attr)
     mock_execute_fn.assert_called_once()
     assert mock_read_fn.call_count == 4
-# End move
+
 
 @mock.patch.object(observingtasks, 'execute_configure_command')
 def test_configure(mock_execute_fn):
@@ -635,10 +829,10 @@ def test_end_defines_obsstate_transitions_correctly(mock_fn):
     observingtasks.end(subarray)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,                    # pass in mock function used for this test
-        'End',                      # 'end' command is requested
+        mock_fn,  # pass in mock function used for this test
+        'End',  # 'end' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.IDLE],            # happy path sequence is IDLE
+        [ObsState.IDLE],  # happy path sequence is IDLE
     )
 
 
@@ -652,10 +846,10 @@ def test_abort_defines_obsstate_transitions_correctly(mock_fn):
     observingtasks.abort(subarray)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,                    # pass in mock function used for this test
-        'Abort',                      # 'abort' command is requested
+        mock_fn,  # pass in mock function used for this test
+        'Abort',  # 'abort' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.ABORTED],            # happy path sequence is ABORTED
+        [ObsState.ABORTED],  # happy path sequence is ABORTED
     )
 
 
@@ -669,10 +863,10 @@ def test_obsreset_defines_obsstate_transitions_correctly(mock_fn):
     observingtasks.obsreset(subarray)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,                    # pass in mock function used for this test
-        'ObsReset',                      # 'obsreset' command is requested
+        mock_fn,  # pass in mock function used for this test
+        'ObsReset',  # 'obsreset' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.IDLE],            # happy path sequence is IDLE
+        [ObsState.IDLE],  # happy path sequence is IDLE
     )
 
 
@@ -686,10 +880,10 @@ def test_restart_defines_obsstate_transitions_correctly(mock_fn):
     observingtasks.restart(subarray)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,                    # pass in mock function used for this test
-        'Restart',                      # 'restart' command is requested
+        mock_fn,  # pass in mock function used for this test
+        'Restart',  # 'restart' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.EMPTY],            # happy path sequence is EMPTY
+        [ObsState.EMPTY],  # happy path sequence is EMPTY
     )
 
 
@@ -703,10 +897,10 @@ def test_execute_configure_command_defines_obsstate_transitions_correctly(mock_f
     observingtasks.execute_configure_command(cmd)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,                    # pass in mock function used for this test
-        'Configure',                      # 'configure' command is requested
+        mock_fn,  # pass in mock function used for this test
+        'Configure',  # 'configure' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.READY],            # happy path sequence is READY
+        [ObsState.CONFIGURING, ObsState.READY],  # happy path sequence is CONFIGURING, READY
     )
 
 
@@ -720,10 +914,10 @@ def test_subarray_scan_defines_obsstate_transitions_correctly(mock_fn):
     observingtasks.scan(subarray)
 
     validate_call_and_wait_for_obsstate_args(
-        mock_fn,                    # pass in mock function used for this test
-        'Scan',                      # 'scan' command is requested
+        mock_fn,  # pass in mock function used for this test
+        'Scan',  # 'scan' command is requested
         SKA_SUB_ARRAY_NODE_1_FDQN,  # command sent to SAN1, obsState read from SAN1
-        [ObsState.SCANNING,ObsState.READY],            # happy path sequence is SCANNING, READY
+        [ObsState.SCANNING, ObsState.READY],  # happy path sequence is SCANNING, READY
     )
 
 
@@ -843,7 +1037,7 @@ def test_configure_from_cdm(mock_execute_fn):
 
 
 @mock.patch.object(observingtasks, '_call_and_wait_for_obsstate')
-def test_assign_resources_from_cdm(mock_execute_fn,):
+def test_assign_resources_from_cdm(mock_execute_fn, ):
     """
     Verify that assign_resources_from_cdm requests resource allocation as
     expected.

@@ -10,7 +10,8 @@ the execution appears synchronous.
 import logging
 import os
 import multiprocessing
-
+from queue import Queue
+from typing import Dict
 import tango
 
 from skuid.client import SkuidClient
@@ -104,9 +105,10 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         """
         self._proxy_factory = proxy_factory
 
-        # ideally we'd add type hints but we're still on Python 3.5 at the time of writing
-        # self.device_proxies: typing.Dict[str, DeviceProxy] = {}
-        self._device_proxies = {}
+        self._device_proxies: Dict[str, tango.DeviceProxy] = {}
+
+        # subscription
+        self.queue = Queue(maxsize=0)
 
     def execute(self, command: Command):
         """
@@ -136,9 +138,59 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         response = getattr(proxy, attribute.name)
         return response
 
+    def subscribe_event(self, attribute: Attribute):
+        """
+        subscribe event on a Tango device.
+
+        :param attribute: the attribute to subscribe
+        :return: the subscribe id
+        """
+
+        proxy = self._get_proxy(attribute.device)
+        LOGGER.debug("%s Subscribing to %s", attribute.device, attribute.name)
+        event_id = proxy.subscribe_event(attribute.name,
+                                         tango.EventType.CHANGE_EVENT,
+                                         self.handle_state_change)
+        LOGGER.debug("%s Subscribed to %s (event type: %s, event id: %d)", attribute.device,
+                     attribute.name, tango.EventType.CHANGE_EVENT, event_id)
+        return event_id
+
+    def handle_state_change(self, event: tango.EventData):
+        """
+        callback method triggered when subscribe event called
+        successfully
+
+        :param event:
+        :return:
+        """
+        LOGGER.debug(f"Event callback, type: {event.event}, error: {event.err}")
+        self.queue.put(event)
+
+    def read_event(self) -> tango.EventData:
+        """
+        Read an event from the queue
+
+        :param :
+        :return:
+         """
+        return self.queue.get()  # TODO: 1. implement timeout functionality
+
+    def unsubscribe_event(self, attribute: Attribute, event_id: int):
+        """
+           unsubscribe event on a Tango device.
+
+           :param event_id: event subscribe id
+           :param attribute: the attribute to unsubscribe
+           :return:
+        """
+        proxy = self._get_proxy(attribute.device)
+        LOGGER.debug('Unsubscribe event: %s/%s', attribute.device, attribute.name)
+        return proxy.unsubscribe_event(event_id)
+
     def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
         # It takes time to construct and connect a device proxy to the remote
         # device, so instances are cached
+
         if device_name not in self._device_proxies:
             proxy = self._proxy_factory(device_name)
             self._device_proxies[device_name] = proxy
@@ -198,6 +250,7 @@ class RemoteScanIdGenerator:  # pylint: disable=too-few-public-methods
         with self.backing.get_lock():
             self.backing.value = self.skuid_client.fetch_scan_id()
             return self.backing.value
+
 
 # hold scan ID generator at the module level
 if 'SKUID_URL' in os.environ:

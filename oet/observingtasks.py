@@ -8,15 +8,17 @@ the API of the devices they are controlling.
 """
 import enum
 import logging
-from datetime import timedelta
 from typing import Optional, Any, NamedTuple, Iterable, List, Tuple
+from datetime import timedelta
 
+import tango
 import marshmallow
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
 import ska.cdm.messages.central_node.release_resources as cdm_release
 import ska.cdm.messages.subarray_node.configure as cdm_configure
 import ska.cdm.messages.subarray_node.scan as cdm_scan
 import ska.cdm.schemas as schemas
+import oet
 
 from . import domain
 from .command import Attribute, Command, SCAN_ID_GENERATOR, TangoExecutor
@@ -63,6 +65,7 @@ class ObsStateError(Exception):
     """
     Represent the status response from wait_for_obsstate() function
     """
+
     def __init__(self, state, msg='Unexpected ObsState'):
         super().__init__(msg)
         self.msg = msg
@@ -305,6 +308,7 @@ def return_allocated_resources(
     subarray.resources += allocated
     return allocated
 
+
 def allocate_resources(subarray: domain.SubArray,
                        resources: domain.ResourceAllocation) -> domain.ResourceAllocation:
     """
@@ -317,7 +321,6 @@ def allocate_resources(subarray: domain.SubArray,
     command = get_allocate_resources_command(subarray, resources)
     subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
     return return_allocated_resources(command, subarray, subarray_device)
-
 
 
 def allocate_resources_from_file(
@@ -347,6 +350,7 @@ def allocate_resources_from_file(
 
     command = get_allocate_resources_command(subarray, resources, template_request)
     subarray_device = TANGO_REGISTRY.get_subarray_node(subarray)
+
     return return_allocated_resources(command, subarray, subarray_device)
 
 
@@ -459,23 +463,39 @@ def wait_for_value(attribute: Attribute, target_values: Iterable[Any], key=lambd
     :param key: function to process each attribute value before comparison
     :return: Attribute value read from device (one of target_values)
     """
-    response = EXECUTOR.read(attribute)
-    processed = key(response)
-    if all(isinstance(value, type(processed)) for value in target_values):
-        while True:
-            if processed in target_values:
-                return processed
-            response = EXECUTOR.read(attribute)
-            processed = key(response)
-    else:
-        raise TypeError('Attribute type does not match type of target values')
+    while True:
+        response = EXECUTOR.read(attribute)
+        processed = key(response)
+        if processed in target_values:
+            return processed
+
+
+def wait_for_pubsub_value(target_values: Iterable[Any], key=lambda _: _) -> Any:
+    """
+    Block until a Tango device attribute has reached one of target values.
+
+    If defined, the optional 'key' function will be used to process the device
+    attribute value before comparison to the target value.
+
+    :param target_values: target ObsState to wait for
+    :param key: function to process each attribute value before comparison
+    :return: Attribute value read from device (one of target_values)
+    """
+    while True:
+        response = EXECUTOR.read_event()
+        if response.err:
+            raise Exception(f'Encountered an error in tango.EventData: {response.errors}')
+        processed = key(response)
+        if processed in target_values:
+            return processed
 
 
 # TODO: 1. implement timeout functionality 2. return value to use Either pattern
 def wait_for_obsstate(
         device: str,
         target_state: ObsState,
-        error_states: Iterable[ObsState]) -> ObsStateResponse:
+        error_states: Iterable[ObsState],
+        use_pubsub: bool = False) -> ObsStateResponse:
     #   timeout) -> Either[Left,Right]
     """
     Block until a Tango device attribute obsState has reached a target state or
@@ -487,7 +507,7 @@ def wait_for_obsstate(
     :param device: device to query
     :param target_state: target ObsState to wait for
     :param error_states: list of possible error ObsStates
-    :param key: function to process each attribute value before comparison
+    :param use_pubsub: subscribe to obsState change event instead of polling it
     :return: ObsState of the device (either target state or error state)
     """
     attribute = Attribute(device, 'obsState')
@@ -499,8 +519,12 @@ def wait_for_obsstate(
     obstates_union.append(target_state)
     # obsState values do not need processing so the optional 'key' argument to
     # wait_for_value is left unset
-    final_state = wait_for_value(attribute, obstates_union,
-                                 key=cast_tango_obsstate_to_oet_obstate)
+    if use_pubsub:
+        final_state = wait_for_pubsub_value(obstates_union,
+                                            key=parse_oet_obsstate_from_tango_eventdata)
+    else:
+        final_state = wait_for_value(attribute, obstates_union,
+                                     key=cast_tango_obsstate_to_oet_obstate)
 
     if final_state != target_state:
         LOGGER.warning('%s state expected to go to %s but instead went to %s',
@@ -512,7 +536,31 @@ def wait_for_obsstate(
 
 
 def cast_tango_obsstate_to_oet_obstate(other):
-    return ObsState[other.name]
+    """
+    Cast the given parameter into OET ObsState (tango ObsState expected as input)
+
+    :param other: Object to be converted
+    :return: OET ObsState
+    """
+    try:
+        oet_obsstate = ObsState[other.name]
+        return oet_obsstate
+    except Exception as exeption:
+        raise TypeError(f'Could not convert attribute value to OET ObsState: {exeption}')
+
+
+def parse_oet_obsstate_from_tango_eventdata(event: tango.EventData) -> ObsState:
+    """
+    Parse OET ObsState from the value stored in tango EventData object
+
+    :param event: Tango EventData object
+    :return: OET ObsState
+    """
+    try:
+        oet_obsstate = ObsState(event.attr_value.value)
+        return oet_obsstate
+    except Exception as exception:
+        raise TypeError(f'Could not extract OET ObsState from EventData: {exception}')
 
 
 def execute_configure_command(command: Command):
@@ -532,7 +580,8 @@ def execute_configure_command(command: Command):
 
     _call_and_wait_for_obsstate(
         command,
-        [(ObsState.READY, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
+        [(ObsState.CONFIGURING, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]),
+         (ObsState.READY, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
     )
 
 
@@ -749,16 +798,33 @@ def _call_and_wait_for_obsstate(command: Command,
     if device_to_monitor is None:
         device_to_monitor = command.device
 
-    response = EXECUTOR.execute(command)
+    use_pubsub = oet.FEATURES.use_pubsub_to_read_tango_attributes
+    attribute = Attribute(device_to_monitor, 'obsState')
+    if use_pubsub:
+        try:
+            LOGGER.info('Using pub/sub to track obsState of %s', device_to_monitor)
+            event_id = EXECUTOR.subscribe_event(attribute)
+        except tango.DevFailed as dev_error:
+            LOGGER.error('Could not subscribe to obsState of %s. '
+                         'Check that LMC base class version is 0.6.1 or newer.', device_to_monitor)
+            raise dev_error
 
-    for target_state, error_states in wait_states:
-        state_response = wait_for_obsstate(
-            device_to_monitor,
-            target_state=target_state,
-            error_states=error_states
-        )
-        if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
-            raise ObsStateError(state_response.final_state)
+    try:
+        response = EXECUTOR.execute(command)
+        for target_state, error_states in wait_states:
+            state_response = wait_for_obsstate(
+                device_to_monitor,
+                target_state=target_state,
+                error_states=error_states,
+                use_pubsub=use_pubsub
+            )
+            if state_response.response_msg == WAIT_FOR_STATE_FAILURE_RESPONSE:
+                raise ObsStateError(state_response.final_state)
+
+    finally:
+        # Always unsubscribe
+        if use_pubsub:
+            EXECUTOR.unsubscribe_event(attribute, event_id)
 
     return response
 
@@ -774,9 +840,9 @@ def abort(subarray: domain.SubArray):
 
     command = get_abort_command(subarray)
     _call_and_wait_for_obsstate(
-        command, 
+        command,
         [(ObsState.ABORTED,
-        [ObsState.FAULT])]
+          [ObsState.FAULT])]
     )
 
 
@@ -802,9 +868,9 @@ def obsreset(subarray: domain.SubArray):
     """
     command = get_obsreset_command(subarray)
     _call_and_wait_for_obsstate(
-        command, 
+        command,
         [(ObsState.IDLE,
-        [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
+          [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
     )
 
 
@@ -819,6 +885,7 @@ def get_obsreset_command(subarray: domain.SubArray) -> Command:
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     return Command(subarray_node_fqdn, 'ObsReset')
 
+
 def restart(subarray: domain.SubArray):
     """
     Send the 'restart' command to the SubArrayNode which sets
@@ -830,9 +897,9 @@ def restart(subarray: domain.SubArray):
 
     command = get_restart_command(subarray)
     _call_and_wait_for_obsstate(
-        command, 
+        command,
         [(ObsState.EMPTY,
-        [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
+          [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
     )
 
 

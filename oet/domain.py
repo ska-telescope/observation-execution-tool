@@ -363,7 +363,8 @@ class SubArray:
         allocated = observingtasks.allocate_resources(self, resources)
         return allocated
 
-    def allocate_from_file(self, cdm_file: str, resources: Optional[ResourceAllocation] = None) -> ResourceAllocation:
+    def allocate_from_file(self, cdm_file: str,
+                           resources: Optional[ResourceAllocation] = None) -> ResourceAllocation:
         """
         Allocate resources to a sub-array using a JSON file.
 

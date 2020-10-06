@@ -1,3 +1,7 @@
+"""
+Reading oet.ini file value and initializing constant of feature toggle with enabling
+event based polling/pubsub
+"""
 import os.path
 import logging
 
