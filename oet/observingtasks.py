@@ -484,8 +484,7 @@ def wait_for_pubsub_value(target_values: Iterable[Any], key=lambda _: _) -> Any:
     while True:
         response = EXECUTOR.read_event()
         if response.err:
-            # TODO: how to handle errors when subscribed? Fall to polling? Raise an exception?
-            raise Exception('Tango error')
+            raise Exception(f'Encountered an error in tango.EventData: {response.errors}')
         processed = key(response)
         if processed in target_values:
             return processed
@@ -805,9 +804,10 @@ def _call_and_wait_for_obsstate(command: Command,
         try:
             LOGGER.info('Using pub/sub to track obsState of %s', device_to_monitor)
             event_id = EXECUTOR.subscribe_event(attribute)
-        except tango.DevFailed as df:
-            LOGGER.warning('Could not subscribe to obsState of %s. OET expect LMC base class version 0.6.1.', device_to_monitor)
-            raise df
+        except tango.DevFailed as dev_error:
+            LOGGER.error('Could not subscribe to obsState of %s. '
+                         'Check that LMC base class version is 0.6.1 or newer.', device_to_monitor)
+            raise dev_error
 
     try:
         response = EXECUTOR.execute(command)
