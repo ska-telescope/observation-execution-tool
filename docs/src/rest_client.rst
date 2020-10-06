@@ -47,13 +47,17 @@ The methods available through the REST Client map closely to the
 |                    +---------------+--------------------------------------------+ Arguments provided here are passed  |
 |                    | kwargs        | --subarray_id=1                            | to the script init function, if     |
 |                    |               |                                            | defined                             |
+|                    |               |                                            |                                     |
+|                    |               |                                            | OET maintains record of 10 newest   |
+|                    |               |                                            | scripts which means creating 11th   |
+|                    |               |                                            | script will remove the oldest       |
+|                    |               |                                            | script from the record.             |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 | list               | server-url    | See note above                             | **List procedures**                 |
 |                    +---------------+--------------------------------------------+-------------------------------------+
-|                    | pid           | None                                       | Return info on the collection of all|
-|                    |               |                                            | loaded and running procedures, or   |
-|                    |               |                                            | info on the one specified by        |
-|                    |               |                                            | process ID (pid)                    |
+|                    | pid           | None                                       | Return info on the collection of 10 |
+|                    |               |                                            | newest procedures, or info on the   |
+|                    |               |                                            | one specified by process ID (pid)   |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 | start              | server-url    | See note above                             | **Start a Procedure Executing**     |
 |                    +---------------+--------------------------------------------+                                     |
@@ -74,7 +78,7 @@ The methods available through the REST Client map closely to the
 |                    |               |                                            |                                     |
 |                    |               |                                            | If run_abort flag is True, OET will |
 |                    |               |                                            | send Abort command to the SubArray  |
-|                    |               |                                            | as part of script termination.      |                           |
+|                    |               |                                            | as part of script termination.      |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to 
@@ -101,9 +105,9 @@ First we load the procedures: ::
 
 which will generate the output: ::
 
-    ID  URI                                             Script          State
-  ----  ----------------------------------------------  --------------  -------
-     1  http://172.16.13.18:5000/api/v1.0/procedures/1  file://test.py  READY
+    ID  Script           Creation time        State
+  ----  ---------------  -------------------  -------
+     1  file://test.py   2020-09-30 10:30:12  CREATED
 
 Note the use of both positional and keyword/value arguments for the
 procedure on the command line.
@@ -113,9 +117,9 @@ Now create a second procedure: ::
 
 giving: ::
 
-    ID  URI                                          Script          State
-  ----  -------------------------------------------  --------------  -------
-     2  http://localhost:5000/api/v1.0/procedures/2  file://test2.py  READY
+   ID   Script           Creation time        State
+  ----  ---------------  -------------------  -------
+    2  file://test2.py  2020-09-30 10:35:12  CREATED
 
 We can check the state of the procedures currently loaded by: ::
 
@@ -123,10 +127,10 @@ We can check the state of the procedures currently loaded by: ::
 
 giving: ::
 
-    ID  URI                                          Script           State
-  ----  -------------------------------------------  ---------------  -------
-     1  http://localhost:5000/api/v1.0/procedures/1  file://test.py   READY
-     2  http://localhost:5000/api/v1.0/procedures/2  file://test2.py  READY
+   ID   Script           Creation time        State
+  ----  ---------------  -------------------  -------
+     1  file://test.py   2020-09-30 10:30:12  CREATED
+     2  file://test2.py  2020-09-30 10:35:12  CREATED
 
 Alternatively, we could check the state of procedure 2 by typing: ::
 
@@ -134,9 +138,9 @@ Alternatively, we could check the state of procedure 2 by typing: ::
 
 giving: ::
 
-    ID  URI                                          Script           State
-  ----  -------------------------------------------  ---------------  -------
-     2  http://localhost:5000/api/v1.0/procedures/2  file://test2.py  READY
+   ID   Script           Creation time        State
+  ----  ---------------  -------------------  -------
+    2   file://test2.py  2020-09-30 10:35:12  CREATED
 
 Now that we have our procedures loaded we can start one of them running.
 At this point we supply the index number of the procedure to run, and
@@ -146,9 +150,9 @@ some runtime arguments to pass to it if required. ::
  
 giving: ::
 
-    ID  URI                                          Script           State
-  ----  -------------------------------------------  ---------------  -------
-     2  http://localhost:5000/api/v1.0/procedures/2  file://test2.py  RUNNING
+    ID   Script           Creation time        State
+  ----  ---------------  -------------------  -------
+    2   file://test2.py  2020-09-30 10:35:12  RUNNING
 
 A 'list' command will give the same information: ::
 
@@ -156,10 +160,10 @@ A 'list' command will give the same information: ::
 
 gives: ::
 
-    ID  URI                                          Script           State
-  ----  -------------------------------------------  ---------------  -------
-     1  http://localhost:5000/api/v1.0/procedures/1  file://test.py   READY
-     2  http://localhost:5000/api/v1.0/procedures/2  file://test2.py  RUNNING
+    ID   Script           Creation time        State
+  ----  ---------------  -------------------  -------
+     1  file://test.py   2020-09-30 10:30:12  CREATED
+     2  file://test2.py  2020-09-30 10:35:12  RUNNING
 
 
 Example session in a SKAMPI environment
