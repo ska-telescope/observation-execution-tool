@@ -258,14 +258,14 @@ def test_procedure_init_stores_initial_arguments(procedure):
     assert procedure.script_args['init'] == ProcedureInput(1, 2, 3, kw1='a', kw2='b')
 
 
-def test_procedure_init_raises_exception_on_script_file_not_found():
+def test_procedure_set_to_failed_when_script_file_not_found():
     """
-    Verify that FileNotFoundError is raised if script file does not exist
+    Verify that a FAILED Procedure is created when the script file is not
+    found.
     """
     script_uri = 'file://abcbs'
-
-    with pytest.raises(FileNotFoundError):
-        _ = Procedure(script_uri=script_uri)
+    procedure = Procedure(script_uri=script_uri)
+    assert procedure.state == ProcedureState.FAILED
 
 
 def test_procedure_terminate_sets_state_to_stopped(procedure):

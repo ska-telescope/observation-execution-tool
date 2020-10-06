@@ -4,16 +4,16 @@ execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
 import dataclasses
-import importlib.machinery
-import multiprocessing
-from multiprocessing.dummy import Pool
-import typing
-import traceback
 import enum
-import types
-import time
+import importlib.machinery
 import logging
+import multiprocessing
+import time
+import traceback
+import types
+import typing
 from collections import OrderedDict
+from multiprocessing.dummy import Pool
 
 from oet.command import SCAN_ID_GENERATOR
 
@@ -60,26 +60,29 @@ class ProcedureInput:
 @dataclasses.dataclass
 class ProcedureHistory:
     """
-    ProcedureHistory is a non-functional dataclass holding execution history of a Procedure.
+    ProcedureHistory is a non-functional dataclass holding execution history
+    of a Procedure.
 
-    process_states: records time for each change of ProcedureState (list of tuples where
-    tuple contains the ProcedureState and time when state was changed to)
-    stacktrace: None unless execution_error is True in which case stores stacktrace from process
+    process_states: records time for each change of ProcedureState (list of
+        tuples where tuple contains the ProcedureState and time when state was
+        changed)
+    stacktrace: None unless execution_error is True in which case stores
+        stacktrace from process
     """
 
-    def __init__(self, process_states=None, stacktrace=None):
+    def __init__(self,
+                 process_states: typing.Optional[typing.OrderedDict[ProcedureState, float]] = None,
+                 stacktrace: typing.Optional[str] = None):
         if process_states is None:
-            process_states = OrderedDict()
-        self.process_states: typing.OrderedDict[ProcedureState, float] = process_states
+            process_states: typing.OrderedDict[ProcedureState, float] = OrderedDict()
+        self.process_states = process_states
         self.stacktrace = stacktrace
 
     def __eq__(self, other):
         if not isinstance(other, ProcedureHistory):
             return False
-        if self.process_states == other.process_states and \
-                self.stacktrace == other.stacktrace:
-            return True
-        return False
+        return self.process_states == other.process_states \
+               and self.stacktrace == other.stacktrace
 
     def __repr__(self):
         p_history = ', '.join(['({!s}, {!r})'.format(s, t) for s, t in self.process_states])
@@ -103,16 +106,23 @@ class Procedure(multiprocessing.Process):
         self.id = None  # pylint:disable=invalid-name
         self.state = None
 
-        self.user_module = ModuleFactory.get_module(script_uri)
-        if hasattr(self.user_module, 'init'):
-            self.user_module.init(*args, **kwargs)
-
         self.script_uri = script_uri
         self.script_args: typing.Dict[str, ProcedureInput] = dict(init=init_args,
                                                                   run=ProcedureInput())
-        self.change_state(ProcedureState.CREATED)
-
         self._scan_counter = scan_counter
+
+        try:
+            self.user_module = ModuleFactory.get_module(script_uri)
+        except FileNotFoundError as e:
+            self.change_state(ProcedureState.CREATED)
+
+            self.user_module = None
+            self.history.stacktrace = traceback.format_exc()
+            self.change_state(ProcedureState.FAILED)
+        else:
+            if hasattr(self.user_module, 'init'):
+                self.user_module.init(*args, **kwargs)
+            self.change_state(ProcedureState.CREATED)
 
     def run(self):
         """
