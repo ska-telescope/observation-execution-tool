@@ -94,7 +94,7 @@ class RestClientUI:
     @staticmethod
     def _tabulate_for_describe(procedure: List[ProcedureSummary]) -> str:
 
-        table_row_title = [(procedure[0].id, procedure[0].script_uri, procedure[0].uri )]
+        table_row_title = [(procedure[0].id, procedure[0].script_uri, procedure[0].uri)]
         headers_title = ['ID', 'Script', 'URI']
 
         table_rows_args = [(s, procedure[0].script_args[s]['args'],
@@ -236,6 +236,7 @@ class RestClientUI:
         procedure = self._client.list(pid)
         return self._tabulate_for_describe(procedure)
 
+
 class RestAdapter:
     """A simple CLI REST client using python-fire for the option parsing"""
 
@@ -363,7 +364,3 @@ def main():
     Fire entry function to provide a CLI interface for REST client.
     """
     fire.Fire(RestClientUI)
-
-
-if __name__ == '__main__':
-    main()
