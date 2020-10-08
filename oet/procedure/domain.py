@@ -14,12 +14,14 @@ import types
 import time
 import logging
 from collections import OrderedDict
-
+import signal
 from oet.command import SCAN_ID_GENERATOR
 
 LOGGER = logging.getLogger(__name__)
 
 PROCEDURE_QUEUE_MAX_LENGTH = 10
+
+DEFAULT_SIGTERM_HANDLER = signal.getsignal(signal.SIGTERM)
 
 
 class ProcedureState(enum.Enum):
@@ -82,7 +84,7 @@ class ProcedureHistory:
         return False
 
     def __repr__(self):
-        p_history = ', '.join(['({!s}, {!r})'.format(s, t) for s, t in self.process_states])
+        p_history = ', '.join(['({!s}, {!r})'.format(s, t) for s, t in self.process_states.items()])
         return '<ProcessHistory(process_states=[{}], ' \
                'stacktrace={})>'.format(p_history, self.stacktrace)
 
@@ -218,6 +220,11 @@ class ProcessManager:
         :param run_args: late-binding arguments to provide to the script
         :return:
         """
+        # Use default SIGTEM signal handler which terminates process on first SIGTERM
+        # If this is not done we inherit the MainContext signal handler, which requests
+        # a co-operative shutdown for the first few attempts before force quitting
+        signal.signal(signal.SIGTERM, DEFAULT_SIGTERM_HANDLER)
+
         if self.running:
             running_pid = self.running.id
             raise ValueError(f'Cannot start PID {process_id}: procedure {running_pid} is running')

@@ -28,13 +28,15 @@ from mptools import (
 )
 
 
-# def test_logger(caplog):
-#     mptools._mptools.start_time = mptools._mptools.start_time - 121.0
-#     caplog.set_level(logging.INFO)
-#     _logger("FOO", logging.INFO, "TESTING")
-#     assert 'TESTING' in caplog.text
-#     assert 'FOO' in caplog.text
-#     assert ' 2:0' in caplog.text
+@pytest.fixture(autouse=True)
+def restore_default_signal_handlers():
+    original_sigint_handler = signal.getsignal(signal.SIGINT)
+    original_sigterm_handler = signal.getsignal(signal.SIGTERM)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGINT, original_sigint_handler)
+        signal.signal(signal.SIGTERM, original_sigterm_handler)
 
 
 def test_mpqueue_get():
