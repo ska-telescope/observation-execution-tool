@@ -135,11 +135,10 @@ class ProcWorker:
     ProcWorker does not contain any business logic, which should be defined
     in a subclass of ProcWorker.
 
-    The core ProcWorker template method main_loop, which is the method called
-    once startup is complete and main execution begins. In ProcWorker this
-    method is left blank and should be overridden by the class extending
-    ProcWorker. Once the main_loop method is complete, the ProcWorker is
-    shutdown.
+    The core ProcWorker template method is main_loop, which is called once
+    startup is complete and main execution begins. In ProcWorker this method
+    is left blank and should be overridden by the class extending ProcWorker.
+    Once the main_loop method is complete, the ProcWorker is shutdown.
 
     MPTools provides some ProcWorker subclasses with main_loop implementations
     that provide different kinds of behaviour. For instance,
@@ -193,17 +192,12 @@ class ProcWorker:
     def init_signals(self) -> SignalObject:
         """
         Initialise the signal handler
-        :return:
         """
         self.log(logging.DEBUG, "Entering init_signals")
         signal_object = init_signals(self.shutdown_event, self.int_handler, self.term_handler)
         return signal_object
 
     def main_loop(self) -> None:
-        """
-        main_loop is called
-        :return:
-        """
         self.log(logging.DEBUG, "Entering main_loop")
         while not self.shutdown_event.is_set():
             self.main_func()
@@ -303,9 +297,9 @@ class QueueProcWorker(ProcWorker):
 
         The events and MPQueues passed to this constructor should be created
         and managed within the scope of a MainContext context manager and
-        shared with other ProcWorkers, so that there is shared communication
-        queues and a common mechanism for indicating when shutdown is
-        required.
+        shared with other ProcWorkers, so that the communication queues are
+        shared correctly between Python processes and there is a common event
+        that can be set to notify all processes when shutdown is required.
 
         :param name: name of this worker
         :param startup_event: event to trigger when startup is complete
@@ -338,7 +332,8 @@ class QueueProcWorker(ProcWorker):
             # timeout unless an item is in the queue.
             item = self.work_q.safe_get()
 
-            # Go back to the top of the while loop if no message was received
+            # Go back to the top of the while loop if no message was received,
+            # thus checking the shutdown event again.
             if not item:
                 continue
 
@@ -383,7 +378,7 @@ class Proc:
     """
     Proc represents a child process of a MainContext.
 
-    Proc instances live within the scope of a MainContext instance and in the
+    Proc instances exist in the scope of a MainContext instance and in the
     same Python interpreter process as the MainContext. Procs are the
     MainContext's link to the ProcWorkers which run in separate Python
     interpreters. Every ProcWorker running in a child process is associated
