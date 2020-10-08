@@ -3,6 +3,7 @@ import logging.handlers
 import threading
 
 import requests
+from flask import request
 from pubsub import pub
 
 from mptools import (
@@ -115,6 +116,10 @@ class FlaskWorker(EventBusWorker):
         # create app and start Flask, using a thread as this is a blocking
         # call
         app = mptools_restserver.create_app(None)
+
+        # add route to run shutdown_flask() when /shutdown is accessed
+        app.add_url_rule('/shutdown', 'shutdown', self.shutdown_flask, methods=['POST'])
+
         self.flask = threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'))
         self.flask.start()
 
@@ -125,9 +130,17 @@ class FlaskWorker(EventBusWorker):
         # flask can only be shut down by accessing a special Werkzeug function
         # that is accessible from a request. Hence, we send a request to a
         # special URL that will access and call that function.
-        requests.post('http://127.0.0.1:5000/api/v1.0/shutdown')
+        requests.post('http://127.0.0.1:5000/shutdown')
         self.flask.join(timeout=3)
         super().shutdown()
+
+    @staticmethod
+    def shutdown_flask():
+        func = request.environ.get('werkzeug.server.shutdown')
+        if func is None:
+            raise RuntimeError('Not running with the Werkzeug Server')
+        func()
+        return 'Stopping Flask'
 
 
 class ScriptExecutionServiceWorker(EventBusWorker):

@@ -35,15 +35,6 @@ def listen():
     return Response(stream(), mimetype='text/event-stream')
 
 
-@API.route('/shutdown', methods=['POST'])
-def shutdown():
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    func()
-    return 'Stopping Flask'
-
-
 def _get_summary_or_404(pid):
     """
     Get a ProcedureSummary, raising a Flask 404 if not found.
