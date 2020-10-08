@@ -8,17 +8,18 @@ script prepared in a prior 'create procedure' call, and to list all prepared
 and running procedures held in the remote server.
 """
 import dataclasses
+import datetime
 import logging
+import operator
+import os
 from http import HTTPStatus
 from typing import Dict, List, Optional
 
-import os
-import datetime
 import fire
 import requests
 import tabulate
 
-LOG = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -87,8 +88,43 @@ class RestClientUI:
                                                        ['CREATED']).strftime('%Y-%m-%d '
                                                                              '%H:%M:%S'),
                        p.state) for p in procedures]
+
         headers = ['ID', 'Script', 'Creation Time', 'State']
         return tabulate.tabulate(table_rows, headers)
+
+    @staticmethod
+    def _tabulate_for_describe(procedure: List[ProcedureSummary]) -> str:
+
+        table_row_title = [(procedure[0].id, procedure[0].script_uri, procedure[0].uri)]
+        headers_title = ['ID', 'Script', 'URI']
+
+        table_rows_args = [(s, procedure[0].script_args[s]['args'],
+                           procedure[0].script_args[s]['kwargs'])
+                           for s in procedure[0].script_args]
+
+        headers_args = ['Method', 'Arguments', 'Keyword Arguments']
+
+        table_rows_states = [(datetime.datetime.fromtimestamp(procedure[0].
+                                                              history['process_states'][s]).
+                                                              strftime('%Y-%m-%d %H:%M:%S.%f'), s)
+                             for s in procedure[0].history['process_states']]
+
+        table_rows_states.sort(key=operator.itemgetter(0))
+        headers_states = ['Time', 'State']
+
+        # define default table sections...
+        table_sections = [
+            tabulate.tabulate(table_row_title, headers_title),
+            tabulate.tabulate(table_rows_states, headers_states),
+            tabulate.tabulate(table_rows_args, headers_args)
+        ]
+
+        # .. and add stacktrace if present
+        stacktrace = procedure[0].history['stacktrace']
+        if stacktrace:
+            table_sections.append(f'Stack Trace:\n------------\n{stacktrace}')
+
+        return '\n\n'.join(table_sections)
 
     def list(self, pid=None) -> str:
         """
@@ -177,6 +213,30 @@ class RestClientUI:
         response = self._client.stop(pid, run_abort)
         return response
 
+    def describe(self, pid=None) -> str:
+        """
+        Display information on the specified procedure.
+
+        This will display the state history of a specified procedure,
+        including the stack trace is the procedure failed. If no procedure ID
+        is declared, the last procedure to be created with be described.
+
+        :param pid: ID of procedure to describe
+        """
+        valid_procedure_ids = [p.id for p in self._client.list()]
+        if not valid_procedure_ids:
+            return 'No procedures to investigate'
+
+        if pid is None:
+            pid = valid_procedure_ids[-1]
+
+        if str(pid) not in valid_procedure_ids:
+            return 'Error: No valid procedure ID specified. ' \
+                   'Specify ID of the procedure to describe.'
+
+        procedure = self._client.list(pid)
+        return self._tabulate_for_describe(procedure)
+
 
 class RestAdapter:
     """A simple CLI REST client using python-fire for the option parsing"""
@@ -234,7 +294,7 @@ class RestAdapter:
                 'init': init_args,
             }
         }
-        LOG.debug('Create payload: %s', request_json)
+        LOGGER.debug('Create payload: %s', request_json)
 
         response = requests.post(self.server_url, json=request_json)
         response_json = response.json()
@@ -268,7 +328,7 @@ class RestAdapter:
             },
             'state': 'RUNNING'
         }
-        LOG.debug('Start payload: %s', request_json)
+        LOGGER.debug('Start payload: %s', request_json)
 
         response = requests.put(url, json=request_json)
         response_json = response.json()
@@ -291,7 +351,7 @@ class RestAdapter:
             'abort': run_abort,
             'state': 'STOPPED'
         }
-        LOG.debug('Stop payload: %s', request_json)
+        LOGGER.debug('Stop payload: %s', request_json)
 
         response = requests.put(url, json=request_json)
         response_json = response.json()
@@ -307,5 +367,7 @@ def main():
     fire.Fire(RestClientUI)
 
 
+# This statement is included so that we can run this module and test the REST
+# client directly without installing the OET project
 if __name__ == '__main__':
     main()

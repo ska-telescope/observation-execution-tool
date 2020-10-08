@@ -4,6 +4,7 @@ Unit tests for the oet.command module.
 import json
 import multiprocessing
 from unittest.mock import patch, Mock, MagicMock
+import tango
 
 from oet.command import (
     Attribute,
@@ -142,6 +143,72 @@ def test_tango_executor_calls_multi_arg_command_correctly():
         executor.execute(cmd)
 
     mock_proxy.command_inout.assert_called_once_with('command', cmd_param=(1, 2, 3))
+
+
+def test_tango_executor_calls_subscribe_event_correctly():
+    """
+    Check that the TangoExecutor correctly invokes subscribe event.
+    :return:
+    """
+    mock_proxy = Mock()
+    attr = Attribute('device', 'name')
+
+    with patch.object(TangoDeviceProxyFactory, '__call__', return_value=mock_proxy):
+        mock_proxy.subscribe_event.return_value = 12345
+        executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
+        resonse = executor.subscribe_event(attr)
+    mock_proxy.subscribe_event.assert_called_once()
+    assert resonse == 12345
+
+
+def test_tango_executor_calls_read_event_correctly_check_queue_is_empty():
+    """
+        Check that the TangoExecutor correctly invokes read event.
+        :return:
+        """
+    mock_proxy = Mock()
+
+    with patch.object(TangoDeviceProxyFactory, '__call__', return_value=mock_proxy):
+        executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
+        evt = mock_proxy.MagicMock(spec_set=tango.EventData)
+        evt.attr_value = 'resourcing'
+        executor.handle_state_change(evt)
+        result = executor.read_event()
+    assert result.attr_value == 'resourcing'
+    assert executor.queue.empty()
+
+
+def test_tango_executor_calls_subscribe_event_callback_correctly():
+    """
+    Check that the TangoExecutor correctly invokes subscribe event callback.
+    :return:
+    """
+    mock_proxy = Mock()
+
+    with patch.object(TangoDeviceProxyFactory, '__call__', return_value=mock_proxy):
+        executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
+        evt = mock_proxy.MagicMock(spec_set=tango.EventData)
+        evt.attr_value = 'resourcing'
+        executor.handle_state_change(evt)
+        result = executor.read_event()
+    assert result.attr_value == 'resourcing'
+    assert executor.queue.empty()
+
+
+def test_tango_executor_calls_unsubscribe_event_correctly():
+    """
+    Check that the TangoExecutor correctly invokes unsubscribe event.
+    :return:
+    """
+    mock_proxy = Mock()
+    attr = Attribute('device', 'name')
+    with patch.object(TangoDeviceProxyFactory, '__call__', return_value=mock_proxy):
+        executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
+        mock_proxy.subscribe_event.return_value = 12345
+        response = executor.subscribe_event(attr)
+        executor.unsubscribe_event(attr, 12345)
+    assert response == 12345
+    mock_proxy.unsubscribe_event.assert_called_once_with(response)
 
 
 def test_tango_device_proxy_creates_device_proxy_to_named_device():
