@@ -244,7 +244,7 @@ def test_put_procedure_calls_stop_on_execution_service_and_executes_abort_script
     when a valid 'stop Procedure' PUT request is received
     """
     expected_response = 'Successfully stopped script with ID 1 and aborted subarray activity '
-    cmd = StopProcessCommand(process_uid=RUN_SUMMARY.id)
+    cmd = StopProcessCommand(process_uid=RUN_SUMMARY.id, run_abort=True)
 
     with mock.patch('oet.procedure.application.restserver.SERVICE') as mock_service:
         mock_service.summarise.return_value = [RUN_SUMMARY]
@@ -255,7 +255,7 @@ def test_put_procedure_calls_stop_on_execution_service_and_executes_abort_script
         response = client.put(RUN_ENDPOINT, json=ABORT_JSON)
         response_json = response.get_json()
 
-        mock_service.stop.assert_called_once_with(cmd, True)
+        mock_service.stop.assert_called_once_with(cmd)
         assert 'abort_message' in response_json
         assert response_json['abort_message'] == expected_response
 
@@ -266,7 +266,7 @@ def test_put_procedure_calls_stop_on_execution_service(client):
     when a valid 'stop Procedure' PUT request is received
     """
     expected_response = 'Successfully stopped script with ID 1'
-    cmd = StopProcessCommand(process_uid=RUN_SUMMARY.id)
+    cmd = StopProcessCommand(process_uid=RUN_SUMMARY.id, run_abort=False)
 
     with mock.patch('oet.procedure.application.restserver.SERVICE') as mock_service:
         mock_service.summarise.return_value = [RUN_SUMMARY]
@@ -277,7 +277,7 @@ def test_put_procedure_calls_stop_on_execution_service(client):
         response = client.put(RUN_ENDPOINT, json=dict(state="STOPPED", abort=False))
         response_json = response.get_json()
 
-        mock_service.stop.assert_called_once_with(cmd, False)
+        mock_service.stop.assert_called_once_with(cmd)
         assert 'abort_message' in response_json
         assert response_json['abort_message'] == expected_response
 

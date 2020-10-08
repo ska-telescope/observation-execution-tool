@@ -59,6 +59,7 @@ class StopProcessCommand:
     arguments the script may require.
     """
     process_uid: int
+    run_abort: bool
 
 
 class ScriptExecutionService:
@@ -148,9 +149,7 @@ class ScriptExecutionService:
 
         return [self._create_summary(pid) for pid in pids]
 
-    def stop(self,
-             cmd: StopProcessCommand,
-             run_abort=True) -> typing.List[ProcedureSummary]:
+    def stop(self, cmd: StopProcessCommand) -> typing.List[ProcedureSummary]:
         """
         Stop execution of a running procedure, optionally running a
         second script once the first process has terminated.
@@ -163,7 +162,7 @@ class ScriptExecutionService:
         self._process_host.stop(cmd.process_uid)
 
         # exit early if not instructed to run post-termination script
-        if not run_abort:
+        if not cmd.run_abort:
             # Did not start a new process so return empty list
             return []
 

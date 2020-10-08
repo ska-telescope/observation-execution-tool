@@ -113,9 +113,9 @@ def update_procedure(procedure_id: int):
     if new_state is domain.ProcedureState.STOPPED:
         if old_state is domain.ProcedureState.RUNNING:
             run_abort = flask.request.json.get('abort')
-            cmd = application.StopProcessCommand(procedure_id)
+            cmd = application.StopProcessCommand(procedure_id, run_abort=run_abort)
             try:
-                result = SERVICE.stop(cmd, run_abort)
+                result = SERVICE.stop(cmd)
                 # result is list of process summaries started in response to abort
                 # If script was stopped and no post-termination abort script was run,
                 # the result list will be empty.

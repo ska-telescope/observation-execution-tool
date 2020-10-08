@@ -51,21 +51,11 @@ def _get_summary_or_404(pid):
     :param pid: ID of Procedure
     :return: ProcedureSummary
     """
-    q = Queue(1)
-    my_request_id = time.time()
-
-    def callback(msg_src, request_id, result):
-        if my_request_id == request_id:
-            q.put(result[0])
-
-    pub.subscribe(callback, 'script.pool.list')
-
-    # With the callback now setup, publish an event to mark the user request event
-    pub.sendMessage('request.script.list', request_id=my_request_id, pids=[pid])
-    try:
-        return q.get(timeout=10)
-    except Empty:
-        return 'Timed out'
+    summaries = call_and_respond('request.script.list', 'script.pool.list', pids=[pid])
+    if not summaries:
+        flask.abort(404, description='Resource not found')
+    else:
+        return summaries[0]
 
 
 @API.route('/procedures', methods=['GET'])
@@ -78,19 +68,9 @@ def get_procedures():
 
     :return: list of Procedure JSON representations
     """
-    q = Queue(1)
-    my_request_id = time.time()
 
-    def callback(msg_src, request_id, result):
-        if my_request_id == request_id:
-            q.put(result)
-
-    pub.subscribe(callback, 'script.pool.list')
-
-    # With the callback now setup, publish an event to mark the user request event
-    pub.sendMessage('request.script.list', request_id=my_request_id, pids=None)
     try:
-        summaries = q.get(timeout=10)
+        summaries = call_and_respond('request.script.list', 'script.pool.list', pids=None)
     except Empty:
         return 'Timed out'
     else:
@@ -126,8 +106,7 @@ def create_procedure():
         flask.abort(400, description='script_uri missing')
     script_uri = flask.request.json['script_uri']
 
-    if 'script_args' in flask.request.json and not isinstance(flask.request.json['script_args'],
-                                                              dict):
+    if 'script_args' in flask.request.json and not isinstance(flask.request.json['script_args'], dict):
         flask.abort(400, description='Malformed script_uri')
     script_args = flask.request.json.get('script_args', {})
 
@@ -139,6 +118,15 @@ def create_procedure():
     prepare_cmd = application.PrepareProcessCommand(script_uri=script_uri,
                                                     init_args=procedure_input)
 
+    try:
+        summary = call_and_respond('request.script.create', 'script.lifecycle.created', cmd=prepare_cmd)
+    except Empty:
+        return 'Timed out'
+
+    return flask.jsonify({'procedure': make_public_summary(summary)}), 201
+
+
+def call_and_respond(request_topic, response_topic, *args, **kwargs):
     q = Queue(1)
     my_request_id = time.time()
 
@@ -146,16 +134,11 @@ def create_procedure():
         if my_request_id == request_id:
             q.put(result)
 
-    pub.subscribe(callback, 'script.lifecycle.created')
+    pub.subscribe(callback, response_topic)
 
     # With the callback now setup, publish an event to mark the user request event
-    pub.sendMessage('request.script.create', request_id=my_request_id, cmd=prepare_cmd)
-    try:
-        summary = q.get(timeout=10)
-    except Empty:
-        return 'Timed out'
-    else:
-        return flask.jsonify({'procedure': make_public_summary(summary)}), 201
+    pub.sendMessage(request_topic, request_id=my_request_id, *args, **kwargs)
+    return q.get(timeout=10)
 
 
 @API.route('/procedures/<int:procedure_id>', methods=['PUT'])
@@ -180,12 +163,12 @@ def update_procedure(procedure_id: int):
     old_state = summary.state
     new_state = domain.ProcedureState[flask.request.json.get('state', summary.state.name)]
 
-    if new_state is domain.ProcedureState.STOP:
+    if new_state is domain.ProcedureState.STOPPED:
         if old_state is domain.ProcedureState.RUNNING:
             run_abort = flask.request.json.get('abort')
-            cmd = application.StopProcessCommand(procedure_id)
+            cmd = application.StopProcessCommand(procedure_id, run_abort=run_abort)
             try:
-                result = SERVICE.stop(cmd, run_abort)
+                result = call_and_respond('request.script.stop', 'script.lifecycle.stopped', cmd=cmd)
                 # result is list of process summaries started in response to abort
                 # If script was stopped and no post-termination abort script was run,
                 # the result list will be empty.
@@ -194,34 +177,24 @@ def update_procedure(procedure_id: int):
                 else:
                     msg = f'Successfully stopped script with ID {procedure_id}'
                 return flask.jsonify({'abort_message': msg})
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 flask.abort(500, exc)
+
         else:
             msg = f'Cannot stop script with ID {procedure_id}: Script is not running'
             return flask.jsonify({'abort_message': msg})
 
-    elif old_state is domain.ProcedureState.READY and new_state is domain.ProcedureState.RUNNING:
+    elif old_state is domain.ProcedureState.CREATED and new_state is domain.ProcedureState.RUNNING:
         run_dict = script_args.get('run', {})
         run_args = run_dict.get('args', [])
         run_kwargs = run_dict.get('kwargs', {})
         procedure_input = domain.ProcedureInput(*run_args, **run_kwargs)
         cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
 
-        q = Queue(1)
-        my_request_id = time.time()
-
-        def callback(msg_src, request_id, result):
-            if my_request_id == request_id:
-                q.put(result)
-
-        pub.subscribe(callback, 'script.lifecycle.started')
-
-        # With the callback now setup, publish an event to mark the user request event
-        pub.sendMessage('request.script.start', request_id=my_request_id, cmd=cmd)
         try:
-            summary = q.get(timeout=10)
+            summary = call_and_respond('request.script.start', 'script.lifecycle.started', cmd=cmd)
         except Empty:
-            return 'timed out'
+            return 'Timed out'
 
     return flask.jsonify({'procedure': make_public_summary(summary)})
 
@@ -239,10 +212,16 @@ def make_public_summary(procedure: application.ProcedureSummary):
     script_args = {method_name: {'args': method_args.args, 'kwargs': method_args.kwargs}
                    for method_name, method_args in procedure.script_args.items()}
 
+    procedure_history = {
+        'process_states': {state.name: time for state, time in procedure.history.process_states.items()},
+        'stacktrace': procedure.history.stacktrace
+    }
+
     return {
         'uri': flask.url_for('api.get_procedure', procedure_id=procedure.id, _external=True),
         'script_uri': procedure.script_uri,
         'script_args': script_args,
+        'history': procedure_history,
         'state': procedure.state.name
     }
 

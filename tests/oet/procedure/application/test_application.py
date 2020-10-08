@@ -250,7 +250,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     # When SES.stop() is called, the SES should stop the current process,
     # prepare a process for the abort script, then set the abort process
     # running..
-    cmd_stop = StopProcessCommand(process_uid=running_pid)
+    cmd_stop = StopProcessCommand(process_uid=running_pid, run_abort=True)
     cmd_create = PrepareProcessCommand(script_uri=abort_script,
                                        init_args=abort_procedure.script_args['init'])
     cmd_run = StartProcessCommand(process_uid=abort_pid,
@@ -275,7 +275,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
         instance.create.side_effect = create_abort
 
         service = ScriptExecutionService(abort_script_uri=abort_script)
-        returned = service.stop(cmd_stop, run_abort=True)
+        returned = service.stop(cmd_stop)
 
         # service should call stop -> create -> run, then return list containing
         # summary
@@ -309,7 +309,7 @@ def test_ses_stop_calls_process_manager_function_with_no_script_execution(abort_
         running_pid: procedure_to_stop
     }
 
-    cmd = StopProcessCommand(process_uid=running_pid)
+    cmd = StopProcessCommand(process_uid=running_pid, run_abort=False)
     # returned summary list should be empty if abort script is bypassed
     expected = []
 
@@ -319,7 +319,7 @@ def test_ses_stop_calls_process_manager_function_with_no_script_execution(abort_
         instance.procedures = process_manager_procedures
 
         service = ScriptExecutionService(abort_script_uri=abort_script)
-        returned = service.stop(cmd, run_abort=False)
+        returned = service.stop(cmd)
 
         # service should call stop() and return empty list
         instance.stop.assert_called_once_with(running_pid)

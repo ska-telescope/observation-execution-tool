@@ -11,11 +11,12 @@ from mptools import (
     MainContext,
     EventMessage,
     QueueProcWorker,
-    web
+    mptools_restserver
 )
 from oet.procedure.application.application import (
     PrepareProcessCommand,
     StartProcessCommand,
+    StopProcessCommand,
     ScriptExecutionService
 )
 
@@ -35,7 +36,7 @@ class EventBusWorker(QueueProcWorker):
 
     def republish(self, topic: pub.Topic = pub.AUTO_TOPIC, **kwargs) -> None:
         """
-        Republish local event over inter-process event bus.
+        Republish a local event over the inter-process event bus.
 
         :param topic: message topic, set automatically by pypubsub
         :param kwargs: any metadata associated with pypubsub message
@@ -73,9 +74,9 @@ class EventBusWorker(QueueProcWorker):
         """
         super().shutdown()
 
-        # Technically unsubscribing  is not necessary, as pypubsub holds weak
-        # references to listeners and unsubscribes listeners that have been
-        # deleted
+        # Technically, unsubscribing is unnecessary as pypubsub holds weak
+        # references to listeners and automatically unsubscribes listeners
+        # that have been deleted
         pub.unsubscribe(self.republish, pub.ALL_TOPICS)
 
     def main_func(self, evt: EventMessage) -> None:
@@ -111,9 +112,9 @@ class FlaskWorker(EventBusWorker):
         # Call super.startup to enable pypubsub <-> event queue republishing
         super().startup()
 
-        # create app and start flask, using a thread as this is a blocking
+        # create app and start Flask, using a thread as this is a blocking
         # call
-        app = web.create_app(None)
+        app = mptools_restserver.create_app(None)
         self.flask = threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'))
         self.flask.start()
 
@@ -166,6 +167,13 @@ class ScriptExecutionServiceWorker(EventBusWorker):
 
         pub.sendMessage('script.pool.list', request_id=request_id, result=summaries)
 
+    def stop(self, msg_src, request_id: str, cmd: StopProcessCommand):
+        self.log(logging.DEBUG, 'Stop procedure request %s: %s', request_id, cmd)
+        summary = self.ses.stop(cmd)
+        self.log(logging.DEBUG, 'Stop result: %s', summary)
+
+        pub.sendMessage('script.lifecycle.stopped', request_id=request_id, result=summary)
+
     def startup(self) -> None:
         super().startup()
 
@@ -175,25 +183,45 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         pub.subscribe(self.prepare, 'request.script.create')
         pub.subscribe(self.start, 'request.script.start')
         pub.subscribe(self.list, 'request.script.list')
+        pub.subscribe(self.stop, 'request.script.stop')
 
     def shutdown(self) -> None:
         pub.unsubscribe(self.prepare, pub.ALL_TOPICS)
         pub.unsubscribe(self.start, pub.ALL_TOPICS)
         pub.unsubscribe(self.list, pub.ALL_TOPICS)
+        pub.unsubscribe(self.stop, pub.ALL_TOPICS)
         super().shutdown()
 
 
-def main(logging_config: dict):
-    with MainContext() as main_ctx:
-        main_ctx.init_logging(logging_config)
+def main():
+    """
+    Create the OET components and start an event loop that dispatches messages
+    between them.
 
+    :param logging_config:
+    """
+    # All queues and processes are created via a MainContext so that they are
+    # shared correctly and have consistent lifecycle management
+    with MainContext() as main_ctx:
+        # wire SIGINT and SIGTERM signal handlers to the shutdown_event Event
+        # monitored by all processes, so that the processes know when
+        # application termination has been requested.
         init_signals(main_ctx.shutdown_event, default_signal_handler, default_signal_handler)
 
-        manager_q = main_ctx.MPQueue()
+        # create our message queues:
+        # manager_q is the message queue for messages from the ScriptExecutionWorker
+        # flask_q is the queue for messages intended for the FlaskWorker process
+        script_executor_q = main_ctx.MPQueue()
         flask_q = main_ctx.MPQueue()
-        event_bus_queues = [manager_q, flask_q]
 
-        main_ctx.Proc("MANAGER", ScriptExecutionServiceWorker, manager_q)
+        # event bus messages received on the event_queue (the main queue that
+        # child processes push to and which the while loop below listens to)
+        # will be pushed onto the queues in this list
+        event_bus_queues = [script_executor_q, flask_q]
+
+        # create the OET components, which will run in child Python processes
+        # and monitor the message queues here for event bus messages
+        main_ctx.Proc("SCRIPT EXECUTOR", ScriptExecutionServiceWorker, script_executor_q)
         main_ctx.Proc("FLASK", FlaskWorker, flask_q)
 
         while not main_ctx.shutdown_event.is_set():
@@ -214,39 +242,4 @@ def main(logging_config: dict):
 
 
 if __name__ == "__main__":
-    logging_config = {
-        'version': 1,
-        'disable_existing_loggers': True,
-        'formatters': {
-            'verbose': {
-                'format': '%(asctime)s.%(msecs)03d %(source)-20s %(levelname)s %(message)s',
-                'datefmt': '%H:%M:%S'
-            },
-            'simple': {
-                'format': '%(levelname)s %(message)s'
-            }
-        },
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'level': 'DEBUG',
-                'formatter': 'verbose'
-            },
-            'werkzeug': {
-                'class': 'logging.StreamHandler',
-                'level': 'DEBUG',
-                'formatter': 'simple'
-            }
-        },
-        'loggers': {
-            '': {
-                'level': 'DEBUG',
-                'handlers': ['console']
-            },
-            'werkzeug': {
-                'level': 'ERROR',
-                'handlers': ['werkzeug']
-            }
-        }
-    }
-    main(logging_config)
+    main()
