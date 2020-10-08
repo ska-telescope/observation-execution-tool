@@ -11,8 +11,8 @@ import time
 
 import pytest
 
-import mptools._mptools
-from mptools import (
+from oet import mptools
+from oet.mptools import (
     MPQueue,
     _sleep_secs,
     SignalObject,

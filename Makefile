@@ -179,7 +179,7 @@ ifneq ($(NETWORK_MODE),host)
 endif
 
 rest: up  ## start OET REST server
-	docker run --rm -p 5000:5000 --name=oet-rest $(IMAGE_TO_TEST) python3 /app/mptools/mptools_oet.py
+	docker run --rm -p 5000:5000 --name=oet-rest $(IMAGE_TO_TEST) python3 /app/oet/procedure/application/main.py
 
 help:  ## show this help.
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

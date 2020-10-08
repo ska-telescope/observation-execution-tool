@@ -6,7 +6,7 @@ __author__ = """Pamela D McA'Nulty"""
 __email__ = 'pamela@mcanulty.org'
 __version__ = '0.2.1'
 
-from mptools._mptools import (
+from ._mptools import (
     MPQueue,
     _sleep_secs,
     SignalObject,
