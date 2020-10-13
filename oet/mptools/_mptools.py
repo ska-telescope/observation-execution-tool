@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 """Main module."""
-
 import functools
 import logging
 import logging.config
@@ -11,6 +10,7 @@ import multiprocessing.queues as mpq
 import multiprocessing.synchronize as mps
 import signal
 import sys
+import threading
 import time
 from queue import Empty, Full
 from typing import Any, List, Tuple, Type, Union
@@ -172,6 +172,9 @@ class ProcWorker:
         :param args:
         """
         self.name = name
+        # setting thread name makes logs easier to understand
+        threading.current_thread().name = name
+
         self.log = functools.partial(logging.log, extra=dict(source=f'{self.name} Worker'))
         self.startup_event = startup_event
         self.shutdown_event = shutdown_event

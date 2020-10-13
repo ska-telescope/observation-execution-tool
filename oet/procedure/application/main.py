@@ -11,9 +11,9 @@ from oet.mptools import (
     default_signal_handler,
     MainContext,
     EventMessage,
-    QueueProcWorker,
-    mptools_restserver
+    QueueProcWorker
 )
+from oet.procedure.application import restserver
 from oet.procedure.application.application import (
     PrepareProcessCommand,
     StartProcessCommand,
@@ -113,13 +113,14 @@ class FlaskWorker(EventBusWorker):
         # Call super.startup to enable pypubsub <-> event queue republishing
         super().startup()
 
-        # create app and start Flask, using a thread as this is a blocking
-        # call
-        app = mptools_restserver.create_app(None)
-
+        app = restserver.create_app(None)
         # add route to run shutdown_flask() when /shutdown is accessed
         app.add_url_rule('/shutdown', 'shutdown', self.shutdown_flask, methods=['POST'])
 
+        # override default msg_src with our real process name
+        app.config.update(msg_src=self.name)
+
+        # start Flask in a thread as app.run is a blocking call
         self.flask = threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'))
         self.flask.start()
 
