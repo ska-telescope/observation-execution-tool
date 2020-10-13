@@ -15,27 +15,27 @@ API = Blueprint('api', __name__)
 TIMEOUT = 10
 
 
-def format_sse(data: str, event=None) -> str:
-    msg = f'data: {data}\n\n'
-    if event is not None:
-        msg = f'event: {event}\n{msg}'
-    return msg
-
-
-@API.route('/stream', methods=['GET'])
-def listen():
-    def stream():
-        q = Queue()
-        def yieldit(*args, topic: pub.Topic=pub.AUTO_TOPIC, **kwargs):
-            msg = format_sse(event=topic.name, data=f'args={args} kwargs={kwargs}')
-            q.put(msg)
-        pub.subscribe(yieldit, pub.ALL_TOPICS)
-
-        while True:
-            msg = q.get()
-            yield msg
-
-    return Response(stream(), mimetype='text/event-stream')
+# def format_sse(data: str, event=None) -> str:
+#     msg = f'data: {data}\n\n'
+#     if event is not None:
+#         msg = f'event: {event}\n{msg}'
+#     return msg
+#
+#
+# @API.route('/stream', methods=['GET'])
+# def listen():
+#     def stream():
+#         q = Queue()
+#         def yieldit(*args, topic: pub.Topic=pub.AUTO_TOPIC, **kwargs):
+#             msg = format_sse(event=topic.name, data=f'args={args} kwargs={kwargs}')
+#             q.put(msg)
+#         pub.subscribe(yieldit, pub.ALL_TOPICS)
+#
+#         while True:
+#             msg = q.get()
+#             yield msg
+#
+#     return Response(stream(), mimetype='text/event-stream')
 
 
 def _get_summary_or_404(pid):
