@@ -14,10 +14,35 @@ from oet.mptools import (
 )
 from oet.procedure import domain
 from oet.procedure.application import application
-from oet.procedure.application.main import ScriptExecutionServiceWorker
+from oet.procedure.application.main import (
+    ScriptExecutionServiceWorker,
+    EventBusWorker
+)
 from tests.oet.mptools.test_mptools import _proc_worker_wrapper_helper
 
 topicMgr = pub.getDefaultTopicMgr()
+
+
+def test_event_bus_worker_verify_message_publishes_when_message_in_work_queue(caplog):
+    """
+    Verify that message event should get published if the event is originated from external
+    """
+    work_q = MPQueue()
+    msg = EventMessage('TEST_SUMMARY', 'PUBSUB', dict(topic='request.script.list', kwargs={'request_id': '123'}))
+    work_q.put(msg)
+    _proc_worker_wrapper_helper(caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True)
+    assert topicMgr.getTopic('request.script.list')
+
+
+def test_event_bus_worker_verify_do_not_publish_message_when_message_originated_from_self(caplog):
+    """
+    Verify that message event should not get published if the event is originated from the self
+    """
+    work_q = MPQueue()
+    msg = EventMessage('TEST', 'PUBSUB', dict(topic='request.script.list', kwargs={'request_id': '123'}))
+    work_q.put(msg)
+    _proc_worker_wrapper_helper(caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True)
+    assert f"Discarding internal event" in caplog.text
 
 
 def test_script_execution_service_worker_verify_list_method_called(caplog):
