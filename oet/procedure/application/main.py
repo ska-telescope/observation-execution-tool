@@ -164,10 +164,16 @@ class ScriptExecutionServiceWorker(EventBusWorker):
     """
     def prepare(self, msg_src, request_id: str, cmd: PrepareProcessCommand):
         self.log(logging.DEBUG, 'Prepare procedure request %s: %s', request_id, cmd)
-        summary = self.ses.prepare(cmd)
-        self.log(logging.DEBUG, 'Prepare procedure %s result: %s', request_id, summary)
+        try:
+            summary = self.ses.prepare(cmd)
+        except FileNotFoundError as e:
+            self.log(logging.INFO, 'Prepare procedure %s failed: %s', request_id, e)
 
-        pub.sendMessage('script.lifecycle.created', request_id=request_id, result=summary)
+            # TODO create failure topic for failures in procedure domain
+            pub.sendMessage('script.lifecycle.created', request_id=request_id, result=e)
+        else:
+            self.log(logging.DEBUG, 'Prepare procedure %s result: %s', request_id, summary)
+            pub.sendMessage('script.lifecycle.created', request_id=request_id, result=summary)
 
     def start(self, msg_src, request_id: str, cmd: StartProcessCommand):
         self.log(logging.DEBUG, 'Start procedure request %s: %s', request_id, cmd)

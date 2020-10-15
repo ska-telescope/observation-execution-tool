@@ -1,8 +1,9 @@
 import time
+import traceback
 from queue import Queue, Empty
 
 import flask
-from flask import Response, Blueprint
+from flask import Blueprint
 from pubsub import pub
 
 from oet.procedure import domain
@@ -130,7 +131,14 @@ def call_and_respond(request_topic, response_topic, *args, **kwargs):
     pub.sendMessage(request_topic, msg_src=msg_src, request_id=my_request_id, *args, **kwargs)
 
     try:
-        return q.get(timeout=TIMEOUT)
+        result = q.get(timeout=TIMEOUT)
+
+        if isinstance(result, Exception):
+            description = ''.join(traceback.format_exception_only(type(result), result))
+            flask.abort(500, description=description)
+
+        return result
+
     except Empty:
         flask.abort(504, description=f'Timeout waiting for msg #{my_request_id} on topic {response_topic}')
 
