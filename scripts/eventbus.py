@@ -21,7 +21,7 @@ def init(subarray_id: int):
 
 
 def announce(msg):
-    pub.sendMessage(topicName='user.script.announce', msg=msg)
+    pub.sendMessage(topicName='user.script.announce', msg_src=__name__, msg=msg)
 
 
 def _main(subarray_id: int):

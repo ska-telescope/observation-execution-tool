@@ -2,8 +2,11 @@
 Unit tests for the procedure REST API module.
 """
 import copy
+import threading
+import time
 from collections import OrderedDict
 from http import HTTPStatus
+from unittest import mock
 
 import flask
 import pytest
@@ -59,21 +62,23 @@ RUN_ENDPOINT = f'{ENDPOINT}/{RUN_SUMMARY.id}'
 
 
 class PubSubHelper:
-    def __init__(self, spec):
+    def __init__(self, spec, match_request_id=True):
         messages = []
         self.messages = messages
         self.spec = spec
+        self.match_request_id = match_request_id
         pub.subscribe(self.respond, pub.ALL_TOPICS)
 
     def respond(self, topic=pub.AUTO_TOPIC, **msg_data):
         self.messages.append((topic, msg_data))
 
         if topic.name in self.spec:
-            (args, kwargs) = self.spec[topic.name].pop()
+            (args, kwargs) = self.spec[topic.name].pop(0)
 
             kwargs['msg_src'] = 'PubSubHelper'
-            if 'request_id' in msg_data:
+            if 'request_id' in msg_data and self.match_request_id:
                 kwargs['request_id'] = msg_data['request_id']
+
             pub.sendMessage(*args, **kwargs)
 
     @property
@@ -118,6 +123,20 @@ def client():
     app.config['msg_src'] = 'unit tests'
     with app.test_client() as client:
         yield client
+
+
+@pytest.fixture
+def short_timeout():
+    """
+    Fixture to shorten grace period before timeout
+    """
+    timeout = restserver.TIMEOUT
+
+    try:
+        restserver.TIMEOUT = 0.1
+        yield
+    finally:
+        restserver.TIMEOUT = timeout
 
 
 def test_get_procedures_with_no_procedures_present_returns_empty_list(client):
@@ -467,3 +486,84 @@ def test_put_procedure_returns_procedure_summary(client):
 
     assert 'procedure' in response_json
     assert_json_equal_to_procedure_summary(CREATE_SUMMARY, response_json['procedure'])
+
+
+def test_stopping_a_non_running_procedure_returns_appropriate_error_message(client):
+    """
+    Invalid procedure state transitions should result in an error.
+    """
+    spec = {
+        'request.script.list': [(['script.pool.list'], dict(result=[CREATE_SUMMARY]))],
+    }
+    helper = PubSubHelper(spec)
+
+    response = client.put(RUN_ENDPOINT, json=dict(state="STOPPED", abort=False))
+    response_json = response.get_json()
+
+    # verify message topic and order
+    assert helper.topics == [
+        'request.script.list',       # procedure retrieval requested
+        'script.pool.list',          # procedure returned
+    ]
+
+    # correct procedure should be stopped
+    assert 'abort_message' in response_json
+    expected_response = 'Cannot stop script with ID 1: Script is not running'
+    assert response_json['abort_message'] == expected_response
+
+
+def test_giving_non_dict_script_args_returns_error_code(client):
+    """
+    script_args JSON parameter must be a dict, otherwise HTTP 500 is raised.
+    """
+    spec = {
+        'request.script.list': [(['script.pool.list'], dict(result=[CREATE_SUMMARY]))],
+    }
+    helper = PubSubHelper(spec)
+
+    json = dict(CREATE_JSON)
+    json.update(script_args=['foo'])
+
+    response = client.put(RUN_ENDPOINT, json=json)
+    assert response.status_code == 400
+
+
+def test_call_and_respond_aborts_with_timeout_when_no_response_received(client, short_timeout):
+    """
+    HTTP 504 (Gateway Timeout) should be raised when message reception wait
+    time exceeds timeout
+    """
+    # do not prime pubsub, so request will timeout
+    response = client.get(ENDPOINT)
+    # 504 and timeout error message
+    assert response.status_code == 504
+
+
+def test_call_and_respond_ignores_responses_when_request_id_differs():
+    """
+    Verify that the messages with different request IDs are ignored.
+    """
+    # call_and_respond will block the MainThread while waiting for its queue
+    # to be filled with a result, hence we need to create another thread which
+    # will broadcast messages as if it's the other component running
+    # concurrently
+    def publish():
+        # sleep long enough for call_and_respond to start running
+        time.sleep(0.1)
+        for i in range(10):
+            pub.sendMessage('response', msg_src='mock', request_id='foo', result=i)
+        pub.sendMessage('response', msg_src='mock', request_id='bar', result='ok')
+
+    t = threading.Thread(target=publish)
+
+    with mock.patch('flask.current_app') as mock_app:
+        mock_app.config = dict(msg_src='mock')
+
+        # this sets the request ID to match to 'bar'
+        with mock.patch('time.time') as mock_time:
+            mock_time.return_value = 'bar'
+
+            t.start()
+            result = restserver.call_and_respond('request', 'response')
+
+    assert result == 'ok'
