@@ -62,7 +62,11 @@ RUN_ENDPOINT = f'{ENDPOINT}/{RUN_SUMMARY.id}'
 
 
 class PubSubHelper:
-    def __init__(self, spec, match_request_id=True):
+    def __init__(self, spec=None, match_request_id=True):
+        # client just wants to capture all messages, no responses required
+        if spec is None:
+            spec = {}
+
         messages = []
         self.messages = messages
         self.spec = spec
