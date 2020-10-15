@@ -1,6 +1,7 @@
 import logging.config
 import logging.handlers
 import threading
+from typing import List
 
 import requests
 from flask import request
@@ -10,6 +11,7 @@ from oet.mptools import (
     init_signals,
     default_signal_handler,
     MainContext,
+    MPQueue,
     EventMessage,
     QueueProcWorker
 )
@@ -235,24 +237,33 @@ def main():
 
         # create the OET components, which will run in child Python processes
         # and monitor the message queues here for event bus messages
-        main_ctx.Proc("SCRIPT EXECUTOR", ScriptExecutionServiceWorker, script_executor_q)
-        main_ctx.Proc("FLASK", FlaskWorker, flask_q)
+        main_ctx.Proc("SESWorker", ScriptExecutionServiceWorker, script_executor_q)
+        main_ctx.Proc("FlaskWorker", FlaskWorker, flask_q)
 
-        while not main_ctx.shutdown_event.is_set():
-            event = main_ctx.event_queue.safe_get()
-            if not event:
-                continue
-            elif event.msg_type == "PUBSUB":
-                for q in event_bus_queues:
-                    q.put(event)
-            elif event.msg_type == "FATAL":
-                main_ctx.log(logging.INFO, f"Fatal Event received: {event.msg}")
-                break
-            elif event.msg_type == "END":
-                main_ctx.log(logging.INFO, f"Shutdown Event received: {event.msg}")
-                break
-            else:
-                main_ctx.log(logging.ERROR, f"Unknown Event: {event}")
+        # with all workers and queues set up, start processing messages
+        main_loop(main_ctx, event_bus_queues)
+
+
+def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
+    """
+    Main message parsing and routing loop, extracted from main() to increase testability.
+
+    :param main_ctx:
+    :param event_bus_queues:
+    :return:
+    """
+    while not main_ctx.shutdown_event.is_set():
+        event = main_ctx.event_queue.safe_get()
+        if not event:
+            continue
+        elif event.msg_type == "PUBSUB":
+            for q in event_bus_queues:
+                q.put(event)
+        elif event.msg_type == "END":
+            main_ctx.log(logging.INFO, f"Shutdown Event received: {event.msg}")
+            break
+        else:
+            main_ctx.log(logging.ERROR, f"Unknown Event: {event}")
 
 
 if __name__ == "__main__":
