@@ -263,3 +263,21 @@ def test_main_loop_checks_shutdown_event_after_every_queue_get():
 
     assert event_q.safe_close() == 0
     assert mock_ctx.shutdown_event.is_set.call_count == 3
+
+
+def test_main_loop_ends_on_fatal_message():
+    """
+    Main loop should terminate when fatal messsage is received.
+    """
+    mock_ctx = mock.MagicMock()
+
+    event_q = MPQueue()
+    event_q.put(EventMessage('TEST', 'FATAL', msg='foo'))
+    event_q.put(EventMessage('TEST', 'END', msg='foo'))
+    mock_ctx.event_queue = event_q
+
+    mock_ctx.shutdown_event.is_set.return_value = False
+
+    main_loop(mock_ctx, [])
+
+    assert event_q.safe_close() == 1

@@ -259,6 +259,9 @@ def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
         elif event.msg_type == "PUBSUB":
             for q in event_bus_queues:
                 q.put(event)
+        elif event.msg_type == "FATAL":
+            main_ctx.log(logging.INFO, f"Fatal Event received: {event.msg}")
+            break
         elif event.msg_type == "END":
             main_ctx.log(logging.INFO, f"Shutdown Event received: {event.msg}")
             break
