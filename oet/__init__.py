@@ -9,6 +9,12 @@ from ska.logging import configure_logging
 
 from .features import Features
 
+import oet.event.topics
+from pubsub import pub
+
+pub.setTopicUnspecifiedFatal(True)
+pub.addTopicDefnProvider(oet.event.topics, pub.TOPIC_TREE_FROM_CLASS)
+
 configure_logging()
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))

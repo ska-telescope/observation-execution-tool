@@ -1,122 +1,252 @@
-import enum
 
 
-class EventTopic(enum.Enum):
-    def __getattr__(self, item):
-        if item != '_value_':
-            return getattr(self.value, item)
-        raise AttributeError
-
-
-class Procedure(EventTopic):
+class request:
     """
-    Topic for events related to Python scripting
+    Root topic for events emitted when a user or system component has made a
+    request.
     """
-    class Request(EventTopic):
+    class procedure:
         """
-        Topic for requests to control Python scripting
-
-        Message data
-        request_id: Unique identifier for request
-        cmd: Command to send with request
-
-        Message example
-        pub.sendMessage('procedure.request.create', request_id=1234, cmd=PrepareProcessCommand)
+        Topic for user requests related to procedures.
         """
-        Create = enum.auto()
-        Start = enum.auto()
-        Stop = enum.auto()
-
-        def __str__(self):
-            return 'procedure.request.' + self.name.lower()
-
-    class Pool(EventTopic):
-        """
-        Topic for events related to inspecting procedures.
-
-        Message data
-        request_id: Unique identifier for request
-        procedures: List of existing Procedures
-
-        Message example
-        pub.sendMessage('procedure.pool.list', request_id=1234, procedures=List[ProcedureSummary])
-        """
-        List = enum.auto()
-
-        def __str__(self):
-            return 'procedure.pool.' + self.name.lower()
-
-    class Lifecycle(EventTopic):
-        """
-        Topic for events related to changes in Procedure state.
-
-        Message data
-        request_id: Unique identifier for request
-        procedure: Updated procedure
-
-        Message example
-        pub.sendMessage('procedure.lifecycle.created', request_id=1234, procedure=ProcedureSummary)
-        """
-        Created = enum.auto()
-        Started = enum.auto()
-        Finished = enum.auto()
-
-        def __str__(self):
-            return 'procedure.lifecycle.' + self.name.lower()
-
-
-class SB(EventTopic):
-    """
-    Topic for events related to Scheduling Blocks
-    """
-    class Lifecycle(EventTopic):
-        """
-        Topic for events related to changes in Scheduling Block state.
-        """
-        Allocated = enum.auto()
-
-        class Observation(EventTopic):
+        class create:
             """
-            Topic for events related to changes in observation executed within
-            a Scheduling Block.
+            Emitted when a request to create a procedure is received.
             """
-            Started = enum.auto()
-            Finished = enum.auto()
+            def msgDataSpec(msg_src, request_id, cmd):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - cmd: PrepareProcessCommand containing request parameters
+                """
+        class list:
+            """
+            Emitted when a request to enumerate all procedures is received.
+            """
+            def msgDataSpec(msg_src, request_id, pids=None):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - pids: Procedure IDs to list
+                """
+        class start:
+            """
+            Emitted when a request to start procedure execution is received.
+            """
+            def msgDataSpec(msg_src, request_id, cmd):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - cmd: StartProcessCommand containing request parameters
+                """
+        class stop:
+            """
+            Emitted when a request to stop a procedure is received.
+            """
+            def msgDataSpec(msg_src, request_id, cmd):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - cmd: StartProcessCommand containing request parameters
+                """
 
-            def __str__(self):
-                return 'sb.lifecycle.observation' + self.name.lower()
 
-        def __str__(self):
-            return 'sb.lifecycle.' + self.name.lower()
-
-
-class Subarray(EventTopic):
+class procedure:
     """
-    Topic for events related to Subarray commands
+    Root topic for events related to procedures.
     """
-    Configured = enum.auto()
-
-    class Resources(EventTopic):
+    class lifecycle:
         """
-        Topic for events related to changes in Subarray resources.
+        Topic for events related to procedure lifecycle.
         """
-        Allocated = enum.auto()
-        Deallocated = enum.auto()
-
-        def __str__(self):
-            return 'subarray.resources.' + self.name.lower()
-
-    class Scan(EventTopic):
+        class created:
+            """
+            Emitted when a procedure is created, i.e., a script is loaded and
+            Python interpreter initialised.
+            """
+            def msgDataSpec(msg_src, request_id, result):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - result: ProcedureSummary characterising the created procedure
+                """
+        class started:
+            """
+            Emitted when a procedure starts, i.e., script starts execution.
+            """
+            def msgDataSpec(msg_src, request_id, result):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - result: ProcedureSummary characterising the created procedure
+                """
+        class stopped:
+            """
+            Emitted when a procedure stops, e.g., script completes or is aborted.
+            """
+            def msgDataSpec(msg_src, request_id, result):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - result: ProcedureSummary characterising the created procedure
+                """
+    class pool:
         """
-        Topic for events related to Subarray scan execution.
+        Topic for events on characterisation of the process pool.
         """
-        Started = enum.auto()
-        Stopped = enum.auto()
+        class list:
+            """
+            Emitted when current procedures and their status is enumerated.
+            """
+            def msgDataSpec(msg_src, request_id, result):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - result: list of ProcedureSummary instances characterising
+                          procedures and their states.
+                """
 
-        def __str__(self):
-            return 'subarray.scan.' + self.name.lower()
 
-    def __str__(self):
-        return 'subarray.' + self.name.lower()
+class user:
+    """
+    UNDOCUMENTED: created as parent without specification
+    """
+    class script:
+        """
+        UNDOCUMENTED: created as parent without specification
+        """
+        class announce:
+            """
+            UNDOCUMENTED: created without spec
+            """
+            def msgDataSpec(msg_src, msg):
+                """
+                - msg_src: component from which the request originated
+                - msg: user message
+                """
 
 
+class sb:
+    """
+
+    """
+    class lifecycle:
+        """
+
+        """
+        class allocated:
+            """
+
+            """
+            def msgDataSpec(msg_src, sb_id):
+                """
+                - msg_src: component from which the request originated
+                - sb_id: Scheduling Block ID
+                """
+
+        class observation:
+            """
+
+            """
+            class started:
+                """
+
+                """
+                def msgDataSpec(msg_src, sb_id):
+                    """
+                    - msg_src: component from which the request originated
+                    - sb_id: Scheduling Block ID
+                    """
+            class finished:
+                """
+
+                """
+                class succeeded:
+                    """
+
+                    """
+                    def msgDataSpec(msg_src, sb_id):
+                        """
+                        - msg_src: component from which the request originated
+                        - sb_id: Scheduling Block ID
+                        """
+                class failed:
+                    """
+
+                    """
+                    def msgDataSpec(msg_src, sb_id):
+                        """
+                        - msg_src: component from which the request originated
+                        - sb_id: Scheduling Block ID
+                        """
+
+
+class subarray:
+    """
+
+    """
+    class resources:
+        """
+
+        """
+        class allocated:
+            """
+
+            """
+            def msgDataSpec(msg_src, subarray_id):
+                """
+                - msg_src: component from which the request originated
+                - sb_id: Subarray ID
+                """
+
+        class deallocated:
+            """
+
+            """
+            def msgDataSpec(msg_src, subarray_id):
+                """
+                - msg_src: component from which the request originated
+                - sb_id: Subarray ID
+                """
+    class configured:
+        """
+
+        """
+        def msgDataSpec(msg_src, subarray_id):
+            """
+            - msg_src: component from which the request originated
+            - sb_id: Subarray ID
+            """
+
+    class scan:
+        """
+
+        """
+        class started:
+            """
+
+            """
+            def msgDataSpec(msg_src, subarray_id):
+                """
+                - msg_src: component from which the request originated
+                - sb_id: Subarray ID
+                """
+        class finished:
+            """
+
+            """
+            def msgDataSpec(msg_src, subarray_id):
+                """
+                - msg_src: component from which the request originated
+                - sb_id: Subarray ID
+                """
+
+    class fault:
+        """
+
+        """
+        def msgDataSpec(msg_src, subarray_id):
+            """
+            - msg_src: component from which the request originated
+            - sb_id: Subarray ID
+            """
