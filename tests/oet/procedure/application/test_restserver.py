@@ -551,8 +551,8 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
         # sleep long enough for call_and_respond to start running
         time.sleep(0.1)
         for i in range(10):
-            pub.sendMessage('response', msg_src='mock', request_id='foo', result=i)
-        pub.sendMessage('response', msg_src='mock', request_id='bar', result='ok')
+            pub.sendMessage('procedure.pool.list', msg_src='mock', request_id='foo', result=i)
+        pub.sendMessage('procedure.pool.list', msg_src='mock', request_id='bar', result='ok')
 
     t = threading.Thread(target=publish)
 
@@ -564,6 +564,6 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
             mock_time.return_value = 'bar'
 
             t.start()
-            result = restserver.call_and_respond('request', 'response')
+            result = restserver.call_and_respond('request.procedure.list', 'procedure.pool.list')
 
     assert result == 'ok'
