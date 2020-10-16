@@ -168,7 +168,7 @@ piplock: build  ## overwrite Pipfile.lock with the image version
 
 interactive: up
 interactive:  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
-	docker run --rm -it -p 3000:3000 --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) --network=$(NETWORK_MODE) \
+	docker run --rm -it -p 5000:5000 --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) --network=$(NETWORK_MODE) \
 	  -e OET_REST_URI=http://$(shell hostname):5000/api/v1.0/procedures -v $(CURDIR):/app $(IMAGE_TO_TEST) /bin/bash
 
 down:  ## stop develop/test environment and any interactive session
@@ -179,7 +179,7 @@ ifneq ($(NETWORK_MODE),host)
 endif
 
 rest: up  ## start OET REST server
-	docker run --rm -e FLASK_ENV=development -e FLASK_APP=oet/procedure/application/restserver:create_app -p 5000:5000 --name=oet-rest $(IMAGE_TO_TEST) flask run -h 0.0.0.0
+	docker run --rm -p 5000:5000 --name=oet-rest $(IMAGE_TO_TEST) python3 /app/oet/procedure/application/main.py
 
 help:  ## show this help.
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
