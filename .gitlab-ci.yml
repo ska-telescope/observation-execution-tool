@@ -30,7 +30,7 @@ stages:
 
 build:
   tags:
-    - docker-executor
+    - k8srunner
   stage: build
   script:
     - make build
@@ -38,7 +38,7 @@ build:
 build_wheel_for_publication: # Executed on a tag:
   stage: build
   tags:
-    - docker-executor
+    - k8srunner
   script:
     - apt-get update
     - apt-get install -y python3-pip
@@ -50,7 +50,7 @@ build_wheel_for_publication: # Executed on a tag:
 
 test:
   tags:
-    - docker-executor
+    - k8srunner
   stage: test
   script:
     - make test
@@ -61,7 +61,7 @@ test:
 
 linting:
   tags:
-    - docker-executor
+    - k8srunner
   stage: linting
   script:
     - make lint
@@ -73,7 +73,7 @@ linting:
 pages:
   when: always
   tags:
-    - docker-executor
+    - k8srunner
   stage: pages
   dependencies:
     - test
@@ -88,7 +88,7 @@ pages:
 
 push_OET_image:
   tags:
-    - docker-executor
+    - k8srunner
   stage: publish
   script:
     - make push
@@ -99,7 +99,7 @@ push_OET_image:
 
 push_SSH_image:
   tags:
-    - docker-executor
+    - k8srunner
   stage: publish
   script:
     - make -C extras/ssh build
@@ -111,7 +111,7 @@ push_SSH_image:
 
 push_jupyter_image:
   tags:
-    - docker-executor
+    - k8srunner
   stage: publish
   script:
     - make -C extras/jupyter build
@@ -123,7 +123,7 @@ push_jupyter_image:
 
 publish_to_nexus:
   tags:
-    - docker-executor
+    - k8srunner
   stage: publish
   variables:
     TWINE_USERNAME: $TWINE_USERNAME
