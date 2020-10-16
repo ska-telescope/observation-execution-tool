@@ -10,6 +10,7 @@ from oet.mptools import (
     MainContext,
     MPQueue,
 )
+from oet.event import topics
 from oet.procedure import domain
 from oet.procedure.application import application
 from oet.procedure.application.main import (
@@ -30,11 +31,11 @@ def test_event_bus_worker_verify_message_publishes_when_message_in_work_queue(ca
     helper = PubSubHelper()
 
     work_q = MPQueue()
-    msg = EventMessage('EXTERNAL COMPONENT', 'PUBSUB', dict(topic='request.script.list', kwargs={'request_id': '123'}))
+    msg = EventMessage('EXTERNAL COMPONENT', 'PUBSUB', dict(topic=topics.request.procedure.list, kwargs={'request_id': '123'}))
     work_q.put(msg)
     _proc_worker_wrapper_helper(caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True)
 
-    assert 'request.script.list' in helper.topics
+    assert topics.request.procedure.list in helper.topic_list
 
 
 def test_event_bus_worker_verify_do_not_publish_message_when_message_originated_from_self(caplog):
@@ -46,10 +47,11 @@ def test_event_bus_worker_verify_do_not_publish_message_when_message_originated_
     work_q = MPQueue()
     # TEST is the default component name assigned in
     # _proc_worker_wrapper_helper. This message should be ignored.
-    msg = EventMessage('TEST', 'PUBSUB', dict(topic='request.script.list', kwargs={'request_id': '123'}))
+    msg = EventMessage('TEST', 'PUBSUB', dict(topic=topics.request.procedure.list, kwargs={'request_id': '123'}))
+
     work_q.put(msg)
     # But coming from NONTEST, this message should be republished.
-    msg = EventMessage('NONTEST', 'PUBSUB', dict(topic='request.script.list', kwargs={'request_id': '456'}))
+    msg = EventMessage('NONTEST', 'PUBSUB', dict(topic=topics.request.procedure.list, kwargs={'request_id': '456'}))
     work_q.put(msg)
 
     _proc_worker_wrapper_helper(caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True)
@@ -60,12 +62,12 @@ def test_event_bus_worker_verify_do_not_publish_message_when_message_originated_
 
 def test_script_execution_service_worker_verify_list_method_called(caplog):
     """
-    SES.summarise should be called when 'request.script.list' message is received
+    SES.summarise should be called when 'request.procedure.list' message is received
     """
     helper = PubSubHelper()
 
     work_q = MPQueue()
-    msg = EventMessage('TEST_SUMMARY', 'PUBSUB', dict(topic='request.script.list', kwargs={'request_id': '123'}))
+    msg = EventMessage('TEST_SUMMARY', 'PUBSUB', dict(topic=topics.request.procedure.list, kwargs={'request_id': '123'}))
     work_q.put(msg)
     event = mp.Event()
 
@@ -76,39 +78,40 @@ def test_script_execution_service_worker_verify_list_method_called(caplog):
     assert event.is_set() is True
     mock_cls.assert_called_once()
 
-    assert helper.topics == [
-        'request.script.list',   # list requested
-        'script.pool.list'       # response published
+    assert helper.topic_list == [
+        topics.request.procedure.list,   # list requested
+        topics.procedure.pool.list       # response published
     ]
 
 
 def test_script_execution_service_worker_verify_start_method_called(caplog):
     """
-    SES.start should be called when 'request.script.started' message is received
+    SES.start should be called when 'request.procedure.started' message is received
     """
     cmd = application.StartProcessCommand(process_uid=123, run_args=domain.ProcedureInput())
     with mock.patch('oet.procedure.application.main.ScriptExecutionService.start') as mock_method:
-        assert_command_request_and_response(caplog, mock_method, 'request.script.start', 'script.lifecycle.started',
-                                            cmd)
+        assert_command_request_and_response(caplog, mock_method, topics.request.procedure.start,
+                                            topics.procedure.lifecycle.started, cmd)
 
 
 def test_script_execution_service_worker_verify_prepare_method_called(caplog):
     """
-    SES.prepare should be called when 'request.script.create' message is received
+    SES.prepare should be called when 'request.procedure.create' message is received
     """
     cmd = application.PrepareProcessCommand(script_uri='test:///hi', init_args=domain.ProcedureInput())
     with mock.patch('oet.procedure.application.main.ScriptExecutionService.prepare') as mock_method:
-        assert_command_request_and_response(caplog, mock_method, 'request.script.create', 'script.lifecycle.created',
-                                            cmd)
+        assert_command_request_and_response(caplog, mock_method, topics.request.procedure.create,
+                                            topics.procedure.lifecycle.created, cmd)
 
 
 def test_script_execution_service_worker_verify_stop_method_called(caplog):
     """
-    SES.stop should be called when 'request.script.stop' message is received
+    SES.stop should be called when 'request.procedure.stop' message is received
     """
     cmd = application.StopProcessCommand(process_uid=123, run_abort=False)
     with mock.patch('oet.procedure.application.main.ScriptExecutionService.stop') as mock_method:
-        assert_command_request_and_response(caplog, mock_method, 'request.script.stop', 'script.lifecycle.stopped', cmd)
+        assert_command_request_and_response(caplog, mock_method, topics.request.procedure.stop,
+                                            topics.procedure.lifecycle.stopped, cmd)
 
 
 def assert_command_request_and_response(caplog, mock_method, request_topic, response_topic, cmd):
@@ -127,7 +130,7 @@ def assert_command_request_and_response(caplog, mock_method, request_topic, resp
     mock_method.assert_called_once()
     assert mock_method.call_args[0][0] == cmd
 
-    assert helper.topics == [
+    assert helper.topic_list == [
         request_topic, response_topic
     ]
 

@@ -23,6 +23,7 @@ from oet.procedure.application.application import (
     ScriptExecutionService
 )
 
+from oet.event import topics
 
 class EventBusWorker(QueueProcWorker):
     """
@@ -173,32 +174,32 @@ class ScriptExecutionServiceWorker(EventBusWorker):
             self.log(logging.INFO, 'Prepare procedure %s failed: %s', request_id, e)
 
             # TODO create failure topic for failures in procedure domain
-            pub.sendMessage('script.lifecycle.created', request_id=request_id, result=e)
+            pub.sendMessage(topics.procedure.lifecycle.created, msg_src=self.name, request_id=request_id, result=e)
 
         else:
             self.log(logging.DEBUG, 'Prepare procedure %s result: %s', request_id, summary)
-            pub.sendMessage('script.lifecycle.created', request_id=request_id, result=summary)
+            pub.sendMessage(topics.procedure.lifecycle.created, msg_src=self.name, request_id=request_id, result=summary)
 
     def start(self, msg_src, request_id: str, cmd: StartProcessCommand):
         self.log(logging.DEBUG, 'Start procedure request %s: %s', request_id, cmd)
         summary = self.ses.start(cmd)
         self.log(logging.DEBUG, 'Start procedure %s result: %s', request_id, summary)
 
-        pub.sendMessage('script.lifecycle.started', request_id=request_id, result=summary)
+        pub.sendMessage(topics.procedure.lifecycle.started, msg_src=self.name, request_id=request_id, result=summary)
 
     def list(self, msg_src, request_id: str, pids=None):
         self.log(logging.DEBUG, 'List procedures for request %s', request_id)
         summaries = self.ses.summarise(pids)
         self.log(logging.DEBUG, 'List result: %s', summaries)
 
-        pub.sendMessage('script.pool.list', request_id=request_id, result=summaries)
+        pub.sendMessage(topics.procedure.pool.list, msg_src=self.name, request_id=request_id, result=summaries)
 
     def stop(self, msg_src, request_id: str, cmd: StopProcessCommand):
         self.log(logging.DEBUG, 'Stop procedure request %s: %s', request_id, cmd)
         summary = self.ses.stop(cmd)
         self.log(logging.DEBUG, 'Stop result: %s', summary)
 
-        pub.sendMessage('script.lifecycle.stopped', request_id=request_id, result=summary)
+        pub.sendMessage(topics.procedure.lifecycle.stopped, msg_src=self.name, request_id=request_id, result=summary)
 
     def startup(self) -> None:
         super().startup()
@@ -206,10 +207,10 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         self.ses = ScriptExecutionService()
 
         # wire up topics to the corresponding SES methods
-        pub.subscribe(self.prepare, 'request.script.create')
-        pub.subscribe(self.start, 'request.script.start')
-        pub.subscribe(self.list, 'request.script.list')
-        pub.subscribe(self.stop, 'request.script.stop')
+        pub.subscribe(self.prepare, topics.request.procedure.create)
+        pub.subscribe(self.start, topics.request.procedure.start)
+        pub.subscribe(self.list, topics.request.procedure.list)
+        pub.subscribe(self.stop, topics.request.procedure.stop)
 
     def shutdown(self) -> None:
         pub.unsubscribe(self.prepare, pub.ALL_TOPICS)

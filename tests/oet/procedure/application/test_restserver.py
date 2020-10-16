@@ -13,6 +13,7 @@ import pytest
 from pubsub import pub
 
 import oet.procedure.domain as domain
+from oet.event import topics
 from oet.procedure.application import restserver
 from oet.procedure.application.application import ProcedureSummary, PrepareProcessCommand, \
     StartProcessCommand, StopProcessCommand
@@ -74,10 +75,11 @@ class PubSubHelper:
         pub.subscribe(self.respond, pub.ALL_TOPICS)
 
     def respond(self, topic=pub.AUTO_TOPIC, **msg_data):
+        topic_cls = self.get_topic_class(topics, topic.name)
         self.messages.append((topic, msg_data))
 
-        if topic.name in self.spec:
-            (args, kwargs) = self.spec[topic.name].pop(0)
+        if topic_cls in self.spec:
+            (args, kwargs) = self.spec[topic_cls].pop(0)
 
             kwargs['msg_src'] = 'PubSubHelper'
             if 'request_id' in msg_data and self.match_request_id:
@@ -86,12 +88,19 @@ class PubSubHelper:
             pub.sendMessage(*args, **kwargs)
 
     @property
-    def topics(self):
-        topics = [topic.name for (topic, _) in self.messages]
-        return topics
+    def topic_list(self):
+        topic_list = [self.get_topic_class(topics, topic.name) for (topic, _) in self.messages]
+        return topic_list
 
     def __getitem__(self, key):
         return self.messages[key]
+
+    def get_topic_class(self, module, cls):
+        if not cls:
+            return module
+        s = cls.split('.')
+        cls = getattr(module, s[0])
+        return self.get_topic_class(cls, '.'.join(s[1:]))
 
 
 def assert_json_equal_to_procedure_summary(summary: ProcedureSummary, summary_json: dict):
@@ -149,7 +158,7 @@ def test_get_procedures_with_no_procedures_present_returns_empty_list(client):
     have been registered
     """
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[]))],
     }
     _ = PubSubHelper(spec)
 
@@ -164,7 +173,7 @@ def test_get_procedures_returns_expected_summaries(client):
     Test that listing procedure resources returns the expected JSON payload
     """
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[CREATE_SUMMARY]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[CREATE_SUMMARY]))],
     }
     _ = PubSubHelper(spec)
 
@@ -182,7 +191,7 @@ def test_get_procedure_by_id(client):
     Verify that getting a resource by ID returns the expected JSON payload
     """
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[CREATE_SUMMARY]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[CREATE_SUMMARY]))],
     }
     _ = PubSubHelper(spec)
 
@@ -202,7 +211,7 @@ def test_get_procedure_gives_404_for_invalid_id(client):
     # empty list as response shows that PID not found when trying to retrieve
     # procedure
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[]))],
     }
     _ = PubSubHelper(spec)
 
@@ -215,7 +224,7 @@ def test_successful_post_to_endpoint_returns_created_http_status(client):
     Verify that creating a new Procedure returns the CREATED HTTP status code
     """
     spec = {
-        'request.script.create': [(['script.lifecycle.created'], dict(result=CREATE_SUMMARY))],
+        topics.request.procedure.create: [([topics.procedure.lifecycle.created], dict(result=CREATE_SUMMARY))],
     }
     _ = PubSubHelper(spec)
 
@@ -229,7 +238,7 @@ def test_successful_post_to_endpoint_returns_summary_in_response(client):
     a summary of the created Procedure.
     """
     spec = {
-        'request.script.create': [(['script.lifecycle.created'], dict(result=CREATE_SUMMARY))],
+        topics.request.procedure.create: [([topics.procedure.lifecycle.created], dict(result=CREATE_SUMMARY))],
     }
     _ = PubSubHelper(spec)
 
@@ -268,16 +277,16 @@ def test_post_to_endpoint_sends_init_arguments(client):
     new Procedure.
     """
     spec = {
-        'request.script.create': [(['script.lifecycle.created'], dict(result=CREATE_SUMMARY))],
+        topics.request.procedure.create: [([topics.procedure.lifecycle.created], dict(result=CREATE_SUMMARY))],
     }
     helper = PubSubHelper(spec)
 
     client.post(ENDPOINT, json=CREATE_JSON)
 
     # verify message sequence and topics
-    assert helper.topics == [
-        'request.script.create',      # procedure creation requested
-        'script.lifecycle.created',   # CREATED ProcedureSummary returned
+    assert helper.topic_list == [
+        topics.request.procedure.create,      # procedure creation requested
+        topics.procedure.lifecycle.created,   # CREATED ProcedureSummary returned
     ]
 
     # now verify arguments were extracted from JSON and passed into command
@@ -293,7 +302,7 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
     # empty list in response signifies that PID was not found when requesting
     # ProcedureSummary
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[]))],
     }
     helper = PubSubHelper(spec)
 
@@ -301,9 +310,9 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
     # verify message sequence and topics
-    assert helper.topics == [
-        'request.script.list',      # procedure retrieval requested
-        'script.pool.list',         # no procedure returned
+    assert helper.topic_list == [
+        topics.request.procedure.list,      # procedure retrieval requested
+        topics.procedure.pool.list,         # no procedure returned
     ]
 
 
@@ -314,7 +323,7 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
     # The procedure is retrieved before the JSON is examined, hence we need to
     # prime the pubsub messages
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[CREATE_SUMMARY]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[CREATE_SUMMARY]))],
     }
     helper = PubSubHelper(spec)
 
@@ -322,9 +331,9 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     # verify message sequence and topics
-    assert helper.topics == [
-        'request.script.list',      # procedure retrieval requested
-        'script.pool.list',         # procedure returned
+    assert helper.topic_list == [
+        topics.request.procedure.list,      # procedure retrieval requested
+        topics.procedure.pool.list,         # procedure returned
     ]
 
 
@@ -334,15 +343,15 @@ def test_put_procedure_calls_run_on_execution_service(client):
     when a valid 'start Procedure' PUT request is received
     """
     # Message sequence for starting a CREATED procedure is:
-    # 1. request.script.list to retrieve the Procedure to inspect
-    # 2. script.pool.list is sent with response = [ProcedureSummary]
+    # 1. request.procedure.list to retrieve the Procedure to inspect
+    # 2. procedure.pool.list is sent with response = [ProcedureSummary]
     # Code sees old state is CREATED, required state is RUNNING
-    # 3. request.script.start is sent to request procedure starts execution
-    # 4. script.lifecycle.started response sent with list containing
+    # 3. request.procedure.start is sent to request procedure starts execution
+    # 4. procedure.lifecycle.started response sent with list containing
     #    ProcedureSummary describing procedure which is now running
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[CREATE_SUMMARY]))],
-        'request.script.start': [(['script.lifecycle.started'], dict(result=RUN_SUMMARY))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[CREATE_SUMMARY]))],
+        topics.request.procedure.start: [([topics.procedure.lifecycle.started], dict(result=RUN_SUMMARY))],
     }
     helper = PubSubHelper(spec)
 
@@ -354,11 +363,11 @@ def test_put_procedure_calls_run_on_execution_service(client):
     assert_json_equal_to_procedure_summary(RUN_SUMMARY, response_json['procedure'])
 
     # verify message sequence and topics
-    assert helper.topics == [
-        'request.script.list',      # procedure retrieval requested
-        'script.pool.list',         # procedure returned
-        'request.script.start',     # procedure abort requested
-        'script.lifecycle.started'  # procedure abort response
+    assert helper.topic_list == [
+        topics.request.procedure.list,      # procedure retrieval requested
+        topics.procedure.pool.list,         # procedure returned
+        topics.request.procedure.start,     # procedure abort requested
+        topics.procedure.lifecycle.started  # procedure abort response
     ]
 
     # verify correct procedure was started
@@ -372,15 +381,15 @@ def test_put_procedure_calls_stop_and_executes_abort_script(client):
     abort a running procedure is received.
     """
     # Message sequence for stopping a RUNNING procedure is:
-    # 1. request.script.list to retrieve the Procedure to inspect
-    # 2. script.pool.list is sent with response = [ProcedureSummary]
+    # 1. request.procedure.list to retrieve the Procedure to inspect
+    # 2. procedure.pool.list is sent with response = [ProcedureSummary]
     # Code sees old state is RUNNING, required state is STOPPED
-    # 3. request.script.stop is sent to request script abort
-    # 4. script.lifecycle.stopped response sent with list containing
+    # 3. request.procedure.stop is sent to request script abort
+    # 4. procedure.lifecycle.stopped response sent with list containing
     #    ProcedureSummary for abort script which is now running
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[RUN_SUMMARY]))],
-        'request.script.stop': [(['script.lifecycle.stopped'], dict(result=[RUN_SUMMARY]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[RUN_SUMMARY]))],
+        topics.request.procedure.stop: [([topics.procedure.lifecycle.stopped], dict(result=[RUN_SUMMARY]))],
     }
     helper = PubSubHelper(spec)
 
@@ -388,11 +397,11 @@ def test_put_procedure_calls_stop_and_executes_abort_script(client):
     response_json = response.get_json()
 
     # verify message sequence and topics
-    assert helper.topics == [
-        'request.script.list',  # procedure retrieval requested
-        'script.pool.list',  # procedure returned
-        'request.script.stop',  # procedure abort requested
-        'script.lifecycle.stopped'  # procedure abort response
+    assert helper.topic_list == [
+        topics.request.procedure.list,  # procedure retrieval requested
+        topics.procedure.pool.list,  # procedure returned
+        topics.request.procedure.stop,  # procedure abort requested
+        topics.procedure.lifecycle.stopped  # procedure abort response
     ]
 
     # verify command payload - correct procedure should be stopped in step #3
@@ -410,15 +419,15 @@ def test_put_procedure_calls_stop_on_execution_service(client):
     but not abort a running procedure is received.
      """
     # Message sequence for stopping a RUNNING procedure is:
-    # 1. request.script.list to retrieve the Procedure to inspect
-    # 2. script.pool.list is sent with response = [ProcedureSummary]
+    # 1. request.procedure.list to retrieve the Procedure to inspect
+    # 2. procedure.pool.list is sent with response = [ProcedureSummary]
     # - code sees old state is RUNNING, required state is STOPPED
-    # 3. request.script.stop is sent to request script abort
-    # 4. script.lifecycle.stopped response sent with empty list, showing no
-    #    abort script is running
+    # 3. request.procedure.stop is sent to request script abort
+    # 4. procedure.lifecycle.stopped response sent with empty list, showing no
+    #    abort procedure is running
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[RUN_SUMMARY]))],
-        'request.script.stop': [(['script.lifecycle.stopped'], dict(result=[]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[RUN_SUMMARY]))],
+        topics.request.procedure.stop: [([topics.procedure.lifecycle.stopped], dict(result=[]))],
     }
     helper = PubSubHelper(spec)
 
@@ -426,11 +435,11 @@ def test_put_procedure_calls_stop_on_execution_service(client):
     response_json = response.get_json()
 
     # verify message topic and order
-    assert helper.topics == [
-        'request.script.list',       # procedure retrieval requested
-        'script.pool.list',          # procedure returned
-        'request.script.stop',       # procedure abort requested
-        'script.lifecycle.stopped'   # procedure abort response
+    assert helper.topic_list == [
+        topics.request.procedure.list,       # procedure retrieval requested
+        topics.procedure.pool.list,          # procedure returned
+        topics.request.procedure.stop,       # procedure abort requested
+        topics.procedure.lifecycle.stopped   # procedure abort response
     ]
 
     # correct procedure should be stopped
@@ -448,11 +457,11 @@ def test_put_procedure_does_not_start_a_procedure_unless_new_state_is_running(cl
     RUNNING.
     """
     # Message sequence is:
-    # 1. request.script.list to retrieve the Procedure to inspect
-    # 2. script.pool.list is sent with response = [ProcedureSummary]
+    # 1. request.procedure.list to retrieve the Procedure to inspect
+    # 2. procedure.pool.list is sent with response = [ProcedureSummary]
     # - code sees new state is not RUNNING, realises it's a no-op request
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[CREATE_SUMMARY]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[CREATE_SUMMARY]))],
     }
     helper = PubSubHelper(spec)
 
@@ -463,7 +472,7 @@ def test_put_procedure_does_not_start_a_procedure_unless_new_state_is_running(cl
     _ = client.put(RUN_ENDPOINT, json=json)
 
     # assert that request to start a procedure was not broadcast
-    assert 'request.script.start' not in helper.topics
+    assert topics.request.procedure.start not in helper.topic_list
 
 
 def test_put_procedure_returns_procedure_summary(client):
@@ -472,11 +481,11 @@ def test_put_procedure_returns_procedure_summary(client):
     transition doesn't occur
     """
     # Message sequence is:
-    # 1. request.script.list to retrieve the Procedure to inspect
-    # 2. script.pool.list is sent with response = [ProcedureSummary]
+    # 1. request.procedure.list to retrieve the Procedure to inspect
+    # 2. procedure.pool.list is sent with response = [ProcedureSummary]
     # - code sees new state is not RUNNING, realises it's a no-op request
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[CREATE_SUMMARY]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[CREATE_SUMMARY]))],
     }
     helper = PubSubHelper(spec)
 
@@ -497,7 +506,7 @@ def test_stopping_a_non_running_procedure_returns_appropriate_error_message(clie
     Invalid procedure state transitions should result in an error.
     """
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[CREATE_SUMMARY]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[CREATE_SUMMARY]))],
     }
     helper = PubSubHelper(spec)
 
@@ -505,9 +514,9 @@ def test_stopping_a_non_running_procedure_returns_appropriate_error_message(clie
     response_json = response.get_json()
 
     # verify message topic and order
-    assert helper.topics == [
-        'request.script.list',       # procedure retrieval requested
-        'script.pool.list',          # procedure returned
+    assert helper.topic_list == [
+        topics.request.procedure.list,       # procedure retrieval requested
+        topics.procedure.pool.list,          # procedure returned
     ]
 
     # correct procedure should be stopped
@@ -521,7 +530,7 @@ def test_giving_non_dict_script_args_returns_error_code(client):
     script_args JSON parameter must be a dict, otherwise HTTP 500 is raised.
     """
     spec = {
-        'request.script.list': [(['script.pool.list'], dict(result=[CREATE_SUMMARY]))],
+        topics.request.procedure.list: [([topics.procedure.pool.list], dict(result=[CREATE_SUMMARY]))],
     }
     helper = PubSubHelper(spec)
 
@@ -555,8 +564,8 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
         # sleep long enough for call_and_respond to start running
         time.sleep(0.1)
         for i in range(10):
-            pub.sendMessage('response', msg_src='mock', request_id='foo', result=i)
-        pub.sendMessage('response', msg_src='mock', request_id='bar', result='ok')
+            pub.sendMessage(topics.procedure.pool.list, msg_src='mock', request_id='foo', result=i)
+        pub.sendMessage(topics.procedure.pool.list, msg_src='mock', request_id='bar', result='ok')
 
     t = threading.Thread(target=publish)
 
@@ -568,6 +577,6 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
             mock_time.return_value = 'bar'
 
             t.start()
-            result = restserver.call_and_respond('request', 'response')
+            result = restserver.call_and_respond(topics.request.procedure.list, topics.procedure.pool.list)
 
     assert result == 'ok'
