@@ -3,9 +3,9 @@ Reading oet.ini file value and initializing constant of feature toggle with enab
 event based polling/pubsub
 """
 import os.path
-import logging
 
 from ska.logging import configure_logging
+from tblib import pickling_support
 
 from .features import Features
 
@@ -20,6 +20,7 @@ pub.setTopicUnspecifiedFatal(True)
 pub.addTopicDefnProvider(oet.event.topics, pub.TOPIC_TREE_FROM_CLASS)
 
 configure_logging()
+pickling_support.install()
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 

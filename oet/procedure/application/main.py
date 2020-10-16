@@ -1,6 +1,7 @@
 import logging.config
 import logging.handlers
 import threading
+from typing import List
 
 import requests
 from flask import request
@@ -10,6 +11,7 @@ from oet.mptools import (
     init_signals,
     default_signal_handler,
     MainContext,
+    MPQueue,
     EventMessage,
     QueueProcWorker
 )
@@ -162,10 +164,20 @@ class ScriptExecutionServiceWorker(EventBusWorker):
     """
     def prepare(self, msg_src, request_id: str, cmd: PrepareProcessCommand):
         self.log(logging.DEBUG, 'Prepare procedure request %s: %s', request_id, cmd)
-        summary = self.ses.prepare(cmd)
-        self.log(logging.DEBUG, 'Prepare procedure %s result: %s', request_id, summary)
+        try:
+            summary = self.ses.prepare(cmd)
 
-        pub.sendMessage('procedure.lifecycle.created', msg_src=self.name, request_id=request_id, result=summary)
+        except (FileNotFoundError, ValueError) as e:
+            # ValueError raised on invalid URI prefix
+            # FileNotFoundError raised when file not found.
+            self.log(logging.INFO, 'Prepare procedure %s failed: %s', request_id, e)
+
+            # TODO create failure topic for failures in procedure domain
+            pub.sendMessage('script.lifecycle.created', msg_src=self.name, request_id=request_id, result=e)
+
+        else:
+            self.log(logging.DEBUG, 'Prepare procedure %s result: %s', request_id, summary)
+            pub.sendMessage('procedure.lifecycle.created', msg_src=self.name, request_id=request_id, result=summary)
 
     def start(self, msg_src, request_id: str, cmd: StartProcessCommand):
         self.log(logging.DEBUG, 'Start procedure request %s: %s', request_id, cmd)
@@ -235,24 +247,36 @@ def main():
 
         # create the OET components, which will run in child Python processes
         # and monitor the message queues here for event bus messages
-        main_ctx.Proc("SCRIPT EXECUTOR", ScriptExecutionServiceWorker, script_executor_q)
-        main_ctx.Proc("FLASK", FlaskWorker, flask_q)
+        main_ctx.Proc("SESWorker", ScriptExecutionServiceWorker, script_executor_q)
+        main_ctx.Proc("FlaskWorker", FlaskWorker, flask_q)
 
-        while not main_ctx.shutdown_event.is_set():
-            event = main_ctx.event_queue.safe_get()
-            if not event:
-                continue
-            elif event.msg_type == "PUBSUB":
-                for q in event_bus_queues:
-                    q.put(event)
-            elif event.msg_type == "FATAL":
-                main_ctx.log(logging.INFO, f"Fatal Event received: {event.msg}")
-                break
-            elif event.msg_type == "END":
-                main_ctx.log(logging.INFO, f"Shutdown Event received: {event.msg}")
-                break
-            else:
-                main_ctx.log(logging.ERROR, f"Unknown Event: {event}")
+        # with all workers and queues set up, start processing messages
+        main_loop(main_ctx, event_bus_queues)
+
+
+def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
+    """
+    Main message parsing and routing loop, extracted from main() to increase testability.
+
+    :param main_ctx:
+    :param event_bus_queues:
+    :return:
+    """
+    while not main_ctx.shutdown_event.is_set():
+        event = main_ctx.event_queue.safe_get()
+        if not event:
+            continue
+        elif event.msg_type == "PUBSUB":
+            for q in event_bus_queues:
+                q.put(event)
+        elif event.msg_type == "FATAL":
+            main_ctx.log(logging.INFO, f"Fatal Event received: {event.msg}")
+            break
+        elif event.msg_type == "END":
+            main_ctx.log(logging.INFO, f"Shutdown Event received: {event.msg}")
+            break
+        else:
+            main_ctx.log(logging.ERROR, f"Unknown Event: {event}")
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ with open('README.md') as readme_file:
 
 setup(
     name='observation-execution-tool',
-    version="2.3.0",
+    version="2.4.1",
     description="This project contains the code for the Observation Execution Tool, the application which provides high-level scripting facilities and a high-level scripting UI for the SKA.",
     long_description=readme + '\n\n',
     author="Your Name",
@@ -44,7 +44,8 @@ setup(
         'skuid',
         'ska-project-data-model-library',
         'ska-logging',
-        'pypubsub'
+        'pypubsub',
+        'tblib'
     ],
     setup_requires=[
         # dependency for `python setup.py test`
