@@ -6,6 +6,7 @@ import flask
 from flask import Blueprint
 from pubsub import pub
 
+from oet.event import topics
 from oet.procedure import domain
 from oet.procedure.application import application
 
@@ -46,7 +47,7 @@ def _get_summary_or_404(pid):
     :param pid: ID of Procedure
     :return: ProcedureSummary
     """
-    summaries = call_and_respond('request.script.list', 'script.pool.list', pids=[pid])
+    summaries = call_and_respond(topics.request.procedure.list, topics.procedure.pool.list, pids=[pid])
 
     if not summaries:
         flask.abort(404, description='Resource not found')
@@ -65,7 +66,7 @@ def get_procedures():
     :return: list of Procedure JSON representations
     """
 
-    summaries = call_and_respond('request.script.list', 'script.pool.list', pids=None)
+    summaries = call_and_respond(topics.request.procedure.list, topics.procedure.pool.list, pids=None)
     return flask.jsonify({'procedures': [make_public_summary(s) for s in summaries]})
 
 
@@ -110,7 +111,7 @@ def create_procedure():
     prepare_cmd = application.PrepareProcessCommand(script_uri=script_uri,
                                                     init_args=procedure_input)
 
-    summary = call_and_respond('request.script.create', 'script.lifecycle.created', cmd=prepare_cmd)
+    summary = call_and_respond(topics.request.procedure.create, topics.procedure.lifecycle.created, cmd=prepare_cmd)
 
     return flask.jsonify({'procedure': make_public_summary(summary)}), 201
 
@@ -169,7 +170,7 @@ def update_procedure(procedure_id: int):
         if old_state is domain.ProcedureState.RUNNING:
             run_abort = flask.request.json.get('abort')
             cmd = application.StopProcessCommand(procedure_id, run_abort=run_abort)
-            result = call_and_respond('request.script.stop', 'script.lifecycle.stopped', cmd=cmd)
+            result = call_and_respond(topics.request.procedure.stop, topics.procedure.lifecycle.stopped, cmd=cmd)
             # result is list of process summaries started in response to abort
             # If script was stopped and no post-termination abort script was run,
             # the result list will be empty.
@@ -190,7 +191,7 @@ def update_procedure(procedure_id: int):
         procedure_input = domain.ProcedureInput(*run_args, **run_kwargs)
         cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
 
-        summary = call_and_respond('request.script.start', 'script.lifecycle.started', cmd=cmd)
+        summary = call_and_respond(topics.request.procedure.start, topics.procedure.lifecycle.started, cmd=cmd)
 
     return flask.jsonify({'procedure': make_public_summary(summary)})
 
