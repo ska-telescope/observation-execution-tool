@@ -166,11 +166,15 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         self.log(logging.DEBUG, 'Prepare procedure request %s: %s', request_id, cmd)
         try:
             summary = self.ses.prepare(cmd)
-        except FileNotFoundError as e:
+
+        except (FileNotFoundError, ValueError) as e:
+            # ValueError raised on invalid URI prefix
+            # FileNotFoundError raised when file not found.
             self.log(logging.INFO, 'Prepare procedure %s failed: %s', request_id, e)
 
             # TODO create failure topic for failures in procedure domain
             pub.sendMessage('script.lifecycle.created', request_id=request_id, result=e)
+
         else:
             self.log(logging.DEBUG, 'Prepare procedure %s result: %s', request_id, summary)
             pub.sendMessage('script.lifecycle.created', request_id=request_id, result=summary)
