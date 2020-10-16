@@ -128,15 +128,15 @@ class user:
 
 class sb:
     """
-
+    Root topic for events emitted relating to Scheduling Blocks
     """
     class lifecycle:
         """
-
+        Topic for events related to Scheduling Block lifecycle
         """
         class allocated:
             """
-
+            Emitted when resources have been allocated within SB execution
             """
             def msgDataSpec(msg_src, sb_id):
                 """
@@ -146,11 +146,11 @@ class sb:
 
         class observation:
             """
-
+            Topic for events related to executing an observation within an SB
             """
             class started:
                 """
-
+                Emitted when an observation is started
                 """
                 def msgDataSpec(msg_src, sb_id):
                     """
@@ -159,11 +159,11 @@ class sb:
                     """
             class finished:
                 """
-
+                Emitted when an observation is finished
                 """
                 class succeeded:
                     """
-
+                    Emitted when an observation is finished successfully
                     """
                     def msgDataSpec(msg_src, sb_id):
                         """
@@ -172,7 +172,7 @@ class sb:
                         """
                 class failed:
                     """
-
+                    Emitted when an error was encountered during observation execution
                     """
                     def msgDataSpec(msg_src, sb_id):
                         """
@@ -183,15 +183,15 @@ class sb:
 
 class subarray:
     """
-
+    Root topic for events emitted relating to individual Subarray activites
     """
     class resources:
         """
-
+        Topic for events relating to Subarray resources
         """
         class allocated:
             """
-
+            Emitted when resources have been allocated to a subarray
             """
             def msgDataSpec(msg_src, subarray_id):
                 """
@@ -201,7 +201,7 @@ class subarray:
 
         class deallocated:
             """
-
+            Emitted when resources have been deallocated from a subarray
             """
             def msgDataSpec(msg_src, subarray_id):
                 """
@@ -210,7 +210,7 @@ class subarray:
                 """
     class configured:
         """
-
+        Emitted when subarray has been configured
         """
         def msgDataSpec(msg_src, subarray_id):
             """
@@ -220,11 +220,11 @@ class subarray:
 
     class scan:
         """
-
+        Topic for events emitted when a scan is run on subarray
         """
         class started:
             """
-
+            Emitted when a scan is started
             """
             def msgDataSpec(msg_src, subarray_id):
                 """
@@ -233,7 +233,7 @@ class subarray:
                 """
         class finished:
             """
-
+            Emitted when a scan is finished
             """
             def msgDataSpec(msg_src, subarray_id):
                 """
@@ -243,10 +243,11 @@ class subarray:
 
     class fault:
         """
-
+        Topic for events emitted when subarray cannot be reached
         """
-        def msgDataSpec(msg_src, subarray_id):
+        def msgDataSpec(msg_src, subarray_id, error):
             """
             - msg_src: component from which the request originated
             - sb_id: Subarray ID
+            - error: Error response received from Subarray
             """
