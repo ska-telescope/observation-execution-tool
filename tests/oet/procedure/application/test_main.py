@@ -35,7 +35,7 @@ def test_event_bus_worker_verify_message_publishes_when_message_in_work_queue(ca
     work_q.put(msg)
     _proc_worker_wrapper_helper(caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True)
 
-    assert topics.request.procedure.list in helper.topics
+    assert topics.request.procedure.list in helper.topic_list
 
 
 def test_event_bus_worker_verify_do_not_publish_message_when_message_originated_from_self(caplog):
@@ -78,7 +78,7 @@ def test_script_execution_service_worker_verify_list_method_called(caplog):
     assert event.is_set() is True
     mock_cls.assert_called_once()
 
-    assert helper.topics == [
+    assert helper.topic_list == [
         topics.request.procedure.list,   # list requested
         topics.procedure.pool.list       # response published
     ]
@@ -130,7 +130,7 @@ def assert_command_request_and_response(caplog, mock_method, request_topic, resp
     mock_method.assert_called_once()
     assert mock_method.call_args[0][0] == cmd
 
-    assert helper.topics == [
+    assert helper.topic_list == [
         request_topic, response_topic
     ]
 

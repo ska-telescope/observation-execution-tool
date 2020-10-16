@@ -75,11 +75,11 @@ class PubSubHelper:
         pub.subscribe(self.respond, pub.ALL_TOPICS)
 
     def respond(self, topic=pub.AUTO_TOPIC, **msg_data):
-        topic_name = self.get_topic_name(topic)
+        topic_cls = self.get_topic_class(topics, topic.name)
         self.messages.append((topic, msg_data))
 
-        if topic_name in self.spec:
-            (args, kwargs) = self.spec[topic_name].pop(0)
+        if topic_cls in self.spec:
+            (args, kwargs) = self.spec[topic_cls].pop(0)
 
             kwargs['msg_src'] = 'PubSubHelper'
             if 'request_id' in msg_data and self.match_request_id:
@@ -88,15 +88,19 @@ class PubSubHelper:
             pub.sendMessage(*args, **kwargs)
 
     @property
-    def topics(self):
-        topics = [self.get_topic_name(topic) for (topic, _) in self.messages]
-        return topics
+    def topic_list(self):
+        topic_list = [self.get_topic_class(topics, topic.name) for (topic, _) in self.messages]
+        return topic_list
 
     def __getitem__(self, key):
         return self.messages[key]
 
-    def get_topic_name(self, topic):
-        return eval('topics.' + topic.name)
+    def get_topic_class(self, module, cls):
+        if not cls:
+            return module
+        s = cls.split('.')
+        cls = getattr(module, s[0])
+        return self.get_topic_class(cls, '.'.join(s[1:]))
 
 
 def assert_json_equal_to_procedure_summary(summary: ProcedureSummary, summary_json: dict):
@@ -280,7 +284,7 @@ def test_post_to_endpoint_sends_init_arguments(client):
     client.post(ENDPOINT, json=CREATE_JSON)
 
     # verify message sequence and topics
-    assert helper.topics == [
+    assert helper.topic_list == [
         topics.request.procedure.create,      # procedure creation requested
         topics.procedure.lifecycle.created,   # CREATED ProcedureSummary returned
     ]
@@ -306,7 +310,7 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
     # verify message sequence and topics
-    assert helper.topics == [
+    assert helper.topic_list == [
         topics.request.procedure.list,      # procedure retrieval requested
         topics.procedure.pool.list,         # no procedure returned
     ]
@@ -327,7 +331,7 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     # verify message sequence and topics
-    assert helper.topics == [
+    assert helper.topic_list == [
         topics.request.procedure.list,      # procedure retrieval requested
         topics.procedure.pool.list,         # procedure returned
     ]
@@ -359,7 +363,7 @@ def test_put_procedure_calls_run_on_execution_service(client):
     assert_json_equal_to_procedure_summary(RUN_SUMMARY, response_json['procedure'])
 
     # verify message sequence and topics
-    assert helper.topics == [
+    assert helper.topic_list == [
         topics.request.procedure.list,      # procedure retrieval requested
         topics.procedure.pool.list,         # procedure returned
         topics.request.procedure.start,     # procedure abort requested
@@ -393,7 +397,7 @@ def test_put_procedure_calls_stop_and_executes_abort_script(client):
     response_json = response.get_json()
 
     # verify message sequence and topics
-    assert helper.topics == [
+    assert helper.topic_list == [
         topics.request.procedure.list,  # procedure retrieval requested
         topics.procedure.pool.list,  # procedure returned
         topics.request.procedure.stop,  # procedure abort requested
@@ -431,7 +435,7 @@ def test_put_procedure_calls_stop_on_execution_service(client):
     response_json = response.get_json()
 
     # verify message topic and order
-    assert helper.topics == [
+    assert helper.topic_list == [
         topics.request.procedure.list,       # procedure retrieval requested
         topics.procedure.pool.list,          # procedure returned
         topics.request.procedure.stop,       # procedure abort requested
@@ -468,7 +472,7 @@ def test_put_procedure_does_not_start_a_procedure_unless_new_state_is_running(cl
     _ = client.put(RUN_ENDPOINT, json=json)
 
     # assert that request to start a procedure was not broadcast
-    assert topics.request.procedure.start not in helper.topics
+    assert topics.request.procedure.start not in helper.topic_list
 
 
 def test_put_procedure_returns_procedure_summary(client):
@@ -510,7 +514,7 @@ def test_stopping_a_non_running_procedure_returns_appropriate_error_message(clie
     response_json = response.get_json()
 
     # verify message topic and order
-    assert helper.topics == [
+    assert helper.topic_list == [
         topics.request.procedure.list,       # procedure retrieval requested
         topics.procedure.pool.list,          # procedure returned
     ]
