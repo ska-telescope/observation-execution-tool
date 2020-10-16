@@ -10,6 +10,7 @@ from oet.mptools import (
     MainContext,
     MPQueue,
 )
+from oet.event import topics
 from oet.procedure import domain
 from oet.procedure.application import application
 from oet.procedure.application.main import (
@@ -30,11 +31,11 @@ def test_event_bus_worker_verify_message_publishes_when_message_in_work_queue(ca
     helper = PubSubHelper()
 
     work_q = MPQueue()
-    msg = EventMessage('EXTERNAL COMPONENT', 'PUBSUB', dict(topic='request.procedure.list', kwargs={'request_id': '123'}))
+    msg = EventMessage('EXTERNAL COMPONENT', 'PUBSUB', dict(topic=topics.request.procedure.list, kwargs={'request_id': '123'}))
     work_q.put(msg)
     _proc_worker_wrapper_helper(caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True)
 
-    assert 'request.procedure.list' in helper.topics
+    assert topics.request.procedure.list in helper.topics
 
 
 def test_event_bus_worker_verify_do_not_publish_message_when_message_originated_from_self(caplog):
@@ -46,11 +47,11 @@ def test_event_bus_worker_verify_do_not_publish_message_when_message_originated_
     work_q = MPQueue()
     # TEST is the default component name assigned in
     # _proc_worker_wrapper_helper. This message should be ignored.
-    msg = EventMessage('TEST', 'PUBSUB', dict(topic='request.procedure.list', kwargs={'request_id': '123'}))
+    msg = EventMessage('TEST', 'PUBSUB', dict(topic=topics.request.procedure.list, kwargs={'request_id': '123'}))
 
     work_q.put(msg)
     # But coming from NONTEST, this message should be republished.
-    msg = EventMessage('NONTEST', 'PUBSUB', dict(topic='request.procedure.list', kwargs={'request_id': '456'}))
+    msg = EventMessage('NONTEST', 'PUBSUB', dict(topic=topics.request.procedure.list, kwargs={'request_id': '456'}))
     work_q.put(msg)
 
     _proc_worker_wrapper_helper(caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True)
@@ -66,7 +67,7 @@ def test_script_execution_service_worker_verify_list_method_called(caplog):
     helper = PubSubHelper()
 
     work_q = MPQueue()
-    msg = EventMessage('TEST_SUMMARY', 'PUBSUB', dict(topic='request.procedure.list', kwargs={'request_id': '123'}))
+    msg = EventMessage('TEST_SUMMARY', 'PUBSUB', dict(topic=topics.request.procedure.list, kwargs={'request_id': '123'}))
     work_q.put(msg)
     event = mp.Event()
 
@@ -78,8 +79,8 @@ def test_script_execution_service_worker_verify_list_method_called(caplog):
     mock_cls.assert_called_once()
 
     assert helper.topics == [
-        'request.procedure.list',   # list requested
-        'procedure.pool.list'       # response published
+        topics.request.procedure.list,   # list requested
+        topics.procedure.pool.list       # response published
     ]
 
 
@@ -89,8 +90,8 @@ def test_script_execution_service_worker_verify_start_method_called(caplog):
     """
     cmd = application.StartProcessCommand(process_uid=123, run_args=domain.ProcedureInput())
     with mock.patch('oet.procedure.application.main.ScriptExecutionService.start') as mock_method:
-        assert_command_request_and_response(caplog, mock_method, 'request.procedure.start', 'procedure.lifecycle.started',
-                                            cmd)
+        assert_command_request_and_response(caplog, mock_method, topics.request.procedure.start,
+                                            topics.procedure.lifecycle.started, cmd)
 
 
 def test_script_execution_service_worker_verify_prepare_method_called(caplog):
@@ -99,8 +100,8 @@ def test_script_execution_service_worker_verify_prepare_method_called(caplog):
     """
     cmd = application.PrepareProcessCommand(script_uri='test:///hi', init_args=domain.ProcedureInput())
     with mock.patch('oet.procedure.application.main.ScriptExecutionService.prepare') as mock_method:
-        assert_command_request_and_response(caplog, mock_method, 'request.procedure.create', 'procedure.lifecycle.created',
-                                            cmd)
+        assert_command_request_and_response(caplog, mock_method, topics.request.procedure.create,
+                                            topics.procedure.lifecycle.created, cmd)
 
 
 def test_script_execution_service_worker_verify_stop_method_called(caplog):
@@ -109,7 +110,8 @@ def test_script_execution_service_worker_verify_stop_method_called(caplog):
     """
     cmd = application.StopProcessCommand(process_uid=123, run_abort=False)
     with mock.patch('oet.procedure.application.main.ScriptExecutionService.stop') as mock_method:
-        assert_command_request_and_response(caplog, mock_method, 'request.procedure.stop', 'procedure.lifecycle.stopped', cmd)
+        assert_command_request_and_response(caplog, mock_method, topics.request.procedure.stop,
+                                            topics.procedure.lifecycle.stopped, cmd)
 
 
 def assert_command_request_and_response(caplog, mock_method, request_topic, response_topic, cmd):
