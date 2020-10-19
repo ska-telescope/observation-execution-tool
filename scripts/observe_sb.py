@@ -29,6 +29,7 @@ from ska.pdm.schemas import CODEC as pdm_CODEC
 from oet import observingtasks
 from oet.command import SCAN_ID_GENERATOR
 from oet.domain import SubArray
+from oet.event import topics
 
 LOG = logging.getLogger(__name__)
 FORMAT = '%(asctime)-15s %(message)s'
@@ -68,6 +69,8 @@ def _main(subarray_id: int, sb_json, configure_json=None):
     LOG.info(f'Running observe_sb script in OS process {os.getpid()}')
     LOG.info(f'Called with sb_json={sb_json}, configure_json={configure_json}, '
              f'subarray_id={subarray_id})')
+
+    observingtasks.send_message(topics.sb.lifecycle.observation.started, sb_id=sb_json['id'])
 
     if not os.path.isfile(sb_json):
         msg = f'SB file not found: {sb_json}'
@@ -164,16 +167,21 @@ def _main(subarray_id: int, sb_json, configure_json=None):
 
         cdm_config.sdp = to_sdpconfiguration(scan_definition)
 
-        # With the CDM modified, we can now issue the Configure instruction...
-        LOG.info(f'Configuring subarray {subarray_id} for scan {scan_id}')
-        observingtasks.configure_from_cdm(subarray_id, cdm_config)
+        try:
+            # With the CDM modified, we can now issue the Configure instruction...
+            LOG.info(f'Configuring subarray {subarray_id} for scan {scan_id}')
+            observingtasks.configure_from_cdm(subarray_id, cdm_config)
 
-        # .. and with configuration complete, we can begin the scan.
-        LOG.info(f'Starting scan {scan_id}')
-        subarray.scan()
+            # .. and with configuration complete, we can begin the scan.
+            LOG.info(f'Starting scan {scan_id}')
+            subarray.scan()
+        except observingtasks.ObsStateError as e:
+            LOG.error(f'Error when executing scan {scan_id}: {e}')
+            observingtasks.send_message(topics.sb.lifecycle.observation.finished.failed, sb_id=sb_json['id'])
 
     # All scans are complete. Observations are concluded with an 'end'
     # command.
+    observingtasks.send_message(topics.sb.lifecycle.observation.finished.succeeded, sb_id=sb_json['id'])
     LOG.info(f'End scheduling block: {sched_block.id}')
     subarray.end()
 
