@@ -70,8 +70,6 @@ def _main(subarray_id: int, sb_json, configure_json=None):
     LOG.info(f'Called with sb_json={sb_json}, configure_json={configure_json}, '
              f'subarray_id={subarray_id})')
 
-    observingtasks.send_message(topics.sb.lifecycle.observation.started, sb_id=sb_json['id'])
-
     if not os.path.isfile(sb_json):
         msg = f'SB file not found: {sb_json}'
         LOG.error(msg)
@@ -168,6 +166,7 @@ def _main(subarray_id: int, sb_json, configure_json=None):
         cdm_config.sdp = to_sdpconfiguration(scan_definition)
 
         try:
+            observingtasks.send_message(topics.sb.lifecycle.observation.started, sb_id=sched_block.id)
             # With the CDM modified, we can now issue the Configure instruction...
             LOG.info(f'Configuring subarray {subarray_id} for scan {scan_id}')
             observingtasks.configure_from_cdm(subarray_id, cdm_config)
@@ -177,11 +176,12 @@ def _main(subarray_id: int, sb_json, configure_json=None):
             subarray.scan()
         except observingtasks.ObsStateError as e:
             LOG.error(f'Error when executing scan {scan_id}: {e}')
-            observingtasks.send_message(topics.sb.lifecycle.observation.finished.failed, sb_id=sb_json['id'])
+            observingtasks.send_message(topics.sb.lifecycle.observation.finished.failed, sb_id=sched_block.id)
+            return
 
     # All scans are complete. Observations are concluded with an 'end'
     # command.
-    observingtasks.send_message(topics.sb.lifecycle.observation.finished.succeeded, sb_id=sb_json['id'])
+    observingtasks.send_message(topics.sb.lifecycle.observation.finished.succeeded, sb_id=sched_block.id)
     LOG.info(f'End scheduling block: {sched_block.id}')
     subarray.end()
 
