@@ -13,7 +13,7 @@ from astropy.coordinates import SkyCoord
 from ska.cdm import schemas
 from ska.cdm.messages.subarray_node.configure import ConfigureRequest
 from ska.cdm.schemas import CODEC
-
+from pubsub import pub
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
@@ -65,6 +65,12 @@ def set_toggle_feature_value(pub_sub=False):
                       })
 
     return Features(parser)
+
+
+def test_publish_event_message_verify_default_topic_assigned():
+    observingtasks.publish_event_message(msg='test message')
+    topicMgr = pub.getDefaultTopicMgr()
+    assert topicMgr.getTopic(observingtasks.topics.user.script.announce)
 
 
 def test_tango_registry_returns_correct_url_for_ska_mid():
