@@ -23,6 +23,7 @@ from ska.pdm.schemas import CODEC as pdm_CODEC
 from skuid.client import SkuidClient
 
 from oet import observingtasks
+from oet.event import topics
 
 LOG = logging.getLogger(__name__)
 FORMAT = '%(asctime)-15s %(message)s'
@@ -95,6 +96,8 @@ def _main(subarray_id: int, sb_json, allocate_json='', update_uids=True):
 
     response = observingtasks.assign_resources_from_cdm(subarray_id, cdm_allocation_request)
     LOG.info(f'Resources Allocated: {response}')
+
+    observingtasks.send_message(topics.sb.lifecycle.allocated, sb_id=pdm_allocation_request.id)
 
     LOG.info('Allocation script complete')
 
