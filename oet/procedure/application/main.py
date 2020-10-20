@@ -2,7 +2,7 @@ import logging.config
 import logging.handlers
 import threading
 from typing import List
-
+import multiprocessing
 import requests
 from flask import request
 from pubsub import pub
@@ -223,7 +223,7 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         super().shutdown()
 
 
-def main():
+def main(mp_ctx):
     """
     Create the OET components and start an event loop that dispatches messages
     between them.
@@ -232,7 +232,8 @@ def main():
     """
     # All queues and processes are created via a MainContext so that they are
     # shared correctly and have consistent lifecycle management
-    with MainContext() as main_ctx:
+
+    with MainContext(mp_ctx) as main_ctx:
         # wire SIGINT and SIGTERM signal handlers to the shutdown_event Event
         # monitored by all processes, so that the processes know when
         # application termination has been requested.
@@ -284,4 +285,5 @@ def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
 
 
 if __name__ == "__main__":
-    main()
+    mp = multiprocessing.get_context('fork')
+    main(mp)

@@ -31,7 +31,7 @@ import functools
 import logging
 import logging.config
 import logging.handlers
-import multiprocessing as mp
+import multiprocessing.context as mpc
 import multiprocessing.queues as mpq
 import multiprocessing.synchronize as mps
 import signal
@@ -39,7 +39,7 @@ import sys
 import threading
 import time
 from queue import Empty, Full
-from typing import Any, List, Tuple, Type, Union
+from typing import Any, List, Optional, Tuple, Type, Union
 
 MPQUEUE_TIMEOUT = 0.02
 
@@ -64,8 +64,7 @@ class MPQueue(mpq.Queue):
     #
     # -- tldr; mp.Queue is a _method_ that returns an mpq.Queue object.  That object
     # requires a context for proper operation, so this __init__ does that work as well.
-    def __init__(self, maxsize=0):
-        ctx = mp.get_context()
+    def __init__(self, maxsize=0, *, ctx):
         super().__init__(maxsize, ctx=ctx)
 
     def safe_get(self, timeout: Union[float, None] = MPQUEUE_TIMEOUT):
@@ -446,6 +445,7 @@ class Proc:
     SHUTDOWN_WAIT_SECS = 3.0
 
     def __init__(self,
+                 mp: mpc.BaseContext,
                  name: str,
                  worker_class: Type[ProcWorker],
                  shutdown_event: mps.Event,
@@ -565,23 +565,20 @@ class MainContext:
     # Grace period after setting shutdown_event before processes are forcibly terminated
     STOP_WAIT_SECS = 3.0
 
-    def __init__(self):
+    def __init__(self, mp_ctx: Optional[mpc.BaseContext] = None):
+        if mp_ctx is None:
+            mp_ctx = mp.get_context()
+        self.mp_ctx = mp_ctx
+
         self.procs: List[Proc] = []
         self.queues: List[MPQueue] = []
         self.log = functools.partial(logging.log, extra=dict(source='MAIN'))
 
         # Event that is set to signify shutdown has been requested
-        self.shutdown_event = mp.Event()
+        self.shutdown_event = mp_ctx.Event()
 
         # main event queue receiving messages to be routed/acted upon
         self.event_queue = self.MPQueue()
-
-        # # queue for log messages
-        self.logging_config = None
-
-    def init_logging(self, config):
-        self.logging_config = config
-        logging.config.dictConfig(config)
 
     def __enter__(self):
         return self
@@ -600,13 +597,13 @@ class MainContext:
         """
         Create a new process managed by this context.
 
+        :param ctx: multiprocessing Context to use
         :param name: name for worker process
         :param worker_class: worker process class
         :param args: argument to pass to worker constructor
         :return: worker instance
         """
-        proc = Proc(name, worker_class, self.shutdown_event, self.event_queue, *args,
-                    logging_config=self.logging_config)
+        proc = Proc(self.mp_ctx, name, worker_class, self.shutdown_event, self.event_queue, *args)
         self.procs.append(proc)
         return proc
 
@@ -618,7 +615,7 @@ class MainContext:
         :param kwargs: queue constructor kwargs
         :return: message queue instance
         """
-        q = MPQueue(*args, **kwargs)
+        q = MPQueue(*args, **kwargs, ctx=self.mp_ctx)
         self.queues.append(q)
         return q
 

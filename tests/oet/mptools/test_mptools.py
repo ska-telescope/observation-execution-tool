@@ -4,14 +4,13 @@
 """Tests for `mptools` package."""
 
 import logging
-import multiprocessing as mp
+import multiprocessing
 import os
 import signal
 import time
 
 import pytest
 
-from oet import mptools
 from oet.mptools import (
     MPQueue,
     _sleep_secs,
@@ -27,6 +26,12 @@ from oet.mptools import (
     TerminateInterrupt
 )
 
+multiprocessing_contexts = [
+    multiprocessing.get_context('spawn'),
+    multiprocessing.get_context('fork'),
+    multiprocessing.get_context('forkserver')
+]
+
 
 @pytest.fixture(autouse=True)
 def restore_default_signal_handlers():
@@ -39,27 +44,29 @@ def restore_default_signal_handlers():
         signal.signal(signal.SIGTERM, original_sigterm_handler)
 
 
-def test_mpqueue_get():
-    Q = MPQueue()
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_mpqueue_get(mp):
+    q = MPQueue(ctx=mp)
 
-    item = Q.safe_get(None)
+    item = q.safe_get(None)
     assert item is None
 
-    Q.put("ITEM1")
-    Q.put("ITEM2")
+    q.put("ITEM1")
+    q.put("ITEM2")
 
-    assert Q.safe_get(0.02) == "ITEM1"
-    assert Q.safe_get(0.02) == "ITEM2"
-    assert Q.safe_get(0.02) is None
-    assert Q.safe_get(None) is None
+    assert q.safe_get(0.02) == "ITEM1"
+    assert q.safe_get(0.02) == "ITEM2"
+    assert q.safe_get(0.02) is None
+    assert q.safe_get(None) is None
 
-    num_left = Q.safe_close()
+    num_left = q.safe_close()
     assert num_left == 0
 
 
-def test_queue_put():
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_queue_put(mp):
     # Create MPQueue of max size 2
-    q = MPQueue(2)
+    q = MPQueue(2, ctx=mp)
     # Putting two items should succeed and return True
     assert q.safe_put("ITEM1")
     assert q.safe_put("ITEM2")
@@ -70,20 +77,21 @@ def test_queue_put():
     assert num_left == 2
 
 
-def test_drain_queue():
-    Q = MPQueue()
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_drain_queue(mp):
+    q = MPQueue(ctx=mp)
 
-    items = list(Q.drain())
+    items = list(q.drain())
     assert items == []
 
     expected = [f"ITEM{idx}" for idx in range(10)]
     for item in expected:
-        Q.put(item)
+        q.put(item)
 
-    items = list(Q.drain())
+    items = list(q.drain())
     assert items == expected
 
-    num_left = Q.safe_close()
+    num_left = q.safe_close()
     assert num_left == 0
 
 
@@ -99,7 +107,8 @@ def test_sleep_secs():
     assert got >= 3.7
 
 
-def test_signal_handling():
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_signal_handling(mp):
     pid = os.getpid()
     evt = mp.Event()
     so = SignalObject(evt)
@@ -129,23 +138,26 @@ def test_signal_handling():
     assert so.shutdown_event.is_set()
 
 
-def test_procworker_rejects_unexpected_arguments():
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_procworker_rejects_unexpected_arguments(mp):
     with pytest.raises(ValueError):
-        ProcWorker("TEST", mp.Event(), mp.Event(), MPQueue(), MPQueue(), "ARG1", "ARG2")
+        ProcWorker("TEST", mp.Event(), mp.Event(), MPQueue(ctx=mp), MPQueue(ctx=mp), "ARG1", "ARG2")
 
 
-def test_procworker_passes_excess_arguments_to_init_args():
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_procworker_passes_excess_arguments_to_init_args(mp):
     class ProcWorkerTest(ProcWorker):
         def init_args(self, args):
             l, = args
             l.extend(['ARG1', 'ARG2'])
 
     arglist = []
-    ProcWorkerTest("TEST", mp.Event(), mp.Event(), MPQueue(), arglist)
+    ProcWorkerTest("TEST", mp.Event(), mp.Event(), MPQueue(ctx=mp), arglist)
     assert arglist == ['ARG1', 'ARG2']
 
 
-def test_proc_worker_init_signals():
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_proc_worker_init_signals(mp):
     pid = os.getpid()
     evt = mp.Event()
     pw = ProcWorker("TEST", 1, evt, 3)
@@ -169,10 +181,11 @@ def test_proc_worker_init_signals():
     assert so.shutdown_event.is_set()
 
 
-def test_proc_worker_no_main_func(caplog):
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_proc_worker_no_main_func(mp, caplog):
     startup_evt = mp.Event()
     shutdown_evt = mp.Event()
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
 
     try:
         caplog.set_level(logging.INFO)
@@ -184,7 +197,8 @@ def test_proc_worker_no_main_func(caplog):
         event_q.safe_close()
 
 
-def test_proc_worker_run(caplog):
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_proc_worker_run(mp, caplog):
     class ProcWorkerTest(ProcWorker):
         def init_args(self, args):
             self.args = args
@@ -195,7 +209,7 @@ def test_proc_worker_run(caplog):
 
     startup_evt = mp.Event()
     shutdown_evt = mp.Event()
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
 
     caplog.set_level(logging.INFO)
     pw = ProcWorkerTest("TEST", startup_evt, shutdown_evt, event_q, "ARG1", "ARG2")
@@ -214,10 +228,10 @@ def test_proc_worker_run(caplog):
     assert f"MAIN_FUNC: ('ARG1', 'ARG2')" in caplog.text
 
 
-def _proc_worker_wrapper_helper(caplog, worker_class, args=None, expect_shutdown_evt=True, alarm_secs=1.0):
+def _proc_worker_wrapper_helper(mp, caplog, worker_class, args=None, expect_shutdown_evt=True, alarm_secs=0.1):
     startup_evt = mp.Event()
     shutdown_evt = mp.Event()
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
     if args is None:
         args = ()
 
@@ -242,7 +256,8 @@ def _proc_worker_wrapper_helper(caplog, worker_class, args=None, expect_shutdown
     return items[:-1]
 
 
-def test_proc_worker_wrapper(caplog):
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_proc_worker_wrapper(mp, caplog):
     class ProcWorkerTest(ProcWorker):
         def init_args(self, args):
             self.args = args
@@ -251,19 +266,20 @@ def test_proc_worker_wrapper(caplog):
             self.log(logging.INFO, f"MAIN_FUNC: {self.args}")
             self.shutdown_event.set()
 
-    items = _proc_worker_wrapper_helper(caplog, ProcWorkerTest, ("ARG1", "ARG2"))
+    items = _proc_worker_wrapper_helper(mp, caplog, ProcWorkerTest, ("ARG1", "ARG2"))
     assert not items
     assert f"MAIN_FUNC: ('ARG1', 'ARG2')" in caplog.text
 
 
-def test_proc_worker_exception(caplog):
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_proc_worker_exception(mp, caplog):
     class ProcWorkerException(ProcWorker):
         def main_func(self):
             raise NameError("Because this doesn't happen often")
 
     startup_evt = mp.Event()
     shutdown_evt = mp.Event()
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
 
     caplog.set_level(logging.INFO)
     with pytest.raises(SystemExit):
@@ -290,8 +306,9 @@ class TimerProcWorkerTest(TimerProcWorker):
             self.shutdown_event.set()
 
 
-def test_timer_proc_worker(caplog):
-    items = _proc_worker_wrapper_helper(caplog, TimerProcWorkerTest)
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_timer_proc_worker(mp, caplog):
+    items = _proc_worker_wrapper_helper(mp, caplog, TimerProcWorkerTest)
     assert len(items) == 4
     for idx, item in enumerate(items[:-1]):
         assert item.startswith(f'TIMER {idx + 1} [')
@@ -302,8 +319,9 @@ class QueueProcWorkerTest(QueueProcWorker):
         self.event_q.put(f'DONE {item}')
 
 
-def test_queue_proc_worker(caplog):
-    work_q = MPQueue()
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_queue_proc_worker(mp, caplog):
+    work_q = MPQueue(ctx=mp)
     work_q.put(1)
     work_q.put(2)
     work_q.put(3)
@@ -311,7 +329,7 @@ def test_queue_proc_worker(caplog):
     work_q.put("END")
     work_q.put(5)
 
-    items = _proc_worker_wrapper_helper(caplog, QueueProcWorkerTest, args=(work_q,), expect_shutdown_evt=False)
+    items = _proc_worker_wrapper_helper(mp, caplog, QueueProcWorkerTest, args=(work_q,), expect_shutdown_evt=False)
     assert len(items) == 4
     assert items == [f'DONE {idx + 1}' for idx in range(4)]
 
@@ -322,24 +340,26 @@ class StartHangWorker(ProcWorker):
             time.sleep(1.0)
 
 
-def test_proc_start_hangs(caplog):
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_proc_start_hangs(mp, caplog):
     shutdown_evt = mp.Event()
-    event_q = MPQueue()
-    log_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
+    log_q = MPQueue(ctx=mp)
     caplog.set_level(logging.INFO)
     Proc.STARTUP_WAIT_SECS = 0.2
     try:
         with pytest.raises(RuntimeError):
-            Proc("TEST", StartHangWorker, shutdown_evt, event_q, log_q)
+            Proc(mp, "TEST", StartHangWorker, shutdown_evt, event_q, log_q)
     finally:
         Proc.STARTUP_WAIT_SECS = 3.0
 
 
-def test_proc_full_stop(caplog):
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_proc_full_stop(mp, caplog):
     shutdown_evt = mp.Event()
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
     caplog.set_level(logging.INFO)
-    proc = Proc("TEST", TimerProcWorkerTest, shutdown_evt, event_q)
+    proc = Proc(mp, "TEST", TimerProcWorkerTest, shutdown_evt, event_q)
 
     for idx in range(4):
         item = event_q.safe_get(1.0)
@@ -362,16 +382,18 @@ class NeedTerminateWorker(ProcWorker):
             time.sleep(1.0)
 
 
-def test_proc_full_stop_need_terminate(caplog):
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_proc_full_stop_need_terminate(mp, caplog):
     shutdown_evt = mp.Event()
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
     caplog.set_level(logging.INFO)
-    proc = Proc("TEST", NeedTerminateWorker, shutdown_evt, event_q)
+    proc = Proc(mp, "TEST", NeedTerminateWorker, shutdown_evt, event_q)
     proc.full_stop(wait_time=0.1)
 
 
-def test_main_context_stop_queues():
-    with MainContext() as mctx:
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_main_context_stop_queues(mp):
+    with MainContext(mp) as mctx:
         q1 = mctx.MPQueue()
         q1.put("SOMETHING 1")
         q2 = mctx.MPQueue()
@@ -381,9 +403,9 @@ def test_main_context_stop_queues():
     assert mctx._stopped_queues_result == 3
 
 
-def _test_stop_procs(cap_log, proc_name, worker_class, *args):
+def _test_stop_procs(mp, cap_log, proc_name, worker_class, *args):
     cap_log.set_level(logging.DEBUG)
-    with MainContext() as mctx:
+    with MainContext(mp) as mctx:
         mctx.STOP_WAIT_SECS = 0.1
         mctx.Proc(proc_name, worker_class, *args)
         time.sleep(0.05)
@@ -393,9 +415,10 @@ def _test_stop_procs(cap_log, proc_name, worker_class, *args):
     return mctx._stopped_procs_result, len(mctx.procs)
 
 
-def test_main_context_exception():
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_main_context_exception(mp):
     with pytest.raises(ValueError):
-        with MainContext():
+        with MainContext(mp):
             raise ValueError("Yep, this is a value Error")
 
 
@@ -405,8 +428,9 @@ class CleanProcWorker(ProcWorker):
         return
 
 
-def test_main_context_stop_procs_clean(caplog):
-    (num_failed, num_terminated), num_still_running = _test_stop_procs(caplog, "CLEAN", CleanProcWorker)
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_main_context_stop_procs_clean(mp, caplog):
+    (num_failed, num_terminated), num_still_running = _test_stop_procs(mp, caplog, "CLEAN", CleanProcWorker)
     assert num_failed == 0
     assert num_terminated == 0
     assert num_still_running == 0
@@ -420,9 +444,10 @@ class FailProcWorker(ProcWorker):
         raise ValueError("main func value error")
 
 
-def test_main_context_stop_procs_fail(caplog):
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_main_context_stop_procs_fail(mp, caplog):
     caplog.set_level(logging.DEBUG)
-    (num_failed, num_terminated), num_still_running = _test_stop_procs(caplog, "FAIL", FailProcWorker)
+    (num_failed, num_terminated), num_still_running = _test_stop_procs(mp, caplog, "FAIL", FailProcWorker)
     assert num_failed == 1
     assert num_terminated == 0
     assert num_still_running == 0
@@ -447,19 +472,21 @@ class HangingProcWorker(ProcWorker):
                 num_terminates += 1
 
 
-def _test_main_context_hang(cap_log, is_hard):
-    return _test_stop_procs(cap_log, "HANG", HangingProcWorker, is_hard)
+def _test_main_context_hang(mp, cap_log, is_hard):
+    return _test_stop_procs(mp, cap_log, "HANG", HangingProcWorker, is_hard)
 
 
-def test_main_context_stop_procs_hung_soft(caplog):
-    (num_failed, num_terminated), num_still_running = _test_main_context_hang(caplog, is_hard=False)
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_main_context_stop_procs_hung_soft(mp, caplog):
+    (num_failed, num_terminated), num_still_running = _test_main_context_hang(mp, caplog, is_hard=False)
     assert num_failed == 0
     assert num_terminated == 1
     assert num_still_running == 0
 
 
-def test_main_context_stop_procs_hung_hard(caplog):
-    (num_failed, num_terminated), num_still_running = _test_main_context_hang(caplog, is_hard=True)
+@pytest.mark.parametrize('mp', multiprocessing_contexts)
+def test_main_context_stop_procs_hung_hard(mp, caplog):
+    (num_failed, num_terminated), num_still_running = _test_main_context_hang(mp, caplog, is_hard=True)
     assert num_failed == 0
     assert num_terminated == 0
     assert num_still_running == 1
