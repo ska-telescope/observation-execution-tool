@@ -63,7 +63,7 @@ def _main(subarray_id: int, sb_json, allocate_json='', update_uids=True):
 
     if not allocate_json:
         cdm_allocation_request = AssignResourcesRequest(subarray_id, None, None)
-    elif not os.path.isfile(allocate_json) :
+    elif not os.path.isfile(allocate_json):
         msg = f'CDM file not found: {allocate_json}'
         LOG.error(msg)
         raise IOError(msg)
@@ -97,7 +97,7 @@ def _main(subarray_id: int, sb_json, allocate_json='', update_uids=True):
     response = observingtasks.assign_resources_from_cdm(subarray_id, cdm_allocation_request)
     LOG.info(f'Resources Allocated: {response}')
 
-    observingtasks.send_message(topics.sb.lifecycle.allocated, sb_id=sb_json['id'])
+    observingtasks.send_message(topics.sb.lifecycle.allocated, sb_id=pdm_allocation_request.id)
 
     LOG.info('Allocation script complete')
 
@@ -252,4 +252,3 @@ def convert_channels(pdm_config: pdm_Channel) -> cdm_Channel:
         freq_max=pdm_config.freq_max,
         link_map=pdm_config.link_map
     )
-

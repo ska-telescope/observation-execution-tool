@@ -167,21 +167,36 @@ def _main(subarray_id: int, sb_json, configure_json=None):
 
         cdm_config.sdp = to_sdpconfiguration(scan_definition)
 
+        observingtasks.send_message(topics.sb.lifecycle.observation.started, sb_id=sched_block.id)
         try:
             # With the CDM modified, we can now issue the Configure instruction...
             LOG.info(f'Configuring subarray {subarray_id} for scan {scan_id}')
+            observingtasks.send_message(topics.scan.lifecycle.configure.started, sb_id=sched_block.id, scan_id=scan_id)
             observingtasks.configure_from_cdm(subarray_id, cdm_config)
+        except observingtasks.ObsStateError as e:
+            LOG.error(f'Error configuring subarray: {e}')
+            observingtasks.send_message(topics.scan.lifecycle.configure.failed, sb_id=sched_block.id, scan_id=scan_id)
+            observingtasks.send_message(topics.sb.lifecycle.observation.finished.failed, sb_id=sched_block.id)
+            return
+        else:
+            observingtasks.send_message(topics.scan.lifecycle.configure.complete, sb_id=sched_block.id, scan_id=scan_id)
 
-            # .. and with configuration complete, we can begin the scan.
+        try:
+            # with configuration complete, we can begin the scan.
             LOG.info(f'Starting scan {scan_id}')
+            observingtasks.send_message(topics.scan.lifecycle.start, sb_id=sched_block.id, scan_id=scan_id)
             subarray.scan()
         except observingtasks.ObsStateError as e:
             LOG.error(f'Error when executing scan {scan_id}: {e}')
-            observingtasks.send_message(topics.sb.lifecycle.observation.finished.failed, sb_id=sb_json['id'])
+            observingtasks.send_message(topics.scan.lifecycle.end.failed, sb_id=sched_block.id, scan_id=scan_id)
+            observingtasks.send_message(topics.sb.lifecycle.observation.finished.failed, sb_id=sched_block.id)
+            return
+        else:
+            observingtasks.send_message(topics.scan.lifecycle.end.succeeded, sb_id=sched_block.id, scan_id=scan_id)
 
     # All scans are complete. Observations are concluded with an 'end'
     # command.
-    observingtasks.send_message(topics.sb.lifecycle.observation.finished.succeeded, sb_id=sb_json['id'])
+    observingtasks.send_message(topics.sb.lifecycle.observation.finished.succeeded, sb_id=sched_block.id)
     LOG.info(f'End scheduling block: {sched_block.id}')
     subarray.end()
 

@@ -251,3 +251,82 @@ class subarray:
             - sb_id: Subarray ID
             - error: Error response received from Subarray
             """
+
+
+class scan:
+    """
+    Root topic for events emitted relating to Scans in the context of SB execution
+    """
+    class lifecycle:
+        """
+        Topic for events related to SB scan lifecycle
+        """
+        class configure:
+            """
+            Emitted when sub-array resources are configured for a scan
+            """
+            class started:
+                """
+                Emitted as scan configuration begins.
+                """
+                def msgDataSpec(msg_src, sb_id, scan_id):
+                    """
+                    - msg_src: component from which the request originated
+                    - sb_id: Scheduling Block ID
+                    - scan_id: Scan ID
+                    """
+            class complete:
+                """
+                Emitted as scan configuration completes successfully.
+                """
+                def msgDataSpec(msg_src, sb_id, scan_id):
+                    """
+                    - msg_src: component from which the request originated
+                    - sb_id: Scheduling Block ID
+                    - scan_id: Scan ID
+                    """
+            class failed:
+                """
+                Emitted if scan configuration fails.
+                """
+                def msgDataSpec(msg_src, sb_id, scan_id):
+                    """
+                    - msg_src: component from which the request originated
+                    - sb_id: Scheduling Block ID
+                    - scan_id: Scan ID
+                    """
+
+        class start:
+            """
+            Emitted when resources have been allocated within SB execution
+            """
+            def msgDataSpec(msg_src, sb_id):
+                """
+                - msg_src: component from which the request originated
+                - sb_id: Scheduling Block ID
+                - scan_id: Scan ID
+                """
+
+        class end:
+            """
+            Emitted when a scan finishes
+            """
+            class succeeded:
+                """
+                Emitted when a scan completes successfully
+                """
+                def msgDataSpec(msg_src, sb_id, scan_id):
+                    """
+                    - msg_src: component from which the request originated
+                    - sb_id: Scheduling Block ID
+                    - scan_id: Scan ID
+                    """
+            class failed:
+                """
+                Emitted when an error was encountered during a scan
+                """
+                def msgDataSpec(msg_src, sb_id, scan_id):
+                    """
+                    - msg_src: component from which the request originated
+                    - sb_id: Scheduling Block ID
+                    """
