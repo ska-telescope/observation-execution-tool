@@ -36,6 +36,7 @@ FORMAT = '%(asctime)-15s %(message)s'
 
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
+
 #
 # Changelog
 #

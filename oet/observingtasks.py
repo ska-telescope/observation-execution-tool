@@ -125,6 +125,19 @@ def send_message(topic, **kwargs):
     pub.sendMessage(topic, msg_src=threading.current_thread().name, **kwargs)
 
 
+def publish_event_message(topic=topics.user.script.announce, **kwargs):
+    """
+    publish pypubsub event messages, OET scripts will be using this method
+    to publish a freeform messages to an unknown listener.
+
+    :param topic: message topic
+    :param kwargs: any metadata associated with pypubsub message
+    :return:
+    """
+    # TODO:the custom topic should be a unique one, compare it with oet.event.topics
+    send_message(topic, **kwargs)
+
+
 # Used as a singleton to look up Tango device FQDNs
 TANGO_REGISTRY = TangoRegistry()
 
@@ -301,9 +314,9 @@ def get_release_resources_command(subarray: domain.SubArray,
 # Added helper function for allocate_resources, allocate_resources_from_file
 # and assign_resources_from_cdm
 def return_allocated_resources(
-                    command: Command, 
-                    subarray: domain.SubArray,
-                    subarray_device: str) -> domain.ResourceAllocation:
+        command: Command,
+        subarray: domain.SubArray,
+        subarray_device: str) -> domain.ResourceAllocation:
     """
     Return the allocated resources
     
