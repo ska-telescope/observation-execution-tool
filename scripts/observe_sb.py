@@ -36,6 +36,7 @@ FORMAT = '%(asctime)-15s %(message)s'
 
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
+
 #
 # Changelog
 #
@@ -69,8 +70,6 @@ def _main(subarray_id: int, sb_json, configure_json=None):
     LOG.info(f'Running observe_sb script in OS process {os.getpid()}')
     LOG.info(f'Called with sb_json={sb_json}, configure_json={configure_json}, '
              f'subarray_id={subarray_id})')
-
-    observingtasks.send_message(topics.sb.lifecycle.observation.started, sb_id=sb_json['id'])
 
     if not os.path.isfile(sb_json):
         msg = f'SB file not found: {sb_json}'
