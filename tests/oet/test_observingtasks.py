@@ -13,12 +13,13 @@ from astropy.coordinates import SkyCoord
 from ska.cdm import schemas
 from ska.cdm.messages.subarray_node.configure import ConfigureRequest
 from ska.cdm.schemas import CODEC
-from pubsub import pub
+from oet.event import topics
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
 from oet.domain import Dish, DishAllocation, ResourceAllocation, SKAMid, SubArray
 from oet.observingtasks import ObsState, ObsStateError
+from tests.oet.procedure.application.test_restserver import PubSubHelper
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
 SKA_SUB_ARRAY_NODE_1_FDQN = 'ska_mid/tm_subarray_node/1'
@@ -68,9 +69,9 @@ def set_toggle_feature_value(pub_sub=False):
 
 
 def test_publish_event_message_verify_default_topic_assigned():
+    helper = PubSubHelper()
     observingtasks.publish_event_message(msg='test message')
-    topicMgr = pub.getDefaultTopicMgr()
-    assert topicMgr.getTopic(observingtasks.topics.user.script.announce)
+    assert topics.user.script.announce in helper.topic_list
 
 
 def test_tango_registry_returns_correct_url_for_ska_mid():

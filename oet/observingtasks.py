@@ -128,7 +128,7 @@ def send_message(topic, **kwargs):
 def publish_event_message(topic=topics.user.script.announce, **kwargs):
     """
     publish pypubsub event messages, OET scripts will be using this method
-    to publish event messages.
+    to publish a freeform messages to an unknown listener.
 
     :param topic: message topic
     :param kwargs: any metadata associated with pypubsub message
