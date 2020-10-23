@@ -192,9 +192,13 @@ class ScriptExecutionServiceWorker(EventBusWorker):
 
     def list(self, msg_src, request_id: str, pids=None):
         self.log(logging.DEBUG, 'List procedures for request %s', request_id)
-        summaries = self.ses.summarise(pids)
-        self.log(logging.DEBUG, 'List result: %s', summaries)
+        try:
+            summaries = self.ses.summarise(pids)
+        except ValueError as e:
+            # ValueError raised when PID not found.
+            summaries = []
 
+        self.log(logging.DEBUG, 'List result: %s', summaries)
         self.send_message(topics.procedure.pool.list, request_id=request_id, result=summaries)
 
     def stop(self, msg_src, request_id: str, cmd: StopProcessCommand):

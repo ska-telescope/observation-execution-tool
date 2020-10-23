@@ -8,6 +8,7 @@ the API of the devices they are controlling.
 """
 import enum
 import logging
+import threading
 from typing import Optional, Any, NamedTuple, Iterable, List, Tuple
 from datetime import timedelta
 
@@ -19,6 +20,9 @@ import ska.cdm.messages.subarray_node.configure as cdm_configure
 import ska.cdm.messages.subarray_node.scan as cdm_scan
 import ska.cdm.schemas as schemas
 import oet
+
+from oet.event import topics
+from pubsub import pub
 
 from . import domain
 from .command import Attribute, Command, SCAN_ID_GENERATOR, TangoExecutor
@@ -108,6 +112,30 @@ class TangoRegistry:  # pylint: disable=too-few-public-methods
         Get the FQDN of the Subarray appropriate to the object.
         """
         return '{}/{}'.format(self._fqdns[domain_object.__class__], domain_object.id)
+
+
+def send_message(topic, **kwargs):
+    """
+    Helper function to send messages via pypubsub.
+
+    :param topic: topic matching a topic in oet.event.topics
+    :param kwargs: kwargs to be included in message
+    :return:
+    """
+    pub.sendMessage(topic, msg_src=threading.current_thread().name, **kwargs)
+
+
+def publish_event_message(topic=topics.user.script.announce, **kwargs):
+    """
+    publish pypubsub event messages, OET scripts will be using this method
+    to publish a freeform messages to an unknown listener.
+
+    :param topic: message topic
+    :param kwargs: any metadata associated with pypubsub message
+    :return:
+    """
+    # TODO:the custom topic should be a unique one, compare it with oet.event.topics
+    send_message(topic, **kwargs)
 
 
 # Used as a singleton to look up Tango device FQDNs
@@ -286,9 +314,9 @@ def get_release_resources_command(subarray: domain.SubArray,
 # Added helper function for allocate_resources, allocate_resources_from_file
 # and assign_resources_from_cdm
 def return_allocated_resources(
-                    command: Command, 
-                    subarray: domain.SubArray,
-                    subarray_device: str) -> domain.ResourceAllocation:
+        command: Command,
+        subarray: domain.SubArray,
+        subarray_device: str) -> domain.ResourceAllocation:
     """
     Return the allocated resources
     
@@ -306,6 +334,9 @@ def return_allocated_resources(
     )
     allocated = convert_assign_resources_response(response)
     subarray.resources += allocated
+
+    send_message(topics.subarray.resources.allocated, subarray_id=subarray.id)
+
     return allocated
 
 
@@ -402,6 +433,9 @@ def deallocate_resources(subarray: domain.SubArray,
         resources = subarray.resources
     released = domain.ResourceAllocation(dishes=resources.dishes)
     subarray.resources -= released
+
+    send_message(topics.subarray.resources.deallocated, subarray_id=subarray.id)
+
     return released
 
 
@@ -602,6 +636,8 @@ def configure(subarray: domain.SubArray, subarray_config: domain.SubArrayConfigu
     # function.
     execute_configure_command(command)
 
+    send_message(topics.subarray.configured, subarray_id=subarray.id)
+
 
 def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: timedelta,
                         with_processing):
@@ -646,6 +682,8 @@ def configure_from_file(subarray: domain.SubArray, request_path, scan_duration: 
 
     execute_configure_command(command)
 
+    send_message(topics.subarray.configured, subarray_id=subarray.id)
+
 
 def configure_from_cdm(subarray_id: int, request: cdm_configure.ConfigureRequest):
     """
@@ -663,6 +701,8 @@ def configure_from_cdm(subarray_id: int, request: cdm_configure.ConfigureRequest
     subarray_node_fqdn = TANGO_REGISTRY.get_subarray_node(subarray)
     command = Command(subarray_node_fqdn, 'Configure', request_json)
     execute_configure_command(command)
+
+    send_message(topics.subarray.configured, subarray_id=subarray_id)
 
 
 def telescope_start_up(telescope: domain.SKAMid):
@@ -739,11 +779,13 @@ def scan(subarray: domain.SubArray):
     #      ABORTING. We don't know how long the SubArrayNode will remain in
     #      the transient ABORTING state so we also wait for ABORTED.
     #   2. Operation failed: obsState transitions to FAULT.
+    send_message(topics.subarray.scan.started, subarray_id=subarray.id)
     _call_and_wait_for_obsstate(
         command,
         [(ObsState.SCANNING, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED]),
          (ObsState.READY, [ObsState.FAULT, ObsState.ABORTING, ObsState.ABORTED])]
     )
+    send_message(topics.subarray.scan.finished, subarray_id=subarray.id)
 
 
 def end(subarray: domain.SubArray):
