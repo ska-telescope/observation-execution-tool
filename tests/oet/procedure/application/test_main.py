@@ -84,6 +84,29 @@ def test_script_execution_service_worker_verify_list_method_called(caplog):
     ]
 
 
+def test_script_execution_service_worker_handles_request_to_list_invalid_id(caplog):
+    """
+    The ValueError raised when SES.summarise is given an invalid PID should be handled.
+    """
+    helper = PubSubHelper()
+
+    work_q = MPQueue()
+    msg = EventMessage('TEST_SUMMARY', 'PUBSUB', dict(topic=topics.request.procedure.list, kwargs={'request_id': '123'}))
+    work_q.put(msg)
+
+    with mock.patch('oet.procedure.application.main.ScriptExecutionService.summarise') as mock_cls:
+        mock_cls.side_effect = ValueError
+        _proc_worker_wrapper_helper(caplog, ScriptExecutionServiceWorker, args=(work_q,), expect_shutdown_evt=True)
+
+    mock_cls.assert_called_once()
+
+    assert helper.topic_list == [
+        topics.request.procedure.list,   # list requested
+        topics.procedure.pool.list       # response published
+    ]
+    assert helper.messages[1][1] == dict(msg_src='TEST', request_id='123', result=[])
+
+
 def test_script_execution_service_worker_verify_start_method_called(caplog):
     """
     SES.start should be called when 'request.procedure.started' message is received
