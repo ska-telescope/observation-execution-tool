@@ -1,6 +1,7 @@
 import time
 import traceback
 from queue import Queue, Empty
+import json
 
 import flask
 from flask import Blueprint
@@ -135,13 +136,33 @@ def call_and_respond(request_topic, response_topic, *args, **kwargs):
         result = q.get(timeout=TIMEOUT)
 
         if isinstance(result, Exception):
-            description = ''.join(traceback.format_exception_only(type(result), result))
+            if isinstance(result, OSError):
+                description = json.dumps(
+                    {
+                        'Error': result.__class__.__name__,
+                        'Message': result.strerror,
+                        "Filename": result.filename
+                    }
+                )
+            else:
+                description = json.dumps(
+                    {
+                        'Error': result.__class__.__name__,
+                        'Message': str(result)
+                    }
+                )
             flask.abort(500, description=description)
 
         return result
 
     except Empty:
-        flask.abort(504, description=f'Timeout waiting for msg #{my_request_id} on topic {response_topic}')
+        description = json.dumps(
+            {
+                "Error" : "Timeout",
+                "Message": f'Timeout waiting for msg #{my_request_id} on topic {response_topic}'
+            }
+        )
+        flask.abort(504, description=description)
 
 
 @API.route('/procedures/<int:procedure_id>', methods=['PUT'])
