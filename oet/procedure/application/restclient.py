@@ -147,8 +147,12 @@ class RestClientUI:
         :param pid: (optional) IDs of procedure to list
         :return: Table entries for requested procedure(s)
         """
-        procedures = self._client.list(pid)
-        return self._tabulate(procedures)
+        try:
+            procedures = self._client.list(pid)
+            return self._tabulate(procedures)
+        except Exception as err:
+            LOGGER.debug(f'received exception {err}')
+            return self._format_error(str(err))
 
     def create(self, script_uri: str, *args, subarray_id=1, **kwargs) -> str:
         """
@@ -285,8 +289,11 @@ class RestAdapter:
         if pid is not None:
             url = f'{self.server_url}/{pid}'
             response = requests.get(url)
-            procedure_json = response.json()['procedure']
-            return [ProcedureSummary.from_json(procedure_json)]
+            if response.status_code == HTTPStatus.OK:
+                procedure_json = response.json()['procedure']
+                return [ProcedureSummary.from_json(procedure_json)]
+            else:
+                raise Exception(response.json()['error'].split(': ',1)[1])
 
         url = self.server_url
         response = requests.get(url)

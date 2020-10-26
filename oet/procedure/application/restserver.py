@@ -11,6 +11,7 @@ from oet.event import topics
 from oet.procedure import domain
 from oet.procedure.application import application
 
+
 # Blueprint for the REST API
 API = Blueprint('api', __name__)
 
@@ -51,7 +52,13 @@ def _get_summary_or_404(pid):
     summaries = call_and_respond(topics.request.procedure.list, topics.procedure.pool.list, pids=[pid])
 
     if not summaries:
-        flask.abort(404, description='Resource not found')
+        description = json.dumps(
+            {
+                "Error" : "ResourceNotFound",
+                "Message": f'No information available for PID={pid}'
+            }
+        )
+        flask.abort(404, description=description)
     else:
         return summaries[0]
 
@@ -97,11 +104,24 @@ def create_procedure():
     :return: JSON summary of created Procedure
     """
     if not flask.request.json or not 'script_uri' in flask.request.json:
-        flask.abort(400, description='script_uri missing')
+        description = json.dumps(
+            {
+                "Error": "Malformed Request",
+                "Message": "script_uri missing"
+            }
+        )
+        flask.abort(400, description=description)
     script_uri = flask.request.json['script_uri']
 
-    if 'script_args' in flask.request.json and not isinstance(flask.request.json['script_args'], dict):
-        flask.abort(400, description='Malformed script_uri')
+    if 'script_args' in flask.request.json and \
+                not isinstance(flask.request.json['script_args'], dict):
+        description = json.dumps(
+            {
+                "Error": "Malformed Request",
+                "Message": "Malformed script_uri in request"
+            }
+        )
+        flask.abort(400, description=description)
     script_args = flask.request.json.get('script_args', {})
 
     init_dict = script_args.get('init', {})
@@ -177,11 +197,23 @@ def update_procedure(procedure_id: int):
     summary = _get_summary_or_404(procedure_id)
 
     if not flask.request.json:
-        flask.abort(400)
+        description = json.dumps(
+            {
+                "Error": "Empty Response",
+                "Message": "No JSON available in response"
+            }
+        )
+        flask.abort(400, description=description)
 
     if 'script_args' in flask.request.json \
             and not isinstance(flask.request.json['script_args'], dict):
-        flask.abort(400)
+        description = json.dumps(
+            {
+                "Error": "Malformed Response",
+                "Message": "Malformed script_args in response"
+            }
+        )
+        flask.abort(400, description=description)
     script_args = flask.request.json.get('script_args', {})
 
     old_state = summary.state
