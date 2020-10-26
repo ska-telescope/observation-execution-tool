@@ -1,0 +1,10 @@
+-r SUT_requirements.txt
+requests-mock
+pytest
+pyyaml
+pytest-cov
+pytest-json-report
+pycodestyle
+pytest-bdd
+pytest-forked
+pytest-ordering
