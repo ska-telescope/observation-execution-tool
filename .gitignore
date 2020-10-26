@@ -26,3 +26,6 @@ setup.py-e
 .eclipse
 .vscode
 .DS_Store
+
+.config.toml
+/builds/

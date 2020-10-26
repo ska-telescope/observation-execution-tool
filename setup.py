@@ -38,14 +38,14 @@ setup(
         'cdm-shared-library',
         'fire',
         'flask',
+        'pypubsub',
         'pytango',
         'requests',
-        'tabulate',
-        'skuid',
-        'ska-project-data-model-library',
         'ska-logging',
-        'pypubsub',
-        'tblib'
+        'ska-project-data-model-library',
+        'skuid',
+        'tabulate',
+        'tblib',
     ],
     setup_requires=[
         # dependency for `python setup.py test`
