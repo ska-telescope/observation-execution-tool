@@ -10,7 +10,7 @@ TEST_ARTIFACTS = pytest.stdout report.xml report.json cucumber.json pytest-logs.
 all: test
 
 install:
-	pip3 install -r test_requirements.txt --use-feature=2020-resolver
+	python3 -m pip install -r test_requirements.txt
 
 # create the build directory
 # execute the python tests
@@ -26,10 +26,10 @@ test: install
 
 lint:
 	python3 -m pip install pylint2junit; \
-	mkdir -p /build/reports; \
-	cd /app && ./code-analysis.sh | tee /build/code_analysis.stdout; \
-	cd /app && pylint --output-format=pylint2junit.JunitReporter oet tests/oet > /build/reports/linting.xml; \
-	sed -i 's/UTF-8" ?>/UTF-8" ?><testsuites>/' /build/reports/linting.xml; \
-	echo "</testsuites>" >> /build/reports/linting.xml; \
+	mkdir -p build/reports; \
+	cd /app && ./code-analysis.sh | tee build/code_analysis.stdout; \
+	cd /app && pylint --output-format=pylint2junit.JunitReporter oet tests/oet > build/reports/linting.xml; \
+	sed -i 's/UTF-8" ?>/UTF-8" ?><testsuites>/' build/reports/linting.xml; \
+	echo "</testsuites>" >> build/reports/linting.xml; \
 
-.PHONY: all test install
+.PHONY: all test install lint

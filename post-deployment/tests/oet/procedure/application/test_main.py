@@ -7,7 +7,6 @@ from functools import partial
 
 from oet.mptools import (
     EventMessage,
-    MainContext,
     MPQueue,
 )
 from oet.event import topics
@@ -17,7 +16,6 @@ from oet.procedure.application.main import (
     EventBusWorker,
     FlaskWorker,
     ScriptExecutionServiceWorker,
-    main,
     main_loop
 )
 from tests.oet.mptools.test_mptools import _proc_worker_wrapper_helper
