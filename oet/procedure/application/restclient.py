@@ -85,7 +85,7 @@ class RestClientUI:
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
         table_rows = [(p.id, p.script_uri,
                        datetime.datetime.fromtimestamp(p.history['process_states']
-                                                       ['CREATED']).strftime('%Y-%m-%d '
+                                                       ['CREATED'], tz=datetime.timezone.utc).strftime('%Y-%m-%d '
                                                                              '%H:%M:%S'),
                        p.state) for p in procedures]
 
@@ -105,7 +105,7 @@ class RestClientUI:
         headers_args = ['Method', 'Arguments', 'Keyword Arguments']
 
         table_rows_states = [(datetime.datetime.fromtimestamp(procedure[0].
-                                                              history['process_states'][s]).
+                                                              history['process_states'][s], tz=datetime.timezone.utc).
                                                               strftime('%Y-%m-%d %H:%M:%S.%f'), s)
                              for s in procedure[0].history['process_states']]
 
