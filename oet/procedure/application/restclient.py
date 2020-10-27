@@ -85,8 +85,8 @@ class RestClientUI:
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
         table_rows = [(p.id, p.script_uri,
                        datetime.datetime.fromtimestamp(p.history['process_states']
-                                                       ['CREATED'], tz=datetime.timezone.utc).strftime('%Y-%m-%d '
-                                                                             '%H:%M:%S'),
+                                                       ['CREATED'], tz=datetime.timezone.utc
+                                                       ).strftime('%Y-%m-%d ' '%H:%M:%S'),
                        p.state) for p in procedures]
 
         headers = ['ID', 'Script', 'Creation Time', 'State']
@@ -105,7 +105,8 @@ class RestClientUI:
         headers_args = ['Method', 'Arguments', 'Keyword Arguments']
 
         table_rows_states = [(datetime.datetime.fromtimestamp(procedure[0].
-                                                              history['process_states'][s], tz=datetime.timezone.utc).
+                                                              history['process_states'][s],
+                                                              tz=datetime.timezone.utc).
                                                               strftime('%Y-%m-%d %H:%M:%S.%f'), s)
                              for s in procedure[0].history['process_states']]
 
@@ -223,17 +224,11 @@ class RestClientUI:
 
         :param pid: ID of procedure to describe
         """
-        valid_procedure_ids = [p.id for p in self._client.list()]
-        if not valid_procedure_ids:
-            return 'No procedures to investigate'
-
         if pid is None:
-            pid = valid_procedure_ids[-1]
-
-        if str(pid) not in valid_procedure_ids:
-            return 'Error: No valid procedure ID specified. ' \
-                   'Specify ID of the procedure to describe.'
-
+            procedures = self._client.list()
+            if not procedures:
+                return 'No procedures to describe'
+            pid = procedures[-1].id
         procedure = self._client.list(pid)
         return self._tabulate_for_describe(procedure)
 

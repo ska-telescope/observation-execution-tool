@@ -3,7 +3,7 @@ Unit tests for the REST client module.
 """
 from http import HTTPStatus
 
-#import requests_mock
+import requests_mock
 import unittest.mock as mock
 import fire
 
@@ -420,43 +420,6 @@ RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
 RESTUI_STOP_RESPONSE_1 = ['Successfully stopped script with ID 1 and aborted subarray activity']
 
 RESTUI_LIST_RESPONSE_FOR_DESCRIBE_1 = [
-    [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
-                      script_uri='file:///app/scripts/test_working.py',
-                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
-                                   'run': {'args': [], 'kwargs': {}}},
-                      history={'process_states': {'COMPLETED': 1603723682.0246627,
-                                                  'CREATED': 1603723668.9510045,
-                                                  'RUNNING': 1603723677.0478802},
-                               'stacktrace': None},
-                      state='COMPLETED'),
-     ProcedureSummary(id=2, uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
-                      script_uri='file:///app/scripts/allocate.py',
-                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
-                                   'run': {'args': [], 'kwargs': {}}},
-                      history={'process_states': {'CREATED': 1603727563.3671296,
-                                                  'FAILED': 1603727578.7150311,
-                                                  'RUNNING': 1603727578.7046797},
-                               'stacktrace': 'Traceback (most recent call last):\n \
-                                File "/app/oet/procedure/domain.py", line 132, in run\n    \
-                                self.user_module.main(*args, **kwargs)\n  \
-                                File "/app/scripts/allocate.py", line 47, in _main\n    \
-                                allocated = subarray.allocate(allocation)\n  \
-                                File "/app/oet/domain.py", line 363, in allocate\n    \
-                                allocated = observingtasks.allocate_resources(self, resources)\n  \
-                                File "/app/oet/observingtasks.py", line 352, \
-                                in allocate_resources\n    \
-                                command = get_allocate_resources_command(subarray, resources)\n  \
-                                File "/app/oet/observingtasks.py", line 259, in \
-                                get_allocate_resources_command\n    \
-                                request = get_allocate_resources_request(subarray, resources, \
-                                template_request)\n  \
-                                File "/app/oet/observingtasks.py", \
-                                line 228, in get_allocate_resources_request\n    \
-                                template_sdp_config = template_request.sdp_config\n\
-                                AttributeError: \'NoneType\' object has no \
-                                attribute \'sdp_config\'\n'},
-                      state='FAILED')
-     ],
     [ProcedureSummary(id=2,
                       uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
                       script_uri='file:///app/scripts/allocate.py',
@@ -481,7 +444,7 @@ RESTUI_LIST_RESPONSE_FOR_DESCRIBE_1 = [
                                 template_request)\n  \
                                 File "/app/oet/observingtasks.py", line 228, in \
                                 get_allocate_resources_request\n    \
-                                template_sdp_config = template_request.sdp_config\n\
+                                template_sdp_config = template_request.sdp_config\n \
                                 AttributeError: \'NoneType\' object has no \
                                 attribute \'sdp_config\'\n'},
                       state='FAILED')
@@ -489,42 +452,6 @@ RESTUI_LIST_RESPONSE_FOR_DESCRIBE_1 = [
 ]
 
 RESTUI_LIST_RESPONSE_FOR_DESCRIBE_2 = [
-    [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
-                      script_uri='file:///app/scripts/test_working.py',
-                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
-                                   'run': {'args': [], 'kwargs': {}}},
-                      history={'process_states': {'COMPLETED': 1603723682.0246627,
-                                                  'CREATED': 1603723668.9510045,
-                                                  'RUNNING': 1603723677.0478802},
-                               'stacktrace': None},
-                      state='COMPLETED'),
-     ProcedureSummary(id=2, uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
-                      script_uri='file:///app/scripts/allocate.py',
-                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
-                                   'run': {'args': [], 'kwargs': {}}},
-                      history={'process_states': {'CREATED': 1603727563.3671296,
-                                                  'FAILED': 1603727578.7150311,
-                                                  'RUNNING': 1603727578.7046797},
-                               'stacktrace': 'Traceback (most recent call last):\n  \
-                               File "/app/oet/procedure/domain.py", line 132, in run\n    \
-                               self.user_module.main(*args, **kwargs)\n  \
-                               File "/app/scripts/allocate.py", line 47, in _main\n    \
-                               allocated = subarray.allocate(allocation)\n  \
-                               File "/app/oet/domain.py", line 363, in allocate\n    \
-                               allocated = observingtasks.allocate_resources(self, resources)\n  \
-                               File "/app/oet/observingtasks.py", line 352, in \
-                               allocate_resources\n    \
-                               command = get_allocate_resources_command(subarray, resources)\n  \
-                               File "/app/oet/observingtasks.py", line 259, in \
-                               get_allocate_resources_command\n    \
-                               request = get_allocate_resources_request(subarray, \
-                               resources, template_request)\n  \
-                               File "/app/oet/observingtasks.py", \
-                               line 228, in get_allocate_resources_request\n    \
-                               template_sdp_config = template_request.sdp_config\n\
-                               AttributeError: \'NoneType\' object has no attribute \'\
-                               sdp_config\'\n'},
-                      state='FAILED')],
     [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/test_working.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
