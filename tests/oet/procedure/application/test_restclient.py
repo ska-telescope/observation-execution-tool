@@ -364,19 +364,8 @@ RESTUI_LIST_RESPONSE = [
                       state='CREATED')]
 ]
 
-RESTUI_START_RESPONSE = [
-    ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
-                     script_uri='file:///app/scripts/allocate.py',
-                     script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
-                                  'run': {'args': [], 'kwargs': {}}},
-                     history={'process_states': {'CREATED': 1603378829.5842578,
-                                                 'RUNNING': 1603378900.5969338},
-                              'stacktrace': None},
-                     state='RUNNING')
-]
-
-RESTUI_LIST_RESPONSE_FOR_START_3 = [
-    [ProcedureSummary(id='1', uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+RESTUI_LIST_RESPONSE_WITH_STACKTRACE = [
+    [ProcedureSummary(id=2, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                      script_uri='file:///app/scripts/allocate.py',
                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                   'run': {'args': [], 'kwargs': {}}},
@@ -405,6 +394,17 @@ RESTUI_LIST_RESPONSE_FOR_START_3 = [
                      state='FAILED')]
 ]
 
+RESTUI_START_RESPONSE = [
+    ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+                     script_uri='file:///app/scripts/allocate.py',
+                     script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
+                                  'run': {'args': [], 'kwargs': {}}},
+                     history={'process_states': {'CREATED': 1603378829.5842578,
+                                                 'RUNNING': 1603378900.5969338},
+                              'stacktrace': None},
+                     state='RUNNING')
+]
+
 RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
     [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/test_working.py',
@@ -418,37 +418,6 @@ RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
 
 RESTUI_STOP_RESPONSE_1 = ['Successfully stopped script with ID 1 and aborted subarray activity']
 
-RESTUI_LIST_RESPONSE_FOR_DESCRIBE_1 = [
-    [ProcedureSummary(id=2,
-                      uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
-                      script_uri='file:///app/scripts/allocate.py',
-                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
-                                   'run': {'args': [], 'kwargs': {}}},
-                      history={'process_states': {'CREATED': 1603727563.3671296,
-                                                  'FAILED': 1603727578.7150311,
-                                                  'RUNNING': 1603727578.7046797},
-                               'stacktrace': 'Traceback (most recent call last):\n  \
-                                File "/app/oet/procedure/domain.py", line 132, in run\n    \
-                                self.user_module.main(*args, **kwargs)\n  File \
-                                "/app/scripts/allocate.py", line 47, in _main\n    \
-                                allocated = subarray.allocate(allocation)\n  \
-                                File "/app/oet/domain.py", line 363, in allocate\n    \
-                                allocated = observingtasks.allocate_resources(self, resources)\n  \
-                                File "/app/oet/observingtasks.py", line 352, in \
-                                allocate_resources\n    \
-                                command = get_allocate_resources_command(subarray, resources)\n  \
-                                File "/app/oet/observingtasks.py", line 259, in \
-                                get_allocate_resources_command\n    \
-                                request = get_allocate_resources_request(subarray, resources, \
-                                template_request)\n  \
-                                File "/app/oet/observingtasks.py", line 228, in \
-                                get_allocate_resources_request\n    \
-                                template_sdp_config = template_request.sdp_config\n \
-                                AttributeError: \'NoneType\' object has no \
-                                attribute \'sdp_config\'\n'},
-                      state='FAILED')
-     ]
-]
 
 RESTUI_LIST_RESPONSE_FOR_DESCRIBE_2 = [
     [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
@@ -538,7 +507,7 @@ def test_restclientui_start_output_when_given_no_pid(mock_list_fn, mock_start_fn
 
 @mock.patch.object(RestAdapter, 'list')
 def test_restclientui_start_output_when_last_created_script_has_failed(mock_list_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_START_3
+    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_WITH_STACKTRACE
 
     fire.Fire(RestClientUI, ['start'])
     captured = capsys.readouterr()
@@ -558,6 +527,7 @@ def test_restclientui_start_output_when_given_pid(mock_list_fn, mock_start_fn, c
 
     assert result[0]['id'] == str(1)
     assert result[0]['state'] == 'RUNNING'
+    mock_start_fn.assert_called_with(1, run_args=mock.ANY)
 
 
 @mock.patch.object(RestAdapter, 'stop')
@@ -570,6 +540,7 @@ def test_restclientui_stop_output_when_a_script_is_running(mock_list_fn, mock_st
     captured = capsys.readouterr()
 
     assert 'Successfully stopped script with ID 1 and aborted subarray activity' in captured.out
+    mock_stop_fn.assert_called_with(1, True)
 
 
 @mock.patch.object(RestAdapter, 'list')
@@ -584,7 +555,7 @@ def test_restclientui_stop_output_when_a_script_is_not_running(mock_list_fn, cap
 
 @mock.patch.object(RestAdapter, 'list')
 def test_restclientui_describe_when_stacktrace_present(mock_list_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_DESCRIBE_1
+    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_WITH_STACKTRACE
 
     fire.Fire(RestClientUI, ['describe', '--pid=2'])
     captured = capsys.readouterr()
@@ -592,6 +563,7 @@ def test_restclientui_describe_when_stacktrace_present(mock_list_fn, capsys):
 
     assert 'AttributeError' in captured.out
     assert 'FAILED' in lines[8]
+    mock_list_fn.assert_called_with(2)
 
 
 @mock.patch.object(RestAdapter, 'list')
@@ -603,3 +575,4 @@ def test_restclientui_describe_when_stacktrace_not_present(mock_list_fn, capsys)
     lines = captured.out.split('\n')
 
     assert 'COMPLETED' in lines[8]
+    mock_list_fn.assert_called_with(1)
