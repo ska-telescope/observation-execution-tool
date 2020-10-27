@@ -329,8 +329,6 @@ def test_stop_procedure_sends_command_with_abort_true():
 # Additions by Liz Bartlett to test restclientUI maybe should be another file.
 
 def test_restclientui_returns_error_when_not_passed_an_invalid_command():
-
-
     root_dir = os.path.split(oet.ROOT_DIR)[0]
     restclient = os.path.join(root_dir, 'oet/procedure/application/restclient.py')
 
@@ -349,7 +347,7 @@ RESTUI_CREATE_RESPONSE = [
                               'stacktrace': None},
                      state='CREATED')]
 
-RESTUI_LIST_RESPONSE_1 = [
+RESTUI_LIST_RESPONSE = [
     [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/allocate.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
@@ -366,18 +364,7 @@ RESTUI_LIST_RESPONSE_1 = [
                       state='CREATED')]
 ]
 
-RESTUI_LIST_RESPONSE_FOR_START_1 = [[]]
-
-RESTUI_LIST_RESPONSE_FOR_START_2 = [
-    [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
-                      script_uri='file:///app/scripts/allocate.py',
-                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
-                                   'run': {'args': [], 'kwargs': {}}},
-                      history={'process_states': {'CREATED': 1603378829.5842578},
-                               'stacktrace': None},
-                      state='CREATED')]
-]
-RESTUI_START_RESPONSE_2 = [
+RESTUI_START_RESPONSE = [
     ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                      script_uri='file:///app/scripts/allocate.py',
                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
@@ -516,7 +503,7 @@ def test_restclientui_creates_a_valid_script(mock_create_fn, capsys):
 
 @mock.patch.object(RestAdapter, 'list')
 def test_restclientui_lists_output(mock_list_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_1
+    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE
     fire.Fire(RestClientUI, ['list'])
     captured = capsys.readouterr()
     result = parse_rest_create_list_response(captured.out)
@@ -527,7 +514,7 @@ def test_restclientui_lists_output(mock_list_fn, capsys):
 
 @mock.patch.object(RestAdapter, 'list')
 def test_restclientui_start_output_when_nothing_to_start(mock_list_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_START_1
+    mock_list_fn.side_effect = [[]]
 
     fire.Fire(RestClientUI, ['start'])
     captured = capsys.readouterr()
@@ -538,8 +525,8 @@ def test_restclientui_start_output_when_nothing_to_start(mock_list_fn, capsys):
 @mock.patch.object(RestAdapter, 'start')
 @mock.patch.object(RestAdapter, 'list')
 def test_restclientui_start_output_when_given_no_pid(mock_list_fn, mock_start_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_START_2
-    mock_start_fn.side_effect = RESTUI_START_RESPONSE_2
+    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE
+    mock_start_fn.side_effect = RESTUI_START_RESPONSE
 
     fire.Fire(RestClientUI, ['start'])
     captured = capsys.readouterr()
@@ -561,8 +548,8 @@ def test_restclientui_start_output_when_last_created_script_has_failed(mock_list
 @mock.patch.object(RestAdapter, 'start')
 @mock.patch.object(RestAdapter, 'list')
 def test_restclientui_start_output_when_given_pid(mock_list_fn, mock_start_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_START_2
-    mock_start_fn.side_effect = RESTUI_START_RESPONSE_2
+    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE
+    mock_start_fn.side_effect = RESTUI_START_RESPONSE
 
     fire.Fire(RestClientUI, ['start', '--pid=1'])
     captured = capsys.readouterr()
@@ -586,7 +573,7 @@ def test_restclientui_stop_output_when_a_script_is_running(mock_list_fn, mock_st
 
 @mock.patch.object(RestAdapter, 'list')
 def test_restclientui_stop_output_when_a_script_is_not_running(mock_list_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_START_2
+    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE
 
     fire.Fire(RestClientUI, ['stop'])
     captured = capsys.readouterr()
