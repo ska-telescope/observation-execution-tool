@@ -388,6 +388,36 @@ RESTUI_START_RESPONSE_2 = [
                      state='RUNNING')
 ]
 
+RESTUI_LIST_RESPONSE_FOR_START_3 = [
+    [ProcedureSummary(id='1', uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+                     script_uri='file:///app/scripts/allocate.py',
+                     script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
+                                  'run': {'args': [], 'kwargs': {}}},
+                     history={'process_states': {'CREATED': 1603801915.4125392,
+                                                 'FAILED': 1603801921.3564265,
+                                                 'RUNNING': 1603801921.3464086},
+                              'stacktrace': 'Traceback (most recent call last):\n  \
+                              File "/app/oet/procedure/domain.py", line 132, in run\n    \
+                              self.user_module.main(*args, **kwargs)\n  \
+                              File "/app/scripts/allocate.py", line 47, in _main\n    \
+                              allocated = subarray.allocate(allocation)\n  \
+                              File "/app/oet/domain.py", line 363, in allocate\n    \
+                              allocated = observingtasks.allocate_resources(self, resources)\n  \
+                              File "/app/oet/observingtasks.py", line 352, in \
+                              allocate_resources\n    command = \
+                              get_allocate_resources_command(subarray, resources)\n  \
+                              File "/app/oet/observingtasks.py", line 259, \
+                              in get_allocate_resources_command\n    \
+                              request = get_allocate_resources_request(subarray, resources, \
+                              template_request)\n  \
+                              File "/app/oet/observingtasks.py", \
+                              line 228, in get_allocate_resources_request\n    \
+                              template_sdp_config = template_request.sdp_config\n\
+                              AttributeError: \'NoneType\' object has no \
+                              attribute \'sdp_config\'\n'},
+                     state='FAILED')]
+]
+
 RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
     [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/test_working.py',
@@ -516,6 +546,16 @@ def test_restclientui_start_output_when_given_no_pid(mock_list_fn, mock_start_fn
     result = parse_rest_create_list_response(captured.out)
 
     assert result[0]['state'] == 'RUNNING'
+
+
+@mock.patch.object(RestAdapter, 'list')
+def test_restclientui_start_output_when_last_created_script_has_failed(mock_list_fn, capsys):
+    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_START_3
+
+    fire.Fire(RestClientUI, ['start'])
+    captured = capsys.readouterr()
+
+    assert 'The last procedure created is in FAILED state and cannot be started' in captured.out
 
 
 @mock.patch.object(RestAdapter, 'start')
