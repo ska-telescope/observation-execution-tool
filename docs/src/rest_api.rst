@@ -326,3 +326,28 @@ argument scan_duration=14::
       }
     }
 
+When an error occurs
+--------------------
+If there is a mistake in the User input it is desirable that the API produces 
+errors in a consistent computer-readable way. Due to lmitations in returning
+errors we create an embedded JSON message.
+The session below attempts to list a procedure which does not exist::
+
+    tangodev@buster:~/ska/observation-execution-tool$ curl -i http://localhost:5000/api/v1.0/procedures/4
+    HTTP/1.0 404 NOT FOUND
+    Content-Type: application/json
+    Content-Length: 114
+    Server: Werkzeug/1.0.1 Python/3.7.3
+    Date: Mon, 26 Oct 2020 14:04:23 GMT
+    
+    {
+        "error": "404 Not Found: {\"Error\": \"ResourceNotFound\", \"Message\": \"No information available for PID=4\"}"
+    }
+    
+The above embedded JSON can be extracted to produce::
+
+    {
+         "Error": "ResourceNotFound",
+         "Message": "No information available for PID=4"
+    }
+    

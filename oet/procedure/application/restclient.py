@@ -12,6 +12,7 @@ import datetime
 import logging
 import operator
 import os
+import json
 from http import HTTPStatus
 from typing import Dict, List, Optional
 
@@ -82,6 +83,16 @@ class RestClientUI:
         self._client = RestAdapter(server_url)
 
     @staticmethod
+    def _format_error(error_json: str) -> str:
+        error_d = json.loads(error_json)
+        if 'Filename' in error_d:
+            msg = f"{error_d['Message']}: {error_d['Filename']}"
+        else:
+            msg = f"{error_d['Error']}: {error_d['Message']}"
+        return (f'The server encountered a problem: {msg}')
+
+
+    @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
         table_rows = [(p.id, p.script_uri,
                        datetime.datetime.fromtimestamp(p.history['process_states']
@@ -136,8 +147,12 @@ class RestClientUI:
         :param pid: (optional) IDs of procedure to list
         :return: Table entries for requested procedure(s)
         """
-        procedures = self._client.list(pid)
-        return self._tabulate(procedures)
+        try:
+            procedures = self._client.list(pid)
+            return self._tabulate(procedures)
+        except Exception as err:
+            LOGGER.debug(f'received exception {err}')
+            return self._format_error(str(err))
 
     def create(self, script_uri: str, *args, subarray_id=1, **kwargs) -> str:
         """
@@ -157,8 +172,12 @@ class RestClientUI:
         """
         kwargs['subarray_id'] = subarray_id
         init_args = dict(args=args, kwargs=kwargs)
-        procedure = self._client.create(script_uri, init_args=init_args)
-        return self._tabulate([procedure])
+        try:
+            procedure = self._client.create(script_uri, init_args=init_args)
+            return self._tabulate([procedure])
+        except Exception as err:
+            LOGGER.debug(f'received exception {err}')
+            return self._format_error(str(err))
 
     def start(self, *args, pid=None, **kwargs) -> str:
         """
@@ -186,8 +205,12 @@ class RestClientUI:
             pid = procedures[-1].id
 
         run_args = dict(args=args, kwargs=kwargs)
-        procedure = self._client.start(pid, run_args=run_args)
-        return self._tabulate([procedure])
+        try:
+            procedure = self._client.start(pid, run_args=run_args)
+            return self._tabulate([procedure])
+        except Exception as err:
+            LOGGER.debug(f'received exception {err}')
+            return self._format_error(str(err))
 
     def stop(self, pid=None, run_abort=True) -> str:
         """
@@ -210,8 +233,12 @@ class RestClientUI:
                 return 'WARNING: More than one procedure is running. ' \
                        'Specify ID of the procedure to stop.'
             pid = running_procedures[0].id
-        response = self._client.stop(pid, run_abort)
-        return response
+        try:
+            response = self._client.stop(pid, run_abort)
+            return response
+        except Exception as err:
+            LOGGER.debug(f'received exception {err}')
+            return self._format_error(str(err))
 
     def describe(self, pid=None) -> str:
         """
@@ -262,8 +289,11 @@ class RestAdapter:
         if pid is not None:
             url = f'{self.server_url}/{pid}'
             response = requests.get(url)
-            procedure_json = response.json()['procedure']
-            return [ProcedureSummary.from_json(procedure_json)]
+            if response.status_code == HTTPStatus.OK:
+                procedure_json = response.json()['procedure']
+                return [ProcedureSummary.from_json(procedure_json)]
+            else:
+                raise Exception(response.json()['error'].split(': ',1)[1])
 
         url = self.server_url
         response = requests.get(url)
@@ -300,7 +330,7 @@ class RestAdapter:
         response_json = response.json()
         if response.status_code == HTTPStatus.CREATED:
             return ProcedureSummary.from_json(response_json['procedure'])
-        raise Exception(response_json['error'])
+        raise Exception(response_json['error'].split(': ',1)[1])
 
     def start(self, pid, run_args=None) -> ProcedureSummary:
         """
@@ -334,7 +364,7 @@ class RestAdapter:
         response_json = response.json()
         if response.status_code == HTTPStatus.OK:
             return ProcedureSummary.from_json(response_json['procedure'])
-        raise Exception(response_json['error'])
+        raise Exception(response_json['error'].split(': ',1)[1])
 
     def stop(self, pid, run_abort=True):
         """
@@ -357,7 +387,7 @@ class RestAdapter:
         response_json = response.json()
         if response.status_code == HTTPStatus.OK:
             return response_json['abort_message']
-        raise Exception(response_json['error'])
+        raise Exception(response_json['error'].split(': ',1)[1])
 
 
 def main():
