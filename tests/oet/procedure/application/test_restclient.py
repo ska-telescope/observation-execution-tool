@@ -3,7 +3,7 @@ Unit tests for the REST client module.
 """
 from http import HTTPStatus
 
-import requests_mock
+#import requests_mock
 import unittest.mock as mock
 import fire
 
@@ -328,9 +328,8 @@ def test_stop_procedure_sends_command_with_abort_true():
 
 # Additions by Liz Bartlett to test restclientUI maybe should be another file.
 
-
 def test_restclientui_returns_error_when_not_passed_an_invalid_command():
-    """ works fine because it doesn't actually contact the rest client"""
+
 
     root_dir = os.path.split(oet.ROOT_DIR)[0]
     restclient = os.path.join(root_dir, 'oet/procedure/application/restclient.py')
@@ -342,7 +341,7 @@ def test_restclientui_returns_error_when_not_passed_an_invalid_command():
 
 
 RESTUI_CREATE_RESPONSE = [
-    ProcedureSummary(id='1', uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+    ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                      script_uri='file:///app/scripts/allocate.py',
                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                   'run': {'args': [], 'kwargs': {}}},
@@ -351,14 +350,14 @@ RESTUI_CREATE_RESPONSE = [
                      state='CREATED')]
 
 RESTUI_LIST_RESPONSE_1 = [
-    [ProcedureSummary(id='1', uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+    [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/allocate.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                    'run': {'args': [], 'kwargs': {}}},
                       history={'process_states': {'CREATED': 1603378829.5842578},
                                'stacktrace': None},
                       state='CREATED'),
-     ProcedureSummary(id='2', uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
+     ProcedureSummary(id=2, uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
                       script_uri='file:///app/scripts/allocate.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                    'run': {'args': [], 'kwargs': {}}},
@@ -368,10 +367,9 @@ RESTUI_LIST_RESPONSE_1 = [
 ]
 
 RESTUI_LIST_RESPONSE_FOR_START_1 = [[]]
-RESTUI_START_RESPONSE_1 = []
 
 RESTUI_LIST_RESPONSE_FOR_START_2 = [
-    [ProcedureSummary(id='1', uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+    [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/allocate.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                    'run': {'args': [], 'kwargs': {}}},
@@ -380,7 +378,7 @@ RESTUI_LIST_RESPONSE_FOR_START_2 = [
                       state='CREATED')]
 ]
 RESTUI_START_RESPONSE_2 = [
-    ProcedureSummary(id='1', uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+    ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                      script_uri='file:///app/scripts/allocate.py',
                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                   'run': {'args': [], 'kwargs': {}}},
@@ -391,7 +389,7 @@ RESTUI_START_RESPONSE_2 = [
 ]
 
 RESTUI_LIST_RESPONSE_FOR_START_3 = [
-    [ProcedureSummary(id='1', uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+    [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/allocate.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                    'run': {'args': [], 'kwargs': {}}},
@@ -399,7 +397,7 @@ RESTUI_LIST_RESPONSE_FOR_START_3 = [
                                'stacktrace': None},
                       state='CREATED'),
 
-     ProcedureSummary(id='2', uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
+     ProcedureSummary(id=2, uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
                       script_uri='file:///app/scripts/deallocate.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                    'run': {'args': [], 'kwargs': {}}},
@@ -409,7 +407,7 @@ RESTUI_LIST_RESPONSE_FOR_START_3 = [
 ]
 
 RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
-    [ProcedureSummary(id='1', uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+    [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/test_working.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                    'run': {'args': [], 'kwargs': {}}},
@@ -420,10 +418,9 @@ RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
 ]
 
 RESTUI_STOP_RESPONSE_1 = ['Successfully stopped script with ID 1 and aborted subarray activity']
-RESTUI_STOP_RESPONSE_2 = []
 
 RESTUI_LIST_RESPONSE_FOR_DESCRIBE_1 = [
-    [ProcedureSummary(id='1', uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+    [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/test_working.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                    'run': {'args': [], 'kwargs': {}}},
@@ -432,7 +429,7 @@ RESTUI_LIST_RESPONSE_FOR_DESCRIBE_1 = [
                                                   'RUNNING': 1603723677.0478802},
                                'stacktrace': None},
                       state='COMPLETED'),
-     ProcedureSummary(id='2', uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
+     ProcedureSummary(id=2, uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
                       script_uri='file:///app/scripts/allocate.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                    'run': {'args': [], 'kwargs': {}}},
@@ -460,7 +457,7 @@ RESTUI_LIST_RESPONSE_FOR_DESCRIBE_1 = [
                                 attribute \'sdp_config\'\n'},
                       state='FAILED')
      ],
-    [ProcedureSummary(id='2',
+    [ProcedureSummary(id=2,
                       uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
                       script_uri='file:///app/scripts/allocate.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
@@ -492,7 +489,7 @@ RESTUI_LIST_RESPONSE_FOR_DESCRIBE_1 = [
 ]
 
 RESTUI_LIST_RESPONSE_FOR_DESCRIBE_2 = [
-    [ProcedureSummary(id='1', uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+    [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/test_working.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                    'run': {'args': [], 'kwargs': {}}},
@@ -501,7 +498,7 @@ RESTUI_LIST_RESPONSE_FOR_DESCRIBE_2 = [
                                                   'RUNNING': 1603723677.0478802},
                                'stacktrace': None},
                       state='COMPLETED'),
-     ProcedureSummary(id='2', uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
+     ProcedureSummary(id=2, uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
                       script_uri='file:///app/scripts/allocate.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                    'run': {'args': [], 'kwargs': {}}},
@@ -528,7 +525,7 @@ RESTUI_LIST_RESPONSE_FOR_DESCRIBE_2 = [
                                AttributeError: \'NoneType\' object has no attribute \'\
                                sdp_config\'\n'},
                       state='FAILED')],
-    [ProcedureSummary(id='1', uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
+    [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/test_working.py',
                       script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
                                    'run': {'args': [], 'kwargs': {}}},
@@ -589,11 +586,9 @@ def test_restclientui_lists_output(mock_list_fn, capsys):
     assert result[1]['id'] == str(2)
 
 
-@mock.patch.object(RestAdapter, 'start')
 @mock.patch.object(RestAdapter, 'list')
-def test_restclientui_start_output_when_nothing_to_start(mock_list_fn, mock_start_fn, capsys):
+def test_restclientui_start_output_when_nothing_to_start(mock_list_fn, capsys):
     mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_START_1
-    mock_start_fn.side_effect = RESTUI_START_RESPONSE_1
 
     fire.Fire(RestClientUI, ['start'])
     captured = capsys.readouterr()
@@ -640,11 +635,9 @@ def test_restclientui_stop_output_when_a_script_is_running(mock_list_fn, mock_st
     assert 'Successfully stopped script with ID 1 and aborted subarray activity' in captured.out
 
 
-@mock.patch.object(RestAdapter, 'stop')
 @mock.patch.object(RestAdapter, 'list')
-def test_restclientui_stop_output_when_a_script_is_not_running(mock_list_fn, mock_stop_fn, capsys):
+def test_restclientui_stop_output_when_a_script_is_not_running(mock_list_fn, capsys):
     mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_START_2
-    mock_stop_fn.side_effect = RESTUI_STOP_RESPONSE_2
 
     fire.Fire(RestClientUI, ['stop'])
     captured = capsys.readouterr()
@@ -665,7 +658,7 @@ def test_restclientui_describe_when_stacktrace_present(mock_list_fn, capsys):
 
 
 @mock.patch.object(RestAdapter, 'list')
-def test_restclientui_describe_when_stacktrace_present(mock_list_fn, capsys):
+def test_restclientui_describe_when_stacktrace_not_present(mock_list_fn, capsys):
     mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_DESCRIBE_2
 
     fire.Fire(RestClientUI, ['describe', '--pid=1'])
