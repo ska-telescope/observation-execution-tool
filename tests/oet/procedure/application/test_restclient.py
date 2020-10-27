@@ -388,24 +388,6 @@ RESTUI_START_RESPONSE_2 = [
                      state='RUNNING')
 ]
 
-RESTUI_LIST_RESPONSE_FOR_START_3 = [
-    [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
-                      script_uri='file:///app/scripts/allocate.py',
-                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
-                                   'run': {'args': [], 'kwargs': {}}},
-                      history={'process_states': {'CREATED': 1603457717.8936973},
-                               'stacktrace': None},
-                      state='CREATED'),
-
-     ProcedureSummary(id=2, uri='http://127.0.0.1:5000/api/v1.0/procedures/2',
-                      script_uri='file:///app/scripts/deallocate.py',
-                      script_args={'init': {'args': [], 'kwargs': {'subarray_id': 1}},
-                                   'run': {'args': [], 'kwargs': {}}},
-                      history={'process_states': {'CREATED': 1603457786.0875766},
-                               'stacktrace': None},
-                      state='CREATED')]
-]
-
 RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
     [ProcedureSummary(id=1, uri='http://127.0.0.1:5000/api/v1.0/procedures/1',
                       script_uri='file:///app/scripts/test_working.py',
