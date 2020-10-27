@@ -533,6 +533,7 @@ def test_restclientui_start_output_when_given_no_pid(mock_list_fn, mock_start_fn
     result = parse_rest_create_list_response(captured.out)
 
     assert result[0]['state'] == 'RUNNING'
+    mock_start_fn.assert_called_with(2, run_args=mock.ANY)
 
 
 @mock.patch.object(RestAdapter, 'list')

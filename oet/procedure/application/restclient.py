@@ -184,9 +184,11 @@ class RestClientUI:
             procedures = self._client.list()
             if not procedures:
                 return 'No procedures to start'
-            if procedures[-1].state != "CREATED":
+            procedure = procedures[-1]
+            if procedure.state != "CREATED":
                 return f'The last procedure created is in {procedures[-1].state} state ' \
                        'and cannot be started, please specify a valid procedure ID.'
+            pid = procedure.id
 
         run_args = dict(args=args, kwargs=kwargs)
         procedure = self._client.start(pid, run_args=run_args)
