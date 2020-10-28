@@ -3,7 +3,7 @@ import traceback
 from queue import Queue, Empty
 
 import flask
-from flask import Blueprint
+from flask import Blueprint, Response, stream_with_context
 from pubsub import pub
 
 from oet.event import topics
@@ -17,27 +17,39 @@ API = Blueprint('api', __name__)
 TIMEOUT = 10
 
 
-# def format_sse(data: str, event=None) -> str:
-#     msg = f'data: {data}\n\n'
-#     if event is not None:
-#         msg = f'event: {event}\n{msg}'
-#     return msg
-#
-#
-# @API.route('/stream', methods=['GET'])
-# def listen():
-#     def stream():
-#         q = Queue()
-#         def yieldit(*args, topic: pub.Topic=pub.AUTO_TOPIC, **kwargs):
-#             msg = format_sse(event=topic.name, data=f'args={args} kwargs={kwargs}')
-#             q.put(msg)
-#         pub.subscribe(yieldit, pub.ALL_TOPICS)
-#
-#         while True:
-#             msg = q.get()
-#             yield msg
-#
-#     return Response(stream(), mimetype='text/event-stream')
+def format_sse(data: str, event=None) -> str:
+    """
+    format server-sent event message.
+    """
+    msg = f'data: {data}\n\n'
+    if event is not None:
+        msg = f'event: {event}\n{msg}'
+    return msg
+
+
+def stream():
+    """
+     Publish server-sent event message as generator object.
+    """
+    q = Queue()
+
+    def yieldit(*args, topic: pub.Topic = pub.AUTO_TOPIC, **kwargs):
+        msg = format_sse(event=topic.name, data=f'args={args} kwargs={kwargs}')
+        q.put(msg)
+
+    pub.subscribe(yieldit, pub.ALL_TOPICS)
+
+    while True:
+        msg = q.get()
+        yield msg
+
+
+@API.route('/stream', methods=['GET'])
+def listen():
+    """
+    A function that streams server-sent events.
+    """
+    return Response(stream_with_context(stream()), mimetype='text/event-stream')
 
 
 def _get_summary_or_404(pid):
@@ -121,6 +133,7 @@ def call_and_respond(request_topic, response_topic, *args, **kwargs):
     my_request_id = time.time()
 
     def callback(msg_src, request_id, result):
+        print("inside callback", result)
         if my_request_id == request_id:
             q.put(result)
 
@@ -270,4 +283,3 @@ def create_app(config_filename):
     app.register_blueprint(API, url_prefix='/api/v1.0')
     app.config.update(msg_src=__name__)
     return app
-

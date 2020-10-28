@@ -9,6 +9,7 @@ from http import HTTPStatus
 from unittest import mock
 
 import flask
+from flask import Response
 import pytest
 from pubsub import pub
 
@@ -32,7 +33,7 @@ CREATE_SUMMARY = ProcedureSummary(
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b')},
     history=domain.ProcedureHistory(process_states=OrderedDict([(domain.ProcedureState.CREATED,
-                                                                  1601295086.129294)]),
+                                                                 1601295086.129294)]),
                                     stacktrace=None),
     state=domain.ProcedureState.CREATED
 )
@@ -51,9 +52,9 @@ RUN_SUMMARY = ProcedureSummary(
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b'),
                  'run': domain.ProcedureInput(4, 5, 6, kw3='c', kw4='d')},
     history=domain.ProcedureHistory(process_states=OrderedDict([(domain.ProcedureState.CREATED,
-                                                                  1601295086.129294),
-                                                                 (domain.ProcedureState.RUNNING,
-                                                                  1601295086.129294)]),
+                                                                 1601295086.129294),
+                                                                (domain.ProcedureState.RUNNING,
+                                                                 1601295086.129294)]),
                                     stacktrace=None),
     state=domain.ProcedureState.RUNNING
 )
@@ -285,8 +286,8 @@ def test_post_to_endpoint_sends_init_arguments(client):
 
     # verify message sequence and topics
     assert helper.topic_list == [
-        topics.request.procedure.create,      # procedure creation requested
-        topics.procedure.lifecycle.created,   # CREATED ProcedureSummary returned
+        topics.request.procedure.create,  # procedure creation requested
+        topics.procedure.lifecycle.created,  # CREATED ProcedureSummary returned
     ]
 
     # now verify arguments were extracted from JSON and passed into command
@@ -311,8 +312,8 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
 
     # verify message sequence and topics
     assert helper.topic_list == [
-        topics.request.procedure.list,      # procedure retrieval requested
-        topics.procedure.pool.list,         # no procedure returned
+        topics.request.procedure.list,  # procedure retrieval requested
+        topics.procedure.pool.list,  # no procedure returned
     ]
 
 
@@ -332,8 +333,8 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
 
     # verify message sequence and topics
     assert helper.topic_list == [
-        topics.request.procedure.list,      # procedure retrieval requested
-        topics.procedure.pool.list,         # procedure returned
+        topics.request.procedure.list,  # procedure retrieval requested
+        topics.procedure.pool.list,  # procedure returned
     ]
 
 
@@ -364,9 +365,9 @@ def test_put_procedure_calls_run_on_execution_service(client):
 
     # verify message sequence and topics
     assert helper.topic_list == [
-        topics.request.procedure.list,      # procedure retrieval requested
-        topics.procedure.pool.list,         # procedure returned
-        topics.request.procedure.start,     # procedure abort requested
+        topics.request.procedure.list,  # procedure retrieval requested
+        topics.procedure.pool.list,  # procedure returned
+        topics.request.procedure.start,  # procedure abort requested
         topics.procedure.lifecycle.started  # procedure abort response
     ]
 
@@ -436,10 +437,10 @@ def test_put_procedure_calls_stop_on_execution_service(client):
 
     # verify message topic and order
     assert helper.topic_list == [
-        topics.request.procedure.list,       # procedure retrieval requested
-        topics.procedure.pool.list,          # procedure returned
-        topics.request.procedure.stop,       # procedure abort requested
-        topics.procedure.lifecycle.stopped   # procedure abort response
+        topics.request.procedure.list,  # procedure retrieval requested
+        topics.procedure.pool.list,  # procedure returned
+        topics.request.procedure.stop,  # procedure abort requested
+        topics.procedure.lifecycle.stopped  # procedure abort response
     ]
 
     # correct procedure should be stopped
@@ -515,8 +516,8 @@ def test_stopping_a_non_running_procedure_returns_appropriate_error_message(clie
 
     # verify message topic and order
     assert helper.topic_list == [
-        topics.request.procedure.list,       # procedure retrieval requested
-        topics.procedure.pool.list,          # procedure returned
+        topics.request.procedure.list,  # procedure retrieval requested
+        topics.procedure.pool.list,  # procedure returned
     ]
 
     # correct procedure should be stopped
@@ -556,6 +557,7 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
     """
     Verify that the messages with different request IDs are ignored.
     """
+
     # call_and_respond will block the MainThread while waiting for its queue
     # to be filled with a result, hence we need to create another thread which
     # will broadcast messages as if it's the other component running
@@ -580,3 +582,34 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
             result = restserver.call_and_respond(topics.request.procedure.list, topics.procedure.pool.list)
 
     assert result == 'ok'
+
+
+def test_format_sse():
+    """
+    Verify formatting of server sent event messages correctly
+    :return:
+    """
+    args = ()
+    kwargs = {'msg_src': 'FlaskWorker', 'request_id': 1603872432.4547951, 'pids': None}
+    data = f'args={args} kwargs={kwargs}'
+    event = 'request.procedure.list'
+    msg = f'data: {data}\n\n'
+    expected_result = f'event: {event}\n{msg}'
+    result = restserver.format_sse(data, event)
+    assert result == expected_result
+
+
+def test_stream_api(client):
+    """
+      Verify streaming of server-sent event messages
+    """
+    with mock.patch('oet.procedure.application.restserver.stream') as mock_stream:
+        mock_stream.return_value = "test message"
+        resp = client.get('stream')
+    mock_stream.assert_called_once()
+    assert resp.status_code == 200
+    assert resp.mimetype == "text/event-stream"
+    assert resp.is_streamed
+    output = resp.get_data(as_text=True)
+    assert output == "test message"
+    assert isinstance(resp, flask.Response)
