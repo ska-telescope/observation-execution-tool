@@ -133,7 +133,6 @@ def call_and_respond(request_topic, response_topic, *args, **kwargs):
     my_request_id = time.time()
 
     def callback(msg_src, request_id, result):
-        print("inside callback", result)
         if my_request_id == request_id:
             q.put(result)
 

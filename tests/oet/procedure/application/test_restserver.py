@@ -9,9 +9,9 @@ from http import HTTPStatus
 from unittest import mock
 
 import flask
-from flask import Response
 import pytest
 from pubsub import pub
+import types
 
 import oet.procedure.domain as domain
 from oet.event import topics
@@ -613,3 +613,22 @@ def test_stream_api(client):
     output = resp.get_data(as_text=True)
     assert output == "test message"
     assert isinstance(resp, flask.Response)
+
+
+def test_stream(client):
+    """
+     Verify streaming of server-sent event messages as generator object
+    """
+    def publish():
+        time.sleep(0.1)
+        pub.sendMessage(topics.procedure.pool.list, msg_src='mock', request_id='bar', result='ok')
+
+    t = threading.Thread(target=publish)
+    with mock.patch('oet.procedure.application.restserver.format_sse') as mock_stream:
+        t.start()
+        mock_stream.return_value = 'test message'
+        stream_generator = restserver.stream()
+        response = next(stream_generator)
+    assert isinstance(stream_generator, types.GeneratorType)
+    assert response == 'test message'
+    mock_stream.assert_called_once()
