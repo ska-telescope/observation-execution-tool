@@ -31,7 +31,7 @@ def format_sse(data: str, event=None) -> str:
 
 def stream():
     """
-     Publish server-sent event message as generator object.
+    Function that uses generator to generate server-sent event message as generator object.
     """
     q = Queue()
 
@@ -49,7 +49,7 @@ def stream():
 @API.route('/stream', methods=['GET'])
 def listen():
     """
-    A function that streams server-sent events.
+    A function that streams event bus oet events to client.
     """
     return Response(stream_with_context(stream()), mimetype='text/event-stream')
 

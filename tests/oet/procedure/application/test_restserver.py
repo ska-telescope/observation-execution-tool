@@ -610,8 +610,7 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
 
 def test_format_sse():
     """
-    Verify formatting of server sent event messages correctly
-    :return:
+    Verify that format of server sent event messages are correct
     """
     args = ()
     kwargs = {'msg_src': 'FlaskWorker', 'request_id': 1603872432.4547951, 'pids': None}
@@ -641,18 +640,18 @@ def test_stream_api(client):
 
 def test_stream(client):
     """
-     Verify streaming of server-sent event messages as generator object
+     Verify function that uses a generator to generate data
     """
     def publish():
         time.sleep(0.1)
         pub.sendMessage(topics.procedure.pool.list, msg_src='mock', request_id='bar', result='ok')
 
     t = threading.Thread(target=publish)
-    with mock.patch('oet.procedure.application.restserver.format_sse') as mock_stream:
+    with mock.patch('oet.procedure.application.restserver.format_sse') as mock_format_sse:
         t.start()
-        mock_stream.return_value = 'test message'
+        mock_format_sse.return_value = 'test message'
         stream_generator = restserver.stream()
         response = next(stream_generator)
     assert isinstance(stream_generator, types.GeneratorType)
     assert response == 'test message'
-    mock_stream.assert_called_once()
+    mock_format_sse.assert_called_once()
