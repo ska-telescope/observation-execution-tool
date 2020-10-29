@@ -86,10 +86,10 @@ test:
     - build
   tags:
     - k8srunner
-  variables:
-    MINIKUBE: "false"
+#  variables:
+#    MINIKUBE: "false"
   environment:
-    name: test
+    name: oet-test
     kubernetes:
       namespace: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
   image: nexus.engageska-portugal.pt/ska-docker/deploy:0.4.3
