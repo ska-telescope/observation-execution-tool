@@ -111,6 +111,10 @@ test:
 lint:
   tags:
     - k8srunner
+  environment:
+    name: oet-test
+    kubernetes:
+      namespace: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
   stage: lint
   script:
     - make lint

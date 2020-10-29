@@ -9,6 +9,8 @@ global:
       enabled: false
 
 oet:
+  rest:
+    enabled: true
   ssh:
     enabled: false
   jupyter:
