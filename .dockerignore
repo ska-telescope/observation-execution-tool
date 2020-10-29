@@ -25,4 +25,4 @@ Dockerfile
 .release
 .gitlab-ci.yml
 .gitignore
-ssh
+.tox

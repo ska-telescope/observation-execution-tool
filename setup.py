@@ -38,9 +38,11 @@ setuptools.setup(
         'cdm-shared-library',
         'fire',
         'flask',
+        'pypubsub',
         'pytango',
         'requests',
-        'tabulate',
+        'ska-logging',
+        'ska-project-data-model-library',
         'skuid',
         'tblib'
     ],
