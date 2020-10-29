@@ -111,6 +111,8 @@ test:
 lint:
   tags:
     - k8srunner
+  variables:
+    MINIKUBE: "false"
   environment:
     name: oet-test
     kubernetes:
