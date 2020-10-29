@@ -109,26 +109,15 @@ test:
     expire_in: 7 days
 
 lint:
+  stage: lint
   tags:
     - k8srunner
-#  variables:
-#    MINIKUBE: "false"
-#  environment:
-#    name: oet-test
-#    kubernetes:
-#      namespace: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
-  stage: lint
-  image: nexus.engageska-portugal.pt/ska-docker/ska-python-buildenv:latest
+  image: nexus.engageska-portugal.pt/ska-docker/deploy:0.4.3
   script:
-    - tox -e lint
-#    - make namespace
-#    - make lint
-#  after_script:
-#    - make delete_namespace
+    - make lint
   artifacts:
     paths:
       - build
-    expire_in: 7 days
 
 pages:
   when: always
