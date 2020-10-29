@@ -11,7 +11,7 @@
 # nexus.engageska-portugal.pt/tango-example/powersupply
 #
 DOCKER_REGISTRY_USER:=ska-telescope
-PROJECT = oet
+PROJECT = observation-execution-tool
 
 # KUBE_NAMESPACE defines the Kubernetes Namespace that will be deployed to
 # using Helm.  If this does not already exist it will be created
@@ -60,7 +60,7 @@ DISPLAY := $(THIS_HOST):0
 
 # Test runner - run to completion job in K8s
 # name of the pod running the k8s_tests
-TEST_RUNNER = test-makefile-runner-$(CI_JOB_ID)-$(KUBE_NAMESPACE)-$(RELEASE_NAME)
+TEST_RUNNER = oet-$(CI_JOB_ID)-$(KUBE_NAMESPACE)-$(RELEASE_NAME)
 
 #
 # include makefile to pick up the standard Make targets, e.g., 'make build'
