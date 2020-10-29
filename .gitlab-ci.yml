@@ -50,7 +50,7 @@ build:
     - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
     - make build
-    - make push
+#    - make push
   artifacts:
     when: always
     paths:

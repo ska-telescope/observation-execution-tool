@@ -11,7 +11,7 @@
 # nexus.engageska-portugal.pt/tango-example/powersupply
 #
 DOCKER_REGISTRY_USER:=ska-telescope
-PROJECT = observation-execution-tool
+PROJECT = oet
 
 # KUBE_NAMESPACE defines the Kubernetes Namespace that will be deployed to
 # using Helm.  If this does not already exist it will be created
