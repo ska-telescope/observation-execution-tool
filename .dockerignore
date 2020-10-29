@@ -4,6 +4,7 @@
 .ipynb_checkpoints
 
 build
+charts
 dist
 .cache
 __pycache__

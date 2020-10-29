@@ -1,0 +1,35 @@
+global:
+  minikube: true
+  sub-system:
+    tango-base:
+      enabled: false
+
+oet:
+  ssh:
+    enabled: false
+  jupyter:
+    enabled: false
+  itango:
+    enabled: false
+
+tango-base:
+  deviceServers:
+  vnc:
+    enabled: false
+  tangorest:
+    enabled: false
+  ingress:
+    enabled: false
+  tangodb:
+    use_pv: false
+    resources:
+      limits:
+        cpu: 1000m     # 200m = 0.2 CPU
+        memory: 256Mi  # 256Mi = 0.25 GB mem
+        ephemeral-storage: 1Gi
+  databaseds:
+    resources:
+      limits:
+        cpu: 1000m     # 200m = 0.2 CPU
+        memory: 256Mi  # 256Mi = 0.25 GB mem
+        ephemeral-storage: 1Gi
