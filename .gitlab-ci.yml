@@ -37,9 +37,9 @@ include:
 stages:
   - build
   - test
-#  - lint
-#  - pages
-#  - publish
+  - lint
+  - pages
+  - publish
 #  - .post
 
 build:
