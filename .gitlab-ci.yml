@@ -111,18 +111,20 @@ test:
 lint:
   tags:
     - k8srunner
-  variables:
-    MINIKUBE: "false"
-  environment:
-    name: oet-test
-    kubernetes:
-      namespace: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
+#  variables:
+#    MINIKUBE: "false"
+#  environment:
+#    name: oet-test
+#    kubernetes:
+#      namespace: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
   stage: lint
+  image: nexus.engageska-portugal.pt/ska-docker/ska-python-buildenv:latest
   script:
-    - make namespace
-    - make lint
-  after_script:
-    - make delete_namespace
+    - tox -e lint
+#    - make namespace
+#    - make lint
+#  after_script:
+#    - make delete_namespace
   artifacts:
     paths:
       - build
