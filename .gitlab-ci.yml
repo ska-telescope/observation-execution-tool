@@ -86,8 +86,8 @@ test:
     - build
   tags:
     - k8srunner
-#  variables:
-#    MINIKUBE: "false"
+  variables:
+    MINIKUBE: "false"
   environment:
     name: oet-test
     kubernetes:
@@ -96,8 +96,8 @@ test:
   script:
     - kubectl version
     - make install-chart
-    - make wait
-    - make smoketest
+#    - make wait
+#    - make smoketest
     - make test
   after_script:
     - make down
