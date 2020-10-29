@@ -50,6 +50,11 @@ build:
     - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
     - make build
+    - make push
+  artifacts:
+    when: always
+    paths:
+      - build
 
 build_wheel_for_publication: # Executed on a tag:
   stage: build
