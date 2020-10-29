@@ -100,8 +100,8 @@ spec:
       - name: oet-rest
         image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{ .Values.rest.image.tag }}"
         imagePullPolicy: {{ .Values.rest.image.pullPolicy }}
-        command: ["python3"]
-        args: ["/app/oet/procedure/application/main.py"]
+        command: ["python"]
+        args: ["-m", "oet.procedure.application.main"]
         env:
           - name: TANGO_HOST
             value: {{ if .Values.global.tango_host -}} {{ .Values.global.tango_host }} {{- else -}} databaseds-tango-base-{{ .Release.Name }}:10000 {{- end }}
