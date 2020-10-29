@@ -113,7 +113,7 @@ lint:
     - k8srunner
   stage: lint
   script:
-    - tox -e lint
+    - make lint
   artifacts:
     paths:
       - build

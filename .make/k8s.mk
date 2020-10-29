@@ -221,6 +221,17 @@ test: ## test the application on K8s
 		kubectl --namespace $(KUBE_NAMESPACE) delete pod $(TEST_RUNNER); \
 		exit $$status
 
+lint: ## lint the application on K8s
+	$(call k8s_test,lint); \
+		status=$$?; \
+		rm -rf charts/build; \
+		kubectl --namespace $(KUBE_NAMESPACE) logs $(TEST_RUNNER) | \
+		perl -ne 'BEGIN {$$on=0;}; if (index($$_, "~~~~BOUNDARY~~~~")!=-1){$$on+=1;next;}; print if $$on % 2;' | \
+		base64 -d | tar -xzf - --directory charts; \
+		kubectl --namespace $(KUBE_NAMESPACE) delete pod $(TEST_RUNNER); \
+		exit $$status
+
+
 rlint:  ## run lint check on Helm Chart using gitlab-runner
 	if [ -n "$(RDEBUG)" ]; then DEBUG_LEVEL=debug; else DEBUG_LEVEL=warn; fi && \
 	gitlab-runner --log-level $${DEBUG_LEVEL} exec $(EXECUTOR) \
