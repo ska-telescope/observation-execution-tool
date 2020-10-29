@@ -40,7 +40,6 @@ stages:
   - lint
   - pages
   - publish
-#  - .post
 
 build:
   stage: build
@@ -50,24 +49,23 @@ build:
     - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
     - make build
-#    - make push
   artifacts:
     when: always
     paths:
       - build
 
-#build_wheel_for_publication: # Executed on a tag:
-#  stage: build
-#  tags:
-#    - k8srunner
-#  script:
-#    - apt-get update
-#    - apt-get install -y python3-pip
-#    - pip3 install setuptools
-#    - python3 setup.py egg_info -b+dev.$CI_COMMIT_SHORT_SHA sdist bdist_wheel # --universal option to used for pure python packages
-#  artifacts:
-#    paths:
-#      - ./dist/
+build_wheel_for_publication: # Executed on a tag:
+  stage: build
+  tags:
+    - k8srunner
+  script:
+    - apt-get update
+    - apt-get install -y python3-pip
+    - pip3 install setuptools
+    - python3 setup.py egg_info -b+dev.$CI_COMMIT_SHORT_SHA sdist bdist_wheel # --universal option to used for pure python packages
+  artifacts:
+    paths:
+      - ./dist/
 
 lint-check-chart:
   stage: lint
@@ -95,7 +93,7 @@ test:
   image: nexus.engageska-portugal.pt/ska-docker/deploy:0.4.3
   script:
     - kubectl version
-    - make install-chart
+#    - make install-chart
 #    - make wait
 #    - make smoketest
     - make test
@@ -108,8 +106,6 @@ test:
     name: "$CI_PROJECT_NAME-$CI_JOB_ID"
     paths:
       - build
-    reports:
-      junit: build/report.xml
     expire_in: 7 days
 
 lint:

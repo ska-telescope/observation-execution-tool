@@ -7,6 +7,10 @@ system: TM-mid
 telescope: SKA-mid
 subsystem: observation-execution-tool
 
+global:
+  minikube: true
+  tango_host: databaseds-tango-base-test:10000
+
 ssh:
   enabled: true
   nodePort:
