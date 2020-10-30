@@ -71,10 +71,6 @@ include .make/docker.mk
 include .make/k8s.mk
 include .make/release.mk
 
-#interactive:  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
-#	docker run --rm -it -p 5000:5000 --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) --network=$(NETWORK_MODE) \
-#	  -e OET_REST_URI=http://$(shell hostname):5000/api/v1.0/procedures -v $(CURDIR):/app $(IMAGE_TO_TEST) /bin/bash
-
 up: namespace install-chart wait
 
 down: uninstall-chart delete_namespace
