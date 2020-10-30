@@ -12,11 +12,11 @@ oet:
   rest:
     enabled: true
   ssh:
-    enabled: false
+    enabled: true
   jupyter:
-    enabled: false
+    enabled: true
   itango:
-    enabled: false
+    enabled: true
 
 tango-base:
   deviceServers:

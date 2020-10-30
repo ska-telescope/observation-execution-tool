@@ -88,6 +88,8 @@ spec:
           - name: env-settings
             mountPath: /etc/environment
             subPath: environment
+        resources:
+{{ toYaml .Values.ssh.resources | indent 10 }}
         readinessProbe:
           tcpSocket:
             port: 22
@@ -113,8 +115,6 @@ spec:
               path: environment
             - key: profile
               path: .profile
-      resources:
-  {{ toYaml .Values.ssh.resources | indent 10 }}
   {{- with .Values.nodeSelector }}
 nodeSelector:
   {{ toYaml . | indent 8 }}

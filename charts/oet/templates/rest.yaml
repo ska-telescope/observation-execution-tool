@@ -113,6 +113,8 @@ spec:
         volumeMounts:
           - name: oet-scripts-volume
             mountPath: /scripts
+        resources:
+{{ toYaml .Values.rest.resources | indent 10 }}
         readinessProbe:
           tcpSocket:
             port: 5000
@@ -166,8 +168,6 @@ spec:
                 path: example_sb.json
               - key: long_sb.json
                 path: long_sb.json
-      resources:
-  {{ toYaml .Values.rest.resources | indent 10 }}
   {{- with .Values.nodeSelector }}
 nodeSelector:
   {{ toYaml . | indent 8 }}

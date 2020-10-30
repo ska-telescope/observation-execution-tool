@@ -204,6 +204,8 @@ spec:
           - name: configuration
             mountPath: /home/tango/.jupyter/jupyter_notebook_config.json
             subPath: jupyter_notebook_config.json
+        resources:
+{{ toYaml .Values.jupyter.resources | indent 10 }}
         readinessProbe:
           tcpSocket:
             port: 8888
@@ -221,8 +223,6 @@ spec:
           successThreshold: {{ .Values.jupyter.livenessProbe.successThreshold }}
           failureThreshold: {{ .Values.jupyter.livenessProbe.failureThreshold }}
       restartPolicy: Always
-      resources:
-  {{ toYaml .Values.rest.resources | indent 10 }}
   {{- with .Values.nodeSelector }}
 nodeSelector:
   {{ toYaml . | indent 8 }}

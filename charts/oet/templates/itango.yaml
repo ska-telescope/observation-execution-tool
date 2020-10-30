@@ -89,6 +89,8 @@ spec:
           - name: itango-configmap-volume
             mountPath: /etc/environment
             subPath: environment
+        resources:
+{{ toYaml .Values.itango.resources | indent 10 }}
         readinessProbe:
           tcpSocket:
             port: 22
@@ -114,8 +116,6 @@ spec:
               path: .profile
             - key: environment
               path: environment
-      resources:
-  {{ toYaml .Values.itango.resources | indent 10 }}
   {{- with .Values.nodeSelector }}
 nodeSelector:
   {{ toYaml . | indent 8 }}
