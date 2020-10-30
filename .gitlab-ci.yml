@@ -97,30 +97,6 @@ push_OET_image:
   except:
     - branches
 
-push_SSH_image:
-  tags:
-    - k8srunner
-  stage: publish
-  script:
-    - make -C extras/ssh build
-    - make -C extras/ssh push
-  only:
-    - tags
-  except:
-    - branches
-
-push_jupyter_image:
-  tags:
-    - k8srunner
-  stage: publish
-  script:
-    - make -C extras/jupyter build
-    - make -C extras/jupyter push
-  only:
-    - tags
-  except:
-    - branches
-
 publish_to_nexus:
   tags:
     - k8srunner

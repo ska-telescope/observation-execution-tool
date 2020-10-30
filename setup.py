@@ -42,7 +42,6 @@ setup(
         'requests',
         'tabulate',
         'skuid',
-        'ska-project-data-model-library',
         'ska-logging',
         'pypubsub',
         'tblib'
