@@ -46,7 +46,7 @@ def stream():
         yield msg
 
 
-@API.route('/procedures/stream', methods=['GET'])
+@API.route('/stream', methods=['GET'])
 def listen():
     """
     A function that streams event bus oet events to client.

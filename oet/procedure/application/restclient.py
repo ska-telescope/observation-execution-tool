@@ -408,7 +408,7 @@ class RestAdapter:
 
         :return: event messages
         """
-        url = f'{self.server_url}/stream'
+        url = self.server_url.replace('procedures', 'stream')
         response = sseclient.SSEClient(url)
         return response
 

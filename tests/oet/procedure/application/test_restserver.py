@@ -628,7 +628,7 @@ def test_stream_api(client):
     """
     with mock.patch('oet.procedure.application.restserver.stream') as mock_stream:
         mock_stream.return_value = "test message"
-        resp = client.get('procedures/stream')
+        resp = client.get('stream')
     mock_stream.assert_called_once()
     assert resp.status_code == 200
     assert resp.mimetype == "text/event-stream"
