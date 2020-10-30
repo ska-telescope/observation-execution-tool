@@ -45,7 +45,8 @@ setup(
         'ska-project-data-model-library',
         'ska-logging',
         'pypubsub',
-        'tblib'
+        'tblib',
+        'sseclient'
     ],
     setup_requires=[
         # dependency for `python setup.py test`

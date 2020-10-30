@@ -19,6 +19,7 @@ from typing import Dict, List, Optional
 import fire
 import requests
 import tabulate
+import sseclient
 
 LOGGER = logging.getLogger(__name__)
 
@@ -91,7 +92,6 @@ class RestClientUI:
             msg = f"{error_d['Error']}: {error_d['Message']}"
         return (f'The server encountered a problem: {msg}')
 
-
     @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
         table_rows = [(p.id, p.script_uri,
@@ -110,7 +110,7 @@ class RestClientUI:
         headers_title = ['ID', 'Script', 'URI']
 
         table_rows_args = [(s, procedure[0].script_args[s]['args'],
-                           procedure[0].script_args[s]['kwargs'])
+                            procedure[0].script_args[s]['kwargs'])
                            for s in procedure[0].script_args]
 
         headers_args = ['Method', 'Arguments', 'Keyword Arguments']
@@ -118,7 +118,7 @@ class RestClientUI:
         table_rows_states = [(datetime.datetime.fromtimestamp(procedure[0].
                                                               history['process_states'][s],
                                                               tz=datetime.timezone.utc).
-                                                              strftime('%Y-%m-%d %H:%M:%S.%f'), s)
+                              strftime('%Y-%m-%d %H:%M:%S.%f'), s)
                              for s in procedure[0].history['process_states']]
 
         table_rows_states.sort(key=operator.itemgetter(0))
@@ -263,6 +263,20 @@ class RestClientUI:
         procedure = self._client.list(pid)
         return self._tabulate_for_describe(procedure)
 
+    def listen(self) -> str:
+        """
+        Display real time oet events published by scripts.
+        """
+        try:
+            response = self._client.listen()
+            for data in response.resp_iterator:
+                print(data.decode("utf-8"))
+        except KeyboardInterrupt as err:
+            LOGGER.info(f'received exception {err}')
+        except Exception as err:
+            LOGGER.debug(f'received exception {err}')
+            return self._format_error(str(err))
+
 
 class RestAdapter:
     """A simple CLI REST client using python-fire for the option parsing"""
@@ -292,7 +306,7 @@ class RestAdapter:
                 procedure_json = response.json()['procedure']
                 return [ProcedureSummary.from_json(procedure_json)]
             else:
-                raise Exception(response.json()['error'].split(': ',1)[1])
+                raise Exception(response.json()['error'].split(': ', 1)[1])
 
         url = self.server_url
         response = requests.get(url)
@@ -329,7 +343,7 @@ class RestAdapter:
         response_json = response.json()
         if response.status_code == HTTPStatus.CREATED:
             return ProcedureSummary.from_json(response_json['procedure'])
-        raise Exception(response_json['error'].split(': ',1)[1])
+        raise Exception(response_json['error'].split(': ', 1)[1])
 
     def start(self, pid, run_args=None) -> ProcedureSummary:
         """
@@ -363,7 +377,7 @@ class RestAdapter:
         response_json = response.json()
         if response.status_code == HTTPStatus.OK:
             return ProcedureSummary.from_json(response_json['procedure'])
-        raise Exception(response_json['error'].split(': ',1)[1])
+        raise Exception(response_json['error'].split(': ', 1)[1])
 
     def stop(self, pid, run_abort=True):
         """
@@ -386,7 +400,17 @@ class RestAdapter:
         response_json = response.json()
         if response.status_code == HTTPStatus.OK:
             return response_json['abort_message']
-        raise Exception(response_json['error'].split(': ',1)[1])
+        raise Exception(response_json['error'].split(': ', 1)[1])
+
+    def listen(self):
+        """
+        Listen real time Oet events
+
+        :return: event messages
+        """
+        url = f'{self.server_url}/stream'
+        response = sseclient.SSEClient(url)
+        return response
 
 
 def main():

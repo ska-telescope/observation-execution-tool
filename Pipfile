@@ -28,6 +28,7 @@ fire = { version="*", index="pypi" }
 tabulate = { version="*", index="pypi" }
 skuid = { version=">=0.0.1", index="nexus"}
 ska-project-data-model-library = { version="*", index="nexus" }
+sseclient = { version="*", index="pypi" }
 
 [dev-packages]
 docutils = { version="*", index="pypi" }
