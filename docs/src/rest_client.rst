@@ -89,7 +89,8 @@ The methods available through the REST Client map closely to the
 |                    |               |                                            | pid is specified describe the last  | 
 |                    |               |                                            | process created.                    |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
-In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to 
+
+In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to
 those specified by name e.g. --myparam=12. 
 
 Help Information
