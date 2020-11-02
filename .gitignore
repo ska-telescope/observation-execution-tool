@@ -4,6 +4,7 @@
 .ipynb_checkpoints
 
 build
+builds
 dist
 .cache
 __pycache__

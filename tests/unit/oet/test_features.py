@@ -3,8 +3,11 @@ Unit tests for the features module
 """
 import os.path
 from configparser import ConfigParser
-from oet.features import Features
+
+from pkg_resources import resource_exists
+
 import oet
+from oet.features import Features
 
 
 def test_pubsub_feature_returns_true_when_enabled_in_file():
@@ -85,12 +88,9 @@ def test_can_read_config_file(tmpdir):
     assert features.use_polling_to_read_tango_attributes is False
 
 
-def test_default_config_file_is_read_if_present():
+def test_default_config_file_is_packaged():
     """
-    Test to make sure that the default config file is found
+    Test to make sure that the default config file is packaged.
     Added to catch a bug found during code review.
     """
-
-    file = os.path.isfile(os.path.join(os.path.split(oet.ROOT_DIR)[0], 'oet.ini'))
-
-    assert file is True
+    assert resource_exists('oet', 'oet.ini') is True

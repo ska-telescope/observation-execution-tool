@@ -1,0 +1,11 @@
+#-rtests/requirements.txt
+cdm-shared-library
+fire
+flask
+pypubsub
+pytango
+requests
+skuid
+ska-logging
+tabulate
+tblib

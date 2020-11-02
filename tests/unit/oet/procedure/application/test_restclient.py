@@ -329,9 +329,7 @@ def test_stop_procedure_sends_command_with_abort_true():
 # Additions by Liz Bartlett to test restclientUI maybe should be another file.
 
 def test_restclientui_returns_error_when_not_passed_an_invalid_command():
-    root_dir = os.path.split(oet.ROOT_DIR)[0]
-    restclient = os.path.join(root_dir, 'oet/procedure/application/restclient.py')
-
+    restclient = oet.procedure.application.restclient.__file__
     result = subprocess.run(['python3', restclient, 'blah'], capture_output=True, text=True)
 
     assert bool(result.stdout) is False
