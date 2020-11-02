@@ -7,11 +7,13 @@ import time
 from collections import OrderedDict
 from http import HTTPStatus
 from unittest import mock
+import requests_mock
 
 import flask
 import pytest
 from pubsub import pub
 import types
+import requests
 
 import oet.procedure.domain as domain
 from oet.event import topics
@@ -655,3 +657,20 @@ def test_stream(client):
     assert isinstance(stream_generator, types.GeneratorType)
     assert response == 'test message'
     mock_format_sse.assert_called_once()
+
+def test_response_text_for_listen():
+    STREAM_URI = 'http://localhost:5000/api/v1.0/stream'
+
+    def publish():
+        time.sleep(0.1)
+        pub.sendMessage(topics.procedure.pool.list, msg_src='mock', request_id='bar', result='ok')
+
+    t = threading.Thread(target=publish)
+    event = 'topics.procedure.pool.list'
+    msg = "args=() kwargs={'msg_src': 'mock', 'request_id': 'bar', 'pids': None}"
+    response_text = f'event: {event}\n{msg}'
+    with requests_mock.Mocker() as mock_server:
+        mock_server.get(STREAM_URI, text=response_text)
+        resp=requests.get(STREAM_URI,stream=True)
+    assert resp.status_code == 200
+    assert response_text == resp.text
