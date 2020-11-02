@@ -89,6 +89,16 @@ The methods available through the REST Client map closely to the
 |                    |               |                                            | pid is specified describe the last  | 
 |                    |               |                                            | process created.                    |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
+| Listen             | server-url    | http://oet-rest:5000/api/v1.0/stream       | **Get real times scripts events**   |
+|                    +---------------+--------------------------------------------+                                     |
+|                    |               |                                            | Get a real time delivery of events  |
+|                    |               |                                            | published by oet scripts            |
+|                    |               |                                            |                                     |
+|                    |               |                                            |                                     |
+|                    |               |                                            |                                     |
+|                    |               |                                            |                                     |
++--------------------+---------------+--------------------------------------------+-------------------------------------+
+
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to 
 those specified by name e.g. --myparam=12. 
 
@@ -166,7 +176,7 @@ A 'list' command will give the same information: ::
 
   $ oet list
 
-gives: ::
+giving: ::
 
     ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
@@ -195,6 +205,26 @@ giving: ::
   run       []           {}
 
 If the procedure failed, then the stack trace will also be displayed.
+
+A 'listen' command will give the real time delivery of oet events published by scripts: ::
+
+  $ oet listen
+
+giving: ::
+
+    event: request.procedure.list
+    data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056049.4846392, 'pids': None}
+
+    event: procedure.pool.list
+    data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056049.4846392, 'result': []}
+
+    event: request.procedure.create
+    data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056247.0666442, 'cmd': PrepareProcessCommand(script_uri='file://scripts/eventbus.py', init_args=<ProcedureInput(, subarray_id=1)>)}
+
+    event: procedure.lifecycle.created
+    data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056247.0666442, 'result': ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.CREATED, 1604056247.713874)], stacktrace=None)>, state=<ProcedureState.CREATED: 1>)}
+
+
 
 Example session in a SKAMPI environment
 ---------------------------------------
