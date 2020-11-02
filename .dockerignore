@@ -4,6 +4,7 @@
 .ipynb_checkpoints
 
 build
+charts
 dist
 .cache
 __pycache__
@@ -24,4 +25,4 @@ Dockerfile
 .release
 .gitlab-ci.yml
 .gitignore
-ssh
+.tox

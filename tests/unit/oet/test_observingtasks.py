@@ -4,22 +4,24 @@ Unit tests for the oet.observingtasks module
 import os
 import unittest.mock as mock
 from typing import List
-import tango
+
 import pytest
 import ska.cdm.messages.central_node.assign_resources as cdm_assign
 import ska.cdm.messages.central_node.release_resources as cdm_release
 import ska.cdm.messages.subarray_node.configure as cdm_configure
+import tango
 from astropy.coordinates import SkyCoord
 from ska.cdm import schemas
 from ska.cdm.messages.subarray_node.configure import ConfigureRequest
 from ska.cdm.schemas import CODEC
-from oet.event import topics
+
 import oet.command as command
 import oet.domain as domain
 import oet.observingtasks as observingtasks
 from oet.domain import Dish, DishAllocation, ResourceAllocation, SKAMid, SubArray
+from oet.event import topics
 from oet.observingtasks import ObsState, ObsStateError
-from tests.oet.procedure.application.test_restserver import PubSubHelper
+from tests.unit.oet.procedure.application.test_restserver import PubSubHelper
 
 SKA_MID_CENTRAL_NODE_FDQN = 'ska_mid/tm_central/central_node'
 SKA_SUB_ARRAY_NODE_1_FDQN = 'ska_mid/tm_subarray_node/1'
