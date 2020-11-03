@@ -27,7 +27,7 @@ ssh:
       cpu: 100m
       memory: 128Mi
     limits:
-      cpu: 100m
+      cpu: 1000m
       memory: 128Mi
   livenessProbe:
     enabled: true
@@ -60,7 +60,7 @@ itango:
       cpu: 100m
       memory: 128Mi
     limits:
-      cpu: 100m
+      cpu: 1000m
       memory: 128Mi
   livenessProbe:
     enabled: true
@@ -92,7 +92,7 @@ rest:
       cpu:  100m
       memory: 128Mi
     limits:
-      cpu:  100m
+      cpu:  1000m
       memory: 128Mi
   livenessProbe:
     enabled: true
@@ -130,7 +130,7 @@ jupyter:
       cpu: 100m
       memory: 128Mi
     limits:
-      cpu: 100m
+      cpu: 1000m
       memory: 128Mi
   livenessProbe:
     enabled: true
