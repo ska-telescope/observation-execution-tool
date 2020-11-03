@@ -11,12 +11,28 @@ global:
 oet:
   rest:
     enabled: true
+# Uncomment if wanting to test local images
+#    image:
+#      tag: latest
   ssh:
     enabled: false
+    image:
+# Uncomment if wanting to test local images
+#    image:
+#      tag: latest
   jupyter:
     enabled: false
+# Uncomment if wanting to test local images
+#    image:
+#      tag: latest
   itango:
     enabled: false
+# Uncomment if wanting to test local images
+#    image:
+#      tag: latest
+# Set if you want to point to your PC for testing
+#  ingress:
+#    hostname: your_hostname.local
 
 tango-base:
   deviceServers:
