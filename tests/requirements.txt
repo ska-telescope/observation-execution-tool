@@ -1,0 +1,17 @@
+coverage
+pylint2junit
+pytest
+pytest-bdd
+pytest-cov
+pytest-json-report
+pytest-mock
+requests-mock
+docstr-coverage
+darglint
+flake8
+flake8_formatter_junit_xml
+flake8-black
+flake8-builtins
+flake8-fixme
+flake8-use-fstring
+flake8-rst-docstrings

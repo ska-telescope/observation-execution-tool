@@ -20,8 +20,8 @@ from oet.procedure.application.main import (
     main,
     main_loop
 )
-from tests.oet.mptools.test_mptools import _proc_worker_wrapper_helper
-from tests.oet.procedure.application.test_restserver import PubSubHelper
+from tests.unit.oet.mptools.test_mptools import _proc_worker_wrapper_helper
+from tests.unit.oet.procedure.application.test_restserver import PubSubHelper
 
 
 def test_event_bus_worker_verify_message_publishes_when_message_in_work_queue(caplog):
