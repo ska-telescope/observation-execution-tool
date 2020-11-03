@@ -20,7 +20,7 @@ ssh:
   image:
     registry: nexus.engageska-portugal.pt/ska-telescope
     image: observation-execution-tool-ssh
-    tag: latest
+    tag: 2.4.2
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -53,7 +53,7 @@ itango:
   image:
     registry: nexus.engageska-portugal.pt/ska-telescope
     image: observation-execution-tool-ssh
-    tag: latest
+    tag: 2.4.2
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -85,7 +85,7 @@ rest:
   image:
     registry: nexus.engageska-portugal.pt/ska-telescope
     image: observation-execution-tool
-    tag: latest
+    tag: 2.4.2
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -123,7 +123,7 @@ jupyter:
   image:
     registry: nexus.engageska-portugal.pt/ska-telescope
     image: observation-execution-tool-jupyter
-    tag: latest
+    tag: 2.4.2
     pullPolicy: IfNotPresent
   resources:
     requests:
