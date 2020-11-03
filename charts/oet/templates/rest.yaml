@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}
+  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "oet.labels" . | indent 4 }}
@@ -23,7 +23,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-scripts
+  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-scripts
   namespace: {{ .Release.Namespace }}
 binaryData:
   hello_world.py: |-
@@ -62,7 +62,7 @@ binaryData:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}
+  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "oet.labels" . | indent 4 }}
@@ -134,7 +134,7 @@ spec:
       volumes:
         - name: oet-scripts-volume
           configMap:
-            name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-scripts
+            name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-scripts
             items:
               - key: hello_world.py
                 path: hello_world.py

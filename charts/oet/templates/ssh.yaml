@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "oet.name" . }}-{{ .Values.ssh.component }}
+  name: {{ template "oet.name" . }}-{{ .Values.ssh.component }}-{{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "oet.labels" . | indent 4 }}
@@ -24,7 +24,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "oet.name" . }}-{{ .Values.ssh.component }}-env-settings
+  name: {{ template "oet.name" . }}-{{ .Values.ssh.component }}-{{ .Release.Name }}-env-settings
   namespace: {{ .Release.Namespace }}
 data:
   environment: |
@@ -36,7 +36,7 @@ data:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "oet.name" . }}-{{ .Values.ssh.component }}
+  name: {{ template "oet.name" . }}-{{ .Values.ssh.component }}-{{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "oet.labels" . | indent 4 }}
@@ -109,7 +109,7 @@ spec:
       volumes:
         - name: env-settings
           configMap:
-            name: {{ template "oet.name" . }}-{{ .Values.ssh.component }}-env-settings
+            name: {{ template "oet.name" . }}-{{ .Values.ssh.component }}-{{ .Release.Name }}-env-settings
             items:
             - key: environment
               path: environment
