@@ -6,7 +6,7 @@ import logging
 import os
 import time
 
-from pubsub import pub
+from oet.observingtasks import publish_event_message
 
 LOG = logging.getLogger(__name__)
 FORMAT = '%(asctime)-15s %(message)s'
@@ -21,7 +21,7 @@ def init(subarray_id: int):
 
 
 def announce(msg):
-    pub.sendMessage(topicName='user.script.announce', msg_src=__name__, msg=msg)
+    publish_event_message(msg=msg)
 
 
 def _main(subarray_id: int):
