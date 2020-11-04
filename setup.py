@@ -38,6 +38,7 @@ setuptools.setup(
         'cdm-shared-library',
         'fire',
         'flask',
+        'jsonpickle',
         'pypubsub',
         'pytango',
         'requests',
