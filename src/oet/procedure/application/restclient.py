@@ -91,7 +91,8 @@ class RestClientUI:
             else:
                 msg = f"{error_d['Error']}: {error_d['Message']}"
         except ValueError:
-            # ValueError raised if error is not valid JSON
+            # ValueError raised if error is not valid JSON. This happens at least when
+            # REST server is not running and returns Connection refused error
             msg = error_json
         return f'The server encountered a problem: {msg}'
 
