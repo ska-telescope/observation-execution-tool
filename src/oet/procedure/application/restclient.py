@@ -84,13 +84,16 @@ class RestClientUI:
 
     @staticmethod
     def _format_error(error_json: str) -> str:
-        error_d = json.loads(error_json)
-        if 'Filename' in error_d:
-            msg = f"{error_d['Message']}: {error_d['Filename']}"
-        else:
-            msg = f"{error_d['Error']}: {error_d['Message']}"
-        return (f'The server encountered a problem: {msg}')
-
+        try:
+            error_d = json.loads(error_json)
+            if 'Filename' in error_d:
+                msg = f"{error_d['Message']}: {error_d['Filename']}"
+            else:
+                msg = f"{error_d['Error']}: {error_d['Message']}"
+        except ValueError:
+            # ValueError raised if error is not valid JSON
+            msg = error_json
+        return f'The server encountered a problem: {msg}'
 
     @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
