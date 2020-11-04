@@ -4,16 +4,14 @@ Unit tests for the procedure REST API module.
 import copy
 import threading
 import time
+import types
 from collections import OrderedDict
 from http import HTTPStatus
 from unittest import mock
-import requests_mock
 
 import flask
 import pytest
 from pubsub import pub
-import types
-import requests
 
 import oet.procedure.domain as domain
 from oet.event import topics
@@ -23,7 +21,7 @@ from oet.procedure.application.application import ProcedureSummary, PrepareProce
 from oet.procedure.domain import ProcedureInput
 
 # Endpoint for the REST API
-ENDPOINT = 'procedures'
+ENDPOINT = 'api/v1.0/procedures'
 
 # Valid JSON struct for creating a new procedure
 CREATE_JSON = dict(script_uri="test:///test.py",
@@ -133,8 +131,7 @@ def client():
     """
     Test fixture that returns a Flask application instance
     """
-    app = flask.Flask(__name__)
-    app.register_blueprint(restserver.API, url_prefix='')
+    app = restserver.create_app('')  # flask.Flask(__name__)
     app.config['TESTING'] = True
     app.config['msg_src'] = 'unit tests'
     with app.test_client() as client:
@@ -223,8 +220,7 @@ def test_get_procedure_gives_404_for_invalid_id(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {
-        'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=1"}'}
+    assert response_json == {'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=1"}'}
 
 
 def test_successful_post_to_endpoint_returns_created_http_status(client):
@@ -270,8 +266,7 @@ def test_post_to_endpoint_requires_script_uri_json_parameter(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {
-        'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "script_uri missing"}'}
+    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "script_uri missing"}'}
 
 
 def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
@@ -285,8 +280,7 @@ def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {
-        'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "Malformed script_uri in request"}'}
+    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "Malformed script_uri in request"}'}
 
 
 def test_post_to_endpoint_sends_init_arguments(client):
@@ -329,8 +323,7 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {
-        'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=123"}'}
+    assert response_json == {'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=123"}'}
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -355,8 +348,7 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {
-        'error': '400 Bad Request: {"Error": "Empty Response", "Message": "No JSON available in response"}'}
+    assert response_json == {'error': '400 Bad Request: {"Error": "Empty Response", "Message": "No JSON available in response"}'}
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -570,8 +562,7 @@ def test_giving_non_dict_script_args_returns_error_code(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {
-        'error': '400 Bad Request: {"Error": "Malformed Response", "Message": "Malformed script_args in response"}'}
+    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Response", "Message": "Malformed script_args in response"}'}
 
 
 def test_call_and_respond_aborts_with_timeout_when_no_response_received(client, short_timeout):
@@ -616,77 +607,58 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
     assert result == 'ok'
 
 
-def test_format_sse():
+def test_sse_string_messages_are_streamed_correctly(client):
     """
-    Verify that format of server sent event messages are correct
+    Verify that simple Messages are streamed as SSE events correctly.
     """
-    args = ()
-    kwargs = {'msg_src': 'FlaskWorker', 'request_id': 1603872432.4547951, 'pids': None}
-    data = f'args={args} kwargs={kwargs}'
-    event = 'request.procedure.list'
-    msg = f'data: {data}\n\n'
-    expected_result = f'event: {event}\n{msg}'
-    result = restserver.format_sse(data, event)
-    assert result == expected_result
+    msg = restserver.Message('foo', type='message')
+
+    with mock.patch('oet.procedure.application.restserver.ServerSentEventsBlueprint.messages') as mock_messages:
+        mock_messages.return_value = [msg]
+        response = client.get(f'/api/v1.0/stream')
+
+    assert isinstance(response, flask.Response)
+    assert response.mimetype == 'text/event-stream'
+    assert response.status_code == 200
+    assert response.is_streamed
+    output = response.get_data(as_text=True)
+    assert output == "event:message\ndata:foo\n\n"
 
 
-def test_stream_api(client):
+def test_sse_complex_messages_are_streamed_correctly(client):
     """
-      Verify streaming of server-sent event messages
+    Verify that Messages containing structured data are streamed correctly.
     """
-    with mock.patch('oet.procedure.application.restserver.stream') as mock_stream:
-        mock_stream.return_value = "test message"
-        resp = client.get('stream')
-    mock_stream.assert_called_once()
-    assert resp.status_code == 200
-    assert resp.mimetype == "text/event-stream"
-    assert resp.is_streamed
-    output = resp.get_data(as_text=True)
-    assert output == "test message"
-    assert isinstance(resp, flask.Response)
+    msg = restserver.Message({"foo": "bar"}, type="message", id=123)
+
+    with mock.patch('oet.procedure.application.restserver.ServerSentEventsBlueprint.messages') as mock_messages:
+        mock_messages.return_value = [msg]
+        response = client.get(f'/api/v1.0/stream')
+
+    assert isinstance(response, flask.Response)
+    assert response.mimetype == 'text/event-stream'
+    assert response.status_code == 200
+    assert response.is_streamed
+    output = response.get_data(as_text=True)
+    assert output == 'event:message\ndata:{"foo": "bar"}\nid:123\n\n'
 
 
-def test_stream(client):
+def test_sse_messages_returns_pubsub_messages(client):
     """
-     Verify function that uses a generator to generate data
+    Test that pypubsub messages are returned by SSE blueprint's messages method.
     """
-
     def publish():
+        # sleep long enough for generator to start running
         time.sleep(0.1)
-        pub.sendMessage(topics.procedure.pool.list, msg_src='mock', request_id='bar', result='ok')
-
-    t = threading.Thread(target=publish)
-    with mock.patch('oet.procedure.application.restserver.format_sse') as mock_format_sse:
-        t.start()
-        mock_format_sse.return_value = 'test message'
-        stream_generator = restserver.stream()
-        response = next(stream_generator)
-    assert isinstance(stream_generator, types.GeneratorType)
-    assert response == 'test message'
-    mock_format_sse.assert_called_once()
-
-
-def test_response_text_for_listen():
-    STREAM_URI = 'http://localhost:5000/api/v1.0/stream'
-
-    def publish():
-        time.sleep(0.1)
-        pub.sendMessage(topics.procedure.pool.list, msg_src='mock', request_id='bar', result='ok')
+        pub.sendMessage(topics.scan.lifecycle.start, msg_src="foo", sb_id="bar")
 
     t = threading.Thread(target=publish)
 
-    with requests_mock.Mocker() as mock_server:
-        t.start()
+    bp = client.application.blueprints['sse']
+    gen = bp.messages()
+    assert isinstance(gen, types.GeneratorType)
 
-        def text_callback(request, context):
-            resp_generator = restserver.stream()
-            response = next(resp_generator)
-            return response
+    t.start()
 
-        mock_server.get(STREAM_URI, text=text_callback)
-        resp = requests.get(STREAM_URI, stream=True)
-
-    assert resp.status_code == 200
-    assert bytes(resp.text, 'utf-8') == b"event: procedure.pool.list\ndata: args=() kwargs={'msg_src': 'mock', 'request_id': 'bar', 'result': 'ok'}\n\n"
-
-
+    output = next(gen)
+    assert output == restserver.Message(dict(topic="scan.lifecycle.start", msg_src="foo", sb_id="bar"))

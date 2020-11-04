@@ -1,16 +1,17 @@
-import time
-import traceback
-from queue import Queue, Empty
 import json
+import time
+from queue import Queue, Empty
+from typing import Generator, Optional, Union
 
 import flask
-from flask import Blueprint, Response, stream_with_context
+import jsonpickle
+from flask import Blueprint, stream_with_context, current_app
 from pubsub import pub
 
 from oet.event import topics
+from oet.mptools import MPQueue
 from oet.procedure import domain
 from oet.procedure.application import application
-
 
 # Blueprint for the REST API
 API = Blueprint('api', __name__)
@@ -19,39 +20,97 @@ API = Blueprint('api', __name__)
 TIMEOUT = 10
 
 
-def format_sse(data: str, event=None) -> str:
+class Message:
     """
-    format server-sent event message.
+    Data that is published as a server-sent event.
     """
-    msg = f'data: {data}\n\n'
-    if event is not None:
-        msg = f'event: {event}\n{msg}'
-    return msg
+
+    def __init__(self,
+                 data: Union[str, dict],
+                 type: Optional[str] = None,
+                 id: Optional[Union[float, int, str]] = None,
+                 retry: Optional[int] = None):
+        """
+        Create a server-sent event.
+
+        :param data: The event data.
+        :param type: An optional event type.
+        :param id: An optional event ID.
+        :param retry: An optional integer, to specify the reconnect time for
+            disconnected clients of this stream.
+        """
+        self.data = data
+        self.type = type
+        self.id = id
+        self.retry = retry
+
+    def __str__(self):
+        """
+        Serialize this object to a string, according to the `server-sent events
+        specification <https://www.w3.org/TR/eventsource/>`_.
+        """
+        if isinstance(self.data, dict):
+            data = jsonpickle.dumps(self.data)
+        else:
+            data = self.data
+        lines = ["data:{value}".format(value=line) for line in data.splitlines()]
+        if self.type:
+            lines.insert(0, "event:{value}".format(value=self.type))
+        if self.id:
+            lines.append("id:{value}".format(value=self.id))
+        if self.retry:
+            lines.append("retry:{value}".format(value=self.retry))
+        return "\n".join(lines) + "\n\n"
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, self.__class__) and
+            self.data == other.data and
+            self.type == other.type and
+            self.id == other.id and
+            self.retry == other.retry
+        )
 
 
-def stream():
+class ServerSentEventsBlueprint(Blueprint):
     """
-    Function that uses generator to generate server-sent event message as generator object.
+    A :class:`flask.Blueprint` subclass that knows how to subscribe to pypubsub
+    topics and stream pubsub events as server-sent events.
     """
-    q = Queue()
 
-    def yieldit(*args, topic: pub.Topic = pub.AUTO_TOPIC, **kwargs):
-        msg = format_sse(event=topic.name, data=f'args={args} kwargs={kwargs}')
-        q.put(msg)
+    def messages(self) -> Generator[Message, None, None]:
+        """
+        A generator of Message objects created from received pubsub events
+        """
+        q = MPQueue()
 
-    pub.subscribe(yieldit, pub.ALL_TOPICS)
+        def add_to_q(topic: pub.Topic = pub.AUTO_TOPIC, **kwargs):
+            kwargs['topic'] = topic.name
+            other = {}
+            if 'request_id' in kwargs:
+                other['id'] = kwargs['request_id']
+                del kwargs['request_id']
 
-    while True:
-        msg = q.get()
-        yield msg
+            msg = Message(kwargs, **other)
+            q.put(msg)
 
+        pub.subscribe(add_to_q, pub.ALL_TOPICS)
 
-@API.route('/stream', methods=['GET'])
-def listen():
-    """
-    A function that streams event bus oet events to client.
-    """
-    return Response(stream_with_context(stream()), mimetype='text/event-stream')
+        while True:
+            msg = q.safe_get(timeout=0.1)
+            if msg is not None:
+                yield msg
+
+    def stream(self) -> flask.Response:
+        @stream_with_context
+        def generator():
+            for message in self.messages():
+                yield str(message)
+
+        return current_app.response_class(
+            generator(),
+            mimetype='text/event-stream'
+        )
 
 
 def _get_summary_or_404(pid):
@@ -66,7 +125,7 @@ def _get_summary_or_404(pid):
     if not summaries:
         description = json.dumps(
             {
-                "Error" : "ResourceNotFound",
+                "Error": "ResourceNotFound",
                 "Message": f'No information available for PID={pid}'
             }
         )
@@ -333,5 +392,11 @@ def create_app(config_filename):
     # app.config.from_pyfile(config_filename)
 
     app.register_blueprint(API, url_prefix='/api/v1.0')
+
+    sse = ServerSentEventsBlueprint('sse', __name__)
+    sse.add_url_rule(rule="", endpoint="stream", view_func=sse.stream)
+    app.register_blueprint(sse, url_prefix="/api/v1.0/stream")
+
     app.config.update(msg_src=__name__)
+
     return app
