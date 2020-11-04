@@ -223,7 +223,8 @@ def test_get_procedure_gives_404_for_invalid_id(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=1"}'}
+    assert response_json == {
+        'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=1"}'}
 
 
 def test_successful_post_to_endpoint_returns_created_http_status(client):
@@ -269,7 +270,8 @@ def test_post_to_endpoint_requires_script_uri_json_parameter(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "script_uri missing"}'}
+    assert response_json == {
+        'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "script_uri missing"}'}
 
 
 def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
@@ -283,7 +285,8 @@ def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "Malformed script_uri in request"}'}
+    assert response_json == {
+        'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "Malformed script_uri in request"}'}
 
 
 def test_post_to_endpoint_sends_init_arguments(client):
@@ -326,7 +329,8 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=123"}'}
+    assert response_json == {
+        'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=123"}'}
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -351,7 +355,8 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Empty Response", "Message": "No JSON available in response"}'}
+    assert response_json == {
+        'error': '400 Bad Request: {"Error": "Empty Response", "Message": "No JSON available in response"}'}
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -565,7 +570,8 @@ def test_giving_non_dict_script_args_returns_error_code(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Response", "Message": "Malformed script_args in response"}'}
+    assert response_json == {
+        'error': '400 Bad Request: {"Error": "Malformed Response", "Message": "Malformed script_args in response"}'}
 
 
 def test_call_and_respond_aborts_with_timeout_when_no_response_received(client, short_timeout):
@@ -644,6 +650,7 @@ def test_stream(client):
     """
      Verify function that uses a generator to generate data
     """
+
     def publish():
         time.sleep(0.1)
         pub.sendMessage(topics.procedure.pool.list, msg_src='mock', request_id='bar', result='ok')
@@ -658,6 +665,7 @@ def test_stream(client):
     assert response == 'test message'
     mock_format_sse.assert_called_once()
 
+
 def test_response_text_for_listen():
     STREAM_URI = 'http://localhost:5000/api/v1.0/stream'
 
@@ -666,11 +674,19 @@ def test_response_text_for_listen():
         pub.sendMessage(topics.procedure.pool.list, msg_src='mock', request_id='bar', result='ok')
 
     t = threading.Thread(target=publish)
-    event = 'topics.procedure.pool.list'
-    msg = "args=() kwargs={'msg_src': 'mock', 'request_id': 'bar', 'pids': None}"
-    response_text = f'event: {event}\n{msg}'
+
     with requests_mock.Mocker() as mock_server:
-        mock_server.get(STREAM_URI, text=response_text)
-        resp=requests.get(STREAM_URI,stream=True)
+        t.start()
+
+        def text_callback(request, context):
+            resp_generator = restserver.stream()
+            response = next(resp_generator)
+            return response
+
+        mock_server.get(STREAM_URI, text=text_callback)
+        resp = requests.get(STREAM_URI, stream=True)
+
     assert resp.status_code == 200
-    assert response_text == resp.text
+    assert bytes(resp.text, 'utf-8') == b"event: procedure.pool.list\ndata: args=() kwargs={'msg_src': 'mock', 'request_id': 'bar', 'result': 'ok'}\n\n"
+
+
