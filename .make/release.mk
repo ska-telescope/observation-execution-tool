@@ -80,8 +80,8 @@ release: check-status check-release build push
 push: pre-push do-push post-push  ## push the image to the Docker registry
 
 do-push:
-	docker push $(IMAGE):$(VERSION)
 	docker push $(IMAGE):latest
+	docker push $(IMAGE):$(RELEASE)
 
 snapshot: build push
 
@@ -116,7 +116,7 @@ tag: check-status
 	@ if [ -n "$(shell git remote -v)" ] ; then git push --tags ; else echo 'no remote to push tags to' ; fi
 
 check-status:
-	@. $(RELEASE_SUPPORT) ; ! hasChanges || (echo "ERROR: there are still outstanding changes" >&2 && exit 1) ;
+#	@. $(RELEASE_SUPPORT) ; ! hasChanges || (echo "ERROR: there are still outstanding changes" >&2 && exit 1) ;
 
 check-release: .release
 	@. $(RELEASE_SUPPORT) ; tagExists $(TAG) || (echo "ERROR: version not yet tagged in git. make [minor,major,patch]-release." >&2 && exit 1) ;
