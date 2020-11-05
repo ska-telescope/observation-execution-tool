@@ -142,6 +142,8 @@ push_OET_image:
   tags:
     - k8srunner
   stage: publish
+  before_script:
+    - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
     - make push
   only:
@@ -153,6 +155,8 @@ push_SSH_image:
   tags:
     - k8srunner
   stage: publish
+  before_script:
+    - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
     - make -C extras/ssh build
     - make -C extras/ssh push
@@ -165,6 +169,8 @@ push_jupyter_image:
   tags:
     - k8srunner
   stage: publish
+  before_script:
+    - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
     - make -C extras/jupyter build
     - make -C extras/jupyter push
