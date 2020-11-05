@@ -4,6 +4,7 @@ Unit tests for the procedure REST API module.
 import copy
 import threading
 import time
+import types
 from collections import OrderedDict
 from http import HTTPStatus
 from unittest import mock
@@ -20,7 +21,7 @@ from oet.procedure.application.application import ProcedureSummary, PrepareProce
 from oet.procedure.domain import ProcedureInput
 
 # Endpoint for the REST API
-ENDPOINT = 'procedures'
+ENDPOINT = 'api/v1.0/procedures'
 
 # Valid JSON struct for creating a new procedure
 CREATE_JSON = dict(script_uri="test:///test.py",
@@ -32,7 +33,7 @@ CREATE_SUMMARY = ProcedureSummary(
     script_uri='test:///test.py',
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b')},
     history=domain.ProcedureHistory(process_states=OrderedDict([(domain.ProcedureState.CREATED,
-                                                                  1601295086.129294)]),
+                                                                 1601295086.129294)]),
                                     stacktrace=None),
     state=domain.ProcedureState.CREATED
 )
@@ -51,9 +52,9 @@ RUN_SUMMARY = ProcedureSummary(
     script_args={'init': domain.ProcedureInput(1, 2, 3, kw1='a', kw2='b'),
                  'run': domain.ProcedureInput(4, 5, 6, kw3='c', kw4='d')},
     history=domain.ProcedureHistory(process_states=OrderedDict([(domain.ProcedureState.CREATED,
-                                                                  1601295086.129294),
-                                                                 (domain.ProcedureState.RUNNING,
-                                                                  1601295086.129294)]),
+                                                                 1601295086.129294),
+                                                                (domain.ProcedureState.RUNNING,
+                                                                 1601295086.129294)]),
                                     stacktrace=None),
     state=domain.ProcedureState.RUNNING
 )
@@ -130,8 +131,7 @@ def client():
     """
     Test fixture that returns a Flask application instance
     """
-    app = flask.Flask(__name__)
-    app.register_blueprint(restserver.API, url_prefix='')
+    app = restserver.create_app('')  # flask.Flask(__name__)
     app.config['TESTING'] = True
     app.config['msg_src'] = 'unit tests'
     with app.test_client() as client:
@@ -297,8 +297,8 @@ def test_post_to_endpoint_sends_init_arguments(client):
 
     # verify message sequence and topics
     assert helper.topic_list == [
-        topics.request.procedure.create,      # procedure creation requested
-        topics.procedure.lifecycle.created,   # CREATED ProcedureSummary returned
+        topics.request.procedure.create,  # procedure creation requested
+        topics.procedure.lifecycle.created,  # CREATED ProcedureSummary returned
     ]
 
     # now verify arguments were extracted from JSON and passed into command
@@ -327,8 +327,8 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
 
     # verify message sequence and topics
     assert helper.topic_list == [
-        topics.request.procedure.list,      # procedure retrieval requested
-        topics.procedure.pool.list,         # no procedure returned
+        topics.request.procedure.list,  # procedure retrieval requested
+        topics.procedure.pool.list,  # no procedure returned
     ]
 
 
@@ -352,8 +352,8 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
 
     # verify message sequence and topics
     assert helper.topic_list == [
-        topics.request.procedure.list,      # procedure retrieval requested
-        topics.procedure.pool.list,         # procedure returned
+        topics.request.procedure.list,  # procedure retrieval requested
+        topics.procedure.pool.list,  # procedure returned
     ]
 
 
@@ -384,9 +384,9 @@ def test_put_procedure_calls_run_on_execution_service(client):
 
     # verify message sequence and topics
     assert helper.topic_list == [
-        topics.request.procedure.list,      # procedure retrieval requested
-        topics.procedure.pool.list,         # procedure returned
-        topics.request.procedure.start,     # procedure abort requested
+        topics.request.procedure.list,  # procedure retrieval requested
+        topics.procedure.pool.list,  # procedure returned
+        topics.request.procedure.start,  # procedure abort requested
         topics.procedure.lifecycle.started  # procedure abort response
     ]
 
@@ -456,10 +456,10 @@ def test_put_procedure_calls_stop_on_execution_service(client):
 
     # verify message topic and order
     assert helper.topic_list == [
-        topics.request.procedure.list,       # procedure retrieval requested
-        topics.procedure.pool.list,          # procedure returned
-        topics.request.procedure.stop,       # procedure abort requested
-        topics.procedure.lifecycle.stopped   # procedure abort response
+        topics.request.procedure.list,  # procedure retrieval requested
+        topics.procedure.pool.list,  # procedure returned
+        topics.request.procedure.stop,  # procedure abort requested
+        topics.procedure.lifecycle.stopped  # procedure abort response
     ]
 
     # correct procedure should be stopped
@@ -535,8 +535,8 @@ def test_stopping_a_non_running_procedure_returns_appropriate_error_message(clie
 
     # verify message topic and order
     assert helper.topic_list == [
-        topics.request.procedure.list,       # procedure retrieval requested
-        topics.procedure.pool.list,          # procedure returned
+        topics.request.procedure.list,  # procedure retrieval requested
+        topics.procedure.pool.list,  # procedure returned
     ]
 
     # correct procedure should be stopped
@@ -580,6 +580,7 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
     """
     Verify that the messages with different request IDs are ignored.
     """
+
     # call_and_respond will block the MainThread while waiting for its queue
     # to be filled with a result, hence we need to create another thread which
     # will broadcast messages as if it's the other component running
@@ -604,3 +605,60 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
             result = restserver.call_and_respond(topics.request.procedure.list, topics.procedure.pool.list)
 
     assert result == 'ok'
+
+
+def test_sse_string_messages_are_streamed_correctly(client):
+    """
+    Verify that simple Messages are streamed as SSE events correctly.
+    """
+    msg = restserver.Message('foo', type='message')
+
+    with mock.patch('oet.procedure.application.restserver.ServerSentEventsBlueprint.messages') as mock_messages:
+        mock_messages.return_value = [msg]
+        response = client.get(f'/api/v1.0/stream')
+
+    assert isinstance(response, flask.Response)
+    assert response.mimetype == 'text/event-stream'
+    assert response.status_code == 200
+    assert response.is_streamed
+    output = response.get_data(as_text=True)
+    assert output == "event:message\ndata:foo\n\n"
+
+
+def test_sse_complex_messages_are_streamed_correctly(client):
+    """
+    Verify that Messages containing structured data are streamed correctly.
+    """
+    msg = restserver.Message({"foo": "bar"}, type="message", id=123)
+
+    with mock.patch('oet.procedure.application.restserver.ServerSentEventsBlueprint.messages') as mock_messages:
+        mock_messages.return_value = [msg]
+        response = client.get(f'/api/v1.0/stream')
+
+    assert isinstance(response, flask.Response)
+    assert response.mimetype == 'text/event-stream'
+    assert response.status_code == 200
+    assert response.is_streamed
+    output = response.get_data(as_text=True)
+    assert output == 'event:message\ndata:{"foo": "bar"}\nid:123\n\n'
+
+
+def test_sse_messages_returns_pubsub_messages(client):
+    """
+    Test that pypubsub messages are returned by SSE blueprint's messages method.
+    """
+    def publish():
+        # sleep long enough for generator to start running
+        time.sleep(0.1)
+        pub.sendMessage(topics.scan.lifecycle.start, msg_src="foo", sb_id="bar")
+
+    t = threading.Thread(target=publish)
+
+    bp = client.application.blueprints['sse']
+    gen = bp.messages()
+    assert isinstance(gen, types.GeneratorType)
+
+    t.start()
+
+    output = next(gen)
+    assert output == restserver.Message(dict(topic="scan.lifecycle.start", msg_src="foo", sb_id="bar"))
