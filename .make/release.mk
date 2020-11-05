@@ -97,13 +97,13 @@ bump-minor-release: .release tag
 bump-major-release: VERSION := $(shell . $(RELEASE_SUPPORT); nextMajorLevel)
 bump-major-release: .release tag
 
-patch-release: tag-patch-release release
+patch-release: bump-patch-release release
 	@echo $(VERSION)
 
-minor-release: tag-minor-release release
+minor-release: bump-minor-release release
 	@echo $(VERSION)
 
-major-release: tag-major-release release
+major-release: bump-major-release release
 	@echo $(VERSION)
 
 tag: TAG=$(shell . $(RELEASE_SUPPORT); getTag $(VERSION))
