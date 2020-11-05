@@ -13,5 +13,5 @@ dependencies:
   version: 0.0.1
   repository: https://nexus.engageska-portugal.pt/repository/helm-chart
 - name: oet
-  version: 0.1.1
+  version: 0.1.2
   repository: file://../oet
