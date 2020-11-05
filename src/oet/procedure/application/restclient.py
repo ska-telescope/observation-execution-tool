@@ -79,7 +79,7 @@ class RestClientUI:
         """
         if server_url is None:
             server_url = os.getenv('OET_REST_URI',
-                                   'http://oet-rest:5000/api/v1.0/procedures')
+                                   'http://oet-rest-test:5000/api/v1.0/procedures')
         self._client = RestAdapter(server_url)
 
     @staticmethod
