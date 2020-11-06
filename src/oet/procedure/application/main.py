@@ -203,10 +203,20 @@ class ScriptExecutionServiceWorker(EventBusWorker):
 
     def stop(self, msg_src, request_id: str, cmd: StopProcessCommand):
         self.log(logging.DEBUG, 'Stop procedure request %s: %s', request_id, cmd)
-        summary = self.ses.stop(cmd)
-        self.log(logging.DEBUG, 'Stop result: %s', summary)
+        try:
+            summary = self.ses.stop(cmd)
+        except FileNotFoundError as e:
+            # FileNotFoundError raised when abort.py script not found
+            self.log(logging.INFO, 'Stop procedure %s failed: %s', request_id, e)
 
-        self.send_message(topics.procedure.lifecycle.stopped, request_id=request_id, result=summary)
+            # TODO create failure topic for failures in procedure domain
+            #  (or refactor abortion script creation so that FileNotFound
+            #  is caught only once in prepare)
+            self.send_message(topics.procedure.lifecycle.stopped, request_id=request_id, result=e)
+        else:
+            self.log(logging.DEBUG, 'Stop result: %s', summary)
+
+            self.send_message(topics.procedure.lifecycle.stopped, request_id=request_id, result=summary)
 
     def startup(self) -> None:
         super().startup()

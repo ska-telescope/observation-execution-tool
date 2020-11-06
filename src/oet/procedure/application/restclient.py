@@ -79,18 +79,22 @@ class RestClientUI:
         """
         if server_url is None:
             server_url = os.getenv('OET_REST_URI',
-                                   'http://oet-rest:5000/api/v1.0/procedures')
+                                   'http://oet-rest-test:5000/api/v1.0/procedures')
         self._client = RestAdapter(server_url)
 
     @staticmethod
     def _format_error(error_json: str) -> str:
-        error_d = json.loads(error_json)
-        if 'Filename' in error_d:
-            msg = f"{error_d['Message']}: {error_d['Filename']}"
-        else:
-            msg = f"{error_d['Error']}: {error_d['Message']}"
-        return (f'The server encountered a problem: {msg}')
-
+        try:
+            error_d = json.loads(error_json)
+            if 'Filename' in error_d:
+                msg = f"{error_d['Message']}: {error_d['Filename']}"
+            else:
+                msg = f"{error_d['Error']}: {error_d['Message']}"
+        except ValueError:
+            # ValueError raised if error is not valid JSON. This happens at least when
+            # REST server is not running and returns Connection refused error
+            msg = error_json
+        return f'The server encountered a problem: {msg}'
 
     @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:

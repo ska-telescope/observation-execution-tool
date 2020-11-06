@@ -25,3 +25,5 @@ setup.py-e
 .eclipse
 .vscode
 .DS_Store
+
+**/Chart.yaml-e

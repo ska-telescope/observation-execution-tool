@@ -25,6 +25,10 @@ This workflow has been mapped to the following REST API:
 +-------------+-------------------------+-------------------------------------+
 | GET         | /api/v1/procedures/<id> | Return a procedure definition       |
 +-------------+-------------------------+-------------------------------------+
+| GET         | /api/v1/stream          | **Streaming real time oet events**: |
+|             |                         | Return a real time oet events       |
+|             |                         | published by scripts                |
++-------------+-------------------------+-------------------------------------+
 | POST        | /api/v1/procedures      | **Prepare a new procedure**         |
 |             |                         | Loads the requested script and      |
 |             |                         | prepares it for execution           |
@@ -350,4 +354,22 @@ The above embedded JSON can be extracted to produce::
          "Error": "ResourceNotFound",
          "Message": "No information available for PID=4"
     }
-    
+
+Listen real time oet events
+---------------------------
+The session below lists all events published by oet scripts. This
+example shows two events, #1 request to available procedures #2 get the details of all the created procedures ::
+
+    tangodev@buster:~/ska/observation-execution-tool$ curl -i http://localhost:5000/api/v1.0/stream
+    HTTP/1.0 200 OK
+    Content-Type: text/event-stream; charset=utf-8
+    Connection: close
+    Server: Werkzeug/1.0.1 Python/3.7.3
+    Date: Mon, 02 Nov 2020 06:57:40 GMT
+
+    event: request.procedure.list
+    data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604300260.0780687, 'pids': None}
+
+    event: procedure.pool.list
+    data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604300260.0780687, 'result': [ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.CREATED, 1604057625.0499432)], stacktrace=None)>, state=<ProcedureState.CREATED: 1>), ProcedureSummary(id=2, script_uri='file://scripts/standby.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.CREATED, 1604057781.273559)], stacktrace=None)>, state=<ProcedureState.CREATED: 1>)]}
+

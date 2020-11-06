@@ -142,6 +142,8 @@ push_OET_image:
   tags:
     - k8srunner
   stage: publish
+  before_script:
+    - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
     - make push
   only:
