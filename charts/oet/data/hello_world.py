@@ -7,15 +7,26 @@ FORMAT = '%(asctime)-15s %(message)s'
 
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
-LOG.info(f'Importing module: {__name__}')
+
+def init(subarray_id: int):
+    global main
+    main = functools.partial(_main, subarray_id)
+    LOG.info(f'Script bound to sub-array {subarray_id}')
 
 
-def main(*args, sleep=None, **kwargs):
-    LOG.info(f'Running script in OS process {os.getpid()}')
-    LOG.info(f'Received user args: {args}')
-    LOG.info(f'Received user kwargs: {kwargs}')
+def announce(msg):
+    publish_event_message(msg=msg)
 
-    if sleep is not None:
-        LOG.info(f'Now sleeping for {sleep} seconds')
-        time.sleep(sleep)
-        LOG.info('Sleep complete\n')
+
+def _main(subarray_id: int, raise_msg=None):
+    announce(f'Running script in OS process {os.getpid()}')
+
+    for i in range(10):
+        announce(f'pretending to execute scan {i}/10')
+        time.sleep(1)
+
+    if raise_msg:
+        announce(f'Raising an exception with msg {raise_msg}')
+        raise Exception(raise_msg)
+
+    announce('Script complete')
