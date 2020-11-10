@@ -18,8 +18,6 @@ docs/_build
 docs/apidocs
 
 venv
-extras/ssh/.release
-extras/jupyter/.release
 setup.py-e
 
 # ide

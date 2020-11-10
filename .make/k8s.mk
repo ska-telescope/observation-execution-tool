@@ -193,7 +193,7 @@ kubeconfig: ## export current KUBECONFIG as base64 ready for KUBE_CONFIG_BASE64
 k8s_test = tar -c tests/ | \
 		kubectl run $(TEST_RUNNER) \
 		--namespace $(KUBE_NAMESPACE) -i --wait --restart=Never \
-		--image-pull-policy=IfNotPresent \
+		--image-pull-policy=Always \
 		--image=$(IMAGE_TO_TEST) -- \
 		/bin/bash -c "mkdir testing && tar xv --directory testing --strip-components 1 --warning=all && cd testing && \
 		make KUBE_NAMESPACE=$(KUBE_NAMESPACE) HELM_RELEASE=$(RELEASE_NAME) TANGO_HOST=$(TANGO_HOST) MARK=$(MARK) $1 && \
@@ -211,7 +211,7 @@ k8s_test = tar -c tests/ | \
 # base64 payload is given a boundary "~~~~BOUNDARY~~~~" and extracted using perl
 # clean up the run to completion container
 # exit the saved status
-test: ## test the application on K8s
+integration_test: ## test the application on K8s
 	$(call k8s_test,test); \
 		status=$$?; \
 		rm -rf charts/build; \
