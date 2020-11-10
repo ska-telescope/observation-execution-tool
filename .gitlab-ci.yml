@@ -79,7 +79,7 @@ lint-check-chart:
     paths:
       - build
 
-unit_test:
+test:
   stage: test
   dependencies:
     - build
