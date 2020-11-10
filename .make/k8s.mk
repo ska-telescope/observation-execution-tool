@@ -211,7 +211,7 @@ k8s_test = tar -c tests/ | \
 # base64 payload is given a boundary "~~~~BOUNDARY~~~~" and extracted using perl
 # clean up the run to completion container
 # exit the saved status
-test: ## test the application on K8s
+integration_test: ## test the application on K8s
 	$(call k8s_test,test); \
 		status=$$?; \
 		rm -rf charts/build; \

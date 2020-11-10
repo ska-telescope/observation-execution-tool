@@ -86,7 +86,7 @@ test:
   tags:
     - k8srunner
   script:
-    - make unit_test
+    - make test
   artifacts:
     name: "$CI_PROJECT_NAME-$CI_JOB_ID"
     paths:
