@@ -79,35 +79,49 @@ lint-check-chart:
     paths:
       - build
 
-test:
+unit_test:
   stage: test
   dependencies:
     - build
   tags:
     - k8srunner
-  variables:
-    MINIKUBE: "false"
-  environment:
-    name: oet-test
-    kubernetes:
-      namespace: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
-  image: nexus.engageska-portugal.pt/ska-docker/deploy:0.4.3
   script:
-    - kubectl version
-    - make install-chart
-#    - make wait
-#    - make smoketest
-    - make test
-  after_script:
-    - make down
-    - mkdir -p build
-    - cp -rf charts/build/* build/
-    - ls -la build
+    - make unit_test
   artifacts:
     name: "$CI_PROJECT_NAME-$CI_JOB_ID"
     paths:
       - build
     expire_in: 7 days
+
+#integration_test:
+#  stage: test
+#  dependencies:
+#    - build
+#  tags:
+#    - k8srunner
+#  variables:
+#    MINIKUBE: "false"
+#  environment:
+#    name: oet-test
+#    kubernetes:
+#      namespace: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
+#  image: nexus.engageska-portugal.pt/ska-docker/deploy:0.4.3
+#  script:
+#    - kubectl version
+#    - make install-chart
+##    - make wait
+##    - make smoketest
+#    - make test
+#  after_script:
+#    - make down
+#    - mkdir -p build
+#    - cp -rf charts/build/* build/
+#    - ls -la build
+#  artifacts:
+#    name: "$CI_PROJECT_NAME-$CI_JOB_ID"
+#    paths:
+#      - build
+#    expire_in: 7 days
 
 lint:
   stage: lint
