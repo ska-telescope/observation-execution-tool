@@ -75,7 +75,7 @@ docker-build: .release
 	@echo INFO: .release created
 	@cat .release
 
-release: check-status check-release build push
+release: check-status check-release build
 
 push: pre-push do-push post-push  ## push the image to the Docker registry
 
