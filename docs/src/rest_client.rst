@@ -99,8 +99,8 @@ The methods available through the REST Client map closely to the
 |                    |               |                                            |                                     |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 
-In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to 
-those specified by name e.g. --myparam=12. 
+In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to
+those specified by name e.g. --myparam=12.
 
 Help Information
 ----------------

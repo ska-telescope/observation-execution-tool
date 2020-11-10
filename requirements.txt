@@ -1,0 +1,13 @@
+#-rtests/requirements.txt
+cdm-shared-library
+fire
+flask
+jsonpickle
+pypubsub
+pytango
+requests
+skuid
+ska-logging
+ska-project-data-model-library
+tabulate
+tblib

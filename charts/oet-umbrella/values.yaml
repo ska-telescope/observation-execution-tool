@@ -1,0 +1,58 @@
+global:
+  annotations:
+    app.gitlab.com/app: CI_PROJECT_PATH_SLUG
+    app.gitlab.com/env: CI_ENVIRONMENT_SLUG
+  minikube: true
+  tango_host: databaseds-tango-base-test:10000
+  sub-system:
+    tango-base:
+      enabled: false
+
+oet:
+  rest:
+    enabled: true
+# Uncomment if wanting to test local images
+#    image:
+#      tag: latest
+  ssh:
+    enabled: false
+    image:
+# Uncomment if wanting to test local images
+#    image:
+#      tag: latest
+  jupyter:
+    enabled: false
+# Uncomment if wanting to test local images
+#    image:
+#      tag: latest
+  itango:
+    enabled: false
+# Uncomment if wanting to test local images
+#    image:
+#      tag: latest
+# Set if you want to point to your PC for testing
+#  ingress:
+#    hostname: your_hostname.local
+
+tango-base:
+  deviceServers:
+  vnc:
+    enabled: false
+  tangorest:
+    enabled: false
+  ingress:
+    enabled: false
+  tangodb:
+    use_pv: false
+# Uncomment for speedier testing on local Kubernetes
+#    resources:
+#      limits:
+#        cpu: 1000m     # 200m = 0.2 CPU
+#        memory: 256Mi  # 256Mi = 0.25 GB mem
+#        ephemeral-storage: 1Gi
+#  databaseds:
+#    resources:
+#      limits:
+#        cpu: 1000m     # 200m = 0.2 CPU
+#        memory: 256Mi  # 256Mi = 0.25 GB mem
+#        ephemeral-storage: 1Gi
