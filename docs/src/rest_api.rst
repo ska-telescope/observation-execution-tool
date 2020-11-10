@@ -367,9 +367,16 @@ example shows two events, #1 request to available procedures #2 get the details 
     Server: Werkzeug/1.0.1 Python/3.7.3
     Date: Mon, 02 Nov 2020 06:57:40 GMT
 
-    event: request.procedure.list
-    data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604300260.0780687, 'pids': None}
+    data:{"msg_src": "FlaskWorker", "pids": null, "topic": "request.procedure.list"}
+    id:1605017762.46912
 
-    event: procedure.pool.list
-    data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604300260.0780687, 'result': [ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.CREATED, 1604057625.0499432)], stacktrace=None)>, state=<ProcedureState.CREATED: 1>), ProcedureSummary(id=2, script_uri='file://scripts/standby.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.CREATED, 1604057781.273559)], stacktrace=None)>, state=<ProcedureState.CREATED: 1>)]}
+    data:{"msg_src": "SESWorker", "result": [], "topic": "procedure.pool.list"}
+    id:1605017762.46912
+
+    data:{"msg_src": "FlaskWorker", "cmd": {"py/object": "oet.procedure.application.application.PrepareProcessCommand", "script_uri": "file://scripts/eventbus.py", "init_args": {"py/object": "oet.procedure.domain.ProcedureInput", "args": {"py/tuple": []}, "kwargs": {"subarray_id": 1}}}, "topic": "request.procedure.create"}
+    id:1605017784.1536236
+
+    data:{"msg_src": "SESWorker", "result": {"py/object": "oet.procedure.application.application.ProcedureSummary", "id": 1, "script_uri": "file://scripts/eventbus.py", "script_args": {"init": {"py/object": "oet.procedure.domain.ProcedureInput", "args": {"py/tuple": []}, "kwargs": {"subarray_id": 1}}, "run": {"py/object": "oet.procedure.domain.ProcedureInput", "args": {"py/tuple": []}, "kwargs": {}}}, "history": {"py/object": "oet.procedure.domain.ProcedureHistory", "process_states": {"py/reduce": [{"py/type": "collections.OrderedDict"}, {"py/tuple": []}, null, null, {"py/tuple": [{"py/tuple": [{"py/reduce": [{"py/type": "oet.procedure.domain.ProcedureState"}, {"py/tuple": [1]}]}, 1605017786.0569353]}]}]}, "stacktrace": null}, "state": {"py/id": 5}}, "topic": "procedure.lifecycle.created"}
+    id:1605017784.1536236
+
 
