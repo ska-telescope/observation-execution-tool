@@ -45,7 +45,8 @@ setuptools.setup(
         'ska-logging',
         'ska-project-data-model-library',
         'skuid',
-        'tblib'
+        'tblib',
+        'tabulate'
     ],
     setup_requires=[
         # dependency for `python setup.py test`
