@@ -50,6 +50,16 @@ unit_test: ## test the application
 	docker rm -f -v $(BUILD); \
 	exit $$status
 
+lint: DOCKER_RUN_ARGS = --volumes-from=$(BUILD)
+lint: ## lint the application
+	$(INIT_CACHE)
+	$(call docker_make,lint); \
+	status=$$?; \
+	rm -rf build; \
+	docker cp $(BUILD):/app/build .; \
+	docker rm -f -v $(BUILD); \
+	exit $$status
+
 #
 # Defines a default make target so that help is printed if make is called
 # without a target
