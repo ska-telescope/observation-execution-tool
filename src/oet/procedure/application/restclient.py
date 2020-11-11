@@ -86,15 +86,15 @@ class RestClientUI:
     def _format_error(error_json: str) -> str:
         try:
             error_d = json.loads(error_json)
-            if 'Filename' in error_d:
-                msg = f"{error_d['Message']}: {error_d['Filename']}"
-            else:
-                msg = f"{error_d['Error']}: {error_d['Message']}"
-        except ValueError:
+            type = error_d['type']
+            message = error_d['Message']
+            error = error_d['error']
+            msg = f'Server encountered error {error}:\n  {type}: {message}'
+        except ValueError as exc:
             # ValueError raised if error is not valid JSON. This happens at least when
             # REST server is not running and returns Connection refused error
-            msg = error_json
-        return f'The server encountered a problem: {msg}'
+            msg = f'The server encountered a problem: {error_json}'
+        return f'{msg}'
 
     @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
@@ -296,7 +296,7 @@ class RestAdapter:
                 procedure_json = response.json()['procedure']
                 return [ProcedureSummary.from_json(procedure_json)]
             else:
-                raise Exception(response.json()['error'].split(': ',1)[1])
+                raise Exception(response.text)
 
         url = self.server_url
         response = requests.get(url)
@@ -330,10 +330,10 @@ class RestAdapter:
         LOGGER.debug('Create payload: %s', request_json)
 
         response = requests.post(self.server_url, json=request_json)
-        response_json = response.json()
+        response_as_dict = response.json()
         if response.status_code == HTTPStatus.CREATED:
-            return ProcedureSummary.from_json(response_json['procedure'])
-        raise Exception(response_json['error'].split(': ',1)[1])
+            return ProcedureSummary.from_json(response_as_dict['procedure'])
+        raise Exception(response.text)
 
     def start(self, pid, run_args=None) -> ProcedureSummary:
         """
@@ -364,10 +364,10 @@ class RestAdapter:
         LOGGER.debug('Start payload: %s', request_json)
 
         response = requests.put(url, json=request_json)
-        response_json = response.json()
+        response_as_dict = response.json()
         if response.status_code == HTTPStatus.OK:
-            return ProcedureSummary.from_json(response_json['procedure'])
-        raise Exception(response_json['error'].split(': ',1)[1])
+            return ProcedureSummary.from_json(response_as_dict['procedure'])
+        raise Exception(response.text)
 
     def stop(self, pid, run_abort=True):
         """
@@ -387,10 +387,10 @@ class RestAdapter:
         LOGGER.debug('Stop payload: %s', request_json)
 
         response = requests.put(url, json=request_json)
-        response_json = response.json()
+        response_as_dict = response.json()
         if response.status_code == HTTPStatus.OK:
-            return response_json['abort_message']
-        raise Exception(response_json['error'].split(': ',1)[1])
+            return response_as_dict['abort_message']
+        raise Exception(response.text)
 
 
 def main():

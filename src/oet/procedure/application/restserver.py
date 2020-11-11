@@ -13,6 +13,7 @@ from oet.mptools import MPQueue
 from oet.procedure import domain
 from oet.procedure.application import application
 
+
 # Blueprint for the REST API
 API = Blueprint('api', __name__)
 
@@ -123,12 +124,12 @@ def _get_summary_or_404(pid):
     summaries = call_and_respond(topics.request.procedure.list, topics.procedure.pool.list, pids=[pid])
 
     if not summaries:
-        description = json.dumps(
+        description = \
             {
-                "Error": "ResourceNotFound",
+                "type": "ResourceNotFound",
                 "Message": f'No information available for PID={pid}'
             }
-        )
+        
         flask.abort(404, description=description)
     else:
         return summaries[0]
@@ -175,23 +176,19 @@ def create_procedure():
     :return: JSON summary of created Procedure
     """
     if not flask.request.json or not 'script_uri' in flask.request.json:
-        description = json.dumps(
-            {
-                "Error": "Malformed Request",
+        description = {
+                "type": "Malformed Request",
                 "Message": "script_uri missing"
             }
-        )
         flask.abort(400, description=description)
     script_uri = flask.request.json['script_uri']
 
     if 'script_args' in flask.request.json and \
                 not isinstance(flask.request.json['script_args'], dict):
-        description = json.dumps(
-            {
-                "Error": "Malformed Request",
+        description = {
+                "type": "Malformed Request",
                 "Message": "Malformed script_uri in request"
             }
-        )
         flask.abort(400, description=description)
     script_args = flask.request.json.get('script_args', {})
 
@@ -228,31 +225,21 @@ def call_and_respond(request_topic, response_topic, *args, **kwargs):
 
         if isinstance(result, Exception):
             if isinstance(result, OSError):
-                description = json.dumps(
-                    {
-                        'Error': result.__class__.__name__,
-                        'Message': result.strerror,
-                        "Filename": result.filename
+                description = {
+                        'type': result.__class__.__name__,
+                        'Message': f'{result.strerror}: {result.filename}'
                     }
-                )
             else:
-                description = json.dumps(
-                    {
-                        'Error': result.__class__.__name__,
+                description = {
+                        'type': result.__class__.__name__,
                         'Message': str(result)
                     }
-                )
             flask.abort(500, description=description)
 
         return result
 
     except Empty:
-        description = json.dumps(
-            {
-                "Error" : "Timeout",
-                "Message": f'Timeout waiting for msg #{my_request_id} on topic {response_topic}'
-            }
-        )
+        description = f'Timeout waiting for msg #{my_request_id} on topic {response_topic}'
         flask.abort(504, description=description)
 
 
@@ -268,19 +255,17 @@ def update_procedure(procedure_id: int):
     summary = _get_summary_or_404(procedure_id)
 
     if not flask.request.json:
-        description = json.dumps(
-            {
-                "Error": "Empty Response",
+        description = {
+                "type": "Empty Response",
                 "Message": "No JSON available in response"
             }
-        )
         flask.abort(400, description=description)
 
     if 'script_args' in flask.request.json \
             and not isinstance(flask.request.json['script_args'], dict):
         description = json.dumps(
             {
-                "Error": "Malformed Response",
+                "type": "Malformed Response",
                 "Message": "Malformed script_args in response"
             }
         )
@@ -347,37 +332,33 @@ def make_public_summary(procedure: application.ProcedureSummary):
     }
 
 
+@API.errorhandler(400)
 @API.errorhandler(404)
+@API.errorhandler(500)
 def resource_not_found(cause):
     """
     Custom 404 Not Found handler for Procedure API.
+    This is overloaded for 
 
     :param cause: root exception for failure (e.g., KeyError)
     :return:
     """
-    return flask.jsonify(error=str(cause)), 404
-
-
-@API.errorhandler(400)
-def bad_request(cause):
-    """
-    Custom 400 Bad Request handler for Procedure API.
-
-    :param cause: root exception for failure (e.g., ValueError)
-    :return:
-    """
-    return flask.jsonify(error=str(cause)), 400
-
-
-@API.errorhandler(500)
-def internal_server_error(cause):
-    """
-    Custom 404 Not Found handler for Procedure API.
-
-    :param cause: root exception for failure (e.g., KeyError)
-    :return:
-    """
-    return flask.jsonify(error=str(cause)), 500
+    response = cause.get_response()
+    if isinstance(cause.description, dict):
+        response_data = {
+            'error': f'{cause.code} {cause.name}',
+            'type': cause.description['type'],
+            'Message': cause.description['Message']
+        }
+    else:
+        response_data = {
+            'error': f'{cause.code} {cause.name}',
+            'type': cause.name,
+            'Message': cause.description
+        }
+    response.content_type = "application/json"
+    response.data = json.dumps(response_data)
+    return response
 
 
 def create_app(config_filename):
