@@ -45,7 +45,6 @@ unit_test: ## test the application
 	$(INIT_CACHE)
 	$(call docker_make,test); \
 	status=$$?; \
-	rm -fr build; \
 	docker cp $(BUILD):/app/build .; \
 	docker rm -f -v $(BUILD); \
 	exit $$status
@@ -55,7 +54,6 @@ lint: ## lint the application
 	$(INIT_CACHE)
 	$(call docker_make,lint); \
 	status=$$?; \
-	rm -rf build; \
 	docker cp $(BUILD):/app/build .; \
 	docker rm -f -v $(BUILD); \
 	exit $$status

@@ -11,17 +11,13 @@ all: test
 # execute the python tests
 # exit with same exit code as test run
 test:
-	mkdir -p /app/build && \
-	tox -e py37 | tee /app/build/pytest.stdout && \
+	mkdir -p build && \
+	tox -e py37 | tee build/pytest.stdout && \
 	status=$$?; \
 	exit $$status
 
 lint:
-	mkdir -p /app/build/reports && \
-#	cd /app && tox -e lint | tee /app/build/lint.stdout && \
-	cd /app && ./code-analysis.sh | tee build/code_analysis.stdout && \
-	cd /app && pylint --output-format=pylint2junit.JunitReporter oet tests/unit > build/reports/linting.xml; \
-	sed -i 's/UTF-8" ?>/UTF-8" ?><testsuites>/' build/reports/linting.xml; \
-	echo "</testsuites>" >> build/reports/linting.xml; \
+	mkdir -p build/reports && \
+	tox -e lint | tee build/lint.stdout
 
 .PHONY: all test install lint
