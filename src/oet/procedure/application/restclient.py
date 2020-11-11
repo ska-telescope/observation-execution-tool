@@ -283,14 +283,27 @@ class RestClientUI:
 
     @staticmethod
     def _filter_event_messages(result, kwargs) -> str:
+        # sample data for testing , need to prepare topic wise data for all the topics
+        topic_dict = {
+
+            'request.procedure.list': lambda
+                event_obj: f'Requesting procedure list from {event_obj["msg_src"]}',
+            'procedure.pool.list': lambda
+                event_obj: f'List of procedures from {event_obj["msg_src"]}',
+            'request.procedure.create':lambda
+                event_obj: f'Request to create a new procedure from {event_obj["msg_src"]}',
+            'procedure.lifecycle.created': lambda
+                event_obj: f'Procedure created with procedure id {event_obj["result"]["id"]}',
+        }
         for resp in result:
             outputJS = json.loads(resp.data)
             if kwargs:
                 for filter_key, filter_value in kwargs.items():
                     if filter_key in outputJS and filter_value in outputJS.values():
-                        print(json.dumps(outputJS)+"\n")
+                        format_topic_message = topic_dict[filter_value]
+                        print(format_topic_message(outputJS) + "\n")
             else:
-                print(resp.data+"\n")
+               print(topic_dict[outputJS['topic']](outputJS) + "\n")
 
 
 class RestAdapter:
