@@ -4,13 +4,15 @@ belong in the application layer of the OET. This layer holds the application
 interface, delegating to objects in the domain layer for business rules and
 actions.
 """
+import os
 import copy
 import dataclasses
 import typing
 
 from .. import domain
 
-ABORT_SCRIPT_URI = 'file:///app/scripts/abort.py'
+base_dir = os.path.dirname(os.path.realpath(__file__))
+ABORT_SCRIPT_URI = 'file://' + base_dir + '/abort.py'
 
 
 @dataclasses.dataclass

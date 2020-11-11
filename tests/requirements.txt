@@ -15,3 +15,4 @@ flake8-builtins
 flake8-fixme
 flake8-use-fstring
 flake8-rst-docstrings
+tabulate

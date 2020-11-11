@@ -1,21 +1,30 @@
+import functools
 import logging
 import os
 import time
+
 
 LOG = logging.getLogger(__name__)
 FORMAT = '%(asctime)-15s %(message)s'
 
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
-LOG.info(f'Importing module: {__name__}')
+
+def init(subarray_id: int):
+    global main
+    main = functools.partial(_main, subarray_id)
+    LOG.info(f'Script bound to sub-array {subarray_id}')
 
 
-def main(*args, sleep=None, **kwargs):
+def _main(subarray_id: int, raise_msg=None):
     LOG.info(f'Running script in OS process {os.getpid()}')
-    LOG.info(f'Received user args: {args}')
-    LOG.info(f'Received user kwargs: {kwargs}')
 
-    if sleep is not None:
-        LOG.info(f'Now sleeping for {sleep} seconds')
-        time.sleep(sleep)
-        LOG.info('Sleep complete\n')
+    for i in range(5):
+        LOG.info(f'pretending to execute scan {i}/10')
+        time.sleep(1)
+
+    if raise_msg:
+        LOG.error(f'Raising an exception with msg {raise_msg}')
+        raise Exception(raise_msg)
+
+    LOG.info('Script complete')
