@@ -268,19 +268,29 @@ class RestClientUI:
         procedure = self._client.list(pid)
         return self._tabulate_for_describe(procedure)
 
-    def listen(self) -> str:
+    def listen(self, **kwargs) -> str:
         """
         Display real time oet events published by scripts.
         """
         try:
             response = self._client.listen()
-            for data in response.resp_iterator:
-                print(data.decode("utf-8"))
+            self._filter_event_messages(response, kwargs)
         except KeyboardInterrupt as err:
-            LOGGER.info(f'received exception {err}')
+            LOGGER.debug(f'received exception {err}')
         except Exception as err:
             LOGGER.debug(f'received exception {err}')
             return self._format_error(str(err))
+
+    @staticmethod
+    def _filter_event_messages(result, kwargs) -> str:
+        for resp in result:
+            outputJS = json.loads(resp.data)
+            if kwargs:
+                for filter_key, filter_value in kwargs.items():
+                    if filter_key in outputJS and filter_value in outputJS.values():
+                        print(json.dumps(outputJS)+"\n")
+            else:
+                print(resp.data+"\n")
 
 
 class RestAdapter:
