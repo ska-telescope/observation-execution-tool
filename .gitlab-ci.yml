@@ -127,12 +127,8 @@ lint:
   stage: lint
   tags:
     - k8srunner
-  image: nexus.engageska-portugal.pt/ska-docker/deploy:0.4.3
   script:
-    - make namespace
     - make lint
-  after_script:
-    - make delete_namespace
   artifacts:
     paths:
       - build
