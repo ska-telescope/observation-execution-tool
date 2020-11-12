@@ -283,17 +283,58 @@ class RestClientUI:
 
     @staticmethod
     def _filter_event_messages(result, kwargs) -> str:
-        # sample data for testing , need to prepare topic wise data for all the topics
         topic_dict = {
-
-            'request.procedure.list': lambda
-                event_obj: f'Requesting procedure list from {event_obj["msg_src"]}',
-            'procedure.pool.list': lambda
-                event_obj: f'List of procedures from {event_obj["msg_src"]}',
             'request.procedure.create':lambda
-                event_obj: f'Request to create a new procedure from {event_obj["msg_src"]}',
+                event_obj: f'Request to create a new procedure is received',
+            'request.procedure.list': lambda
+                event_obj: f'Request to list all the procedures is received',
+            'request.procedure.start': lambda
+                event_obj: f'Request to start procedure execution is received',
+            'request.procedure.stop': lambda
+                event_obj: f'Request to stop a procedure is received',
+            'procedure.pool.list': lambda
+                event_obj: f'Current procedures and their status is enumerated',
             'procedure.lifecycle.created': lambda
-                event_obj: f'Procedure created with procedure id {event_obj["result"]["id"]}',
+                event_obj: f'Procedure {event_obj["result"]["id"]} is created',
+            'procedure.lifecycle.started':lambda
+                event_obj: f'Procedure {event_obj["result"]["id"]} is started',
+            'procedure.lifecycle.stopped': lambda
+                event_obj: f'Procedure {event_obj["result"]["id"]} is stopped',
+            'user.script.announce':lambda
+                event_obj: f'Test announcement', # need to define message for this topic
+            'sb.lifecycle.allocated':lambda
+                event_obj: f'Resources have been allocated within Scheduling Block {event_obj["sb_id"]} execution',
+            'sb.lifecycle.observation.started':lambda
+                event_obj: f'observation within an Scheduling Block {event_obj["sb_id"]} is started',
+            'sb.lifecycle.observation.finished.succeeded': lambda
+                event_obj: f'observation within an Scheduling Block {event_obj["sb_id"]} is finished successfully',
+            'sb.lifecycle.observation.finished.failed': lambda
+                event_obj: f'observation within an Scheduling Block {event_obj["sb_id"]} is failed',
+            'subarray.resources.allocated': lambda
+                event_obj: f'Resources have been allocated to a subarray {event_obj["subarray_id"]}',
+            'subarray.resources.deallocated': lambda
+                event_obj: f'Resources have been deallocated from a subarray {event_obj["subarray_id"]}',
+            'subarray.configured':lambda
+                event_obj: f'Subarray {event_obj["subarray_id"]} has been configured',
+            'subarray.scan.started': lambda
+                event_obj: f'Scan is started on subarray {event_obj["subarray_id"]}',
+            'subarray.scan.finished': lambda
+                event_obj: f'Scan is finished on subarray {event_obj["subarray_id"]}',
+            'subarray.fault': lambda
+                event_obj: f'There was an error {event_obj["error"]} in reaching Subarray {event_obj["subarray_id"]}',
+            'scan.lifecycle.configure.started': lambda
+                event_obj: f'Sub-array resource configuration begins for a scan {event_obj["scan_id"]} of SB {event_obj["sb_id"]}',
+            'scan.lifecycle.configure.complete': lambda
+                event_obj: f'Sub-array resource configuration for a scan {event_obj["scan_id"]} of SB {event_obj["sb_id"]} completed successfully',
+            'scan.lifecycle.configure.failed': lambda
+                event_obj: f'Sub-array resource configuration for a scan {event_obj["scan_id"]} of SB {event_obj["sb_id"]} failed',
+            'scan.lifecycle.start': lambda
+                event_obj: f'Resources have been allocated within SB {event_obj["sb_id"]}',
+            'scan.lifecycle.end.succeeded': lambda
+                event_obj: f'Scan {event_obj["scan_id"]} of SB {event_obj["sb_id"]} completed Successfully',
+            'scan.lifecycle.end.failed': lambda
+                event_obj: f'Error encountered during a scan {event_obj["scan_id"]} of SB {event_obj["sb_id"]}',
+
         }
         for resp in result:
             outputJS = json.loads(resp.data)
