@@ -6,8 +6,8 @@ jsonpickle
 pypubsub
 pytango
 requests
-sseclient
 skuid
 ska-logging
+sseclient-py
 tabulate
 tblib

@@ -45,7 +45,7 @@ setuptools.setup(
         'ska-logging',
         'ska-project-data-model-library',
         'skuid',
-        'sseclient',
+        'sseclient-py',
         'tabulate',
         'tblib',
     ],

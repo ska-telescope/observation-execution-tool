@@ -14,7 +14,9 @@ import operator
 import os
 import json
 from http import HTTPStatus
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Generator
+import urllib3
+import pprint
 
 import fire
 import requests
@@ -69,6 +71,59 @@ class RestClientUI:
     running at any one time.
     """
 
+    TOPIC_DICT = {
+        'request.procedure.create': lambda
+            evt: f'Request to prepare {evt["cmd"]["script_uri"]} for execution on subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]} received',
+        'request.procedure.list': lambda
+            evt: f'Request to list all the procedures is received',
+        'request.procedure.start': lambda
+            evt: f'Request to start procedure execution is received',
+        'request.procedure.stop': lambda
+            evt: f'Request to stop a procedure is received',
+        'procedure.pool.list': lambda
+            evt: f'Current procedures and their status is enumerated',
+        'procedure.lifecycle.created': lambda
+            evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) ready for execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
+        'procedure.lifecycle.started': lambda
+            evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) started execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
+        'procedure.lifecycle.stopped': lambda
+            evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) stopped execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
+        'user.script.announce': lambda
+            evt: f'Script message: {evt["msg"]}',
+        'sb.lifecycle.allocated': lambda
+            evt: f'Resources have been allocated within Scheduling Block {evt["sb_id"]} execution',
+        'sb.lifecycle.observation.started': lambda
+            evt: f'observation within an Scheduling Block {evt["sb_id"]} is started',
+        'sb.lifecycle.observation.finished.succeeded': lambda
+            evt: f'observation within an Scheduling Block {evt["sb_id"]} is finished successfully',
+        'sb.lifecycle.observation.finished.failed': lambda
+            evt: f'observation within an Scheduling Block {evt["sb_id"]} is failed',
+        'subarray.resources.allocated': lambda
+            evt: f'Resources have been allocated to a subarray {evt["subarray_id"]}',
+        'subarray.resources.deallocated': lambda
+            evt: f'Resources have been deallocated from a subarray {evt["subarray_id"]}',
+        'subarray.configured': lambda
+            evt: f'Subarray {evt["subarray_id"]} has been configured',
+        'subarray.scan.started': lambda
+            evt: f'Scan is started on subarray {evt["subarray_id"]}',
+        'subarray.scan.finished': lambda
+            evt: f'Scan is finished on subarray {evt["subarray_id"]}',
+        'subarray.fault': lambda
+            evt: f'There was an error {evt["error"]} in reaching Subarray {evt["subarray_id"]}',
+        'scan.lifecycle.configure.started': lambda
+            evt: f'Sub-array resource configuration begins for a scan {evt["scan_id"]} of SB {evt["sb_id"]}',
+        'scan.lifecycle.configure.complete': lambda
+            evt: f'Sub-array resource configuration for a scan {evt["scan_id"]} of SB {evt["sb_id"]} completed successfully',
+        'scan.lifecycle.configure.failed': lambda
+            evt: f'Sub-array resource configuration for a scan {evt["scan_id"]} of SB {evt["sb_id"]} failed',
+        'scan.lifecycle.start': lambda
+            evt: f'Resources have been allocated within SB {evt["sb_id"]}',
+        'scan.lifecycle.end.succeeded': lambda
+            evt: f'Scan {evt["scan_id"]} of SB {evt["sb_id"]} completed Successfully',
+        'scan.lifecycle.end.failed': lambda
+            evt: f'Error encountered during a scan {evt["scan_id"]} of SB {evt["sb_id"]}',
+    }
+
     def __init__(self, server_url=None):
         """
         Create a new client for the OET script execution service.
@@ -95,6 +150,7 @@ class RestClientUI:
             # ValueError raised if error is not valid JSON. This happens at least when
             # REST server is not running and returns Connection refused error
             msg = error_json
+            raise
         return f'The server encountered a problem: {msg}'
 
     @staticmethod
@@ -268,13 +324,13 @@ class RestClientUI:
         procedure = self._client.list(pid)
         return self._tabulate_for_describe(procedure)
 
-    def listen(self, **kwargs) -> str:
+    def listen(self, **kwargs):
         """
         Display real time oet events published by scripts.
         """
         try:
-            response = self._client.listen()
-            self._filter_event_messages(response, kwargs)
+            for evt in self._client.listen():
+                print(self._filter_event_messages(evt, kwargs))
         except KeyboardInterrupt as err:
             LOGGER.debug(f'received exception {err}')
         except Exception as err:
@@ -282,69 +338,15 @@ class RestClientUI:
             return self._format_error(str(err))
 
     @staticmethod
-    def _filter_event_messages(result, kwargs) -> str:
-        topic_dict = {
-            'request.procedure.create':lambda
-                event_obj: f'Request to create a new procedure is received',
-            'request.procedure.list': lambda
-                event_obj: f'Request to list all the procedures is received',
-            'request.procedure.start': lambda
-                event_obj: f'Request to start procedure execution is received',
-            'request.procedure.stop': lambda
-                event_obj: f'Request to stop a procedure is received',
-            'procedure.pool.list': lambda
-                event_obj: f'Current procedures and their status is enumerated',
-            'procedure.lifecycle.created': lambda
-                event_obj: f'Procedure {event_obj["result"]["id"]} is created',
-            'procedure.lifecycle.started':lambda
-                event_obj: f'Procedure {event_obj["result"]["id"]} is started',
-            'procedure.lifecycle.stopped': lambda
-                event_obj: f'Procedure {event_obj["result"]["id"]} is stopped',
-            'user.script.announce':lambda
-                event_obj: f'Test announcement', # need to define message for this topic
-            'sb.lifecycle.allocated':lambda
-                event_obj: f'Resources have been allocated within Scheduling Block {event_obj["sb_id"]} execution',
-            'sb.lifecycle.observation.started':lambda
-                event_obj: f'observation within an Scheduling Block {event_obj["sb_id"]} is started',
-            'sb.lifecycle.observation.finished.succeeded': lambda
-                event_obj: f'observation within an Scheduling Block {event_obj["sb_id"]} is finished successfully',
-            'sb.lifecycle.observation.finished.failed': lambda
-                event_obj: f'observation within an Scheduling Block {event_obj["sb_id"]} is failed',
-            'subarray.resources.allocated': lambda
-                event_obj: f'Resources have been allocated to a subarray {event_obj["subarray_id"]}',
-            'subarray.resources.deallocated': lambda
-                event_obj: f'Resources have been deallocated from a subarray {event_obj["subarray_id"]}',
-            'subarray.configured':lambda
-                event_obj: f'Subarray {event_obj["subarray_id"]} has been configured',
-            'subarray.scan.started': lambda
-                event_obj: f'Scan is started on subarray {event_obj["subarray_id"]}',
-            'subarray.scan.finished': lambda
-                event_obj: f'Scan is finished on subarray {event_obj["subarray_id"]}',
-            'subarray.fault': lambda
-                event_obj: f'There was an error {event_obj["error"]} in reaching Subarray {event_obj["subarray_id"]}',
-            'scan.lifecycle.configure.started': lambda
-                event_obj: f'Sub-array resource configuration begins for a scan {event_obj["scan_id"]} of SB {event_obj["sb_id"]}',
-            'scan.lifecycle.configure.complete': lambda
-                event_obj: f'Sub-array resource configuration for a scan {event_obj["scan_id"]} of SB {event_obj["sb_id"]} completed successfully',
-            'scan.lifecycle.configure.failed': lambda
-                event_obj: f'Sub-array resource configuration for a scan {event_obj["scan_id"]} of SB {event_obj["sb_id"]} failed',
-            'scan.lifecycle.start': lambda
-                event_obj: f'Resources have been allocated within SB {event_obj["sb_id"]}',
-            'scan.lifecycle.end.succeeded': lambda
-                event_obj: f'Scan {event_obj["scan_id"]} of SB {event_obj["sb_id"]} completed Successfully',
-            'scan.lifecycle.end.failed': lambda
-                event_obj: f'Error encountered during a scan {event_obj["scan_id"]} of SB {event_obj["sb_id"]}',
-
-        }
-        for resp in result:
-            outputJS = json.loads(resp.data)
-            if kwargs:
-                for filter_key, filter_value in kwargs.items():
-                    if filter_key in outputJS and filter_value in outputJS.values():
-                        format_topic_message = topic_dict[filter_value]
-                        print(format_topic_message(outputJS) + "\n")
-            else:
-               print(topic_dict[outputJS['topic']](outputJS) + "\n")
+    def _filter_event_messages(evt: sseclient.Event, kwargs) -> str:
+        outputJS = json.loads(evt.data)
+        if kwargs:
+            for filter_key, filter_value in kwargs.items():
+                if filter_key in outputJS and filter_value in outputJS.values():
+                    format_topic_message = RestClientUI.TOPIC_DICT[filter_value]
+                    return format_topic_message(outputJS)
+        else:
+           return RestClientUI.TOPIC_DICT[outputJS['topic']](outputJS)
 
 
 class RestAdapter:
@@ -471,15 +473,21 @@ class RestAdapter:
             return response_json['abort_message']
         raise Exception(response_json['error'].split(': ', 1)[1])
 
-    def listen(self):
+    def listen(self) -> Generator[sseclient.Event, None, None]:
         """
         Listen real time Oet events
 
         :return: event messages
         """
         url = self.server_url.replace('procedures', 'stream')
-        response = sseclient.SSEClient(url)
-        return response
+
+        http = urllib3.PoolManager()
+        response = http.request('GET', url, preload_content=False)
+        client = sseclient.SSEClient(response)
+
+        for event in client.events():
+            LOGGER.debug(pprint.pformat(json.loads(event.data)))
+            yield event
 
 
 def main():
@@ -492,4 +500,5 @@ def main():
 # This statement is included so that we can run this module and test the REST
 # client directly without installing the OET project
 if __name__ == '__main__':
+    # logging.basicConfig(level=logging.DEBUG)
     main()
