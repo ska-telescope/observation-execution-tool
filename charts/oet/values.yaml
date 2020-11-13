@@ -18,10 +18,12 @@ rest:
   component: rest
   function: script-execution
   domain: operations
+  ingress:
+    enabled: false
   image:
     registry: nexus.engageska-portugal.pt/ska-telescope
     image: observation-execution-tool
-    tag: 2.7.1
+    tag: 2.8.0
     pullPolicy: IfNotPresent
   resources:
     requests:

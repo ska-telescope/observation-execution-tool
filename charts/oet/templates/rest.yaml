@@ -1,4 +1,30 @@
 {{ if .Values.rest.enabled }}
+{{ if .Values.rest.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "oet.labels" . | indent 4 }}
+    component: {{ .Values.rest.component }}
+    function: {{ .Values.rest.function }}
+    domain: {{ .Values.rest.domain }}
+    intent: production
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/rule-type: PathPrefix
+spec:
+  rules:
+    - host: {{ tpl .Values.ingress.hostname . }}
+      http:
+        paths:
+        - path: /api
+          backend:
+           serviceName: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+           servicePort: 5000
+{{ end }}
 ---
 apiVersion: v1
 kind: Service
