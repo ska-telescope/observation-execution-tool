@@ -8,7 +8,7 @@ with open('README.md') as readme_file:
 
 setuptools.setup(
     name='observation-execution-tool',
-    version="2.8.5",
+    version="2.8.6",
     description="This project contains the code for the Observation Execution Tool, the application which provides high-level scripting facilities and a high-level scripting UI for the SKA.",
     long_description=readme + '\n\n',
     author="Stewart Williams",
