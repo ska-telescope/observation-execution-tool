@@ -7,11 +7,14 @@ import flask
 import jsonpickle
 from flask import Blueprint, stream_with_context, current_app
 from pubsub import pub
+from werkzeug.serving import WSGIRequestHandler
 
 from oet.event import topics
 from oet.mptools import MPQueue
 from oet.procedure import domain
 from oet.procedure.application import application
+
+WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 # Blueprint for the REST API
 API = Blueprint('api', __name__)
