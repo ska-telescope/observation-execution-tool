@@ -3,19 +3,25 @@ The oet.procedure.domain module holds domain entities from the script
 execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
+import copy
 import dataclasses
-import importlib.machinery
-import multiprocessing
-from multiprocessing.dummy import Pool
-import typing
-import traceback
 import enum
-import types
-import time
+import importlib.machinery
 import logging
-from collections import OrderedDict
+import multiprocessing
 import signal
+import threading
+import time
+import traceback
+import types
+import typing
+from collections import OrderedDict
+from multiprocessing.dummy import Pool
+
+from pubsub import pub
+
 from oet.command import SCAN_ID_GENERATOR
+from oet.event import topics
 
 LOGGER = logging.getLogger(__name__)
 
@@ -96,13 +102,15 @@ class Procedure(multiprocessing.Process):
     """
 
     def __init__(self, script_uri: str, *args,
-                 scan_counter: typing.Optional[multiprocessing.Value] = None, **kwargs):
+                 scan_counter: typing.Optional[multiprocessing.Value] = None,
+                 procedure_id: typing.Optional[int] = None,
+                 **kwargs):
         multiprocessing.Process.__init__(self)
         self.stacktrace_queue = multiprocessing.Queue()
         self.history = ProcedureHistory()
         init_args = ProcedureInput(*args, **kwargs)
 
-        self.id = None  # pylint:disable=invalid-name
+        self.id = procedure_id  # pylint:disable=invalid-name
         self.state = None
 
         self.user_module = ModuleFactory.get_module(script_uri)
@@ -123,10 +131,13 @@ class Procedure(multiprocessing.Process):
         This calls the main() method of the target script.
         """
         # set shared scan ID backing store, if provided
-        try:
-            if self._scan_counter:
-                SCAN_ID_GENERATOR.backing = self._scan_counter
+        if self._scan_counter:
+            SCAN_ID_GENERATOR.backing = self._scan_counter
 
+        msg_src = threading.current_thread().name
+        topic = topics.procedure.lifecycle.stopped
+
+        try:
             args = self.script_args['run'].args
             kwargs = self.script_args['run'].kwargs
             self.user_module.main(*args, **kwargs)
@@ -135,6 +146,13 @@ class Procedure(multiprocessing.Process):
             LOGGER.debug('Process terminated unexpectedly. Exception caught: %s', exception)
             stacktrace = traceback.format_exc()
             self.stacktrace_queue.put(stacktrace)
+            topic = topics.procedure.lifecycle.failed
+
+        finally:
+            request_id = time.time()
+            summary = ProcedureSummary.from_procedure(self)
+            # Queue input arg cannot be pickled, so remove
+            pub.sendMessage(topic, msg_src=msg_src, request_id=request_id, result=summary)
 
     def start(self):
         """
@@ -163,6 +181,30 @@ class Procedure(multiprocessing.Process):
         """
         self.state = new_state
         self.history.process_states[new_state] = time.time()
+
+
+@dataclasses.dataclass
+class ProcedureSummary:
+    """
+    ProcedureSummary is a brief representation of a runtime Procedure. It
+    captures essential information required to describe a Procedure and to
+    distinguish it from other Procedures.
+    """
+    id: int  # pylint: disable=invalid-name
+    script_uri: str
+    script_args: typing.Dict[str, ProcedureInput]
+    history: ProcedureHistory
+    state: ProcedureState
+
+    @staticmethod
+    def from_procedure(procedure: Procedure):
+        return ProcedureSummary(
+            id=procedure.id,
+            script_uri=procedure.script_uri,
+            script_args=procedure.script_args,
+            history=procedure.history,
+            state=procedure.state
+        )
 
 
 class ProcessManager:

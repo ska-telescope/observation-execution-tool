@@ -16,9 +16,15 @@ from pubsub import pub
 import oet.procedure.domain as domain
 from oet.event import topics
 from oet.procedure.application import restserver
-from oet.procedure.application.application import ProcedureSummary, PrepareProcessCommand, \
-    StartProcessCommand, StopProcessCommand
-from oet.procedure.domain import ProcedureInput
+from oet.procedure.application.application import (
+    PrepareProcessCommand,
+    StartProcessCommand,
+    StopProcessCommand
+)
+from oet.procedure.domain import (
+    ProcedureInput,
+    ProcedureSummary
+)
 
 # Endpoint for the REST API
 ENDPOINT = 'api/v1.0/procedures'
