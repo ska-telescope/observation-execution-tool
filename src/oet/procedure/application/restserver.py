@@ -14,7 +14,7 @@ from oet.mptools import MPQueue
 from oet.procedure import domain
 from oet.procedure.application import application
 
-WSGIRequestHandler.protocol_version = "HTTP/1.1"
+# WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 # Blueprint for the REST API
 API = Blueprint('api', __name__)
