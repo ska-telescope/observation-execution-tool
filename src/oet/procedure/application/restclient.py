@@ -353,7 +353,14 @@ class RestClientUI:
 
     @staticmethod
     def _filter_event_messages(evt: sseclient.Event, topics: List[str]) -> str:
-        event_dict = json.loads(evt.data)
+        if not evt.data:
+            return ''
+
+        try:
+            event_dict = json.loads(evt.data)
+        except json.decoder.JSONDecodeError as e:
+            print(e)
+            return f'ERROR Could not parse event: {evt}'
 
         event_topic = event_dict.get('topic', None)
         if event_topic not in topics:
@@ -361,7 +368,11 @@ class RestClientUI:
 
         # no topic defined - print anyway
         formatter = RestClientUI.TOPIC_DICT.get(event_topic, str)
-        return formatter(event_dict)
+        try:
+            return formatter(event_dict)
+        except KeyError:
+            LOGGER.debug('Error parsing event: %s', event_dict)
+            return ''
 
 
 class RestAdapter:
@@ -496,7 +507,13 @@ class RestAdapter:
         """
         url = self.server_url.replace('procedures', 'stream')
 
-        for msg in sseclient.SSEClient(url):
+        s = requests.Session()
+
+        # disable compression to work around Traefik ingress problem with compressed SSE streams
+        headers = {'Accept-Encoding': 'identity'}
+
+        for msg in sseclient.SSEClient(url, headers=headers):
+            LOGGER.debug('Event: %s', msg)
             yield msg
 
 
@@ -510,5 +527,5 @@ def main():
 # This statement is included so that we can run this module and test the REST
 # client directly without installing the OET project
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     main()
