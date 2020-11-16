@@ -3,6 +3,8 @@
 #
 IMAGE_TO_TEST = $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):latest
 
+CACHE_VOLUME = $(PROJECT)-test-cache
+
 #
 # Never use the network=host mode when running CI jobs, and add extra
 # distinguishing identifiers to the network name and container names to
@@ -11,11 +13,11 @@ IMAGE_TO_TEST = $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):lates
 #
 ifneq ($(CI_JOB_ID),)
 CONTAINER_NAME_PREFIX := $(PROJECT)-$(CI_JOB_ID)-
+DOCKER_TOX_CACHE :=
 else
 CONTAINER_NAME_PREFIX := $(PROJECT)-
+DOCKER_TOX_CACHE := -v $(CACHE_VOLUME):/app/.tox
 endif
-
-CACHE_VOLUME = $(PROJECT)-test-cache
 
 # Creates Docker volume for use as a cache, if it doesn't exist already
 INIT_CACHE = \
@@ -31,8 +33,7 @@ BUILD = $(eval BUILD := $(BUILD_GEN))$(BUILD)
 docker_make = tar -c tests/ | \
 	docker run -i --rm \
 	-e TANGO_HOST=$(TANGO_HOST) \
-	-v $(CACHE_VOLUME):/app/.tox \
-	-v /app/build -w /app \
+	$(DOCKER_TOX_CACHE) -v /app/build -w /app \
 	-u tango $(DOCKER_RUN_ARGS) $(IMAGE_TO_TEST) \
 	bash -c "sudo chown -R tango:tango /app/build && \
 			 sudo chown -R tango:tango /app/.tox && \
