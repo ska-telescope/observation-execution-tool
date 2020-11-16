@@ -9,19 +9,17 @@ and running procedures held in the remote server.
 """
 import dataclasses
 import datetime
+import json
 import logging
 import operator
 import os
-import json
 from http import HTTPStatus
 from typing import Dict, List, Optional, Generator
-import urllib3
-import pprint
 
 import fire
 import requests
-import tabulate
 import sseclient
+import tabulate
 
 LOGGER = logging.getLogger(__name__)
 
