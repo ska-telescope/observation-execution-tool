@@ -16,4 +16,5 @@ pytest-mock
 pytest-repeat
 pytest-xdist
 requests-mock
+sseclient
 tabulate
