@@ -357,7 +357,7 @@ class RestClientUI:
 
         event_topic = event_dict.get('topic', None)
         if event_topic not in topics:
-            return None
+            return ''
 
         # no topic defined - print anyway
         formatter = RestClientUI.TOPIC_DICT.get(event_topic, str)
