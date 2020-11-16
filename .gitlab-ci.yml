@@ -49,13 +49,14 @@ build:
     - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
     - make build
-    - mkdir -p image
-    - docker save nexus.engageska-portugal.pt/ska-telescope/observation-execution-tool:latest > image/latest.tar
+    - make push
+#    - mkdir -p image
+#    - docker save nexus.engageska-portugal.pt/ska-telescope/observation-execution-tool:latest > image/latest.tar
   artifacts:
     when: always
     paths:
       - build
-      - image
+#      - image
 
 build_wheel_for_publication: # Executed on a tag:
   stage: build
@@ -88,7 +89,7 @@ test:
   tags:
     - k8srunner
   script:
-    - docker load -i image/latest.tar
+#    - docker load -i image/latest.tar
     - make test
   artifacts:
     name: "$CI_PROJECT_NAME-$CI_JOB_ID"
@@ -131,7 +132,7 @@ lint:
   tags:
     - k8srunner
   script:
-    - docker load -i image/latest.tar
+#    - docker load -i image/latest.tar
     - make lint
   artifacts:
     paths:
@@ -160,7 +161,7 @@ push_OET_image:
   before_script:
     - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
-    - docker load -i image/latest.tar
+#    - docker load -i image/latest.tar
     - make push
   only:
     - tags
