@@ -49,7 +49,7 @@ build:
     - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
     - make build
-    - make push
+#    - make push
 #    - mkdir -p image
 #    - docker save nexus.engageska-portugal.pt/ska-telescope/observation-execution-tool:latest > image/latest.tar
   artifacts:
