@@ -104,6 +104,9 @@ class ServerSentEventsBlueprint(Blueprint):
     def stream(self) -> flask.Response:
         @stream_with_context
         def generator():
+            # must immediately yield to return 200 OK response to client,
+            # otherwise response is only sent on first event
+            yield '\n'
             for message in self.messages():
                 yield str(message)
 

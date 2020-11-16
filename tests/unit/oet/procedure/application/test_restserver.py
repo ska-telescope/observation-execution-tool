@@ -615,14 +615,14 @@ def test_sse_string_messages_are_streamed_correctly(client):
 
     with mock.patch('oet.procedure.application.restserver.ServerSentEventsBlueprint.messages') as mock_messages:
         mock_messages.return_value = [msg]
-        response = client.get(f'/api/v1.0/stream')
+        response = client.get('/api/v1.0/stream')
 
-    assert isinstance(response, flask.Response)
-    assert response.mimetype == 'text/event-stream'
-    assert response.status_code == 200
-    assert response.is_streamed
-    output = response.get_data(as_text=True)
-    assert output == "event:message\ndata:foo\n\n"
+        assert isinstance(response, flask.Response)
+        assert response.mimetype == 'text/event-stream'
+        assert response.status_code == 200
+        assert response.is_streamed
+        output = response.get_data(as_text=True)
+        assert output == "\nevent:message\ndata:foo\n\n"
 
 
 def test_sse_complex_messages_are_streamed_correctly(client):
@@ -633,14 +633,14 @@ def test_sse_complex_messages_are_streamed_correctly(client):
 
     with mock.patch('oet.procedure.application.restserver.ServerSentEventsBlueprint.messages') as mock_messages:
         mock_messages.return_value = [msg]
-        response = client.get(f'/api/v1.0/stream')
+        response = client.get('/api/v1.0/stream')
 
-    assert isinstance(response, flask.Response)
-    assert response.mimetype == 'text/event-stream'
-    assert response.status_code == 200
-    assert response.is_streamed
-    output = response.get_data(as_text=True)
-    assert output == 'event:message\ndata:{"foo": "bar"}\nid:123\n\n'
+        assert isinstance(response, flask.Response)
+        assert response.mimetype == 'text/event-stream'
+        assert response.status_code == 200
+        assert response.is_streamed
+        output = response.get_data(as_text=True)
+        assert output == '\nevent:message\ndata:{"foo": "bar"}\nid:123\n\n'
 
 
 def test_sse_messages_returns_pubsub_messages(client):
