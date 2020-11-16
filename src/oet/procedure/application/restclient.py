@@ -264,8 +264,12 @@ class RestClientUI:
             if not procedures:
                 return 'No procedures to describe'
             pid = procedures[-1].id
-        procedure = self._client.list(pid)
-        return self._tabulate_for_describe(procedure)
+        try:
+            procedure = self._client.list(pid)
+            return self._tabulate_for_describe(procedure)
+        except Exception as err:
+            LOGGER.debug(f'received exception {err}')
+            return self._format_error(str(err))
 
 
 class RestAdapter:
