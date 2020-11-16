@@ -3,5 +3,5 @@ name: oet
 description: A Helm chart for deploying the Observation Execution Tool on Kubernetes
 type: application
 version: 0.2.0
-appVersion: 2.8.3
+appVersion: 2.8.4
 icon: https://www.skatelescope.org/wp-content/uploads/2016/07/09545_NEW_LOGO_2014.png
