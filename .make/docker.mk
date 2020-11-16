@@ -36,7 +36,7 @@ docker_make = tar -c tests/ | \
 	$(DOCKER_TOX_CACHE) -v /app/build -w /app \
 	-u tango $(DOCKER_RUN_ARGS) $(IMAGE_TO_TEST) \
 	bash -c "sudo chown -R tango:tango /app/build && \
-			 sudo chown -R tango:tango /app/.tox && \
+			 sudo chown -fR tango:tango /app/.tox && \
 			 tar x -C /app --exclude='*.pyc' --exclude='__pycache__' --strip-components 1 --warning=all && \
 			 make HELM_RELEASE=$(RELEASE_NAME) TANGO_HOST=$(TANGO_HOST) MARK=$(MARK) $1" \
 	2>&1
