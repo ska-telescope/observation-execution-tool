@@ -349,7 +349,6 @@ class RestClientUI:
             LOGGER.debug(f'received exception {err}')
         except Exception as err:
             LOGGER.debug(f'received exception {err}')
-            raise
             return self._format_error(str(err))
 
     @staticmethod
