@@ -33,7 +33,7 @@ def _main(subarray_id: int, raise_msg=None):
     LOG.info(f'Running script in OS process {os.getpid()}')
     announce(f'Running script in OS process {os.getpid()}')
 
-    for i in range(10):
+    for i in range(1, 10):
         LOG.info(f'pretending to execute scan {i}/10')
         announce(f'pretending to execute scan {i}/10')
         time.sleep(1)
