@@ -73,13 +73,13 @@ class RestClientUI:
 
     TOPIC_DICT = {
         'request.procedure.create': lambda
-            evt: f'Request to prepare {evt["cmd"]["script_uri"]} for execution on subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]} received',
+            evt: f'Request: prepare {evt["cmd"]["script_uri"]} for execution on subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]}',
         'request.procedure.list': lambda
             evt: f'Request to list all the procedures is received',
         'request.procedure.start': lambda
-            evt: f'Request to start procedure execution is received',
+            evt: f'Request: start execution of process #{evt["cmd"]["process_uid"]}',
         'request.procedure.stop': lambda
-            evt: f'Request to stop a procedure is received',
+            evt: f'Request: stop procedure is received',
         'procedure.pool.list': lambda
             evt: f'Current procedures and their status is enumerated',
         'procedure.lifecycle.created': lambda
@@ -88,6 +88,8 @@ class RestClientUI:
             evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) started execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
         'procedure.lifecycle.stopped': lambda
             evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) stopped execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
+        'procedure.lifecycle.failed': lambda
+            evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) execution failed on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
         'user.script.announce': lambda
             evt: f'Script message: {evt["msg"]}',
         'sb.lifecycle.allocated': lambda
@@ -324,29 +326,45 @@ class RestClientUI:
         procedure = self._client.list(pid)
         return self._tabulate_for_describe(procedure)
 
-    def listen(self, **kwargs):
+    def listen(self, topics: Optional[str] = 'all', exclude: Optional[str] = 'request,procedure.pool'):
         """
         Display real time oet events published by scripts.
+
+        :param topics: event topics to display, or 'all' for all (default='all')
+        :param exclude: event topics to exclude (default='request,procedure.pool')
         """
+        if topics == 'all':
+            topics = list(RestClientUI.TOPIC_DICT.keys())
+        else:
+            topics = topics.split(',')
+
+        exclude_topics = exclude.split(',')
+        to_exclude = [t for e in exclude_topics for t in topics if t.startswith(e)]
+        topics = [t for t in topics if t not in to_exclude]
+
         try:
             for evt in self._client.listen():
-                print(self._filter_event_messages(evt, kwargs))
+                output = self._filter_event_messages(evt, topics)
+                if output:
+                    print(output)
         except KeyboardInterrupt as err:
             LOGGER.debug(f'received exception {err}')
         except Exception as err:
             LOGGER.debug(f'received exception {err}')
+            raise
             return self._format_error(str(err))
 
     @staticmethod
-    def _filter_event_messages(evt: sseclient.Event, kwargs) -> str:
-        outputJS = json.loads(evt.data)
-        if kwargs:
-            for filter_key, filter_value in kwargs.items():
-                if filter_key in outputJS and filter_value in outputJS.values():
-                    format_topic_message = RestClientUI.TOPIC_DICT[filter_value]
-                    return format_topic_message(outputJS)
-        else:
-           return RestClientUI.TOPIC_DICT[outputJS['topic']](outputJS)
+    def _filter_event_messages(evt: sseclient.Event, topics: List[str]) -> str:
+        event_dict = json.loads(evt.data)
+
+        event_topic = event_dict.get('topic', None)
+        if event_topic not in topics:
+            return None
+
+        # no topic defined - print anyway
+        formatter = RestClientUI.TOPIC_DICT.get(event_topic, str)
+        return formatter(event_dict)
 
 
 class RestAdapter:
@@ -481,13 +499,8 @@ class RestAdapter:
         """
         url = self.server_url.replace('procedures', 'stream')
 
-        http = urllib3.PoolManager()
-        response = http.request('GET', url, preload_content=False)
-        client = sseclient.SSEClient(response)
-
-        for event in client.events():
-            LOGGER.debug(pprint.pformat(json.loads(event.data)))
-            yield event
+        for msg in sseclient.SSEClient(url):
+            yield msg
 
 
 def main():
@@ -500,5 +513,5 @@ def main():
 # This statement is included so that we can run this module and test the REST
 # client directly without installing the OET project
 if __name__ == '__main__':
-    # logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
     main()
