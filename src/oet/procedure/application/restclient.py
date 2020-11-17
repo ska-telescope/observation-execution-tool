@@ -8,18 +8,18 @@ script prepared in a prior 'create procedure' call, and to list all prepared
 and running procedures held in the remote server.
 """
 import dataclasses
+from http import HTTPStatus
+
 import datetime
+import fire
 import json
 import logging
 import operator
 import os
-from http import HTTPStatus
-from typing import Dict, List, Optional, Generator
-
-import fire
 import requests
 import sseclient
 import tabulate
+from typing import Dict, List, Optional, Generator
 
 LOGGER = logging.getLogger(__name__)
 
@@ -109,13 +109,13 @@ class RestClientUI:
         'request.procedure.stop': lambda
             evt: f'User request: stop procedure #{evt["cmd"]["process_uid"]} with {"" if evt["cmd"]["run_abort"] else "no"} abort',
         'procedure.pool.list': lambda
-            evt: f'Current procedures and their status is enumerated',
+            evt: f'Enumerating current procedures and status',
         'procedure.lifecycle.created': lambda
             evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) ready for execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
         'procedure.lifecycle.started': lambda
             evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) started execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
         'procedure.lifecycle.stopped': lambda
-            evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) execution complete {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
+            evt: RestClientUI._extract_result_from_abort_result(evt),
         'procedure.lifecycle.failed': lambda
             evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) execution failed on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
         'user.script.announce': lambda
@@ -153,6 +153,28 @@ class RestClientUI:
         'scan.lifecycle.end.failed': lambda
             evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} failed',
     }
+
+    @staticmethod
+    def _extract_result_from_abort_result(evt: dict):
+        """
+        PI8 workaround.
+
+        A script stopping naturally returns a single ProcedureSummary.
+        However, an aborted script returns a _list_ of ProcedureSummaries, one
+        summary for each post-abort script. If the result is a list, this
+        method returns the first result found, which is enough for PI8.
+
+        TODO refactor stop message to a common type
+        """
+        try:
+            result = evt['result'][0]
+        except IndexError:
+            # stop script but no post-abort script run
+            # no other info available in message!
+            return f'Procedure stopped'
+        except TypeError:
+            result = evt['result']
+        return f'Procedure {result["id"]} ({result["script_uri"]}) execution complete {result["script_args"]["init"]["kwargs"]["subarray_id"]}'
 
     def __init__(self, server_url=None):
         """
@@ -271,7 +293,7 @@ class RestClientUI:
             LOGGER.debug(f'received exception {err}')
             return self._format_error(str(err))
 
-    def start(self, *args, pid=None, listen=True, **kwargs) -> str:
+    def start(self, *args, pid=None, listen=True, **kwargs) -> Generator[str, None, None]:
         """
         Start a specified Procedure.
 
@@ -286,6 +308,7 @@ class RestClientUI:
             oet start --pid=3 'hello' --verbose=true
 
         :param pid: ID of the procedure to start
+        :param listen: True to display events
         :param args: late-binding position arguments for script
         :param kwargs: late-binding kwargs for script
         :return: Table entry for running procedure
@@ -293,11 +316,14 @@ class RestClientUI:
         if pid is None:
             procedures = self._client.list()
             if not procedures:
-                return 'No procedures to start'
+                yield 'No procedures to start'
+                return
+
             procedure = procedures[-1]
             if procedure.state != "CREATED":
-                return f'The last procedure created is in {procedures[-1].state} state ' \
+                yield f'The last procedure created is in {procedures[-1].state} state ' \
                        'and cannot be started, please specify a valid procedure ID.'
+                return
             pid = procedure.id
 
         run_args = dict(args=args, kwargs=kwargs)
