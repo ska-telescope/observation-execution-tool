@@ -8,20 +8,50 @@ script prepared in a prior 'create procedure' call, and to list all prepared
 and running procedures held in the remote server.
 """
 import dataclasses
+from http import HTTPStatus
+
 import datetime
+import fire
 import json
 import logging
 import operator
 import os
-from http import HTTPStatus
-from typing import Dict, List, Optional, Generator
-
-import fire
 import requests
 import sseclient
 import tabulate
+from typing import Dict, List, Optional, Generator
 
 LOGGER = logging.getLogger(__name__)
+
+
+#
+# Monkey patch SSEclient to solve issue with gzip-compressed SSE streams
+#
+# Patch taken verbatim from:
+# https://github.com/Count-Count/sseclient/tree/dont_use_raw_reads_with_gzipped_or_chunked_streams
+#
+def iter_content(self):
+    if hasattr(self.resp.raw, '_fp') and \
+            hasattr(self.resp.raw._fp, 'fp') and \
+            hasattr(self.resp.raw._fp.fp, 'read1') and \
+            not self.resp.raw.chunked and \
+            not self.resp.raw.getheader("Content-Encoding"):
+
+        def generate():
+            while True:
+                chunk = self.resp.raw._fp.fp.read1(self.chunk_size)
+                if not chunk:
+                    break
+                yield chunk
+
+        return generate()
+
+    else:
+        # short reads cannot be used, this will block until
+        # the full chunk size is actually read
+        return self.resp.iter_content(self.chunk_size)
+
+sseclient.SSEClient.iter_content = iter_content
 
 
 @dataclasses.dataclass
@@ -71,58 +101,80 @@ class RestClientUI:
 
     TOPIC_DICT = {
         'request.procedure.create': lambda
-            evt: f'Request: prepare {evt["cmd"]["script_uri"]} for execution on subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]}',
+            evt: f'User request: prepare {evt["cmd"]["script_uri"]} for execution on subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]}',
         'request.procedure.list': lambda
-            evt: f'Request to list all the procedures is received',
+            evt: f'User request to list all the procedures is received',
         'request.procedure.start': lambda
-            evt: f'Request: start execution of process #{evt["cmd"]["process_uid"]}',
+            evt: f'User request: start execution of process #{evt["cmd"]["process_uid"]}',
         'request.procedure.stop': lambda
-            evt: f'Request: stop procedure is received',
+            evt: f'User request: stop procedure #{evt["cmd"]["process_uid"]} with {"" if evt["cmd"]["run_abort"] else "no"} abort',
         'procedure.pool.list': lambda
-            evt: f'Current procedures and their status is enumerated',
+            evt: f'Enumerating current procedures and status',
         'procedure.lifecycle.created': lambda
             evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) ready for execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
         'procedure.lifecycle.started': lambda
             evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) started execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
         'procedure.lifecycle.stopped': lambda
-            evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) stopped execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
+            evt: RestClientUI._extract_result_from_abort_result(evt),
         'procedure.lifecycle.failed': lambda
             evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) execution failed on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
         'user.script.announce': lambda
             evt: f'Script message: {evt["msg"]}',
         'sb.lifecycle.allocated': lambda
-            evt: f'Resources have been allocated within Scheduling Block {evt["sb_id"]} execution',
+            evt: f'Resources allocated using SB {evt["sb_id"]}',
         'sb.lifecycle.observation.started': lambda
-            evt: f'observation within an Scheduling Block {evt["sb_id"]} is started',
+            evt: f'Observation for SB {evt["sb_id"]} started',
         'sb.lifecycle.observation.finished.succeeded': lambda
-            evt: f'observation within an Scheduling Block {evt["sb_id"]} is finished successfully',
+            evt: f'Observation for SB {evt["sb_id"]} complete',
         'sb.lifecycle.observation.finished.failed': lambda
-            evt: f'observation within an Scheduling Block {evt["sb_id"]} is failed',
+            evt: f'Observation for SB {evt["sb_id"]} failed',
         'subarray.resources.allocated': lambda
-            evt: f'Resources have been allocated to a subarray {evt["subarray_id"]}',
+            evt: f'Subarray {evt["subarray_id"]}: resources allocated',
         'subarray.resources.deallocated': lambda
-            evt: f'Resources have been deallocated from a subarray {evt["subarray_id"]}',
+            evt: f'Subarray {evt["subarray_id"]}: resources released',
         'subarray.configured': lambda
-            evt: f'Subarray {evt["subarray_id"]} has been configured',
+            evt: f'Subarray {evt["subarray_id"]} configured',
         'subarray.scan.started': lambda
-            evt: f'Scan is started on subarray {evt["subarray_id"]}',
+            evt: f'Subarray {evt["subarray_id"]}: scan started',
         'subarray.scan.finished': lambda
-            evt: f'Scan is finished on subarray {evt["subarray_id"]}',
+            evt: f'Subarray {evt["subarray_id"]}: scan complete',
         'subarray.fault': lambda
-            evt: f'There was an error {evt["error"]} in reaching Subarray {evt["subarray_id"]}',
+            evt: f'Subarray {evt["subarray_id"]} error: {evt["error"]}',
         'scan.lifecycle.configure.started': lambda
-            evt: f'Sub-array resource configuration begins for a scan {evt["scan_id"]} of SB {evt["sb_id"]}',
+            evt: f'SB {evt["sb_id"]}: configuring for scan {evt["scan_id"]}',
         'scan.lifecycle.configure.complete': lambda
-            evt: f'Sub-array resource configuration for a scan {evt["scan_id"]} of SB {evt["sb_id"]} completed successfully',
+            evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} configuration complete',
         'scan.lifecycle.configure.failed': lambda
-            evt: f'Sub-array resource configuration for a scan {evt["scan_id"]} of SB {evt["sb_id"]} failed',
+            evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} configuration failed',
         'scan.lifecycle.start': lambda
-            evt: f'Resources have been allocated within SB {evt["sb_id"]}',
+            evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} starting',
         'scan.lifecycle.end.succeeded': lambda
-            evt: f'Scan {evt["scan_id"]} of SB {evt["sb_id"]} completed Successfully',
+            evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} complete',
         'scan.lifecycle.end.failed': lambda
-            evt: f'Error encountered during a scan {evt["scan_id"]} of SB {evt["sb_id"]}',
+            evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} failed',
     }
+
+    @staticmethod
+    def _extract_result_from_abort_result(evt: dict):
+        """
+        PI8 workaround.
+
+        A script stopping naturally returns a single ProcedureSummary.
+        However, an aborted script returns a _list_ of ProcedureSummaries, one
+        summary for each post-abort script. If the result is a list, this
+        method returns the first result found, which is enough for PI8.
+
+        TODO refactor stop message to a common type
+        """
+        try:
+            result = evt['result'][0]
+        except IndexError:
+            # stop script but no post-abort script run
+            # no other info available in message!
+            return f'Procedure stopped'
+        except TypeError:
+            result = evt['result']
+        return f'Procedure {result["id"]} ({result["script_uri"]}) execution complete {result["script_args"]["init"]["kwargs"]["subarray_id"]}'
 
     def __init__(self, server_url=None):
         """
@@ -241,7 +293,7 @@ class RestClientUI:
             LOGGER.debug(f'received exception {err}')
             return self._format_error(str(err))
 
-    def start(self, *args, pid=None, **kwargs) -> str:
+    def start(self, *args, pid=None, listen=True, **kwargs) -> Generator[str, None, None]:
         """
         Start a specified Procedure.
 
@@ -256,6 +308,7 @@ class RestClientUI:
             oet start --pid=3 'hello' --verbose=true
 
         :param pid: ID of the procedure to start
+        :param listen: True to display events
         :param args: late-binding position arguments for script
         :param kwargs: late-binding kwargs for script
         :return: Table entry for running procedure
@@ -263,20 +316,37 @@ class RestClientUI:
         if pid is None:
             procedures = self._client.list()
             if not procedures:
-                return 'No procedures to start'
+                yield 'No procedures to start'
+                return
+
             procedure = procedures[-1]
             if procedure.state != "CREATED":
-                return f'The last procedure created is in {procedures[-1].state} state ' \
+                yield f'The last procedure created is in {procedures[-1].state} state ' \
                        'and cannot be started, please specify a valid procedure ID.'
+                return
             pid = procedure.id
 
         run_args = dict(args=args, kwargs=kwargs)
         try:
+            if listen:
+                listener = self.listen()
+
             procedure = self._client.start(pid, run_args=run_args)
-            return self._tabulate([procedure])
+            for line in self._tabulate([procedure]).splitlines(keepends=False):
+                yield line
+
+            if listen:
+                yield ''
+                yield 'Events'
+                yield '------'
+                yield ''
+
+                for msg in listener:
+                    yield msg
+
         except Exception as err:
             LOGGER.debug(f'received exception {err}')
-            return self._format_error(str(err))
+            yield self._format_error(str(err))
 
     def stop(self, pid=None, run_abort=True) -> str:
         """
@@ -337,14 +407,14 @@ class RestClientUI:
             topics = topics.split(',')
 
         exclude_topics = exclude.split(',')
-        to_exclude = [t for e in exclude_topics for t in topics if t.startswith(e)]
+        to_exclude = [t for e in exclude_topics for t in topics if e and t.startswith(e)]
         topics = [t for t in topics if t not in to_exclude]
 
         try:
             for evt in self._client.listen():
                 output = self._filter_event_messages(evt, topics)
                 if output:
-                    print(output)
+                    yield f'- {output}'
         except KeyboardInterrupt as err:
             LOGGER.debug(f'received exception {err}')
         except Exception as err:
@@ -359,7 +429,6 @@ class RestClientUI:
         try:
             event_dict = json.loads(evt.data)
         except json.decoder.JSONDecodeError as e:
-            print(e)
             return f'ERROR Could not parse event: {evt}'
 
         event_topic = event_dict.get('topic', None)
@@ -507,12 +576,7 @@ class RestAdapter:
         """
         url = self.server_url.replace('procedures', 'stream')
 
-        s = requests.Session()
-
-        # disable compression to work around Traefik ingress problem with compressed SSE streams
-        headers = {'Accept-Encoding': 'identity'}
-
-        for msg in sseclient.SSEClient(url, headers=headers):
+        for msg in sseclient.SSEClient(url):
             LOGGER.debug('Event: %s', msg)
             yield msg
 
