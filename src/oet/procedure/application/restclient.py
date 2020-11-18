@@ -172,7 +172,7 @@ class RestClientUI:
             # stop script but no post-abort script run
             # no other info available in message!
             return f'Procedure stopped'
-        except TypeError:
+        except (TypeError, KeyError):
             result = evt['result']
         return f'Procedure {result["id"]} ({result["script_uri"]}) execution complete {result["script_args"]["init"]["kwargs"]["subarray_id"]}'
 
@@ -441,6 +441,7 @@ class RestClientUI:
             return formatter(event_dict)
         except KeyError:
             LOGGER.debug('Error parsing event: %s', event_dict)
+            raise
             return ''
 
 
@@ -591,5 +592,5 @@ def main():
 # This statement is included so that we can run this module and test the REST
 # client directly without installing the OET project
 if __name__ == '__main__':
-    # logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
     main()
