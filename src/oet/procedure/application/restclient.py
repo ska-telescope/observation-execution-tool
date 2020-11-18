@@ -592,5 +592,5 @@ def main():
 # This statement is included so that we can run this module and test the REST
 # client directly without installing the OET project
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     main()
