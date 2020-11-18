@@ -441,7 +441,6 @@ class RestClientUI:
             return formatter(event_dict)
         except KeyError:
             LOGGER.debug('Error parsing event: %s', event_dict)
-            raise
             return ''
 
 
