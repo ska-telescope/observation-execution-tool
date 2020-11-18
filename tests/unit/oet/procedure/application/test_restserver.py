@@ -220,7 +220,7 @@ def test_get_procedure_gives_404_for_invalid_id(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=1"}'}
+    assert response_json == {'error': '404 Not Found', 'type':  'ResourceNotFound', 'Message': 'No information available for PID=1'}
 
 
 def test_successful_post_to_endpoint_returns_created_http_status(client):
@@ -266,7 +266,7 @@ def test_post_to_endpoint_requires_script_uri_json_parameter(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "script_uri missing"}'}
+    assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Request', 'Message': 'script_uri missing'}
 
 
 def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
@@ -280,7 +280,7 @@ def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "Malformed script_uri in request"}'}
+    assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Request', 'Message': 'Malformed script_uri in request'}
 
 
 def test_post_to_endpoint_sends_init_arguments(client):
@@ -323,7 +323,7 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=123"}'}
+    assert response_json == {'error': '404 Not Found', 'type':  'ResourceNotFound', 'Message': 'No information available for PID=123'}
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -348,7 +348,7 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Empty Response", "Message": "No JSON available in response"}'}
+    assert response_json == {'error': '400 Bad Request','type': 'Empty Response', 'Message': 'No JSON available in response'}
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -562,7 +562,7 @@ def test_giving_non_dict_script_args_returns_error_code(client):
 
     response_json = response.get_json()
     # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Response", "Message": "Malformed script_args in response"}'}
+    assert response_json == {'error': '400 Bad Request', 'Error': 'Malformed Response', 'Message': 'Malformed script_args in response'}
 
 
 def test_call_and_respond_aborts_with_timeout_when_no_response_received(client, short_timeout):
