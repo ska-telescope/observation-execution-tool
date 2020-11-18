@@ -11,23 +11,10 @@ global:
 oet:
   rest:
     enabled: true
-# Uncomment if wanting to test local images
-#    image:
-#      tag: latest
-  ssh:
-    enabled: false
-    image:
-# Uncomment if wanting to test local images
-#    image:
-#      tag: latest
-  jupyter:
-    enabled: false
-# Uncomment if wanting to test local images
-#    image:
-#      tag: latest
-  itango:
-    enabled: false
-# Uncomment if wanting to test local images
+# Uncomment to make REST server available via ingress
+#    ingress:
+#      enabled: true
+# Uncomment to test local images
 #    image:
 #      tag: latest
 # Set if you want to point to your PC for testing

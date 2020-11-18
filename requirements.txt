@@ -8,6 +8,6 @@ pytango
 requests
 skuid
 ska-logging
-ska-project-data-model-library
+sseclient
 tabulate
 tblib

@@ -1,4 +1,30 @@
 {{ if .Values.rest.enabled }}
+{{ if .Values.rest.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "oet.labels" . | indent 4 }}
+    component: {{ .Values.rest.component }}
+    function: {{ .Values.rest.function }}
+    domain: {{ .Values.rest.domain }}
+    intent: production
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/rule-type: PathPrefix
+spec:
+  rules:
+    - host: {{ tpl .Values.ingress.hostname . }}
+      http:
+        paths:
+        - path: /api
+          backend:
+           serviceName: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+           servicePort: 5000
+{{ end }}
 ---
 apiVersion: v1
 kind: Service
@@ -28,36 +54,6 @@ metadata:
 binaryData:
   hello_world.py: |-
 {{ .Files.Get "data/hello_world.py" | b64enc | indent 4 }}
-  allocate.py: |-
-{{ .Files.Get "data/allocate.py" | b64enc | indent 4 }}
-  allocate_from_file.py: |-
-{{ .Files.Get "data/allocate_from_file.py" | b64enc | indent 4 }}
-  allocate_from_file_sb.py: |-
-{{ .Files.Get "data/allocate_from_file_sb.py" | b64enc | indent 4 }}
-  deallocate.py: |-
-{{ .Files.Get "data/deallocate.py" | b64enc | indent 4 }}
-  startup.py: |-
-{{ .Files.Get "data/startup.py" | b64enc | indent 4 }}
-  standby.py: |-
-{{ .Files.Get "data/standby.py" | b64enc | indent 4 }}
-  observe.py: |-
-{{ .Files.Get "data/observe.py" | b64enc | indent 4 }}
-  observe_sb.py: |-
-{{ .Files.Get "data/observe_sb.py" | b64enc | indent 4 }}
-  abort.py: |-
-{{ .Files.Get "data/abort.py" | b64enc | indent 4 }}
-  restart.py: |-
-{{ .Files.Get "data/restart.py" | b64enc | indent 4 }}
-  reset.py: |-
-{{ .Files.Get "data/reset.py" | b64enc | indent 4 }}
-  example_allocate.json: |-
-{{ .Files.Get "data/example_allocate.json" | b64enc | indent 4 }}
-  example_configure.json: |-
-{{ .Files.Get "data/example_configure.json" | b64enc | indent 4 }}
-  example_sb.json: |-
-{{ .Files.Get "data/example_sb.json" | b64enc | indent 4 }}
-  long_sb.json: |-
-{{ .Files.Get "data/long_sb.json" | b64enc | indent 4 }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -138,36 +134,6 @@ spec:
             items:
               - key: hello_world.py
                 path: hello_world.py
-              - key: allocate.py
-                path: allocate.py
-              - key: allocate_from_file.py
-                path: allocate_from_file.py
-              - key: allocate_from_file_sb.py
-                path: allocate_from_file_sb.py
-              - key: deallocate.py
-                path: deallocate.py
-              - key: startup.py
-                path: startup.py
-              - key: standby.py
-                path: standby.py
-              - key: observe.py
-                path: observe.py
-              - key: observe_sb.py
-                path: observe_sb.py
-              - key: abort.py
-                path: abort.py
-              - key: restart.py
-                path: restart.py
-              - key: reset.py
-                path: reset.py
-              - key: example_allocate.json
-                path: example_allocate.json
-              - key: example_configure.json
-                path: example_configure.json
-              - key: example_sb.json
-                path: example_sb.json
-              - key: long_sb.json
-                path: long_sb.json
   {{- with .Values.nodeSelector }}
 nodeSelector:
   {{ toYaml . | indent 8 }}

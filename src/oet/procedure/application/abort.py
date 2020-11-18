@@ -5,12 +5,13 @@ import functools
 import logging
 import os
 
-from oet.domain import SubArray
+from oet.command import TangoExecutor, Command, Attribute
 
 LOG = logging.getLogger(__name__)
 FORMAT = '%(asctime)-15s %(message)s'
 
 logging.basicConfig(level=logging.INFO, format=FORMAT)
+EXECUTOR = TangoExecutor()
 
 
 def main(*args, **kwargs):
@@ -41,11 +42,24 @@ def _main(subarray_id: int, *args, **kwargs):
 
     LOG.info(f'Called with main(subarray_id={subarray_id})')
 
-    subarray = SubArray(subarray_id)
+    subarray_fqdn = 'ska_mid/tm_subarray_node/' + str(subarray_id)
+    cmd = Command(subarray_fqdn, 'Abort')
+    attr = Attribute(subarray_fqdn, 'obsState')
 
-    LOG.info(f'aborting subarray {subarray_id} activity')
+    LOG.info(f'Aborting subarray {subarray_id}')
+    event_id = EXECUTOR.subscribe_event(attr)
 
-    subarray.abort()
+    EXECUTOR.execute(cmd)
+    _wait_for_abort_state()
+    EXECUTOR.unsubscribe_event(attr, event_id)
 
-    LOG.info('Observation script complete')
+    LOG.info('Abort script complete')
+
+
+def _wait_for_abort_state():
+    while True:
+        event = EXECUTOR.read_event()
+        if event.attr_value.value == 7:
+            LOG.info('Subarray reached state ABORTED')
+            return True
 
