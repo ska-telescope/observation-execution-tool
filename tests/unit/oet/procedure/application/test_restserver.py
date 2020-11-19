@@ -219,7 +219,6 @@ def test_get_procedure_gives_404_for_invalid_id(client):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
     assert response_json == {'error': '404 Not Found', 'type':  'ResourceNotFound', 'Message': 'No information available for PID=1'}
 
 
@@ -265,7 +264,6 @@ def test_post_to_endpoint_requires_script_uri_json_parameter(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
     assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Request', 'Message': 'script_uri missing'}
 
 
@@ -279,7 +277,6 @@ def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
     assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Request', 'Message': 'Malformed script_uri in request'}
 
 
@@ -322,7 +319,6 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
     assert response_json == {'error': '404 Not Found', 'type':  'ResourceNotFound', 'Message': 'No information available for PID=123'}
 
     # verify message sequence and topics
@@ -347,7 +343,6 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
     assert response_json == {'error': '400 Bad Request','type': 'Empty Response', 'Message': 'No JSON available in response'}
 
     # verify message sequence and topics
@@ -561,7 +556,6 @@ def test_giving_non_dict_script_args_returns_error_code(client):
     assert response.status_code == 400
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
     assert response_json == {'error': '400 Bad Request', 'Error': 'Malformed Response', 'Message': 'Malformed script_args in response'}
 
 
