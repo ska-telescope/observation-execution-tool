@@ -335,13 +335,14 @@ def make_public_summary(procedure: application.ProcedureSummary):
 @API.errorhandler(400)
 @API.errorhandler(404)
 @API.errorhandler(500)
-def resource_not_found(cause):
+def server_error_response(cause):
     """
-    Custom 404 Not Found handler for Procedure API.
-    This is overloaded for 
+    Custom error handler for Procedure API.
+    This is overloaded for 400, 404 and 500 and could conceivably be 
+    extended for other errors by adding the appropriate errorhander decorator.
 
     :param cause: root exception for failure (e.g., KeyError)
-    :return:
+    :return: HTTP Response
     """
     response = cause.get_response()
     if isinstance(cause.description, dict):
