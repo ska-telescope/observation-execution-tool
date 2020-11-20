@@ -239,7 +239,10 @@ def call_and_respond(request_topic, response_topic, *args, **kwargs):
         return result
 
     except Empty:
-        description = f'Timeout waiting for msg #{my_request_id} on topic {response_topic}'
+        description = {
+                    'Message': f'Timeout waiting for msg #{my_request_id} on topic {response_topic}',
+                    'type':'Timeout Error'
+                }
         flask.abort(504, description=description)
 
 
@@ -335,10 +338,11 @@ def make_public_summary(procedure: application.ProcedureSummary):
 @API.errorhandler(400)
 @API.errorhandler(404)
 @API.errorhandler(500)
+@API.errorhandler(504)
 def server_error_response(cause):
     """
     Custom error handler for Procedure API.
-    This is overloaded for 400, 404 and 500 and could conceivably be 
+    This is overloaded for 400, 404, 500 and 504 and could conceivably be 
     extended for other errors by adding the appropriate errorhander decorator.
 
     :param cause: root exception for failure (e.g., KeyError)
