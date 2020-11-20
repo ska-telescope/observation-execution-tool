@@ -578,7 +578,7 @@ def test_call_and_respond_aborts_with_timeout_when_no_response_received(client, 
     response_json = response.get_json()
     assert response_json['error'] == '504 Gateway Timeout'
     assert response_json['Message'].startswith('Timeout waiting for msg ')
-    assert responxe_json['type'] == 'Timeout Error'
+    assert response_json['type'] == 'Timeout Error'
 
 
 def test_call_and_respond_ignores_responses_when_request_id_differs():
