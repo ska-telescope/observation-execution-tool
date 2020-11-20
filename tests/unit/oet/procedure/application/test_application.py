@@ -6,9 +6,19 @@ import unittest.mock as mock
 
 import pytest
 
-from oet.procedure.application.application import ScriptExecutionService, ProcedureSummary, \
-    PrepareProcessCommand, StartProcessCommand, StopProcessCommand
-from oet.procedure.domain import Procedure, ProcedureInput, ProcedureState, ProcedureHistory
+from oet.procedure.application.application import (
+    PrepareProcessCommand,
+    ScriptExecutionService,
+    StartProcessCommand,
+    StopProcessCommand
+)
+from oet.procedure.domain import (
+    Procedure,
+    ProcedureHistory,
+    ProcedureInput,
+    ProcedureState,
+    ProcedureSummary
+)
 
 
 @pytest.fixture
@@ -62,7 +72,7 @@ def test_ses_create_summary_returns_expected_object():
     Verify that the private method _create_summary converts from Procedures to
     ProcedureSummary correctly
     """
-    procedure = Procedure('test://test.py', 1, 2, 3, kw1=4, kw2=5)
+    procedure = Procedure('test://test.py', 1, 2, 3, procedure_id=123, kw1=4, kw2=5)
     procedures = {123: procedure}
     expected = ProcedureSummary(id=123, script_uri=procedure.script_uri,
                                 script_args=procedure.script_args,
@@ -83,7 +93,7 @@ def test_ses_prepare_calls_process_manager_method_and_returns_summary_for_create
     """
     script_uri = 'test://test.py'
     cmd = PrepareProcessCommand(script_uri=script_uri, init_args=ProcedureInput())
-    procedure = Procedure(script_uri)
+    procedure = Procedure(script_uri, procedure_id=123)
     procedures = {123: procedure}
     expected = ProcedureSummary(id=123, script_uri=procedure.script_uri,
                                 script_args=procedure.script_args,
@@ -115,7 +125,7 @@ def test_ses_start_calls_process_manager_function_and_returns_summary():
     """
     script_uri = 'test://test.py'
     cmd = StartProcessCommand(process_uid=123, run_args=ProcedureInput())
-    procedure = Procedure(script_uri)
+    procedure = Procedure(script_uri, procedure_id=123)
     procedures = {123: procedure}
     expected = ProcedureSummary(id=123, script_uri=procedure.script_uri,
                                 script_args=procedure.script_args,
@@ -146,9 +156,9 @@ def test_ses_summarise_returns_summaries_for_requested_pids():
     ScriptExecutionService.summarise() should only return status for requested
     procedures.
     """
-    procedure_a = Procedure('test://a')
-    procedure_b = Procedure('test://b')
-    procedure_c = Procedure('test://c')
+    procedure_a = Procedure('test://a', procedure_id=1)
+    procedure_b = Procedure('test://b', procedure_id=2)
+    procedure_c = Procedure('test://c', procedure_id=3)
     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
 
     expected = [
@@ -196,9 +206,9 @@ def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
     Verify that summaries for all procedures are returned when no specific PID
     is requested.
     """
-    procedure_a = Procedure('test://a')
-    procedure_b = Procedure('test://b')
-    procedure_c = Procedure('test://c')
+    procedure_a = Procedure('test://a', procedure_id=1)
+    procedure_b = Procedure('test://b', procedure_id=2)
+    procedure_c = Procedure('test://c', procedure_id=3)
     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
 
     expected = [
@@ -234,11 +244,11 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     abort_pid = 123
 
     # Create Procedure representing the script to be stopped
-    procedure_to_stop = Procedure('test://a', subarray_id=subarray_id)
+    procedure_to_stop = Procedure('test://a', procedure_id=running_pid, subarray_id=subarray_id)
 
     # Create second Procedure to represent the Process running the
     # post-termination abort script
-    abort_procedure = Procedure(abort_script, subarray_id=subarray_id)
+    abort_procedure = Procedure(abort_script, procedure_id=abort_pid, subarray_id=subarray_id)
 
     # Prepare a dict of PIDs to Procedures that we can use to mock the internal
     # data structure held by ProcessManager. This dict is read by the SES when

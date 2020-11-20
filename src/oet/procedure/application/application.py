@@ -4,13 +4,14 @@ belong in the application layer of the OET. This layer holds the application
 interface, delegating to objects in the domain layer for business rules and
 actions.
 """
-import copy
 import dataclasses
+import os
 import typing
 
 from .. import domain
 
-ABORT_SCRIPT_URI = 'file:///app/scripts/abort.py'
+base_dir = os.path.dirname(os.path.realpath(__file__))
+ABORT_SCRIPT_URI = 'file://' + base_dir + '/abort.py'
 
 
 @dataclasses.dataclass
@@ -34,20 +35,6 @@ class StartProcessCommand:
     """
     process_uid: int
     run_args: domain.ProcedureInput
-
-
-@dataclasses.dataclass
-class ProcedureSummary:
-    """
-    ProcedureSummary is a brief representation of a runtime Procedure. It
-    captures essential information required to describe a Procedure and to
-    distinguish it from other Procedures.
-    """
-    id: int  # pylint: disable=invalid-name
-    script_uri: str
-    script_args: typing.Dict[str, domain.ProcedureInput]
-    history: domain.ProcedureHistory
-    state: domain.ProcedureState
 
 
 @dataclasses.dataclass
@@ -87,7 +74,7 @@ class ScriptExecutionService:
         self._process_host = domain.ProcessManager()
         self._abort_script_uri = abort_script_uri
 
-    def _create_summary(self, pid: int) -> ProcedureSummary:
+    def _create_summary(self, pid: int) -> domain.ProcedureSummary:
         """
         Return a ProcedureSummary for the Procedure with the given ID.
 
@@ -95,16 +82,9 @@ class ScriptExecutionService:
         :return: ProcedureSummary
         """
         procedure = self._process_host.procedures[pid]
-        summary = ProcedureSummary(
-            id=pid,
-            script_uri=procedure.script_uri,
-            script_args=copy.deepcopy(procedure.script_args),
-            history=procedure.history,
-            state=procedure.state
-        )
-        return summary
+        return domain.ProcedureSummary.from_procedure(procedure)
 
-    def prepare(self, cmd: PrepareProcessCommand) -> ProcedureSummary:
+    def prepare(self, cmd: PrepareProcessCommand) -> domain.ProcedureSummary:
         """
         Load and prepare a Python script for execution, but do not commence
         execution.
@@ -117,7 +97,7 @@ class ScriptExecutionService:
         summary = self._create_summary(pid)
         return summary
 
-    def start(self, cmd: StartProcessCommand) -> ProcedureSummary:
+    def start(self, cmd: StartProcessCommand) -> domain.ProcedureSummary:
         """
         Start execution of a prepared procedure.
 
@@ -128,7 +108,7 @@ class ScriptExecutionService:
         return self._create_summary(cmd.process_uid)
 
     def summarise(self, pids: typing.Optional[typing.List[int]] = None) \
-            -> typing.List[ProcedureSummary]:
+            -> typing.List[domain.ProcedureSummary]:
         """
         Return ProcedureSummary objects for Procedures with the requested IDs.
 
@@ -149,7 +129,7 @@ class ScriptExecutionService:
 
         return [self._create_summary(pid) for pid in pids]
 
-    def stop(self, cmd: StopProcessCommand) -> typing.List[ProcedureSummary]:
+    def stop(self, cmd: StopProcessCommand) -> typing.List[domain.ProcedureSummary]:
         """
         Stop execution of a running procedure, optionally running a
         second script once the first process has terminated.

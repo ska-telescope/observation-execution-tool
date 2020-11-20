@@ -49,10 +49,14 @@ build:
     - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
     - make build
+#    - make push
+#    - mkdir -p image
+#    - docker save nexus.engageska-portugal.pt/ska-telescope/observation-execution-tool:latest > image/latest.tar
   artifacts:
     when: always
     paths:
       - build
+#      - image
 
 build_wheel_for_publication: # Executed on a tag:
   stage: build
@@ -84,40 +88,52 @@ test:
     - build
   tags:
     - k8srunner
-  variables:
-    MINIKUBE: "false"
-  environment:
-    name: oet-test
-    kubernetes:
-      namespace: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
-  image: nexus.engageska-portugal.pt/ska-docker/deploy:0.4.3
   script:
-    - kubectl version
-    - make install-chart
-#    - make wait
-#    - make smoketest
+#    - docker load -i image/latest.tar
     - make test
-  after_script:
-    - make down
-    - mkdir -p build
-    - cp -rf charts/build/* build/
-    - ls -la build
   artifacts:
     name: "$CI_PROJECT_NAME-$CI_JOB_ID"
     paths:
       - build
     expire_in: 7 days
 
+#integration_test:
+#  stage: test
+#  dependencies:
+#    - build
+#  tags:
+#    - k8srunner
+#  variables:
+#    MINIKUBE: "false"
+#  environment:
+#    name: oet-test
+#    kubernetes:
+#      namespace: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
+#  image: nexus.engageska-portugal.pt/ska-docker/deploy:0.4.3
+#  script:
+#    - kubectl version
+#    - make install-chart
+##    - make wait
+##    - make smoketest
+#    - make test
+#  after_script:
+#    - make down
+#    - mkdir -p build
+#    - cp -rf charts/build/* build/
+#    - ls -la build
+#  artifacts:
+#    name: "$CI_PROJECT_NAME-$CI_JOB_ID"
+#    paths:
+#      - build
+#    expire_in: 7 days
+
 lint:
   stage: lint
   tags:
     - k8srunner
-  image: nexus.engageska-portugal.pt/ska-docker/deploy:0.4.3
   script:
-    - make namespace
+#    - docker load -i image/latest.tar
     - make lint
-  after_script:
-    - make delete_namespace
   artifacts:
     paths:
       - build
@@ -145,35 +161,8 @@ push_OET_image:
   before_script:
     - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
   script:
+    - make build
     - make push
-  only:
-    - tags
-  except:
-    - branches
-
-push_SSH_image:
-  tags:
-    - k8srunner
-  stage: publish
-  before_script:
-    - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
-  script:
-    - make -C extras/ssh build
-    - make -C extras/ssh push
-  only:
-    - tags
-  except:
-    - branches
-
-push_jupyter_image:
-  tags:
-    - k8srunner
-  stage: publish
-  before_script:
-    - docker login -u $DOCKER_REGISTRY_USERNAME -p $DOCKER_REGISTRY_PASSWORD $DOCKER_REGISTRY_HOST
-  script:
-    - make -C extras/jupyter build
-    - make -C extras/jupyter push
   only:
     - tags
   except:

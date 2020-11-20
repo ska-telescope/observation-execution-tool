@@ -76,9 +76,11 @@ up: namespace install-chart wait
 down: uninstall-chart delete_namespace
 
 rest:  ## start OET REST server
-	docker run --rm -p 5000:5000 --name=oet-rest $(IMAGE_TO_TEST) python -m oet.procedure.application.main
+	docker run --rm -p 5000:5000 -v $(CURDIR):/app -e PYTHONPATH=/app/src -w /app --name=oet-rest $(IMAGE_TO_TEST) python -m oet.procedure.application.main
 
 post-push:
 	@. $(RELEASE_SUPPORT) ; differsFromRelease || docker push $(IMAGE):$(VERSION) ;
+
+test: unit_test
 
 .PHONY: all test help k8s show lint deploy delete logs describe namespace delete_namespace kubeconfig kubectl_dependencies helm_dependencies rk8s_test k8s_test rlint install-chart uninstall-chart reinstall-chart upgrade-chart
