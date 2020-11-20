@@ -556,7 +556,7 @@ def test_giving_non_dict_script_args_returns_error_code(client):
     assert response.status_code == 400
 
     response_json = response.get_json()
-    assert response_json == {'error': '400 Bad Request', 'Error': 'Malformed Response', 'Message': 'Malformed script_args in response'}
+    assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Response', 'Message': 'Malformed script_args in response'}
 
 
 def test_call_and_respond_aborts_with_timeout_when_no_response_received(client, short_timeout):
@@ -568,6 +568,11 @@ def test_call_and_respond_aborts_with_timeout_when_no_response_received(client, 
     response = client.get(ENDPOINT)
     # 504 and timeout error message
     assert response.status_code == 504
+
+    response_json = response.get_json()
+    assert response_json['error'] == '504 Gateway Timout'
+    assert response_json['Message'].startswith('Timeout waiting for msg ')
+    assert responxe_json['type'] == 'Timeout Error'
 
 
 def test_call_and_respond_ignores_responses_when_request_id_differs():
