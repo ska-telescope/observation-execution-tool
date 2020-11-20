@@ -225,8 +225,7 @@ def test_get_procedure_gives_404_for_invalid_id(client):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=1"}'}
+    assert response_json == {'error': '404 Not Found', 'type':  'ResourceNotFound', 'Message': 'No information available for PID=1'}
 
 
 def test_successful_post_to_endpoint_returns_created_http_status(client):
@@ -271,8 +270,7 @@ def test_post_to_endpoint_requires_script_uri_json_parameter(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "script_uri missing"}'}
+    assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Request', 'Message': 'script_uri missing'}
 
 
 def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
@@ -285,8 +283,7 @@ def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Request", "Message": "Malformed script_uri in request"}'}
+    assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Request', 'Message': 'Malformed script_uri in request'}
 
 
 def test_post_to_endpoint_sends_init_arguments(client):
@@ -328,8 +325,7 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '404 Not Found: {"Error": "ResourceNotFound", "Message": "No information available for PID=123"}'}
+    assert response_json == {'error': '404 Not Found', 'type':  'ResourceNotFound', 'Message': 'No information available for PID=123'}
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -353,8 +349,7 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Empty Response", "Message": "No JSON available in response"}'}
+    assert response_json == {'error': '400 Bad Request','type': 'Empty Response', 'Message': 'No JSON available in response'}
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -567,8 +562,7 @@ def test_giving_non_dict_script_args_returns_error_code(client):
     assert response.status_code == 400
 
     response_json = response.get_json()
-    # TODO this should be refactored to be a JSON dict, not a dict in a string
-    assert response_json == {'error': '400 Bad Request: {"Error": "Malformed Response", "Message": "Malformed script_args in response"}'}
+    assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Response', 'Message': 'Malformed script_args in response'}
 
 
 def test_call_and_respond_aborts_with_timeout_when_no_response_received(client, short_timeout):
@@ -580,6 +574,11 @@ def test_call_and_respond_aborts_with_timeout_when_no_response_received(client, 
     response = client.get(ENDPOINT)
     # 504 and timeout error message
     assert response.status_code == 504
+
+    response_json = response.get_json()
+    assert response_json['error'] == '504 Gateway Timeout'
+    assert response_json['Message'].startswith('Timeout waiting for msg ')
+    assert response_json['type'] == 'Timeout Error'
 
 
 def test_call_and_respond_ignores_responses_when_request_id_differs():
