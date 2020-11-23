@@ -4,4 +4,4 @@ FROM nexus.engageska-portugal.pt/ska-docker/ska-python-runtime:9.3.2.1 AS runtim
 ENV PATH="/home/tango/.local/bin:${PATH}"
 RUN python3 -m pip install --extra-index-url https://nexus.engageska-portugal.pt/repository/pypi/simple -rrequirements.txt .
 
-CMD ["python3","/app/oet/procedure/application/main.py"]
+CMD ["python3", "-m", "oet.procedure.application.main"]

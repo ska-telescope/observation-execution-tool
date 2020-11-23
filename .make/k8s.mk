@@ -221,7 +221,7 @@ integration_test: ## test the application on K8s
 		kubectl --namespace $(KUBE_NAMESPACE) delete pod $(TEST_RUNNER); \
 		exit $$status
 
-lint: ## lint the application on K8s
+k8s_lint: ## lint the application on K8s
 	$(call k8s_test,lint); \
 		status=$$?; \
 		rm -rf charts/build; \

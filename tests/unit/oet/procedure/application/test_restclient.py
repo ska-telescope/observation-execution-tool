@@ -483,7 +483,7 @@ def test_restclientui_lists_output(mock_list_fn, capsys):
 def test_restclientui_start_output_when_nothing_to_start(mock_list_fn, capsys):
     mock_list_fn.side_effect = [[]]
 
-    fire.Fire(RestClientUI, ['start'])
+    fire.Fire(RestClientUI, ['start', '--nolisten'])
     captured = capsys.readouterr()
 
     assert 'No procedures to start' in captured.out
@@ -495,7 +495,7 @@ def test_restclientui_start_output_when_given_no_pid(mock_list_fn, mock_start_fn
     mock_list_fn.side_effect = RESTUI_LIST_RESPONSE
     mock_start_fn.side_effect = RESTUI_START_RESPONSE
 
-    fire.Fire(RestClientUI, ['start'])
+    fire.Fire(RestClientUI, ['start', '--nolisten'])
     captured = capsys.readouterr()
     result = parse_rest_create_list_response(captured.out)
 
@@ -507,7 +507,7 @@ def test_restclientui_start_output_when_given_no_pid(mock_list_fn, mock_start_fn
 def test_restclientui_start_output_when_last_created_script_has_failed(mock_list_fn, capsys):
     mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_WITH_STACKTRACE
 
-    fire.Fire(RestClientUI, ['start'])
+    fire.Fire(RestClientUI, ['start', '--nolisten'])
     captured = capsys.readouterr()
 
     assert 'The last procedure created is in FAILED state and cannot be started' in captured.out
@@ -519,7 +519,7 @@ def test_restclientui_start_output_when_given_pid(mock_list_fn, mock_start_fn, c
     mock_list_fn.side_effect = RESTUI_LIST_RESPONSE
     mock_start_fn.side_effect = RESTUI_START_RESPONSE
 
-    fire.Fire(RestClientUI, ['start', '--pid=1'])
+    fire.Fire(RestClientUI, ['start', '--pid=1', '--nolisten'])
     captured = capsys.readouterr()
     result = parse_rest_create_list_response(captured.out)
 

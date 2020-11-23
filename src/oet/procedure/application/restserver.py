@@ -7,11 +7,14 @@ import flask
 import jsonpickle
 from flask import Blueprint, stream_with_context, current_app
 from pubsub import pub
+from werkzeug.serving import WSGIRequestHandler
 
 from oet.event import topics
 from oet.mptools import MPQueue
 from oet.procedure import domain
 from oet.procedure.application import application
+
+# WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 # Blueprint for the REST API
 API = Blueprint('api', __name__)
@@ -104,6 +107,9 @@ class ServerSentEventsBlueprint(Blueprint):
     def stream(self) -> flask.Response:
         @stream_with_context
         def generator():
+            # must immediately yield to return 200 OK response to client,
+            # otherwise response is only sent on first event
+            yield '\n'
             for message in self.messages():
                 yield str(message)
 
@@ -320,7 +326,7 @@ def update_procedure(procedure_id: int):
     return flask.jsonify({'procedure': make_public_summary(summary)})
 
 
-def make_public_summary(procedure: application.ProcedureSummary):
+def make_public_summary(procedure: domain.ProcedureSummary):
     """
     Convert a ProcedureSummary into JSON ready for client consumption.
 

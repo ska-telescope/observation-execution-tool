@@ -90,6 +90,17 @@ class procedure:
                 - request_id: unique identifier for this request
                 - result: ProcedureSummary characterising the created procedure
                 """
+        class failed:
+            """
+            Emitted when a procedure fails.
+            """
+            def msgDataSpec(msg_src, request_id, result):
+                """
+                - msg_src: component from which the event originated
+                - request_id: unique identifier for this event
+                - result: ProcedureSummary characterising the failed procedure
+                """
+
     class pool:
         """
         Topic for events on characterisation of the process pool.
