@@ -133,6 +133,7 @@ lint:
     - k8srunner
   script:
 #    - docker load -i image/latest.tar
+    - make build
     - make lint
   artifacts:
     paths:

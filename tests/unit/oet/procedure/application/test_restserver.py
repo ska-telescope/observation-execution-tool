@@ -225,7 +225,8 @@ def test_get_procedure_gives_404_for_invalid_id(client):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
     response_json = response.get_json()
-    assert response_json == {'error': '404 Not Found', 'type':  'ResourceNotFound', 'Message': 'No information available for PID=1'}
+    assert response_json == {'error': '404 Not Found', 'type': 'ResourceNotFound',
+                             'Message': 'No information available for PID=1'}
 
 
 def test_successful_post_to_endpoint_returns_created_http_status(client):
@@ -283,7 +284,8 @@ def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
-    assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Request', 'Message': 'Malformed script_uri in request'}
+    assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Request',
+                             'Message': 'Malformed script_uri in request'}
 
 
 def test_post_to_endpoint_sends_init_arguments(client):
@@ -325,7 +327,8 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
     response_json = response.get_json()
-    assert response_json == {'error': '404 Not Found', 'type':  'ResourceNotFound', 'Message': 'No information available for PID=123'}
+    assert response_json == {'error': '404 Not Found', 'type': 'ResourceNotFound',
+                             'Message': 'No information available for PID=123'}
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -349,7 +352,8 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
-    assert response_json == {'error': '400 Bad Request','type': 'Empty Response', 'Message': 'No JSON available in response'}
+    assert response_json == {'error': '400 Bad Request', 'type': 'Empty Response',
+                             'Message': 'No JSON available in response'}
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -562,7 +566,8 @@ def test_giving_non_dict_script_args_returns_error_code(client):
     assert response.status_code == 400
 
     response_json = response.get_json()
-    assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Response', 'Message': 'Malformed script_args in response'}
+    assert response_json == {'error': '400 Bad Request', 'type': 'Malformed Response',
+                             'Message': 'Malformed script_args in response'}
 
 
 def test_call_and_respond_aborts_with_timeout_when_no_response_received(client, short_timeout):
@@ -652,6 +657,7 @@ def test_sse_messages_returns_pubsub_messages(client):
     """
     Test that pypubsub messages are returned by SSE blueprint's messages method.
     """
+
     def publish():
         # sleep long enough for generator to start running
         time.sleep(0.1)
@@ -667,3 +673,66 @@ def test_sse_messages_returns_pubsub_messages(client):
 
     output = next(gen)
     assert output == restserver.Message(dict(topic="scan.lifecycle.start", msg_src="foo", sb_id="bar"))
+
+
+def test_message_input_eq_works_as_expected():
+    """
+    Verify message equality
+    """
+    m1 = restserver.Message({"foo": "bar"})
+    m2 = restserver.Message({"foo": "bar"})
+    m3 = restserver.Message({"foo": "bar"}, type="message")
+    assert m1 == m2
+    assert m1 != m3
+    assert m1 != object()
+
+
+def test_message_str():
+    """
+    Verify that the str string for a Message is correctly formatted.
+    """
+    message = restserver.Message("foo", type="message", id=123, retry=100)
+    assert str(message) == 'event:message\ndata:foo\nid:123\nretry:100\n\n'
+
+
+def test_message_input_accepts_expected_constructor_values():
+    """
+    Verify that message constructor accepts expected inputs.
+    """
+    message = restserver.Message("foo", type="message", id=123, retry=100)
+    assert message.data == "foo"
+    assert message.type == "message"
+    assert message.id == 123
+    assert message.retry == 100
+
+
+def test_message_with_multiline_data():
+    """
+    Verify that message works with multiline data.
+    """
+    message = restserver.Message("foo\nbar")
+    assert message.data == "foo\nbar"
+    assert message.type == None
+    assert message.id == None
+    assert message.retry == None
+    assert str(message) == 'data:foo\ndata:bar\n\n'
+
+
+def test_message_raise_exception_on_empty():
+    """
+     Verify that empty message() raise exception
+    """
+    with pytest.raises(TypeError):
+        m = restserver.Message()
+
+
+def test_message_with_simple_data():
+    """
+    Verify that message works with simple data.
+    """
+    message = restserver.Message("foo")
+    assert message.data == "foo"
+    assert message.type == None
+    assert message.id == None
+    assert message.retry == None
+    assert str(message) == 'data:foo\n\n'
