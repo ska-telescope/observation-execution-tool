@@ -68,6 +68,12 @@ lint: build  ## lint the application
 pull_release:  ## download the latest release of the application
 	docker pull $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):$(RELEASE)
 
-interactive:  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
+interactive: build  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
 	docker run --rm -it --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) \
 	  -v $(CURDIR):/app $(IMAGE_TO_TEST) /bin/bash
+
+prune:  ## delete stale Docker images
+	docker rmi $(shell docker images --format '{{.Repository}}:{{.Tag}}' |\
+		grep '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT)' |\
+		grep -v '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):latest' |\
+		grep -v '$(IMAGE_TO_TEST)' )
