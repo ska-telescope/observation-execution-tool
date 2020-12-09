@@ -57,17 +57,7 @@ docker-build: .release
 	docker build $(DOCKER_BUILD_ARGS) -t $(IMAGE):$(VERSION) $(DOCKER_BUILD_CONTEXT) -f $(DOCKER_FILE_PATH) --build-arg DOCKER_REGISTRY_HOST=$(DOCKER_REGISTRY_HOST) --build-arg DOCKER_REGISTRY_USER=$(DOCKER_REGISTRY_USER)
 	@DOCKER_MAJOR=$(shell docker -v | sed -e 's/.*version //' -e 's/,.*//' | cut -d\. -f1) ; \
 	DOCKER_MINOR=$(shell docker -v | sed -e 's/.*version //' -e 's/,.*//' | cut -d\. -f2) ; \
-	if [ $$DOCKER_MAJOR -eq 1 ] && [ $$DOCKER_MINOR -lt 10 ] ; then \
-		echo docker tag -f $(IMAGE):$(VERSION) $(IMAGE):latest ;\
-		docker tag -f $(IMAGE):$(VERSION) $(IMAGE):latest ;\
-		echo docker tag -f $(IMAGE):$(VERSION) $(IMAGE):$(RELEASE) ;\
-		docker tag -f $(IMAGE):$(VERSION) $(IMAGE):$(RELEASE) ;\
-	else \
-		echo docker tag $(IMAGE):$(VERSION) $(IMAGE):latest ;\
-		docker tag $(IMAGE):$(VERSION) $(IMAGE):latest ; \
-		echo docker tag $(IMAGE):$(VERSION) $(IMAGE):$(RELEASE) ;\
-		docker tag $(IMAGE):$(VERSION) $(IMAGE):$(RELEASE) ; \
-	fi
+	docker tag $(IMAGE):$(VERSION) $(IMAGE):latest
 
 .release:
 	@echo "release=0.0.0" > .release
