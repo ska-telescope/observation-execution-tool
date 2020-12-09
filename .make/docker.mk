@@ -42,7 +42,7 @@ docker_make = tar -c tests/ | \
 	2>&1
 
 unit_test: DOCKER_RUN_ARGS = --volumes-from=$(BUILD)
-unit_test: ## test the application
+unit_test: build  ## test the application
 	$(INIT_CACHE)
 	$(call docker_make,test); \
 	status=$$?; \
@@ -51,7 +51,7 @@ unit_test: ## test the application
 	exit $$status
 
 lint: DOCKER_RUN_ARGS = --volumes-from=$(BUILD)
-lint: ## lint the application
+lint: build  ## lint the application
 	$(INIT_CACHE)
 	$(call docker_make,lint); \
 	status=$$?; \
