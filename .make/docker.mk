@@ -76,4 +76,5 @@ prune:  ## delete stale Docker images
 	docker rmi $(shell docker images --format '{{.Repository}}:{{.Tag}}' |\
 		grep '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT)' |\
 		grep -v '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):latest' |\
+		grep -v '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):$(RELEASE)' |\
 		grep -v '$(IMAGE_TO_TEST)' )
