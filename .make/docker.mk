@@ -65,8 +65,8 @@ lint: build  ## lint the application
 #
 .DEFAULT_GOAL := help
 
-pull:  ## download the application image
-	docker pull $(IMAGE_TO_TEST)
+pull_release:  ## download the latest release of the application
+	docker pull $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):$(RELEASE)
 
 interactive:  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
 	docker run --rm -it --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) \
