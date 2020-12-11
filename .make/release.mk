@@ -55,8 +55,6 @@ post-push:
 
 docker-build: .release
 	docker build $(DOCKER_BUILD_ARGS) -t $(IMAGE):$(VERSION) $(DOCKER_BUILD_CONTEXT) -f $(DOCKER_FILE_PATH) --build-arg DOCKER_REGISTRY_HOST=$(DOCKER_REGISTRY_HOST) --build-arg DOCKER_REGISTRY_USER=$(DOCKER_REGISTRY_USER)
-	@DOCKER_MAJOR=$(shell docker -v | sed -e 's/.*version //' -e 's/,.*//' | cut -d\. -f1) ; \
-	DOCKER_MINOR=$(shell docker -v | sed -e 's/.*version //' -e 's/,.*//' | cut -d\. -f2) ; \
 	docker tag $(IMAGE):$(VERSION) $(IMAGE):latest
 
 .release:
@@ -103,7 +101,7 @@ tag: check-status
 	git add .
 	git commit -m "bumped to version $(VERSION)" ;
 	git tag $(TAG) ;
-	@ if [ -n "$(shell git remote -v)" ] ; then git push --tags ; else echo 'no remote to push tags to' ; fi
+	@ if [ -n "$(shell git remote -v)" ] ; then git push --follow-tags ; else echo 'no remote to push tags to' ; fi
 
 check-status:
 	@. $(RELEASE_SUPPORT) ; ! hasChanges || (echo "ERROR: there are still outstanding changes" >&2 && exit 1) ;
