@@ -1,7 +1,7 @@
 #
 # IMAGE_TO_TEST defines the tag of the Docker image to test
 #
-IMAGE_TO_TEST = $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):latest
+IMAGE_TO_TEST = $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):$(VERSION)
 
 CACHE_VOLUME = $(PROJECT)-test-cache
 
@@ -42,7 +42,7 @@ docker_make = tar -c tests/ | \
 	2>&1
 
 unit_test: DOCKER_RUN_ARGS = --volumes-from=$(BUILD)
-unit_test: ## test the application
+unit_test: build  ## test the application
 	$(INIT_CACHE)
 	$(call docker_make,test); \
 	status=$$?; \
@@ -51,7 +51,7 @@ unit_test: ## test the application
 	exit $$status
 
 lint: DOCKER_RUN_ARGS = --volumes-from=$(BUILD)
-lint: ## lint the application
+lint: build  ## lint the application
 	$(INIT_CACHE)
 	$(call docker_make,lint); \
 	status=$$?; \
@@ -65,9 +65,16 @@ lint: ## lint the application
 #
 .DEFAULT_GOAL := help
 
-pull:  ## download the application image
-	docker pull $(IMAGE_TO_TEST)
+pull_release:  ## download the latest release of the application
+	docker pull $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):$(RELEASE)
 
-interactive:  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
+interactive: build  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
 	docker run --rm -it --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) \
 	  -v $(CURDIR):/app $(IMAGE_TO_TEST) /bin/bash
+
+prune:  ## delete stale Docker images
+	docker rmi $(shell docker images --format '{{.Repository}}:{{.Tag}}' |\
+		grep '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT)' |\
+		grep -v '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):latest' |\
+		grep -v '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):$(RELEASE)' |\
+		grep -v '$(IMAGE_TO_TEST)' )
