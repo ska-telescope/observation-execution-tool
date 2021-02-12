@@ -159,22 +159,22 @@ can be found here: :doc:`rest_client`.
 
 Feature flags
 -------------
-Some of the OET behaviour is configurable at run time via a configuration file, 
-oet.ini. This can either be the default file, located in the project folder
-which can be editted by the user, or a user specified version of the file, 
-located in the user's home directory. If for some reason no config file is 
-found, the toggles are set to their default values ie. Polling.
+OET feature flags are configured via environment variables and configuration
+files. The configuration file, oet.ini, can be located either in the user's
+home directory, or the root of the installation folder.
 
-Currently the toggle option are:
+Feature flags are read in this order:
 
-+-------------------+---------+----------------------------+---------+
-| Toggle            | Type    | Description                | Default |
-+===================+=========+============================+=========+
-| read_via_pubsub   | Boolean | sets whether pubsub or     | False   |
-|                   |         | the alternative, polling,  |         |
-|                   |         | is used to read from tango |         |
-+-------------------+---------+----------------------------+---------+
+1. environment variable;
+1. oet.ini configuration file;
+1. default flag value as specified in OET code.
 
+Available feature flags are:
 
-
-
++----------------------+-------------------+---------+----------------------------+---------+
+| environment variable | oet.ini setting   | Type    | Description                | Default |
++======================+===================+=========+============================+=========+
+| OET_READ_VIA_PUBSUB  | read_via_pubsub   | Boolean | sets whether pubsub or     | False   |
+|                      |                   |         | the alternative, polling,  |         |
+|                      |                   |         | is used to read from tango |         |
++----------------------+-------------------+---------+----------------------------+---------+
