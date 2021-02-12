@@ -32,7 +32,6 @@ setuptools.setup(
     ],
     test_suite='tests/unit',
     install_requires=[
-        'cdm-shared-library',
         'fire',
         'flask',
         'jsonpickle',
@@ -40,7 +39,6 @@ setuptools.setup(
         'pytango',
         'requests',
         'ska-logging',
-        'ska-project-data-model-library',
         'skuid',
         'sseclient',
         'tabulate',
