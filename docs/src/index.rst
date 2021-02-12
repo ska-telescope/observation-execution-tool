@@ -39,8 +39,7 @@ Project description
 ===================
 
 This project contains the code for the Observation Execution Tool (OET), the
-application which provides high-level scripting facilities and a high-level
-scripting UI for the SKA.
+application which provides on-demand Python script execution for the SKA.
 
 Overview
 ========
@@ -74,15 +73,8 @@ Execute the test suite and lint the project with:
 
 ::
 
-  make test-all
-
-
-Launch an interactive shell inside a container, with your workspace visible
-inside the container:
-
-::
-
-  make interactive
+  make test
+  make lint
 
 Makefile targets
 ================
@@ -95,20 +87,16 @@ The following make targets are defined:
 +=================+================================================+
 | build           | Build a new application image                  |
 +-----------------+------------------------------------------------+
-| test-all        | Test and lint the application image            |
-+-----------------+------------------------------------------------+
 | test            | Test the application image                     |
 +-----------------+------------------------------------------------+
 | lint            | Lint the application image                     |
++-----------------+------------------------------------------------+
+| prune           | Delete stale Docker images for this project    |
 +-----------------+------------------------------------------------+
 | interactive     | Launch a minimal Tango system (including the   |
 |                 | device under development), mounting the source |
 |                 | directory from the host machine inside the     |
 |                 | container                                      |
-+-----------------+------------------------------------------------+
-| piplock         | Overwrite the Pipfile.lock in the source       |
-|                 | with the generated version from the            |
-|                 | application image                              |
 +-----------------+------------------------------------------------+
 | push            | Push the application image to the Docker       |
 |                 | registry                                       |
@@ -165,9 +153,9 @@ home directory, or the root of the installation folder.
 
 Feature flags are read in this order:
 
-1. environment variable;
-1. oet.ini configuration file;
-1. default flag value as specified in OET code.
+#. environment variable;
+#. oet.ini configuration file;
+#. default flag value as specified in OET code.
 
 Available feature flags are:
 

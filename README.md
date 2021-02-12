@@ -21,7 +21,8 @@ make build
 Execute the test suite and lint the project with:
 
 ```
-make test-all
+make test
+make lint
 ```
 
 Launch an interactive shell inside a container, with your workspace visible
@@ -35,4 +36,3 @@ make interactive
 [![Documentation Status](https://readthedocs.org/projects/ska-telescope-observation-execution-tool/badge/?version=latest)](https://developer.skatelescope.org/projects/observation-execution-tool/en/latest/?badge=latest)
 
 Documentation can be found in the ``docs`` folder.
-
