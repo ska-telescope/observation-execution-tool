@@ -71,3 +71,12 @@ pull:  ## download the application image
 interactive:  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
 	docker run --rm -it --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) \
 	  -v $(CURDIR):/app $(IMAGE_TO_TEST) /bin/bash
+
+prune:  ## delete stale Docker images
+	docker images --format '{{.ID}} {{.Repository}}:{{.Tag}}' |\
+		grep '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT)' |\
+		grep -v ':latest$$' |\
+		grep -v '$(RELEASE)$$' |\
+		grep -v '$(VERSION)$$' |\
+		awk '{print $$1;}' |\
+		xargs docker rmi -f
