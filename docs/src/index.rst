@@ -39,8 +39,7 @@ Project description
 ===================
 
 This project contains the code for the Observation Execution Tool (OET), the
-application which provides high-level scripting facilities and a high-level
-scripting UI for the SKA.
+application which provides on-demand Python script execution for the SKA.
 
 Overview
 ========
@@ -74,15 +73,8 @@ Execute the test suite and lint the project with:
 
 ::
 
-  make test-all
-
-
-Launch an interactive shell inside a container, with your workspace visible
-inside the container:
-
-::
-
-  make interactive
+  make test
+  make lint
 
 Makefile targets
 ================
@@ -95,20 +87,16 @@ The following make targets are defined:
 +=================+================================================+
 | build           | Build a new application image                  |
 +-----------------+------------------------------------------------+
-| test-all        | Test and lint the application image            |
-+-----------------+------------------------------------------------+
 | test            | Test the application image                     |
 +-----------------+------------------------------------------------+
 | lint            | Lint the application image                     |
++-----------------+------------------------------------------------+
+| prune           | Delete stale Docker images for this project    |
 +-----------------+------------------------------------------------+
 | interactive     | Launch a minimal Tango system (including the   |
 |                 | device under development), mounting the source |
 |                 | directory from the host machine inside the     |
 |                 | container                                      |
-+-----------------+------------------------------------------------+
-| piplock         | Overwrite the Pipfile.lock in the source       |
-|                 | with the generated version from the            |
-|                 | application image                              |
 +-----------------+------------------------------------------------+
 | push            | Push the application image to the Docker       |
 |                 | registry                                       |
@@ -159,22 +147,22 @@ can be found here: :doc:`rest_client`.
 
 Feature flags
 -------------
-Some of the OET behaviour is configurable at run time via a configuration file, 
-oet.ini. This can either be the default file, located in the project folder
-which can be editted by the user, or a user specified version of the file, 
-located in the user's home directory. If for some reason no config file is 
-found, the toggles are set to their default values ie. Polling.
+OET feature flags are configured via environment variables and configuration
+files. The configuration file, oet.ini, can be located either in the user's
+home directory, or the root of the installation folder.
 
-Currently the toggle option are:
+Feature flags are read in this order:
 
-+-------------------+---------+----------------------------+---------+
-| Toggle            | Type    | Description                | Default |
-+===================+=========+============================+=========+
-| read_via_pubsub   | Boolean | sets whether pubsub or     | False   |
-|                   |         | the alternative, polling,  |         |
-|                   |         | is used to read from tango |         |
-+-------------------+---------+----------------------------+---------+
+#. environment variable;
+#. oet.ini configuration file;
+#. default flag value as specified in OET code.
 
+Available feature flags are:
 
-
-
++----------------------+-------------------+---------+----------------------------+---------+
+| environment variable | oet.ini setting   | Type    | Description                | Default |
++======================+===================+=========+============================+=========+
+| OET_READ_VIA_PUBSUB  | read_via_pubsub   | Boolean | sets whether pubsub or     | False   |
+|                      |                   |         | the alternative, polling,  |         |
+|                      |                   |         | is used to read from tango |         |
++----------------------+-------------------+---------+----------------------------+---------+

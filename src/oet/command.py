@@ -8,12 +8,12 @@ asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
 import logging
-import os
 import multiprocessing
+import os
 from queue import Queue
 from typing import Dict
-import tango
 
+import tango
 from skuid.client import SkuidClient
 
 LOGGER = logging.getLogger(__name__)

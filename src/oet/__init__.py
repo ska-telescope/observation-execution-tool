@@ -22,4 +22,7 @@ pub.addTopicDefnProvider(oet.event.topics, pub.TOPIC_TREE_FROM_CLASS)
 configure_logging()
 pickling_support.install()
 
-FEATURES = Features.create_from_config_files(os.path.expanduser('~/oet.ini'), resource_filename(__name__, 'oet.ini'))
+FEATURES = Features.create_from_config_files(
+    os.path.expanduser('~/oet.ini'),
+    resource_filename(__name__, 'oet.ini')
+)

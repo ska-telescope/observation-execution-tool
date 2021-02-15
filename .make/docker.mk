@@ -73,8 +73,10 @@ interactive: build  ## start an interactive session using the project image (cau
 	  -v $(CURDIR):/app $(IMAGE_TO_TEST) /bin/bash
 
 prune:  ## delete stale Docker images
-	docker rmi $(shell docker images --format '{{.Repository}}:{{.Tag}}' |\
+	docker images --format '{{.ID}} {{.Repository}}:{{.Tag}}' |\
 		grep '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT)' |\
-		grep -v '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):latest' |\
-		grep -v '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):$(RELEASE)' |\
-		grep -v '$(IMAGE_TO_TEST)' )
+		grep -v ':latest$$' |\
+		grep -v '$(RELEASE)$$' |\
+		grep -v '$(VERSION)$$' |\
+		awk '{print $$1;}' |\
+		xargs docker rmi -f
