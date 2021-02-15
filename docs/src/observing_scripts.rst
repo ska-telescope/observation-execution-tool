@@ -68,13 +68,13 @@ order. For example, to enact a whole SB:
 --------------------------
 Helper Classes and Methods
 --------------------------
-The OET, PDM and CDM projects have provided helper classes and functions
+The OET Scripts, PDM and CDM projects have provided helper classes and functions
 to hide from the high-level user some of the complexity of the SB and CDM 
 JSON structures and the telescope devices.
 
-OET helpers reside in two modules,
-:ref:`oet.domain <domain-guide>` and 
-:ref:`oet.observingtasks <observingtasks-guide>`. 
+Scripting library, OET Scripts, has two helper modules,
+`ska.scripting.domain <https://developer.skatelescope.org/projects/oet-scripts/en/latest/package/domain.html>` and
+`ska.scripting.observingtasks <https://developer.skatelescope.org/projects/oet-scripts/en/latest/package/observingtasks.html>`.
 
 PDM helpers are documented in the
 `PDM documentation <https://developer.skatelescope.org/projects/ska-project-data-model-library/en/latest/index.html>`_ .

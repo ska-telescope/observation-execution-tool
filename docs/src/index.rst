@@ -28,9 +28,6 @@
   :caption: Public API Documentation
   :hidden:
 
-  package/domain
-  package/observingtasks
-
 ==========================
 observation-execution-tool
 ==========================
