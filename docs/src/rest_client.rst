@@ -16,8 +16,7 @@ described in the :doc:`rest_api`. The :doc:`rest_server` lets the user:
   have them ready for execution.
 * When required, pass run-time arguments to a script and start a process 
   executing it.
-
-Aborting script execution is not required in this PI.
+* Stop the script mid-execution by terminating the process executing it.
 
 The REST Client provides a command line interface (CLI) through which
 the user can communicate with the :doc:`rest_server` remotely.  The
