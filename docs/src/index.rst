@@ -16,8 +16,6 @@
   rest_server
   rest_client
   rest_api
-  observing_scripts
-  script_examples
 
 .. COMMUNITY SECTION ==================================================
 
@@ -52,6 +50,15 @@ functionality:
 
 .. [1] Representational State Transfer (REST) is an architectural style that
        guarantees interopability between computer systems on the internet.
+
+Observing Scripts
+-----------------
+
+The observing scripts executed by OET are Python scripts that control the SKA
+telescope devices. `OET Scripts <https://developer.skatelescope.org/projects/oet-scripts/en/latest/index.html>`_
+project provides the high-level user with Python modules for creating observing
+scripts while hiding the complexity of configuration and control of Tango devices.
+
 
 Quickstart
 ==========
