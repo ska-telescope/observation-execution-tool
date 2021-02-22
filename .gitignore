@@ -27,3 +27,4 @@ setup.py-e
 .DS_Store
 
 **/Chart.yaml-e
+.tox/

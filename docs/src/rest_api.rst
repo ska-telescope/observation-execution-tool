@@ -1,7 +1,7 @@
 .. _rest-api:
 
 ********
-Rest API
+REST API
 ********
 
 A ‘Procedure’ represents a script along with its load-time arguments and
