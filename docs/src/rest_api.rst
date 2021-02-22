@@ -58,7 +58,7 @@ Procedures are defined as JSON objects with the following fields:
 |             |            | Keys are the name of the script method, values are dicts with two    |
 |             |            | keys (‘args’ and ‘kwargs’) for positional arguments and              |
 |             |            | keyword/value arguments respectively. For example, below represents  |
-|             |            | a call to init(1,2,3,subarray_id=1)::                                   |
+|             |            | a call to init(1,2,3,subarray_id=1)::                                |
 |             |            |                                                                      |
 |             |            |    "script_args": {                                                  |
 |             |            |      "init": {                                                       |
@@ -68,7 +68,7 @@ Procedures are defined as JSON objects with the following fields:
 |             |            |          3                                                           |
 |             |            |        ],                                                            |
 |             |            |        "kwargs": {                                                   |
-|             |            |          "subarray_id": "1"                                             |
+|             |            |          "subarray_id": "1"                                          |
 |             |            |        }                                                             |
 |             |            |      }                                                               |
 |             |            |    }                                                                 |
