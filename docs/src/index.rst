@@ -16,8 +16,6 @@
   rest_server
   rest_client
   rest_api
-  observing_scripts
-  script_examples
 
 .. COMMUNITY SECTION ==================================================
 
@@ -27,9 +25,6 @@
   :maxdepth: 1
   :caption: Public API Documentation
   :hidden:
-
-  package/domain
-  package/observingtasks
 
 ==========================
 observation-execution-tool
@@ -43,18 +38,25 @@ application which provides on-demand Python script execution for the SKA.
 
 Overview
 ========
-The OET is made up of two components that work together to provide the required
-functionality:
+The OET consists of a script execution engine, which loads specified scripts
+and runs them in child Python processes, and a REST layer which makes the
+API for the script execution engine available via REST over HTTP.
 
-- The OET :doc:`rest_server` [1]_ maintains a list of the scripts that have been
+The REST layer is made up of two components that work together to provide the
+remote script execution functionality:
+
+- The OET :doc:`rest_server` maintains a list of the scripts that have been
   loaded and their current state. The server implements the interface specified
   by the OET :doc:`rest_api`.
 - The OET :doc:`rest_client` provides a Command Line Interface (CLI) to the 
   OET :doc:`rest_server`. It does this by translating and communicating HTTP 
   messages to and from the server.
 
-.. [1] Representational State Transfer (REST) is an architectural style that
-       guarantees interopability between computer systems on the internet.
+.. note::
+   SKA control scripts are not packaged as part of this project. The repository
+   of observing scripts executed by the OET can be found in the
+   `OET Scripts <https://developer.skatelescope.org/projects/oet-scripts/en/latest/index.html>`_
+   project.
 
 Quickstart
 ==========

@@ -1,18 +1,17 @@
 .. _rest-api:
 
 ********
-Rest API
+REST API
 ********
 
 A ‘Procedure’ represents a script along with its load-time arguments and
 runtime arguments. The REST API operates on procedures.
 
-The workflow for the script execution service in PI5 is to:
+The workflow for the script execution service is to:
 
 * Load a requested Python script(s) ready for execution;
-* When requested, start execution of the requested script.
-
-It is not necessary to abort script execution this PI.
+* When requested, start execution of the requested script;
+* Abort the script mid-execution if requested with an option to send the abort command to sub-array.
 
 This workflow has been mapped to the following REST API:
 
@@ -59,7 +58,7 @@ Procedures are defined as JSON objects with the following fields:
 |             |            | Keys are the name of the script method, values are dicts with two    |
 |             |            | keys (‘args’ and ‘kwargs’) for positional arguments and              |
 |             |            | keyword/value arguments respectively. For example, below represents  |
-|             |            | a call to init(1,2,3,subarray=1)::                                   |
+|             |            | a call to init(1,2,3,subarray_id=1)::                                   |
 |             |            |                                                                      |
 |             |            |    "script_args": {                                                  |
 |             |            |      "init": {                                                       |
@@ -69,7 +68,7 @@ Procedures are defined as JSON objects with the following fields:
 |             |            |          3                                                           |
 |             |            |        ],                                                            |
 |             |            |        "kwargs": {                                                   |
-|             |            |          "subarray": "1"                                             |
+|             |            |          "subarray_id": "1"                                             |
 |             |            |        }                                                             |
 |             |            |      }                                                               |
 |             |            |    }                                                                 |
@@ -94,7 +93,7 @@ Below is a JSON representation of an example procedure resource. This resource
 script (located on disk at /path/to/observing_script.py), that has been loaded
 and its initialisation method called with two arguments (e.g, the script init
 function was called as
-``init(subarray=1, sb_uri=’file:///path/to/scheduling_block_123.json’)``. The
+``init(subarray_id=1, sb_uri=’file:///path/to/scheduling_block_123.json’)``. The
 script is ready to execute but is not yet executing, as shown by its state
 being `CREATED``::
 
@@ -104,7 +103,7 @@ being `CREATED``::
             "args": [],
             "kwargs": {
               "sb_uri": "file:///path/to/scheduling_block_123.json",
-              "subarray": 1
+              "subarray_id": 1
             }
           },
           "run": {
@@ -138,7 +137,7 @@ procedure is returned as JSON. Note that in the return JSON the procedure URI
 is defined. This URI can be used in a PUT request that commences script
 execution::
 
-    tangodev@buster:~/ska/observation-execution-tool$ curl -i -H "Content-Type: application/json" -X POST -d '{"script_uri":"file:///path/to/observing_script.py", "script_args": {"init": { "kwargs": {"subarray": 1, "sb_uri": "file:///path/to/scheduling_block_123.json"} } }}' http://localhost:5000/api/v1.0/procedures
+    tangodev@buster:~/ska/observation-execution-tool$ curl -i -H "Content-Type: application/json" -X POST -d '{"script_uri":"file:///path/to/observing_script.py", "script_args": {"init": { "kwargs": {"subarray_id": 1, "sb_uri": "file:///path/to/scheduling_block_123.json"} } }}' http://localhost:5000/api/v1.0/procedures
     HTTP/1.0 201 CREATED
     Content-Type: application/json
     Content-Length: 424
@@ -152,7 +151,7 @@ execution::
             "args": [],
             "kwargs": {
               "sb_uri": "file:///path/to/scheduling_block_123.json",
-              "subarray": 1
+              "subarray_id": 1
             }
           },
           "run": {
@@ -220,7 +219,7 @@ resource_allocation.py, and procedure #2 that will run observing_script.py::
               "args": [],
               "kwargs": {
                 "sb_uri": "file:///path/to/scheduling_block_123.json",
-                "subarray": 1
+                "subarray_id": 1
               }
             },
             "run": {
@@ -307,7 +306,7 @@ argument scan_duration=14::
             "args": [],
             "kwargs": {
               "sb_uri": "file:///path/to/scheduling_block_123.json",
-              "subarray": 1
+              "subarray_id": 1
             }
           },
           "run": {
@@ -330,30 +329,38 @@ argument scan_duration=14::
       }
     }
 
+
+Aborting process execution
+--------------------------
+The signal to abort script mid-execution is to change the state of a procedure to
+``STOPPED``. This is achieved with a PUT request to the resource. Additional argument
+`abort` can be provided in the request which, when true, will execute an abort script
+that will send Abort command to the sub-array device. The default value of `abort` is
+False. ::
+
+    tangodev@buster:~/ska/observation-execution-tool$ curl -i -H "Content-Type: application/json" -X PUT -d '{"abort": true, "state": "STOPPED"}' http://localhost:5000/api/v1.0/procedures/2
+    HTTP/1.0 200 OK
+    Content-Type: application/json
+    Content-Length: 467
+    Server: Werkzeug/0.16.0 Python/3.7.3
+    Date: Wed, 15 Jan 2020 10:14:09 GMT
+    {"abort_message":"Successfully stopped script with ID 2 and aborted subarray activity "}
+
 When an error occurs
 --------------------
 If there is a mistake in the User input it is desirable that the API produces 
-errors in a consistent computer-readable way. Due to lmitations in returning
-errors we create an embedded JSON message.
+errors in a consistent computer-readable way.
+
 The session below attempts to list a procedure which does not exist::
 
     tangodev@buster:~/ska/observation-execution-tool$ curl -i http://localhost:5000/api/v1.0/procedures/4
     HTTP/1.0 404 NOT FOUND
     Content-Type: application/json
-    Content-Length: 114
+    Content-Length: 103
     Server: Werkzeug/1.0.1 Python/3.7.3
-    Date: Mon, 26 Oct 2020 14:04:23 GMT
-    
-    {
-        "error": "404 Not Found: {\"Error\": \"ResourceNotFound\", \"Message\": \"No information available for PID=4\"}"
-    }
-    
-The above embedded JSON can be extracted to produce::
+    Date: Thu, 18 Feb 2021 17:40:30 GMT
 
-    {
-         "Error": "ResourceNotFound",
-         "Message": "No information available for PID=4"
-    }
+    {"error": "404 Not Found", "type": "ResourceNotFound", "Message": "No information available for PID=4"}
 
 Listen real time oet events
 ---------------------------
