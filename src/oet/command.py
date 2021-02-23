@@ -110,9 +110,11 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         # subscription
         self.queue = Queue(maxsize=0)
 
-    def execute(self, command: Command):
+    def execute(self, command: Command, **kwargs):
         """
         Execute a Command on a Tango device.
+
+        Additional kwargs to the DeviceProxy can be specified if required.
 
         :param command: the command to execute
         :return: the response, if any, returned by the Tango device
@@ -124,7 +126,7 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         if len(command.args) > 1:
             param = command.args
         LOGGER.info('Executing command: %r', command)
-        return proxy.command_inout(command.command_name, cmd_param=param)
+        return proxy.command_inout(command.command_name, cmd_param=param, **kwargs)
 
     def read(self, attribute: Attribute):
         """
