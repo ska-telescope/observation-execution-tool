@@ -86,7 +86,9 @@ class TangoDeviceProxyFactory:  # pylint: disable=too-few-public-methods
     """
 
     def __call__(self, device_name: str) -> tango.DeviceProxy:
-        return tango.DeviceProxy(device_name)
+        proxy = tango.DeviceProxy(device_name)
+        proxy.set_timeout_millis(10000)
+        return proxy
 
 
 class TangoExecutor:  # pylint: disable=too-few-public-methods
