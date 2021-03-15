@@ -14,14 +14,14 @@ from oet.mptools import (
     MainContext,
     MPQueue,
     EventMessage,
-    QueueProcWorker
+    QueueProcWorker,
 )
 from oet.procedure.application import restserver
 from oet.procedure.application.application import (
     PrepareProcessCommand,
     StartProcessCommand,
     StopProcessCommand,
-    ScriptExecutionService
+    ScriptExecutionService,
 )
 
 
@@ -48,7 +48,7 @@ class EventBusWorker(QueueProcWorker):
         """
         # avoid infinite loop - do not republish external events
         try:
-            msg_src = kwargs.pop('msg_src')
+            msg_src = kwargs.pop("msg_src")
         except KeyError:
             # No message source = virgin event published on pypubsub
             msg_src = self.name
@@ -57,11 +57,13 @@ class EventBusWorker(QueueProcWorker):
         # out to the main queue and hence on to other EventBusWorkers
         if msg_src == self.name:
             # Convert pypubsub event to the equivalent mptools EventMessage
-            msg = EventMessage(self.name, 'PUBSUB', dict(topic=topic.name, kwargs=kwargs))
+            msg = EventMessage(
+                self.name, "PUBSUB", dict(topic=topic.name, kwargs=kwargs)
+            )
 
             # not that this is a blocking put. If the queue is full, this call
             # will block until the queue has room to accept the message
-            self.log(logging.DEBUG, 'Queueing internal event: %s', msg)
+            self.log(logging.DEBUG, "Queueing internal event: %s", msg)
             self.event_q.put(msg)
 
     def startup(self) -> None:
@@ -95,12 +97,12 @@ class EventBusWorker(QueueProcWorker):
         """
         # avoid infinite loop - do not reprocess events that originated from us
         if evt.msg_src != self.name:
-            self.log(logging.DEBUG, 'Republishing external event: %s', evt)
+            self.log(logging.DEBUG, "Republishing external event: %s", evt)
             payload = evt.msg
-            topic = payload['topic']
-            pub.sendMessage(topic, msg_src=evt.msg_src, **payload['kwargs'])
+            topic = payload["topic"]
+            pub.sendMessage(topic, msg_src=evt.msg_src, **payload["kwargs"])
         else:
-            self.log(logging.DEBUG, 'Discarding internal event: %s', evt)
+            self.log(logging.DEBUG, "Discarding internal event: %s", evt)
 
     def send_message(self, topic, **kwargs):
         pub.sendMessage(topic, msg_src=self.name, **kwargs)
@@ -121,13 +123,13 @@ class FlaskWorker(EventBusWorker):
 
         app = restserver.create_app(None)
         # add route to run shutdown_flask() when /shutdown is accessed
-        app.add_url_rule('/shutdown', 'shutdown', self.shutdown_flask, methods=['POST'])
+        app.add_url_rule("/shutdown", "shutdown", self.shutdown_flask, methods=["POST"])
 
         # override default msg_src with our real process name
         app.config.update(msg_src=self.name)
 
         # start Flask in a thread as app.run is a blocking call
-        self.flask = threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'))
+        self.flask = threading.Thread(target=app.run, kwargs=dict(host="0.0.0.0"))
         self.flask.start()
 
     def shutdown(self) -> None:
@@ -137,17 +139,17 @@ class FlaskWorker(EventBusWorker):
         # flask can only be shut down by accessing a special Werkzeug function
         # that is accessible from a request. Hence, we send a request to a
         # special URL that will access and call that function.
-        requests.post('http://127.0.0.1:5000/shutdown')
+        requests.post("http://127.0.0.1:5000/shutdown")
         self.flask.join(timeout=3)
         super().shutdown()
 
     @staticmethod
     def shutdown_flask():
-        func = request.environ.get('werkzeug.server.shutdown')
+        func = request.environ.get("werkzeug.server.shutdown")
         if func is None:
-            raise RuntimeError('Not running with the Werkzeug Server')
+            raise RuntimeError("Not running with the Werkzeug Server")
         func()
-        return 'Stopping Flask'
+        return "Stopping Flask"
 
 
 class ScriptExecutionServiceWorker(EventBusWorker):
@@ -166,57 +168,76 @@ class ScriptExecutionServiceWorker(EventBusWorker):
     to the world by the ScriptExectutionServiceWorker. This could change so
     that the ScriptExecutionService itself sends the message.
     """
+
     def prepare(self, msg_src, request_id: str, cmd: PrepareProcessCommand):
-        self.log(logging.DEBUG, 'Prepare procedure request %s: %s', request_id, cmd)
+        self.log(logging.DEBUG, "Prepare procedure request %s: %s", request_id, cmd)
         try:
             summary = self.ses.prepare(cmd)
 
         except (FileNotFoundError, ValueError) as e:
             # ValueError raised on invalid URI prefix
             # FileNotFoundError raised when file not found.
-            self.log(logging.INFO, 'Prepare procedure %s failed: %s', request_id, e)
+            self.log(logging.INFO, "Prepare procedure %s failed: %s", request_id, e)
 
             # TODO create failure topic for failures in procedure domain
-            self.send_message(topics.procedure.lifecycle.created, request_id=request_id, result=e)
+            self.send_message(
+                topics.procedure.lifecycle.created, request_id=request_id, result=e
+            )
 
         else:
-            self.log(logging.DEBUG, 'Prepare procedure %s result: %s', request_id, summary)
-            self.send_message(topics.procedure.lifecycle.created, request_id=request_id, result=summary)
+            self.log(
+                logging.DEBUG, "Prepare procedure %s result: %s", request_id, summary
+            )
+            self.send_message(
+                topics.procedure.lifecycle.created,
+                request_id=request_id,
+                result=summary,
+            )
 
     def start(self, msg_src, request_id: str, cmd: StartProcessCommand):
-        self.log(logging.DEBUG, 'Start procedure request %s: %s', request_id, cmd)
+        self.log(logging.DEBUG, "Start procedure request %s: %s", request_id, cmd)
         summary = self.ses.start(cmd)
-        self.log(logging.DEBUG, 'Start procedure %s result: %s', request_id, summary)
+        self.log(logging.DEBUG, "Start procedure %s result: %s", request_id, summary)
 
-        self.send_message(topics.procedure.lifecycle.started, request_id=request_id, result=summary)
+        self.send_message(
+            topics.procedure.lifecycle.started, request_id=request_id, result=summary
+        )
 
     def list(self, msg_src, request_id: str, pids=None):
-        self.log(logging.DEBUG, 'List procedures for request %s', request_id)
+        self.log(logging.DEBUG, "List procedures for request %s", request_id)
         try:
             summaries = self.ses.summarise(pids)
-        except ValueError as e:
+        except ValueError:
             # ValueError raised when PID not found.
             summaries = []
 
-        self.log(logging.DEBUG, 'List result: %s', summaries)
-        self.send_message(topics.procedure.pool.list, request_id=request_id, result=summaries)
+        self.log(logging.DEBUG, "List result: %s", summaries)
+        self.send_message(
+            topics.procedure.pool.list, request_id=request_id, result=summaries
+        )
 
     def stop(self, msg_src, request_id: str, cmd: StopProcessCommand):
-        self.log(logging.DEBUG, 'Stop procedure request %s: %s', request_id, cmd)
+        self.log(logging.DEBUG, "Stop procedure request %s: %s", request_id, cmd)
         try:
             summary = self.ses.stop(cmd)
         except FileNotFoundError as e:
             # FileNotFoundError raised when abort.py script not found
-            self.log(logging.INFO, 'Stop procedure %s failed: %s', request_id, e)
+            self.log(logging.INFO, "Stop procedure %s failed: %s", request_id, e)
 
             # TODO create failure topic for failures in procedure domain
             #  (or refactor abortion script creation so that FileNotFound
             #  is caught only once in prepare)
-            self.send_message(topics.procedure.lifecycle.stopped, request_id=request_id, result=e)
+            self.send_message(
+                topics.procedure.lifecycle.stopped, request_id=request_id, result=e
+            )
         else:
-            self.log(logging.DEBUG, 'Stop result: %s', summary)
+            self.log(logging.DEBUG, "Stop result: %s", summary)
 
-            self.send_message(topics.procedure.lifecycle.stopped, request_id=request_id, result=summary)
+            self.send_message(
+                topics.procedure.lifecycle.stopped,
+                request_id=request_id,
+                result=summary,
+            )
 
     def startup(self) -> None:
         super().startup()
@@ -250,7 +271,9 @@ def main():
         # wire SIGINT and SIGTERM signal handlers to the shutdown_event Event
         # monitored by all processes, so that the processes know when
         # application termination has been requested.
-        init_signals(main_ctx.shutdown_event, default_signal_handler, default_signal_handler)
+        init_signals(
+            main_ctx.shutdown_event, default_signal_handler, default_signal_handler
+        )
 
         # create our message queues:
         # manager_q is the message queue for messages from the ScriptExecutionWorker
@@ -274,7 +297,8 @@ def main():
 
 def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
     """
-    Main message parsing and routing loop, extracted from main() to increase testability.
+    Main message parsing and routing loop, extracted from main() to increase
+    testability.
 
     :param main_ctx:
     :param event_bus_queues:

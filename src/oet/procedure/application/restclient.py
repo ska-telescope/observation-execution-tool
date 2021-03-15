@@ -31,11 +31,13 @@ LOGGER = logging.getLogger(__name__)
 # https://github.com/Count-Count/sseclient/tree/dont_use_raw_reads_with_gzipped_or_chunked_streams
 #
 def iter_content(self):
-    if hasattr(self.resp.raw, '_fp') and \
-            hasattr(self.resp.raw._fp, 'fp') and \
-            hasattr(self.resp.raw._fp.fp, 'read1') and \
-            not self.resp.raw.chunked and \
-            not self.resp.raw.getheader("Content-Encoding"):
+    if (
+        hasattr(self.resp.raw, "_fp")
+        and hasattr(self.resp.raw._fp, "fp")
+        and hasattr(self.resp.raw._fp.fp, "read1")
+        and not self.resp.raw.chunked
+        and not self.resp.raw.getheader("Content-Encoding")
+    ):
 
         def generate():
             while True:
@@ -50,6 +52,7 @@ def iter_content(self):
         # short reads cannot be used, this will block until
         # the full chunk size is actually read
         return self.resp.iter_content(self.chunk_size)
+
 
 sseclient.SSEClient.iter_content = iter_content
 
@@ -76,14 +79,14 @@ class ProcedureSummary:
         :param json: payload to convert
         :return: equivalent ProcedureSummary instance
         """
-        uid = json['uri'].split('/')[-1]
+        uid = json["uri"].split("/")[-1]
         return ProcedureSummary(
             id=uid,
-            uri=json['uri'],
-            script_uri=json['script_uri'],
-            script_args=json['script_args'],
-            history=json['history'],
-            state=json['state']
+            uri=json["uri"],
+            script_uri=json["script_uri"],
+            script_args=json["script_args"],
+            history=json["history"],
+            state=json["state"],
         )
 
 
@@ -100,58 +103,107 @@ class RestClientUI:
     """
 
     TOPIC_DICT = {
-        'request.procedure.create': lambda
-            evt: f'User request: prepare {evt["cmd"]["script_uri"]} for execution on subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]}',
-        'request.procedure.list': lambda
-            evt: f'User request to list all the procedures is received',
-        'request.procedure.start': lambda
-            evt: f'User request: start execution of process #{evt["cmd"]["process_uid"]}',
-        'request.procedure.stop': lambda
-            evt: f'User request: stop procedure #{evt["cmd"]["process_uid"]} with {"" if evt["cmd"]["run_abort"] else "no"} abort',
-        'procedure.pool.list': lambda
-            evt: f'Enumerating current procedures and status',
-        'procedure.lifecycle.created': lambda
-            evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) ready for execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
-        'procedure.lifecycle.started': lambda
-            evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) started execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
-        'procedure.lifecycle.stopped': lambda
-            evt: RestClientUI._extract_result_from_abort_result(evt),
-        'procedure.lifecycle.failed': lambda
-            evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) execution failed on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}',
-        'user.script.announce': lambda
-            evt: f'Script message: {evt["msg"]}',
-        'sb.lifecycle.allocated': lambda
-            evt: f'Resources allocated using SB {evt["sb_id"]}',
-        'sb.lifecycle.observation.started': lambda
-            evt: f'Observation for SB {evt["sb_id"]} started',
-        'sb.lifecycle.observation.finished.succeeded': lambda
-            evt: f'Observation for SB {evt["sb_id"]} complete',
-        'sb.lifecycle.observation.finished.failed': lambda
-            evt: f'Observation for SB {evt["sb_id"]} failed',
-        'subarray.resources.allocated': lambda
-            evt: f'Subarray {evt["subarray_id"]}: resources allocated',
-        'subarray.resources.deallocated': lambda
-            evt: f'Subarray {evt["subarray_id"]}: resources released',
-        'subarray.configured': lambda
-            evt: f'Subarray {evt["subarray_id"]} configured',
-        'subarray.scan.started': lambda
-            evt: f'Subarray {evt["subarray_id"]}: scan started',
-        'subarray.scan.finished': lambda
-            evt: f'Subarray {evt["subarray_id"]}: scan complete',
-        'subarray.fault': lambda
-            evt: f'Subarray {evt["subarray_id"]} error: {evt["error"]}',
-        'scan.lifecycle.configure.started': lambda
-            evt: f'SB {evt["sb_id"]}: configuring for scan {evt["scan_id"]}',
-        'scan.lifecycle.configure.complete': lambda
-            evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} configuration complete',
-        'scan.lifecycle.configure.failed': lambda
-            evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} configuration failed',
-        'scan.lifecycle.start': lambda
-            evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} starting',
-        'scan.lifecycle.end.succeeded': lambda
-            evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} complete',
-        'scan.lifecycle.end.failed': lambda
-            evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} failed',
+        "request.procedure.create": (
+            lambda evt: (
+                f'User request: prepare {evt["cmd"]["script_uri"]} for execution on '
+                f'subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]}'
+            )
+        ),
+        "request.procedure.list": (
+            lambda evt: "User request to list all the procedures is received"
+        ),
+        "request.procedure.start": (
+            lambda evt: (
+                f"User request: start execution of process "
+                f'#{evt["cmd"]["process_uid"]}'
+            )
+        ),
+        "request.procedure.stop": (
+            lambda evt: (
+                f'User request: stop procedure #{evt["cmd"]["process_uid"]} with '
+                f'{"" if evt["cmd"]["run_abort"] else "no"} abort'
+            )
+        ),
+        "procedure.pool.list": (
+            lambda evt: "Enumerating current procedures and status"
+        ),
+        "procedure.lifecycle.created": (
+            lambda evt: (
+                f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) '
+                f"ready for execution on subarray "
+                f'{evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            )
+        ),
+        "procedure.lifecycle.started": (
+            lambda evt: (
+                f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) '
+                f"started execution on subarray "
+                f'{evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            )
+        ),
+        "procedure.lifecycle.stopped": (
+            lambda evt: RestClientUI._extract_result_from_abort_result(evt)
+        ),
+        "procedure.lifecycle.failed": (
+            lambda evt: (
+                f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) '
+                f"execution failed on subarray "
+                f'{evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            )
+        ),
+        "user.script.announce": lambda evt: f'Script message: {evt["msg"]}',
+        "sb.lifecycle.allocated": (
+            lambda evt: f'Resources allocated using SB {evt["sb_id"]}'
+        ),
+        "sb.lifecycle.observation.started": (
+            lambda evt: f'Observation for SB {evt["sb_id"]} started'
+        ),
+        "sb.lifecycle.observation.finished.succeeded": (
+            lambda evt: f'Observation for SB {evt["sb_id"]} complete'
+        ),
+        "sb.lifecycle.observation.finished.failed": (
+            lambda evt: f'Observation for SB {evt["sb_id"]} failed'
+        ),
+        "subarray.resources.allocated": (
+            lambda evt: f'Subarray {evt["subarray_id"]}: resources allocated'
+        ),
+        "subarray.resources.deallocated": (
+            lambda evt: f'Subarray {evt["subarray_id"]}: resources released'
+        ),
+        "subarray.configured": (
+            lambda evt: f'Subarray {evt["subarray_id"]} configured'
+        ),
+        "subarray.scan.started": (
+            lambda evt: f'Subarray {evt["subarray_id"]}: scan started'
+        ),
+        "subarray.scan.finished": (
+            lambda evt: f'Subarray {evt["subarray_id"]}: scan complete'
+        ),
+        "subarray.fault": (
+            lambda evt: f'Subarray {evt["subarray_id"]} error: {evt["error"]}'
+        ),
+        "scan.lifecycle.configure.started": (
+            lambda evt: f'SB {evt["sb_id"]}: configuring for scan {evt["scan_id"]}'
+        ),
+        "scan.lifecycle.configure.complete": (
+            lambda evt: (
+                f'SB {evt["sb_id"]}: scan {evt["scan_id"]} configuration complete'
+            )
+        ),
+        "scan.lifecycle.configure.failed": (
+            lambda evt: (
+                f'SB {evt["sb_id"]}: scan {evt["scan_id"]} configuration failed'
+            )
+        ),
+        "scan.lifecycle.start": (
+            lambda evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} starting'
+        ),
+        "scan.lifecycle.end.succeeded": (
+            lambda evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} complete'
+        ),
+        "scan.lifecycle.end.failed": (
+            lambda evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} failed'
+        ),
     }
 
     @staticmethod
@@ -167,14 +219,17 @@ class RestClientUI:
         TODO refactor stop message to a common type
         """
         try:
-            result = evt['result'][0]
+            result = evt["result"][0]
         except IndexError:
             # stop script but no post-abort script run
             # no other info available in message!
-            return f'Procedure stopped'
+            return "Procedure stopped"
         except (TypeError, KeyError):
-            result = evt['result']
-        return f'Procedure {result["id"]} ({result["script_uri"]}) execution complete {result["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            result = evt["result"]
+        return (
+            f'Procedure {result["id"]} ({result["script_uri"]}) execution complete '
+            f'{result["script_args"]["init"]["kwargs"]["subarray_id"]}'
+        )
 
     def __init__(self, server_url=None):
         """
@@ -186,69 +241,85 @@ class RestClientUI:
         :param server_url: URI of the target REST server
         """
         if server_url is None:
-            server_url = os.getenv('OET_REST_URI',
-                                   'http://oet-rest-test:5000/api/v1.0/procedures')
+            server_url = os.getenv(
+                "OET_REST_URI", "http://oet-rest-test:5000/api/v1.0/procedures"
+            )
         self._client = RestAdapter(server_url)
 
     @staticmethod
     def _format_error(error_json: str) -> str:
         try:
             error_d = json.loads(error_json)
-            type = error_d['type']
-            message = error_d['Message']
-            error = error_d['error']
-            msg = f'Server encountered error {error}:\n  {type}: {message}'
-        except ValueError as exc:
+            type = error_d["type"]
+            message = error_d["Message"]
+            error = error_d["error"]
+            msg = f"Server encountered error {error}:\n  {type}: {message}"
+        except ValueError:
             # ValueError raised if error is not valid JSON. This happens at least when
             # REST server is not running and returns Connection refused error
-            msg = f'The server encountered a problem: {error_json}'
-        return f'{msg}'
+            msg = f"The server encountered a problem: {error_json}"
+        return f"{msg}"
 
     @staticmethod
     def _tabulate(procedures: List[ProcedureSummary]) -> str:
-        table_rows = [(p.id, p.script_uri,
-                       datetime.datetime.fromtimestamp(p.history['process_states']
-                                                       ['CREATED'], tz=datetime.timezone.utc
-                                                       ).strftime('%Y-%m-%d ' '%H:%M:%S'),
-                       p.state) for p in procedures]
+        table_rows = [
+            (
+                p.id,
+                p.script_uri,
+                datetime.datetime.fromtimestamp(
+                    p.history["process_states"]["CREATED"], tz=datetime.timezone.utc
+                ).strftime("%Y-%m-%d " "%H:%M:%S"),
+                p.state,
+            )
+            for p in procedures
+        ]
 
-        headers = ['ID', 'Script', 'Creation Time', 'State']
+        headers = ["ID", "Script", "Creation Time", "State"]
         return tabulate.tabulate(table_rows, headers)
 
     @staticmethod
     def _tabulate_for_describe(procedure: List[ProcedureSummary]) -> str:
 
         table_row_title = [(procedure[0].id, procedure[0].script_uri, procedure[0].uri)]
-        headers_title = ['ID', 'Script', 'URI']
+        headers_title = ["ID", "Script", "URI"]
 
-        table_rows_args = [(s, procedure[0].script_args[s]['args'],
-                            procedure[0].script_args[s]['kwargs'])
-                           for s in procedure[0].script_args]
+        table_rows_args = [
+            (
+                s,
+                procedure[0].script_args[s]["args"],
+                procedure[0].script_args[s]["kwargs"],
+            )
+            for s in procedure[0].script_args
+        ]
 
-        headers_args = ['Method', 'Arguments', 'Keyword Arguments']
+        headers_args = ["Method", "Arguments", "Keyword Arguments"]
 
-        table_rows_states = [(datetime.datetime.fromtimestamp(procedure[0].
-                                                              history['process_states'][s],
-                                                              tz=datetime.timezone.utc).
-                              strftime('%Y-%m-%d %H:%M:%S.%f'), s)
-                             for s in procedure[0].history['process_states']]
+        table_rows_states = [
+            (
+                datetime.datetime.fromtimestamp(
+                    procedure[0].history["process_states"][s], tz=datetime.timezone.utc
+                ).strftime("%Y-%m-%d %H:%M:%S.%f"),
+                s,
+            )
+            for s in procedure[0].history["process_states"]
+        ]
 
         table_rows_states.sort(key=operator.itemgetter(0))
-        headers_states = ['Time', 'State']
+        headers_states = ["Time", "State"]
 
         # define default table sections...
         table_sections = [
             tabulate.tabulate(table_row_title, headers_title),
             tabulate.tabulate(table_rows_states, headers_states),
-            tabulate.tabulate(table_rows_args, headers_args)
+            tabulate.tabulate(table_rows_args, headers_args),
         ]
 
         # .. and add stacktrace if present
-        stacktrace = procedure[0].history['stacktrace']
+        stacktrace = procedure[0].history["stacktrace"]
         if stacktrace:
-            table_sections.append(f'Stack Trace:\n------------\n{stacktrace}')
+            table_sections.append(f"Stack Trace:\n------------\n{stacktrace}")
 
-        return '\n\n'.join(table_sections)
+        return "\n\n".join(table_sections)
 
     def list(self, pid=None) -> str:
         """
@@ -264,7 +335,7 @@ class RestClientUI:
             procedures = self._client.list(pid)
             return self._tabulate(procedures)
         except Exception as err:
-            LOGGER.debug(f'received exception {err}')
+            LOGGER.debug(f"received exception {err}")
             return self._format_error(str(err))
 
     def create(self, script_uri: str, *args, subarray_id=1, **kwargs) -> str:
@@ -283,16 +354,18 @@ class RestClientUI:
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.
         """
-        kwargs['subarray_id'] = subarray_id
+        kwargs["subarray_id"] = subarray_id
         init_args = dict(args=args, kwargs=kwargs)
         try:
             procedure = self._client.create(script_uri, init_args=init_args)
             return self._tabulate([procedure])
         except Exception as err:
-            LOGGER.debug(f'received exception {err}')
+            LOGGER.debug(f"received exception {err}")
             return self._format_error(str(err))
 
-    def start(self, *args, pid=None, listen=True, **kwargs) -> Generator[str, None, None]:
+    def start(
+        self, *args, pid=None, listen=True, **kwargs
+    ) -> Generator[str, None, None]:
         """
         Start a specified Procedure.
 
@@ -315,13 +388,15 @@ class RestClientUI:
         if pid is None:
             procedures = self._client.list()
             if not procedures:
-                yield 'No procedures to start'
+                yield "No procedures to start"
                 return
 
             procedure = procedures[-1]
             if procedure.state != "CREATED":
-                yield f'The last procedure created is in {procedures[-1].state} state ' \
-                       'and cannot be started, please specify a valid procedure ID.'
+                yield (
+                    f"The last procedure created is in {procedures[-1].state} state "
+                    "and cannot be started, please specify a valid procedure ID."
+                )
                 return
             pid = procedure.id
 
@@ -335,16 +410,16 @@ class RestClientUI:
                 yield line
 
             if listen:
-                yield ''
-                yield 'Events'
-                yield '------'
-                yield ''
+                yield ""
+                yield "Events"
+                yield "------"
+                yield ""
 
                 for msg in listener:
                     yield msg
 
         except Exception as err:
-            LOGGER.debug(f'received exception {err}')
+            LOGGER.debug(f"received exception {err}")
             yield self._format_error(str(err))
 
     def stop(self, pid=None, run_abort=True) -> str:
@@ -361,18 +436,22 @@ class RestClientUI:
         :return: Empty table entry
         """
         if pid is None:
-            running_procedures = [p for p in self._client.list() if p.state == 'RUNNING']
+            running_procedures = [
+                p for p in self._client.list() if p.state == "RUNNING"
+            ]
             if not running_procedures:
-                return 'No procedures to stop'
+                return "No procedures to stop"
             if len(running_procedures) > 1:
-                return 'WARNING: More than one procedure is running. ' \
-                       'Specify ID of the procedure to stop.'
+                return (
+                    "WARNING: More than one procedure is running. "
+                    "Specify ID of the procedure to stop."
+                )
             pid = running_procedures[0].id
         try:
             response = self._client.stop(pid, run_abort)
             return response
         except Exception as err:
-            LOGGER.debug(f'received exception {err}')
+            LOGGER.debug(f"received exception {err}")
             return self._format_error(str(err))
 
     def describe(self, pid=None) -> str:
@@ -388,63 +467,69 @@ class RestClientUI:
         if pid is None:
             procedures = self._client.list()
             if not procedures:
-                return 'No procedures to describe'
+                return "No procedures to describe"
             pid = procedures[-1].id
         try:
             procedure = self._client.list(pid)
             return self._tabulate_for_describe(procedure)
         except Exception as err:
-            LOGGER.debug(f'received exception {err}')
+            LOGGER.debug(f"received exception {err}")
             return self._format_error(str(err))
 
-    def listen(self, topics: Optional[str] = 'all', exclude: Optional[str] = 'request,procedure.pool'):
+    def listen(
+        self,
+        topics: Optional[str] = "all",
+        exclude: Optional[str] = "request,procedure.pool",
+    ):
         """
         Display real time oet events published by scripts.
 
         :param topics: event topics to display, or 'all' for all (default='all')
         :param exclude: event topics to exclude (default='request,procedure.pool')
         """
-        if topics == 'all':
+        if topics == "all":
             topics = list(RestClientUI.TOPIC_DICT.keys())
         else:
-            topics = topics.split(',')
+            topics = topics.split(",")
 
-        exclude_topics = exclude.split(',')
-        to_exclude = [t for e in exclude_topics for t in topics if e and t.startswith(e)]
+        exclude_topics = exclude.split(",")
+        to_exclude = [
+            t for e in exclude_topics for t in topics if e and t.startswith(e)
+        ]
         topics = [t for t in topics if t not in to_exclude]
 
         try:
             for evt in self._client.listen():
                 output = self._filter_event_messages(evt, topics)
                 if output:
-                    yield f'- {output}'
+                    yield f"- {output}"
         except KeyboardInterrupt as err:
-            LOGGER.debug(f'received exception {err}')
+            LOGGER.debug(f"received exception {err}")
         except Exception as err:
-            LOGGER.debug(f'received exception {err}')
+            LOGGER.debug(f"received exception {err}")
             return self._format_error(str(err))
 
     @staticmethod
     def _filter_event_messages(evt: sseclient.Event, topics: List[str]) -> str:
         if not evt.data:
-            return ''
+            return ""
 
         try:
             event_dict = json.loads(evt.data)
-        except json.decoder.JSONDecodeError as e:
-            return f'ERROR Could not parse event: {evt}'
+        except json.decoder.JSONDecodeError:
+            return f"ERROR Could not parse event: {evt}"
 
-        event_topic = event_dict.get('topic', None)
+        event_topic = event_dict.get("topic", None)
         if event_topic not in topics:
-            return ''
+            return ""
 
         # no topic defined - print anyway
         formatter = RestClientUI.TOPIC_DICT.get(event_topic, str)
         try:
             return formatter(event_dict)
         except KeyError:
-            LOGGER.debug('Error parsing event: %s', event_dict)
-            return ''
+            LOGGER.debug("Error parsing event: %s", event_dict)
+            return ""
 
 
 class RestAdapter:
@@ -469,17 +554,17 @@ class RestAdapter:
         :return: List of ProcedureSummary instances
         """
         if pid is not None:
-            url = f'{self.server_url}/{pid}'
+            url = f"{self.server_url}/{pid}"
             response = requests.get(url)
             if response.status_code == HTTPStatus.OK:
-                procedure_json = response.json()['procedure']
+                procedure_json = response.json()["procedure"]
                 return [ProcedureSummary.from_json(procedure_json)]
             else:
                 raise Exception(response.text)
 
         url = self.server_url
         response = requests.get(url)
-        procedures_json = response.json()['procedures']
+        procedures_json = response.json()["procedures"]
         return [ProcedureSummary.from_json(d) for d in procedures_json]
 
     def create(self, script_uri: str, init_args: Dict = None) -> ProcedureSummary:
@@ -501,17 +586,17 @@ class RestAdapter:
             init_args = dict(args=[], kwargs={})
 
         request_json = {
-            'script_uri': script_uri,
-            'script_args': {
-                'init': init_args,
-            }
+            "script_uri": script_uri,
+            "script_args": {
+                "init": init_args,
+            },
         }
-        LOGGER.debug('Create payload: %s', request_json)
+        LOGGER.debug("Create payload: %s", request_json)
 
         response = requests.post(self.server_url, json=request_json)
         response_as_dict = response.json()
         if response.status_code == HTTPStatus.CREATED:
-            return ProcedureSummary.from_json(response_as_dict['procedure'])
+            return ProcedureSummary.from_json(response_as_dict["procedure"])
         raise Exception(response.text)
 
     def start(self, pid, run_args=None) -> ProcedureSummary:
@@ -529,23 +614,18 @@ class RestAdapter:
         :param run_args: late-binding script arguments
         :return: Summary of running procedure.
         """
-        url = f'{self.server_url}/{pid}'
+        url = f"{self.server_url}/{pid}"
 
         if run_args is None:
             run_args = dict(args=[], kwargs={})
 
-        request_json = {
-            'script_args': {
-                'run': run_args
-            },
-            'state': 'RUNNING'
-        }
-        LOGGER.debug('Start payload: %s', request_json)
+        request_json = {"script_args": {"run": run_args}, "state": "RUNNING"}
+        LOGGER.debug("Start payload: %s", request_json)
 
         response = requests.put(url, json=request_json)
         response_as_dict = response.json()
         if response.status_code == HTTPStatus.OK:
-            return ProcedureSummary.from_json(response_as_dict['procedure'])
+            return ProcedureSummary.from_json(response_as_dict["procedure"])
         raise Exception(response.text)
 
     def stop(self, pid, run_abort=True):
@@ -557,20 +637,16 @@ class RestAdapter:
             script has terminated
         :return: success/failure message
         """
-        url = f'{self.server_url}/{pid}'
+        url = f"{self.server_url}/{pid}"
 
-        request_json = {
-            'abort': run_abort,
-            'state': 'STOPPED'
-        }
-        LOGGER.debug('Stop payload: %s', request_json)
+        request_json = {"abort": run_abort, "state": "STOPPED"}
+        LOGGER.debug("Stop payload: %s", request_json)
 
         response = requests.put(url, json=request_json)
         response_as_dict = response.json()
         if response.status_code == HTTPStatus.OK:
-            return response_as_dict['abort_message']
+            return response_as_dict["abort_message"]
         raise Exception(response.text)
-
 
     def listen(self) -> Generator[sseclient.Event, None, None]:
         """
@@ -578,10 +654,10 @@ class RestAdapter:
 
         :return: event messages
         """
-        url = self.server_url.replace('procedures', 'stream')
+        url = self.server_url.replace("procedures", "stream")
 
         for msg in sseclient.SSEClient(url):
-            LOGGER.debug('Event: %s', msg)
+            LOGGER.debug("Event: %s", msg)
             yield msg
 
 
@@ -594,6 +670,6 @@ def main():
 
 # This statement is included so that we can run this module and test the REST
 # client directly without installing the OET project
-if __name__ == '__main__':
+if __name__ == "__main__":
     # logging.basicConfig(level=logging.DEBUG)
     main()

@@ -41,8 +41,8 @@ SOFTWARE.
 """
 
 __author__ = """Pamela D McA'Nulty"""
-__email__ = 'pamela@mcanulty.org'
-__version__ = '0.2.1'
+__email__ = "pamela@mcanulty.org"
+__version__ = "0.2.1"
 
 from ._mptools import (
     MPQueue,
@@ -60,19 +60,20 @@ from ._mptools import (
     MainContext,
     TerminateInterrupt,
 )
+
 __all__ = [
-    'MPQueue',
-    '_sleep_secs',
-    'SignalObject',
-    'init_signal',
-    'init_signals',
-    'default_signal_handler',
-    'ProcWorker',
-    'proc_worker_wrapper',
-    'TimerProcWorker',
-    'QueueProcWorker',
-    'Proc',
-    'EventMessage',
-    'MainContext',
-    'TerminateInterrupt',
+    "MPQueue",
+    "_sleep_secs",
+    "SignalObject",
+    "init_signal",
+    "init_signals",
+    "default_signal_handler",
+    "ProcWorker",
+    "proc_worker_wrapper",
+    "TimerProcWorker",
+    "QueueProcWorker",
+    "Proc",
+    "EventMessage",
+    "MainContext",
+    "TerminateInterrupt",
 ]

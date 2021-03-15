@@ -8,21 +8,23 @@ import os
 from oet.command import TangoExecutor, Command, Attribute
 
 LOG = logging.getLogger(__name__)
-FORMAT = '%(asctime)-15s %(message)s'
+FORMAT = "%(asctime)-15s %(message)s"
 
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 EXECUTOR = TangoExecutor()
 
 
 def main(*args, **kwargs):
-    LOG.warning('Deprecated! Calling main before sub-array is bound will be removed for PI9')
+    LOG.warning(
+        "Deprecated! Calling main before sub-array is bound will be removed for PI9"
+    )
     _main(*args, **kwargs)
 
 
 def init(subarray_id: int):
     global main
     main = functools.partial(_main, subarray_id)
-    LOG.info(f'Script bound to sub-array {subarray_id}')
+    LOG.info(f"Script bound to sub-array {subarray_id}")
 
 
 def _main(subarray_id: int, *args, **kwargs):
@@ -33,33 +35,32 @@ def _main(subarray_id: int, *args, **kwargs):
     :param subarray_id: numeric subarray ID
     :return:
     """
-    LOG.info(f'Running abort script in OS process {os.getpid()}')
+    LOG.info(f"Running abort script in OS process {os.getpid()}")
 
     if args:
-        LOG.warning('Got unexpected positional args: %s', args)
+        LOG.warning("Got unexpected positional args: %s", args)
     if kwargs:
-        LOG.warning('Got unexpected named args: %s', kwargs)
+        LOG.warning("Got unexpected named args: %s", kwargs)
 
-    LOG.info(f'Called with main(subarray_id={subarray_id})')
+    LOG.info(f"Called with main(subarray_id={subarray_id})")
 
-    subarray_fqdn = 'ska_mid/tm_subarray_node/' + str(subarray_id)
-    cmd = Command(subarray_fqdn, 'Abort')
-    attr = Attribute(subarray_fqdn, 'obsState')
+    subarray_fqdn = "ska_mid/tm_subarray_node/" + str(subarray_id)
+    cmd = Command(subarray_fqdn, "Abort")
+    attr = Attribute(subarray_fqdn, "obsState")
 
-    LOG.info(f'Aborting subarray {subarray_id}')
+    LOG.info(f"Aborting subarray {subarray_id}")
     event_id = EXECUTOR.subscribe_event(attr)
 
     EXECUTOR.execute(cmd)
     _wait_for_abort_state()
     EXECUTOR.unsubscribe_event(attr, event_id)
 
-    LOG.info('Abort script complete')
+    LOG.info("Abort script complete")
 
 
 def _wait_for_abort_state():
     while True:
         event = EXECUTOR.read_event()
         if event.attr_value.value == 7:
-            LOG.info('Subarray reached state ABORTED')
+            LOG.info("Subarray reached state ABORTED")
             return True
-
