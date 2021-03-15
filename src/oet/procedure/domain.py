@@ -3,7 +3,6 @@ The oet.procedure.domain module holds domain entities from the script
 execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
-import copy
 import dataclasses
 import enum
 import importlib.machinery
@@ -34,6 +33,7 @@ class ProcedureState(enum.Enum):
     """
     Represents the script execution state.
     """
+
     CREATED = enum.auto()
     RUNNING = enum.auto()
     COMPLETED = enum.auto()
@@ -60,19 +60,22 @@ class ProcedureInput:
         return False
 
     def __repr__(self):
-        args = ', '.join((str(a) for a in self.args))
-        kwargs = ', '.join(['{!s}={!r}'.format(k, v) for k, v in self.kwargs.items()])
-        return '<ProcedureInput({})>'.format(', '.join((args, kwargs)))
+        args = ", ".join((str(a) for a in self.args))
+        kwargs = ", ".join(["{!s}={!r}".format(k, v) for k, v in self.kwargs.items()])
+        return "<ProcedureInput({})>".format(", ".join((args, kwargs)))
 
 
 @dataclasses.dataclass
 class ProcedureHistory:
     """
-    ProcedureHistory is a non-functional dataclass holding execution history of a Procedure.
+    ProcedureHistory is a non-functional dataclass holding execution history of
+    a Procedure.
 
-    process_states: records time for each change of ProcedureState (list of tuples where
-    tuple contains the ProcedureState and time when state was changed to)
-    stacktrace: None unless execution_error is True in which case stores stacktrace from process
+    process_states: records time for each change of ProcedureState (list of
+        tuples where tuple contains the ProcedureState and time when state was
+        changed to)
+    stacktrace: None unless execution_error is True in which case stores
+        stacktrace from process
     """
 
     def __init__(self, process_states=None, stacktrace=None):
@@ -84,15 +87,20 @@ class ProcedureHistory:
     def __eq__(self, other):
         if not isinstance(other, ProcedureHistory):
             return False
-        if self.process_states == other.process_states and \
-                self.stacktrace == other.stacktrace:
+        if (
+            self.process_states == other.process_states
+            and self.stacktrace == other.stacktrace
+        ):
             return True
         return False
 
     def __repr__(self):
-        p_history = ', '.join(['({!s}, {!r})'.format(s, t) for s, t in self.process_states.items()])
-        return '<ProcessHistory(process_states=[{}], ' \
-               'stacktrace={})>'.format(p_history, self.stacktrace)
+        p_history = ", ".join(
+            ["({!s}, {!r})".format(s, t) for s, t in self.process_states.items()]
+        )
+        return "<ProcessHistory(process_states=[{}], " "stacktrace={})>".format(
+            p_history, self.stacktrace
+        )
 
 
 class Procedure(multiprocessing.Process):
@@ -101,10 +109,14 @@ class Procedure(multiprocessing.Process):
     and its execution state.
     """
 
-    def __init__(self, script_uri: str, *args,
-                 scan_counter: typing.Optional[multiprocessing.Value] = None,
-                 procedure_id: typing.Optional[int] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        script_uri: str,
+        *args,
+        scan_counter: typing.Optional[multiprocessing.Value] = None,
+        procedure_id: typing.Optional[int] = None,
+        **kwargs,
+    ):
         multiprocessing.Process.__init__(self)
         self.stacktrace_queue = multiprocessing.Queue()
         self.history = ProcedureHistory()
@@ -114,12 +126,13 @@ class Procedure(multiprocessing.Process):
         self.state = None
 
         self.user_module = ModuleFactory.get_module(script_uri)
-        if hasattr(self.user_module, 'init'):
+        if hasattr(self.user_module, "init"):
             self.user_module.init(*args, **kwargs)
 
         self.script_uri = script_uri
-        self.script_args: typing.Dict[str, ProcedureInput] = dict(init=init_args,
-                                                                  run=ProcedureInput())
+        self.script_args: typing.Dict[str, ProcedureInput] = dict(
+            init=init_args, run=ProcedureInput()
+        )
         self.change_state(ProcedureState.CREATED)
 
         self._scan_counter = scan_counter
@@ -138,12 +151,14 @@ class Procedure(multiprocessing.Process):
         topic = topics.procedure.lifecycle.stopped
 
         try:
-            args = self.script_args['run'].args
-            kwargs = self.script_args['run'].kwargs
+            args = self.script_args["run"].args
+            kwargs = self.script_args["run"].kwargs
             self.user_module.main(*args, **kwargs)
 
         except Exception as exception:  # pylint: disable=broad-except
-            LOGGER.debug('Process terminated unexpectedly. Exception caught: %s', exception)
+            LOGGER.debug(
+                "Process terminated unexpectedly. Exception caught: %s", exception
+            )
             stacktrace = traceback.format_exc()
             self.stacktrace_queue.put(stacktrace)
             topic = topics.procedure.lifecycle.failed
@@ -152,7 +167,9 @@ class Procedure(multiprocessing.Process):
             request_id = time.time()
             summary = ProcedureSummary.from_procedure(self)
             # Queue input arg cannot be pickled, so remove
-            pub.sendMessage(topic, msg_src=msg_src, request_id=request_id, result=summary)
+            pub.sendMessage(
+                topic, msg_src=msg_src, request_id=request_id, result=summary
+            )
 
     def start(self):
         """
@@ -163,14 +180,14 @@ class Procedure(multiprocessing.Process):
         the child process.
         """
         if self.state is not ProcedureState.CREATED:
-            raise Exception(f'Invalid procedure state for run: {self.state}')
+            raise Exception(f"Invalid procedure state for run: {self.state}")
 
         self.change_state(ProcedureState.RUNNING)
         super().start()
 
     def terminate(self):
         if self.state is not ProcedureState.RUNNING:
-            raise Exception(f'Invalid procedure state for terminate: {self.state}')
+            raise Exception(f"Invalid procedure state for terminate: {self.state}")
 
         self.change_state(ProcedureState.STOPPED)
         super().terminate()
@@ -190,6 +207,7 @@ class ProcedureSummary:
     captures essential information required to describe a Procedure and to
     distinguish it from other Procedures.
     """
+
     id: int  # pylint: disable=invalid-name
     script_uri: str
     script_args: typing.Dict[str, ProcedureInput]
@@ -203,7 +221,7 @@ class ProcedureSummary:
             script_uri=procedure.script_uri,
             script_args=procedure.script_args,
             history=procedure.history,
-            state=procedure.state
+            state=procedure.state,
         )
 
 
@@ -221,7 +239,7 @@ class ProcessManager:
 
         self._procedure_factory = ProcedureFactory()
         self._pool = Pool()
-        self._scan_id = multiprocessing.Value('i', 1)
+        self._scan_id = multiprocessing.Value("i", 1)
 
     def create(self, script_uri: str, *, init_args: ProcedureInput) -> int:
         """
@@ -237,10 +255,13 @@ class ProcessManager:
         else:
             pid = max(self.procedures.keys()) + 1
 
-        LOGGER.debug('Creating Procedure with pid %d and script_uri %s', pid, script_uri)
+        LOGGER.debug(
+            "Creating Procedure with pid %d and script_uri %s", pid, script_uri
+        )
 
-        procedure = self._procedure_factory.create(script_uri, *init_args.args,
-                                                   scan_counter=self._scan_id, **init_args.kwargs)
+        procedure = self._procedure_factory.create(
+            script_uri, *init_args.args, scan_counter=self._scan_id, **init_args.kwargs
+        )
         procedure.id = pid
 
         # Delete oldest procedure if procedure limit reached
@@ -269,17 +290,19 @@ class ProcessManager:
 
         if self.running:
             running_pid = self.running.id
-            raise ValueError(f'Cannot start PID {process_id}: procedure {running_pid} is running')
+            raise ValueError(
+                f"Cannot start PID {process_id}: procedure {running_pid} is running"
+            )
 
         try:
             procedure = self.procedures[process_id]
         except KeyError as exc:
-            raise ValueError(f'Process {process_id} not found') from exc
+            raise ValueError(f"Process {process_id} not found") from exc
 
-        LOGGER.debug('Starting Procedure %d', process_id)
+        LOGGER.debug("Starting Procedure %d", process_id)
 
         self.running = procedure
-        procedure.script_args['run'] = run_args
+        procedure.script_args["run"] = run_args
         procedure.start()
 
         def callback(*_):
@@ -307,14 +330,14 @@ class ProcessManager:
         :return:
         """
         if self.running is None:
-            raise ValueError(f'Cannot stop PID {process_id}: procedure is not running')
+            raise ValueError(f"Cannot stop PID {process_id}: procedure is not running")
 
         try:
             procedure = self.procedures[process_id]
         except KeyError as exc:
-            raise ValueError(f'Process {process_id} not found') from exc
+            raise ValueError(f"Process {process_id} not found") from exc
 
-        LOGGER.debug('Stopping Procedure %d', process_id)
+        LOGGER.debug("Stopping Procedure %d", process_id)
 
         if procedure.is_alive():
             procedure.terminate()
@@ -368,12 +391,12 @@ class ModuleFactory:
         :param script_uri: URI of script to load
         :return: Python module
         """
-        if script_uri.startswith('test://'):
+        if script_uri.startswith("test://"):
             loader = ModuleFactory._null_module_loader
-        elif script_uri.startswith('file://'):
+        elif script_uri.startswith("file://"):
             loader = ModuleFactory._load_module_from_file
         else:
-            raise ValueError('Script URI type not handled: {}'.format(script_uri))
+            raise ValueError("Script URI type not handled: {}".format(script_uri))
 
         return loader(script_uri)
 
@@ -388,7 +411,7 @@ class ModuleFactory:
         """
         # remove 'file://' prefix
         path = script_uri[7:]
-        loader = importlib.machinery.SourceFileLoader('user_module', path)
+        loader = importlib.machinery.SourceFileLoader("user_module", path)
         user_module = types.ModuleType(loader.name)
         loader.exec_module(user_module)
         return user_module
@@ -408,7 +431,7 @@ class ModuleFactory:
         def main(*_, **__):
             pass
 
-        user_module = types.ModuleType('user_module')
+        user_module = types.ModuleType("user_module")
         user_module.main = main
         user_module.init = init
 

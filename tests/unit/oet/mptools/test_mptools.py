@@ -11,7 +11,6 @@ import time
 
 import pytest
 
-from oet import mptools
 from oet.mptools import (
     MPQueue,
     _sleep_secs,
@@ -24,7 +23,7 @@ from oet.mptools import (
     QueueProcWorker,
     Proc,
     MainContext,
-    TerminateInterrupt
+    TerminateInterrupt,
 )
 
 
@@ -137,12 +136,12 @@ def test_procworker_rejects_unexpected_arguments():
 def test_procworker_passes_excess_arguments_to_init_args():
     class ProcWorkerTest(ProcWorker):
         def init_args(self, args):
-            l, = args
-            l.extend(['ARG1', 'ARG2'])
+            (l,) = args
+            l.extend(["ARG1", "ARG2"])
 
     arglist = []
     ProcWorkerTest("TEST", mp.Event(), mp.Event(), MPQueue(), arglist)
-    assert arglist == ['ARG1', 'ARG2']
+    assert arglist == ["ARG1", "ARG2"]
 
 
 def test_proc_worker_init_signals():
@@ -214,7 +213,9 @@ def test_proc_worker_run(caplog):
     assert f"MAIN_FUNC: ('ARG1', 'ARG2')" in caplog.text
 
 
-def _proc_worker_wrapper_helper(caplog, worker_class, args=None, expect_shutdown_evt=True, alarm_secs=1.0):
+def _proc_worker_wrapper_helper(
+    caplog, worker_class, args=None, expect_shutdown_evt=True, alarm_secs=1.0
+):
     startup_evt = mp.Event()
     shutdown_evt = mp.Event()
     event_q = MPQueue()
@@ -228,7 +229,9 @@ def _proc_worker_wrapper_helper(caplog, worker_class, args=None, expect_shutdown
         signal.signal(signal.SIGALRM, alarm_handler)
         signal.setitimer(signal.ITIMER_REAL, alarm_secs)
     caplog.set_level(logging.DEBUG)
-    exitcode = proc_worker_wrapper(worker_class, "TEST", startup_evt, shutdown_evt, event_q, *args)
+    exitcode = proc_worker_wrapper(
+        worker_class, "TEST", startup_evt, shutdown_evt, event_q, *args
+    )
     assert startup_evt.is_set()
     assert shutdown_evt.is_set() == expect_shutdown_evt
     items = list(event_q.drain())
@@ -267,7 +270,9 @@ def test_proc_worker_exception(caplog):
 
     caplog.set_level(logging.INFO)
     with pytest.raises(SystemExit):
-        proc_worker_wrapper(ProcWorkerException, "TEST", startup_evt, shutdown_evt, event_q)
+        proc_worker_wrapper(
+            ProcWorkerException, "TEST", startup_evt, shutdown_evt, event_q
+        )
     assert startup_evt.is_set()
     assert not shutdown_evt.is_set()
     item = event_q.safe_get()
@@ -294,12 +299,12 @@ def test_timer_proc_worker(caplog):
     items = _proc_worker_wrapper_helper(caplog, TimerProcWorkerTest)
     assert len(items) == 4
     for idx, item in enumerate(items[:-1]):
-        assert item.startswith(f'TIMER {idx + 1} [')
+        assert item.startswith(f"TIMER {idx + 1} [")
 
 
 class QueueProcWorkerTest(QueueProcWorker):
     def main_func(self, item):
-        self.event_q.put(f'DONE {item}')
+        self.event_q.put(f"DONE {item}")
 
 
 def test_queue_proc_worker(caplog):
@@ -311,9 +316,11 @@ def test_queue_proc_worker(caplog):
     work_q.put("END")
     work_q.put(5)
 
-    items = _proc_worker_wrapper_helper(caplog, QueueProcWorkerTest, args=(work_q,), expect_shutdown_evt=False)
+    items = _proc_worker_wrapper_helper(
+        caplog, QueueProcWorkerTest, args=(work_q,), expect_shutdown_evt=False
+    )
     assert len(items) == 4
-    assert items == [f'DONE {idx + 1}' for idx in range(4)]
+    assert items == [f"DONE {idx + 1}" for idx in range(4)]
 
 
 class StartHangWorker(ProcWorker):
@@ -344,7 +351,7 @@ def test_proc_full_stop(caplog):
     for idx in range(4):
         item = event_q.safe_get(1.0)
         assert item, f"idx: {idx}"
-        assert item.startswith(f'TIMER {idx + 1} [')
+        assert item.startswith(f"TIMER {idx + 1} [")
 
     item = event_q.safe_get(1.0)
     assert item.msg_src == "TEST"
@@ -406,7 +413,9 @@ class CleanProcWorker(ProcWorker):
 
 
 def test_main_context_stop_procs_clean(caplog):
-    (num_failed, num_terminated), num_still_running = _test_stop_procs(caplog, "CLEAN", CleanProcWorker)
+    (num_failed, num_terminated), num_still_running = _test_stop_procs(
+        caplog, "CLEAN", CleanProcWorker
+    )
     assert num_failed == 0
     assert num_terminated == 0
     assert num_still_running == 0
@@ -422,7 +431,9 @@ class FailProcWorker(ProcWorker):
 
 def test_main_context_stop_procs_fail(caplog):
     caplog.set_level(logging.DEBUG)
-    (num_failed, num_terminated), num_still_running = _test_stop_procs(caplog, "FAIL", FailProcWorker)
+    (num_failed, num_terminated), num_still_running = _test_stop_procs(
+        caplog, "FAIL", FailProcWorker
+    )
     assert num_failed == 1
     assert num_terminated == 0
     assert num_still_running == 0
@@ -430,7 +441,7 @@ def test_main_context_stop_procs_fail(caplog):
 
 class HangingProcWorker(ProcWorker):
     def init_args(self, args):
-        self.is_hard, = args
+        (self.is_hard,) = args
 
     # def __init__(self, name, startup_event, shutdown_event, event_q, is_hard):
     #     self.is_hard = is_hard
@@ -452,14 +463,18 @@ def _test_main_context_hang(cap_log, is_hard):
 
 
 def test_main_context_stop_procs_hung_soft(caplog):
-    (num_failed, num_terminated), num_still_running = _test_main_context_hang(caplog, is_hard=False)
+    (num_failed, num_terminated), num_still_running = _test_main_context_hang(
+        caplog, is_hard=False
+    )
     assert num_failed == 0
     assert num_terminated == 1
     assert num_still_running == 0
 
 
 def test_main_context_stop_procs_hung_hard(caplog):
-    (num_failed, num_terminated), num_still_running = _test_main_context_hang(caplog, is_hard=True)
+    (num_failed, num_terminated), num_still_running = _test_main_context_hang(
+        caplog, is_hard=True
+    )
     assert num_failed == 0
     assert num_terminated == 0
     assert num_still_running == 1
