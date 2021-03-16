@@ -4,17 +4,17 @@
 REST Client
 ***********
 
-SKA observations will be controlled by ‘Procedures’. Each 'Procedure' 
-comprises a Python script and a set of arguments, some of which will be 
-set when the script is loaded and some at run-time. 
+SKA observations will be controlled by ‘Procedures’. Each 'Procedure'
+comprises a Python script and a set of arguments, some of which will be
+set when the script is loaded and some at run-time.
 
-The management of 'Procedures' and the processes which execute them is 
-handled by the :doc:`rest_server`, which implements the methods 
+The management of 'Procedures' and the processes which execute them is
+handled by the :doc:`rest_server`, which implements the methods
 described in the :doc:`rest_api`. The :doc:`rest_server` lets the user:
 
-* Load requested Procedure scripts with initialization arguments and 
+* Load requested Procedure scripts with initialization arguments and
   have them ready for execution.
-* When required, pass run-time arguments to a script and start a process 
+* When required, pass run-time arguments to a script and start a process
   executing it.
 * Stop the script mid-execution by terminating the process executing it.
 
@@ -85,7 +85,7 @@ The methods available through the REST Client map closely to the
 |                    |               |                                            | history and, if the procedure       |
 |                    |               |                                            | failed, the stack trace of a        |
 |                    |               |                                            | specified process ID (pid). If no   |
-|                    |               |                                            | pid is specified describe the last  | 
+|                    |               |                                            | pid is specified describe the last  |
 |                    |               |                                            | process created.                    |
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 | Listen             | server-url    | http://oet-rest:5000/api/v1.0/stream       | **Get real times scripts events**   |
@@ -164,7 +164,7 @@ At this point we supply the index number of the procedure to run, and
 some runtime arguments to pass to it if required. ::
 
   $ oet start --pid=2 'bob' --simulate=false
- 
+
 giving: ::
 
     ID   Script           Creation time        State
@@ -184,20 +184,20 @@ giving: ::
 
 A 'describe' command will give further detail on a procedure, no
 matter its state.::
- 
+
  $oet describe --pid=2
 
 giving: ::
 
     ID  Script           URI
-  ----  ---------------  ----------------------------------------- 
-     2  file://test2.py  http://0.0.0.0:5000/api/v1.0/procedures/2 
- 
+  ----  ---------------  -----------------------------------------
+     2  file://test2.py  http://0.0.0.0:5000/api/v1.0/procedures/2
+
   Time                        State
   --------------------------  -------
   2020-09-30 10:19:38.646475  CREATED
   2020-09-30 10:35:12.605270  RUNNING
-  
+
   Method    Arguments    Keyword Arguments
   --------  -----------  -------------------
   init      []           {'subarray_id': 1}
@@ -253,4 +253,3 @@ full observation, e.g.,::
   # create process for telescope standby script
   oet create file:///scripts/standby.py
   oet start
-

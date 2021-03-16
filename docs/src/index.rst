@@ -48,8 +48,8 @@ remote script execution functionality:
 - The OET :doc:`rest_server` maintains a list of the scripts that have been
   loaded and their current state. The server implements the interface specified
   by the OET :doc:`rest_api`.
-- The OET :doc:`rest_client` provides a Command Line Interface (CLI) to the 
-  OET :doc:`rest_server`. It does this by translating and communicating HTTP 
+- The OET :doc:`rest_client` provides a Command Line Interface (CLI) to the
+  OET :doc:`rest_server`. It does this by translating and communicating HTTP
   messages to and from the server.
 
 .. note::
