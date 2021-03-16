@@ -8,18 +8,18 @@ script prepared in a prior 'create procedure' call, and to list all prepared
 and running procedures held in the remote server.
 """
 import dataclasses
-from http import HTTPStatus
-
 import datetime
-import fire
 import json
 import logging
 import operator
 import os
+from http import HTTPStatus
+from typing import Dict, Generator, List, Optional
+
+import fire
 import requests
 import sseclient
 import tabulate
-from typing import Dict, List, Optional, Generator
 
 LOGGER = logging.getLogger(__name__)
 

@@ -9,19 +9,19 @@ from pubsub import pub
 
 from oet.event import topics
 from oet.mptools import (
-    init_signals,
-    default_signal_handler,
+    EventMessage,
     MainContext,
     MPQueue,
-    EventMessage,
     QueueProcWorker,
+    default_signal_handler,
+    init_signals,
 )
 from oet.procedure.application import restserver
 from oet.procedure.application.application import (
     PrepareProcessCommand,
+    ScriptExecutionService,
     StartProcessCommand,
     StopProcessCommand,
-    ScriptExecutionService,
 )
 
 

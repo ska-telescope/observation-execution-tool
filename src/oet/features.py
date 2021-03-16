@@ -9,9 +9,9 @@ Feature flag values are set from, in order:
   2. an .ini file
   3. default values set in code
 """
+import distutils.util
 import os
 from configparser import ConfigParser
-import distutils.util
 
 
 class Features:
