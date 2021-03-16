@@ -1,11 +1,11 @@
 import json
 import time
-from queue import Queue, Empty
+from queue import Empty, Queue
 from typing import Generator, Optional, Union
 
 import flask
 import jsonpickle
-from flask import Blueprint, stream_with_context, current_app
+from flask import Blueprint, current_app, stream_with_context
 from pubsub import pub
 
 from oet.event import topics

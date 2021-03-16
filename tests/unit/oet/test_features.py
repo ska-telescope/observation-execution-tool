@@ -1,12 +1,13 @@
 """
 Unit tests for the features module
 """
-from configparser import ConfigParser
 import os
+from configparser import ConfigParser
+from unittest import mock
+
 from pkg_resources import resource_exists
 
 from oet.features import Features
-from unittest import mock
 
 
 def test_pubsub_precedence():

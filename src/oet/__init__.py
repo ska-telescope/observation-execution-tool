@@ -10,6 +10,7 @@ from ska.logging import configure_logging
 from tblib import pickling_support
 
 import oet.event.topics
+
 from .features import Features
 
 # Set pypubsub to throw an error if topic in sendMessage does not correspond

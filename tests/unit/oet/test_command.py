@@ -4,6 +4,7 @@ Unit tests for the oet.command module.
 import json
 import multiprocessing
 from unittest.mock import patch, Mock, MagicMock
+
 import tango
 
 from oet.command import (

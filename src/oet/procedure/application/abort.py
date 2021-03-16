@@ -5,7 +5,7 @@ import functools
 import logging
 import os
 
-from oet.command import TangoExecutor, Command, Attribute
+from oet.command import Attribute, Command, TangoExecutor
 
 LOG = logging.getLogger(__name__)
 FORMAT = "%(asctime)-15s %(message)s"
