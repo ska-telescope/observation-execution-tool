@@ -46,6 +46,7 @@ MPQUEUE_TIMEOUT = 0.02
 
 # -- Queue handling support
 
+
 class MPQueue(mpq.Queue):
     """
     MPQueue is a multiprocessing Queue extended with convenience methods that
@@ -128,7 +129,9 @@ class SignalObject:
         self.shutdown_event = shutdown_event
 
 
-def default_signal_handler(signal_object: SignalObject, exception_class, signal_num: int, current_stack_frame):
+def default_signal_handler(
+    signal_object: SignalObject, exception_class, signal_num: int, current_stack_frame
+):
     signal_object.terminate_called += 1
     signal_object.shutdown_event.set()
     if signal_object.terminate_called >= signal_object.MAX_TERMINATE_CALLED:
@@ -149,6 +152,7 @@ def init_signals(shutdown_event, int_handler, term_handler):
 
 
 # -- Worker Process classes
+
 
 class ProcWorker:
     """
@@ -173,6 +177,7 @@ class ProcWorker:
     - QueueProcWorker.main_loop has code that gets items from a queue, calling
       a function with every item received.
     """
+
     # Number of times terminate is retried before
     MAX_TERMINATE_CALLED = 3
 
@@ -181,13 +186,15 @@ class ProcWorker:
     # signal handler for SIGTERM
     term_handler = staticmethod(default_signal_handler)
 
-    def __init__(self,
-                 name: str,
-                 startup_event: mps.Event,
-                 shutdown_event: mps.Event,
-                 event_q: MPQueue,
-                 *args,
-                 logging_config: dict = None):
+    def __init__(
+        self,
+        name: str,
+        startup_event: mps.Event,
+        shutdown_event: mps.Event,
+        event_q: MPQueue,
+        *args,
+        logging_config: dict = None,
+    ):
         """
         Create a new ProcWorker.
 
@@ -201,7 +208,9 @@ class ProcWorker:
         # setting thread name makes logs easier to understand
         threading.current_thread().name = name
 
-        self.log = functools.partial(logging.log, extra=dict(source=f'{self.name} Worker'))
+        self.log = functools.partial(
+            logging.log, extra=dict(source=f"{self.name} Worker")
+        )
         self.startup_event = startup_event
         self.shutdown_event = shutdown_event
         self.event_q = event_q
@@ -223,7 +232,9 @@ class ProcWorker:
         Initialise the signal handler
         """
         self.log(logging.DEBUG, "Entering init_signals")
-        signal_object = init_signals(self.shutdown_event, self.int_handler, self.term_handler)
+        signal_object = init_signals(
+            self.shutdown_event, self.int_handler, self.term_handler
+        )
         return signal_object
 
     def main_loop(self) -> None:
@@ -239,7 +250,9 @@ class ProcWorker:
 
     def main_func(self, *args):
         self.log(logging.DEBUG, "Entering main_func")
-        raise NotImplementedError(f"{self.__class__.__name__}.main_func is not implemented")
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.main_func is not implemented"
+        )
 
     def run(self) -> int:
         """
@@ -289,6 +302,7 @@ class TimerProcWorker(ProcWorker):
     """
     TimerProcWorker is a ProcWorker that calls main_func on a fixed cadence.
     """
+
     # Interval between calls to main_func()
     INTERVAL_SECS = 10
 
@@ -313,14 +327,16 @@ class QueueProcWorker(ProcWorker):
     received on its work queue.
     """
 
-    def __init__(self,
-                 name: str,
-                 startup_event: mps.Event,
-                 shutdown_event: mps.Event,
-                 event_q: MPQueue,
-                 work_q: MPQueue,
-                 *args,
-                 **kwargs):
+    def __init__(
+        self,
+        name: str,
+        startup_event: mps.Event,
+        shutdown_event: mps.Event,
+        event_q: MPQueue,
+        work_q: MPQueue,
+        *args,
+        **kwargs,
+    ):
         """
         Create a new QueueProcWorker.
 
@@ -350,7 +366,7 @@ class QueueProcWorker(ProcWorker):
         Event delivery will cease when the shutdown event is set or a special
         sentinel message is sent.
         """
-        self.log(logging.DEBUG, 'Entering QueueProcWorker.main_loop')
+        self.log(logging.DEBUG, "Entering QueueProcWorker.main_loop")
 
         # stop processing as soon as the shutdown_event is set. When set, this
         # breaks out of the while loop, thus ending main_loop and starting
@@ -367,7 +383,9 @@ class QueueProcWorker(ProcWorker):
                 continue
 
             # ok - an item was received from queue
-            self.log(logging.DEBUG, f"QueueProcWorker.main_loop received '{item}' message")
+            self.log(
+                logging.DEBUG, f"QueueProcWorker.main_loop received '{item}' message"
+            )
             # if item is the sentinel message, break to exit out of main_loop
             # and start shutdown
             if item == "END":
@@ -380,13 +398,16 @@ class QueueProcWorker(ProcWorker):
 
 # -- Process Wrapper
 
-def proc_worker_wrapper(proc_worker_class: Type[ProcWorker],
-                        name: str,
-                        startup_evt: mps.Event,
-                        shutdown_evt: mps.Event,
-                        event_q: MPQueue,
-                        *args,
-                        **kwargs):
+
+def proc_worker_wrapper(
+    proc_worker_class: Type[ProcWorker],
+    name: str,
+    startup_evt: mps.Event,
+    shutdown_evt: mps.Event,
+    event_q: MPQueue,
+    *args,
+    **kwargs,
+):
     """
     This function is called to launch the worker task from within the child
     process.
@@ -399,7 +420,9 @@ def proc_worker_wrapper(proc_worker_class: Type[ProcWorker],
     :param args: any additional arguments to give to worker constructor
     :return:
     """
-    proc_worker = proc_worker_class(name, startup_evt, shutdown_evt, event_q, *args, **kwargs)
+    proc_worker = proc_worker_class(
+        name, startup_evt, shutdown_evt, event_q, *args, **kwargs
+    )
     return proc_worker.run()
 
 
@@ -438,6 +461,7 @@ class Proc:
     which should be contained in the ProcWorker - or more likely, a class that
     extends ProcWorker.
     """
+
     # Start-up grace time before Proc gives up and terminates the ProcWorker
     STARTUP_WAIT_SECS = 3.0
 
@@ -445,17 +469,19 @@ class Proc:
     # terminating the ProcWorker
     SHUTDOWN_WAIT_SECS = 3.0
 
-    def __init__(self,
-                 name: str,
-                 worker_class: Type[ProcWorker],
-                 shutdown_event: mps.Event,
-                 event_q: MPQueue,
-                 *args,
-                 logging_config: dict = None):
+    def __init__(
+        self,
+        name: str,
+        worker_class: Type[ProcWorker],
+        shutdown_event: mps.Event,
+        event_q: MPQueue,
+        *args,
+        logging_config: dict = None,
+    ):
         # Prefix log messages originating from this process with the process name
         if logging_config:
             logging.config.dictConfig(logging_config)
-        self.log = functools.partial(logging.log, extra=dict(source=f'{name} Worker'))
+        self.log = functools.partial(logging.log, extra=dict(source=f"{name} Worker"))
 
         self.name = name
 
@@ -478,25 +504,35 @@ class Proc:
         self.proc = mp.Process(
             target=proc_worker_wrapper,
             name=name,
-            args=(worker_class, name, self.startup_event, shutdown_event, event_q, *args),
-            kwargs=dict(logging_config=logging_config)
+            args=(
+                worker_class,
+                name,
+                self.startup_event,
+                shutdown_event,
+                event_q,
+                *args,
+            ),
+            kwargs=dict(logging_config=logging_config),
         )
 
         # At this point the mp.Process has been prepared, but it's not yet
         # running. Calling start() will cause the new interpreter to be
         # launched and the ProcWorker to start executing. If the ProcWorker
         # starts successfully, it will set the startup event.
-        self.log(logging.DEBUG, 'Proc.__init__ starting: %s', name)
+        self.log(logging.DEBUG, "Proc.__init__ starting: %s", name)
         self.proc.start()
         started = self.startup_event.wait(timeout=Proc.STARTUP_WAIT_SECS)
-        self.log(logging.DEBUG, 'Proc.__init__ starting: %s got %s', name, started)
+        self.log(logging.DEBUG, "Proc.__init__ starting: %s got %s", name, started)
 
         # If the event remains unset, startup failed (or we didn't wait long
         # enough - we're assuming STARTUP_WAIT_SECS is sufficient!), in which
         # case terminate the process and raise an exception.
         if not started:
             self.terminate()
-            raise RuntimeError(f'Process {name} failed to startup after {Proc.STARTUP_WAIT_SECS} seconds')
+            raise RuntimeError(
+                f"Process {name} failed to startup after {Proc.STARTUP_WAIT_SECS} "
+                f"seconds"
+            )
 
     def full_stop(self, wait_time=SHUTDOWN_WAIT_SECS) -> None:
         """
@@ -510,7 +546,7 @@ class Proc:
 
         :param wait_time: grace time before sending SIGTERM signals
         """
-        self.log(logging.DEBUG, 'Proc.full_stop stopping: %s', self.name)
+        self.log(logging.DEBUG, "Proc.full_stop stopping: %s", self.name)
         self.shutdown_event.set()
         self.proc.join(wait_time)
         if self.proc.is_alive():
@@ -538,10 +574,20 @@ class Proc:
                 break
 
         if self.proc.is_alive():
-            self.log(logging.ERROR, 'Proc.terminate failed to terminate %s after %s attempts', self.name, attempt)
+            self.log(
+                logging.ERROR,
+                "Proc.terminate failed to terminate %s after %s attempts",
+                self.name,
+                attempt,
+            )
             return False
         else:
-            self.log(logging.INFO, 'Proc.terminate terminated %s after %s attempt(s)', self.name, max_retries - attempt)
+            self.log(
+                logging.INFO,
+                "Proc.terminate terminated %s after %s attempt(s)",
+                self.name,
+                max_retries - attempt,
+            )
             return True
 
     def __enter__(self):
@@ -568,7 +614,7 @@ class MainContext:
     def __init__(self):
         self.procs: List[Proc] = []
         self.queues: List[MPQueue] = []
-        self.log = functools.partial(logging.log, extra=dict(source='MAIN'))
+        self.log = functools.partial(logging.log, extra=dict(source="MAIN"))
 
         # Event that is set to signify shutdown has been requested
         self.shutdown_event = mp.Event()
@@ -588,7 +634,11 @@ class MainContext:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
-            self.log(logging.ERROR, f"Exception: {exc_val}", exc_info=(exc_type, exc_val, exc_tb))
+            self.log(
+                logging.ERROR,
+                f"Exception: {exc_val}",
+                exc_info=(exc_type, exc_val, exc_tb),
+            )
 
         self._stopped_procs_result = self.stop_procs()
         self._stopped_queues_result = self.stop_queues()
@@ -605,8 +655,14 @@ class MainContext:
         :param args: argument to pass to worker constructor
         :return: worker instance
         """
-        proc = Proc(name, worker_class, self.shutdown_event, self.event_queue, *args,
-                    logging_config=self.logging_config)
+        proc = Proc(
+            name,
+            worker_class,
+            self.shutdown_event,
+            self.event_queue,
+            *args,
+            logging_config=self.logging_config,
+        )
         self.procs.append(proc)
         return proc
 
@@ -648,7 +704,10 @@ class MainContext:
             else:
                 exitcode = proc.proc.exitcode
                 if exitcode:
-                    self.log(logging.ERROR, f"Process {proc.name} ended with exitcode {exitcode}")
+                    self.log(
+                        logging.ERROR,
+                        f"Process {proc.name} ended with exitcode {exitcode}",
+                    )
                     num_failed += 1
                 else:
                     self.log(logging.DEBUG, f"Process {proc.name} stopped successfully")

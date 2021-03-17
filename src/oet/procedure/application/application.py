@@ -11,7 +11,7 @@ import typing
 from .. import domain
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
-ABORT_SCRIPT_URI = 'file://' + base_dir + '/abort.py'
+ABORT_SCRIPT_URI = "file://" + base_dir + "/abort.py"
 
 
 @dataclasses.dataclass
@@ -21,6 +21,7 @@ class PrepareProcessCommand:
     ScriptExecutionService prepare command. It holds all the information
     required to load and prepare a Python script ready for execution.
     """
+
     script_uri: str
     init_args: domain.ProcedureInput
 
@@ -33,6 +34,7 @@ class StartProcessCommand:
     start a prepared script process along with any late-binding runtime
     arguments the script may require.
     """
+
     process_uid: int
     run_args: domain.ProcedureInput
 
@@ -45,6 +47,7 @@ class StopProcessCommand:
     Stop a script process along with any late-binding runtime
     arguments the script may require.
     """
+
     process_uid: int
     run_abort: bool
 
@@ -107,8 +110,9 @@ class ScriptExecutionService:
         self._process_host.run(cmd.process_uid, run_args=cmd.run_args)
         return self._create_summary(cmd.process_uid)
 
-    def summarise(self, pids: typing.Optional[typing.List[int]] = None) \
-            -> typing.List[domain.ProcedureSummary]:
+    def summarise(
+        self, pids: typing.Optional[typing.List[int]] = None
+    ) -> typing.List[domain.ProcedureSummary]:
         """
         Return ProcedureSummary objects for Procedures with the requested IDs.
 
@@ -125,7 +129,7 @@ class ScriptExecutionService:
 
         missing_pids = {p for p in pids if p not in all_pids}
         if missing_pids:
-            raise ValueError(f'Process IDs not found: {missing_pids}')
+            raise ValueError(f"Process IDs not found: {missing_pids}")
 
         return [self._create_summary(pid) for pid in pids]
 
@@ -149,14 +153,13 @@ class ScriptExecutionService:
         # prepare second script
         prepare_cmd = PrepareProcessCommand(
             script_uri=self._abort_script_uri,
-            init_args=domain.ProcedureInput(subarray_id=subarray_id)
+            init_args=domain.ProcedureInput(subarray_id=subarray_id),
         )
         procedure_summary = self.prepare(prepare_cmd)
 
         # start the second script
         run_cmd = StartProcessCommand(
-            process_uid=procedure_summary.id,
-            run_args=domain.ProcedureInput()
+            process_uid=procedure_summary.id, run_args=domain.ProcedureInput()
         )
         summary = self.start(run_cmd)
         return [summary]
@@ -169,8 +172,8 @@ class ScriptExecutionService:
         :return: subarray id
         """
         procedure_summary = self.summarise(pids=[pid])[0]
-        init_dict = procedure_summary.script_args['init']
+        init_dict = procedure_summary.script_args["init"]
         init_kwargs = init_dict.kwargs
-        if 'subarray_id' not in init_kwargs:
-            raise ValueError(f'Subarray Id not found')
-        return init_kwargs['subarray_id']
+        if "subarray_id" not in init_kwargs:
+            raise ValueError("Subarray Id not found")
+        return init_kwargs["subarray_id"]

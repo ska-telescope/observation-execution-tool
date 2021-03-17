@@ -6,8 +6,14 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from oet.procedure.domain import Procedure, ProcedureInput, \
-    ProcedureHistory, ProcedureState, ProcessManager, PROCEDURE_QUEUE_MAX_LENGTH
+from oet.procedure.domain import (
+    Procedure,
+    ProcedureInput,
+    ProcedureHistory,
+    ProcedureState,
+    ProcessManager,
+    PROCEDURE_QUEUE_MAX_LENGTH,
+)
 
 
 @pytest.fixture
@@ -17,7 +23,7 @@ def script_path(tmpdir):
     """
     script_path = tmpdir.join("script.py")
     script_path.write("def main(*args, **kwargs):\n\tpass")
-    return f'file://{str(script_path)}'
+    return f"file://{str(script_path)}"
 
 
 @pytest.fixture
@@ -26,11 +32,13 @@ def fail_script(tmpdir):
     Pytest fixture to return a path to a script file
     """
     script_path = tmpdir.join("fail.py")
-    script_path.write("""
+    script_path.write(
+        """
 def main(*args, **kwargs):
     raise Exception('oops!')
-""")
-    return f'file://{str(script_path)}'
+"""
+    )
+    return f"file://{str(script_path)}"
 
 
 @pytest.fixture
@@ -39,14 +47,16 @@ def abort_script(tmpdir):
     Pytest fixture to return a path to a script file
     """
     script_path = tmpdir.join("abort.py")
-    script_path.write("""
+    script_path.write(
+        """
 import time
 
 def main(queue, procedure):
     time.sleep(2)
     queue.put(procedure.pid)
-""")
-    return f'file://{str(script_path)}'
+"""
+    )
+    return f"file://{str(script_path)}"
 
 
 @pytest.fixture
@@ -57,11 +67,13 @@ def script_with_queue_path(tmpdir):
     """
     path = tmpdir.join("script_with_queue.py")
 
-    path.write("""
+    path.write(
+        """
 def main(queue, procedure):
     queue.put(procedure.pid)
-""")
-    return f'file://{str(path)}'
+"""
+    )
+    return f"file://{str(path)}"
 
 
 @pytest.fixture
@@ -72,13 +84,15 @@ def script_that_increments_and_returns_scan_id(tmpdir):
     """
     path = tmpdir.join("script_for_scan_id.py")
 
-    path.write("""
+    path.write(
+        """
 from oet.command import SCAN_ID_GENERATOR
 
 def main(queue):
     queue.put(SCAN_ID_GENERATOR.next())
-""")
-    return f'file://{str(path)}'
+"""
+    )
+    return f"file://{str(path)}"
 
 
 @pytest.fixture
@@ -86,7 +100,7 @@ def procedure(script_path):
     """
     Pytest fixture to return a prepared Procedure
     """
-    return Procedure(script_path, 1, 2, 3, kw1='a', kw2='b')
+    return Procedure(script_path, 1, 2, 3, kw1="a", kw2="b")
 
 
 @pytest.fixture
@@ -197,7 +211,7 @@ def test_procedure_run_executes_user_script(script_with_queue_path):
     """
     procedure = Procedure(script_uri=script_with_queue_path)
     queue = multiprocessing.Queue()
-    procedure.script_args['run'].args = [queue, procedure]
+    procedure.script_args["run"].args = [queue, procedure]
     procedure.run()
     assert queue.qsize() == 1
     assert queue.get() is None
@@ -214,7 +228,7 @@ def test_procedure_run_catches_and_stores_script_exception(fail_script):
         procedure.stacktrace_queue.get(timeout=1)
     except Exception:  # pylint: disable=broad-except
         # test should not raise an exception, so fail if it does
-        pytest.fail('Stacktrace not found in queue')
+        pytest.fail("Stacktrace not found in queue")
 
 
 def test_procedure_start_executes_user_script_in_child_process(script_with_queue_path):
@@ -223,7 +237,7 @@ def test_procedure_start_executes_user_script_in_child_process(script_with_queue
     """
     procedure = Procedure(script_uri=script_with_queue_path)
     queue = multiprocessing.Queue()
-    procedure.script_args['run'].args = [queue, procedure]
+    procedure.script_args["run"].args = [queue, procedure]
     procedure.start()
     procedure.join()
     assert not queue.empty()
@@ -234,11 +248,11 @@ def test_runtime_arguments_are_passed_to_user_script(procedure):
     """
     Verify that arguments passed from procedure are accessible in the user script
     """
-    run_args = ProcedureInput(5, 6, 7, kw3='c', kw4='d')
-    procedure.script_args['run'] = run_args
+    run_args = ProcedureInput(5, 6, 7, kw3="c", kw4="d")
+    procedure.script_args["run"] = run_args
     procedure.user_module = MagicMock()
     procedure.run()
-    procedure.user_module.main.assert_called_with(5, 6, 7, kw3='c', kw4='d')
+    procedure.user_module.main.assert_called_with(5, 6, 7, kw3="c", kw4="d")
 
 
 def test_procedure_start_raises_exception_on_a_running_procedure(procedure):
@@ -255,14 +269,14 @@ def test_procedure_init_stores_initial_arguments(procedure):
     Verify that the procedure constructor arguments are captured and persisted
     on the procedure instance.
     """
-    assert procedure.script_args['init'] == ProcedureInput(1, 2, 3, kw1='a', kw2='b')
+    assert procedure.script_args["init"] == ProcedureInput(1, 2, 3, kw1="a", kw2="b")
 
 
 def test_procedure_init_raises_exception_on_script_file_not_found():
     """
     Verify that FileNotFoundError is raised if script file does not exist
     """
-    script_uri = 'file://abcbs'
+    script_uri = "file://abcbs"
 
     with pytest.raises(FileNotFoundError):
         _ = Procedure(script_uri=script_uri)
@@ -331,7 +345,9 @@ def test_process_manager_create_adds_new_procedure(manager, script_path):
     assert len(manager.procedures) == len_before + 1
 
 
-def test_process_manager_create_removes_oldest_procedure_on_max_procedures(manager, script_path):
+def test_process_manager_create_removes_oldest_procedure_on_max_procedures(
+    manager, script_path
+):
     """
     Verify that ProcessManager removes the oldest procedure when the maximum number of
     saved procedures is reached
@@ -360,26 +376,26 @@ def test_process_manager_create_captures_initialisation_arguments(manager, scrip
     expected = ProcedureInput(1, 2, 3, a=4, b=5)
     pid = manager.create(script_path, init_args=expected)
     created = manager.procedures[pid]
-    assert created.script_args['init'] == expected
+    assert created.script_args["init"] == expected
 
 
-def test_calling_process_manager_run_sets_run_args_on_procedure(manager,
-                                                                script_path,
-                                                                process_cleanup):
+def test_calling_process_manager_run_sets_run_args_on_procedure(
+    manager, script_path, process_cleanup
+):
     """
     Verify that the arguments to ProcessManager run() are captured and stored on the
     procedure instance
     """
     pid = manager.create(script_path, init_args=ProcedureInput())
-    expected = ProcedureInput(5, 6, 7, kw3='c', kw4='d')
+    expected = ProcedureInput(5, 6, 7, kw3="c", kw4="d")
     created = manager.procedures[pid]
     manager.run(pid, run_args=expected)
-    assert created.script_args['run'] == expected
+    assert created.script_args["run"] == expected
 
 
-def test_process_manager_run_changes_state_of_procedure_to_running(manager,
-                                                                   script_path,
-                                                                   process_cleanup):
+def test_process_manager_run_changes_state_of_procedure_to_running(
+    manager, script_path, process_cleanup
+):
     """
     Verify that procedure state changes when ProcessManager starts
     procedure execution
@@ -392,8 +408,9 @@ def test_process_manager_run_changes_state_of_procedure_to_running(manager,
 
 def test_process_manager_run_executes_procedure_start(manager, process_cleanup):
     """
-    Verify that a call to ProcessManager run() executes Procedure.start() instead of Procedure.run()
-    This confirms that Procedure will execute in a child process.
+    Verify that a call to ProcessManager run() executes Procedure.start()
+    instead of Procedure.run(). This confirms that Procedure will execute in a
+    child process.
     """
     procedure = MagicMock()
     manager.procedures[1] = procedure
@@ -407,12 +424,14 @@ def test_process_manager_run_sets_running_procedure(manager, tmpdir, process_cle
     appropriately when run() is called
     """
     script_path = tmpdir.join("sleep.py")
-    script_path.write("""
+    script_path.write(
+        """
 def main(shutdown_event, *args, **kwargs):
     while not shutdown_event.is_set():
         continue
-""")
-    script_uri = f'file://{str(script_path)}'
+"""
+    )
+    script_uri = f"file://{str(script_path)}"
 
     shutdown_event = multiprocessing.Event()
     pid = manager.create(script_uri, init_args=ProcedureInput())
@@ -421,7 +440,9 @@ def main(shutdown_event, *args, **kwargs):
     shutdown_event.set()
 
 
-def test_process_manager_sets_running_to_none_when_process_completes(manager, script_path):
+def test_process_manager_sets_running_to_none_when_process_completes(
+    manager, script_path
+):
     """
     Verify that ProcessManager sets running procedure attribute to None
     when process completes
@@ -473,7 +494,9 @@ def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_sc
     assert manager.running is None
 
 
-def test_process_manager_updates_procedure_state_on_script_failure(manager, fail_script):
+def test_process_manager_updates_procedure_state_on_script_failure(
+    manager, fail_script
+):
     """
     Verify that ProcessManager removes a failed procedure from
     the procedures list
@@ -484,7 +507,9 @@ def test_process_manager_updates_procedure_state_on_script_failure(manager, fail
     assert manager.procedures[pid].state == ProcedureState.FAILED
 
 
-def test_process_manager_updates_procedure_history_on_script_failure(manager, fail_script):
+def test_process_manager_updates_procedure_history_on_script_failure(
+    manager, fail_script
+):
     """
     Verify that ProcessManager updates FAILED to procedure history when script fails
     """
@@ -511,9 +536,9 @@ def test_process_manager_run_fails_on_invalid_pid(manager):
         manager.run(321, run_args=ProcedureInput())
 
 
-def test_process_manager_run_fails_on_process_that_is_already_running(manager,
-                                                                      script_path,
-                                                                      process_cleanup):
+def test_process_manager_run_fails_on_process_that_is_already_running(
+    manager, script_path, process_cleanup
+):
     """
     Verify that an exception is raised when requesting run() for a procedure
     that is already running
@@ -570,7 +595,9 @@ def test_process_manager_stop_fails_on_invalid_pid(manager):
         manager.stop(321)
 
 
-def test_process_manager_stop_fails_on_process_that_is_not_running(manager, script_path):
+def test_process_manager_stop_fails_on_process_that_is_not_running(
+    manager, script_path
+):
     """
     Verify that an exception is raised when requesting stop() for a procedure
     that is not running
@@ -580,7 +607,9 @@ def test_process_manager_stop_fails_on_process_that_is_not_running(manager, scri
         manager.stop(pid)
 
 
-def test_scan_id_persists_between_executions(script_that_increments_and_returns_scan_id):
+def test_scan_id_persists_between_executions(
+    script_that_increments_and_returns_scan_id,
+):
     """
     The scan ID should be shared and persisted between process executions.
     """
@@ -588,14 +617,18 @@ def test_scan_id_persists_between_executions(script_that_increments_and_returns_
     queue = multiprocessing.Queue()
     run_args = ProcedureInput(queue)
 
-    pid = manager.create(script_uri=script_that_increments_and_returns_scan_id,
-                         init_args=ProcedureInput())
+    pid = manager.create(
+        script_uri=script_that_increments_and_returns_scan_id,
+        init_args=ProcedureInput(),
+    )
     manager.run(pid, run_args=run_args)
     wait_for_process_to_complete(manager)
     scan_id = queue.get(timeout=1)
 
-    pid = manager.create(script_uri=script_that_increments_and_returns_scan_id,
-                         init_args=ProcedureInput())
+    pid = manager.create(
+        script_uri=script_that_increments_and_returns_scan_id,
+        init_args=ProcedureInput(),
+    )
     manager.run(pid, run_args=run_args)
     wait_for_process_to_complete(manager)
     next_scan_id = queue.get(timeout=1)

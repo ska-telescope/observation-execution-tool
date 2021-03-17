@@ -348,7 +348,7 @@ False. ::
 
 When an error occurs
 --------------------
-If there is a mistake in the User input it is desirable that the API produces 
+If there is a mistake in the User input it is desirable that the API produces
 errors in a consistent computer-readable way.
 
 The session below attempts to list a procedure which does not exist::
@@ -385,5 +385,3 @@ example shows two events, #1 request to available procedures #2 get the details 
 
     data:{"msg_src": "SESWorker", "result": {"py/object": "oet.procedure.application.application.ProcedureSummary", "id": 1, "script_uri": "file://scripts/eventbus.py", "script_args": {"init": {"py/object": "oet.procedure.domain.ProcedureInput", "args": {"py/tuple": []}, "kwargs": {"subarray_id": 1}}, "run": {"py/object": "oet.procedure.domain.ProcedureInput", "args": {"py/tuple": []}, "kwargs": {}}}, "history": {"py/object": "oet.procedure.domain.ProcedureHistory", "process_states": {"py/reduce": [{"py/type": "collections.OrderedDict"}, {"py/tuple": []}, null, null, {"py/tuple": [{"py/tuple": [{"py/reduce": [{"py/type": "oet.procedure.domain.ProcedureState"}, {"py/tuple": [1]}]}, 1605017786.0569353]}]}]}, "stacktrace": null}, "state": {"py/id": 5}}, "topic": "procedure.lifecycle.created"}
     id:1605017784.1536236
-
-

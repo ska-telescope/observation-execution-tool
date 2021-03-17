@@ -10,6 +10,7 @@ from ska.logging import configure_logging
 from tblib import pickling_support
 
 import oet.event.topics
+
 from .features import Features
 
 # Set pypubsub to throw an error if topic in sendMessage does not correspond
@@ -23,6 +24,5 @@ configure_logging()
 pickling_support.install()
 
 FEATURES = Features.create_from_config_files(
-    os.path.expanduser('~/oet.ini'),
-    resource_filename(__name__, 'oet.ini')
+    os.path.expanduser("~/oet.ini"), resource_filename(__name__, "oet.ini")
 )

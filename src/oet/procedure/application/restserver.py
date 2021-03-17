@@ -1,23 +1,23 @@
 import json
 import time
-from queue import Queue, Empty
+from queue import Empty, Queue
 from typing import Generator, Optional, Union
 
 import flask
 import jsonpickle
-from flask import Blueprint, stream_with_context, current_app
+from flask import Blueprint, current_app, stream_with_context
 from pubsub import pub
-from werkzeug.serving import WSGIRequestHandler
 
 from oet.event import topics
 from oet.mptools import MPQueue
 from oet.procedure import domain
 from oet.procedure.application import application
 
+# from werkzeug.serving import WSGIRequestHandler
 # WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 # Blueprint for the REST API
-API = Blueprint('api', __name__)
+API = Blueprint("api", __name__)
 
 # time allowed for Flask <-> other ProcWorker communication before timeout
 TIMEOUT = 10
@@ -28,11 +28,13 @@ class Message:
     Data that is published as a server-sent event.
     """
 
-    def __init__(self,
-                 data: Union[str, dict],
-                 type: Optional[str] = None,
-                 id: Optional[Union[float, int, str]] = None,
-                 retry: Optional[int] = None):
+    def __init__(
+        self,
+        data: Union[str, dict],
+        type: Optional[str] = None,
+        id: Optional[Union[float, int, str]] = None,
+        retry: Optional[int] = None,
+    ):
         """
         Create a server-sent event.
 
@@ -67,11 +69,11 @@ class Message:
 
     def __eq__(self, other):
         return (
-            isinstance(other, self.__class__) and
-            self.data == other.data and
-            self.type == other.type and
-            self.id == other.id and
-            self.retry == other.retry
+            isinstance(other, self.__class__)
+            and self.data == other.data
+            and self.type == other.type
+            and self.id == other.id
+            and self.retry == other.retry
         )
 
 
@@ -88,11 +90,11 @@ class ServerSentEventsBlueprint(Blueprint):
         q = MPQueue()
 
         def add_to_q(topic: pub.Topic = pub.AUTO_TOPIC, **kwargs):
-            kwargs['topic'] = topic.name
+            kwargs["topic"] = topic.name
             other = {}
-            if 'request_id' in kwargs:
-                other['id'] = kwargs['request_id']
-                del kwargs['request_id']
+            if "request_id" in kwargs:
+                other["id"] = kwargs["request_id"]
+                del kwargs["request_id"]
 
             msg = Message(kwargs, **other)
             q.put(msg)
@@ -109,14 +111,11 @@ class ServerSentEventsBlueprint(Blueprint):
         def generator():
             # must immediately yield to return 200 OK response to client,
             # otherwise response is only sent on first event
-            yield '\n'
+            yield "\n"
             for message in self.messages():
                 yield str(message)
 
-        return current_app.response_class(
-            generator(),
-            mimetype='text/event-stream'
-        )
+        return current_app.response_class(generator(), mimetype="text/event-stream")
 
 
 def _get_summary_or_404(pid):
@@ -126,21 +125,22 @@ def _get_summary_or_404(pid):
     :param pid: ID of Procedure
     :return: ProcedureSummary
     """
-    summaries = call_and_respond(topics.request.procedure.list, topics.procedure.pool.list, pids=[pid])
+    summaries = call_and_respond(
+        topics.request.procedure.list, topics.procedure.pool.list, pids=[pid]
+    )
 
     if not summaries:
-        description = \
-            {
-                "type": "ResourceNotFound",
-                "Message": f'No information available for PID={pid}'
-            }
-        
+        description = {
+            "type": "ResourceNotFound",
+            "Message": f"No information available for PID={pid}",
+        }
+
         flask.abort(404, description=description)
     else:
         return summaries[0]
 
 
-@API.route('/procedures', methods=['GET'])
+@API.route("/procedures", methods=["GET"])
 def get_procedures():
     """
     List all Procedures.
@@ -151,11 +151,13 @@ def get_procedures():
     :return: list of Procedure JSON representations
     """
 
-    summaries = call_and_respond(topics.request.procedure.list, topics.procedure.pool.list, pids=None)
-    return flask.jsonify({'procedures': [make_public_summary(s) for s in summaries]})
+    summaries = call_and_respond(
+        topics.request.procedure.list, topics.procedure.pool.list, pids=None
+    )
+    return flask.jsonify({"procedures": [make_public_summary(s) for s in summaries]})
 
 
-@API.route('/procedures/<int:procedure_id>', methods=['GET'])
+@API.route("/procedures/<int:procedure_id>", methods=["GET"])
 def get_procedure(procedure_id: int):
     """
     Get a Procedure.
@@ -167,10 +169,10 @@ def get_procedure(procedure_id: int):
     :return: Procedure JSON
     """
     summary = _get_summary_or_404(procedure_id)
-    return flask.jsonify({'procedure': make_public_summary(summary)})
+    return flask.jsonify({"procedure": make_public_summary(summary)})
 
 
-@API.route('/procedures', methods=['POST'])
+@API.route("/procedures", methods=["POST"])
 def create_procedure():
     """
     Create a new Procedure.
@@ -180,34 +182,37 @@ def create_procedure():
 
     :return: JSON summary of created Procedure
     """
-    if not flask.request.json or not 'script_uri' in flask.request.json:
-        description = {
-                "type": "Malformed Request",
-                "Message": "script_uri missing"
-            }
+    if not flask.request.json or "script_uri" not in flask.request.json:
+        description = {"type": "Malformed Request", "Message": "script_uri missing"}
         flask.abort(400, description=description)
-    script_uri = flask.request.json['script_uri']
+    script_uri = flask.request.json["script_uri"]
 
-    if 'script_args' in flask.request.json and \
-                not isinstance(flask.request.json['script_args'], dict):
+    if "script_args" in flask.request.json and not isinstance(
+        flask.request.json["script_args"], dict
+    ):
         description = {
-                "type": "Malformed Request",
-                "Message": "Malformed script_uri in request"
-            }
+            "type": "Malformed Request",
+            "Message": "Malformed script_uri in request",
+        }
         flask.abort(400, description=description)
-    script_args = flask.request.json.get('script_args', {})
+    script_args = flask.request.json.get("script_args", {})
 
-    init_dict = script_args.get('init', {})
-    init_args = init_dict.get('args', [])
-    init_kwargs = init_dict.get('kwargs', {})
+    init_dict = script_args.get("init", {})
+    init_args = init_dict.get("args", [])
+    init_kwargs = init_dict.get("kwargs", {})
 
     procedure_input = domain.ProcedureInput(*init_args, **init_kwargs)
-    prepare_cmd = application.PrepareProcessCommand(script_uri=script_uri,
-                                                    init_args=procedure_input)
+    prepare_cmd = application.PrepareProcessCommand(
+        script_uri=script_uri, init_args=procedure_input
+    )
 
-    summary = call_and_respond(topics.request.procedure.create, topics.procedure.lifecycle.created, cmd=prepare_cmd)
+    summary = call_and_respond(
+        topics.request.procedure.create,
+        topics.procedure.lifecycle.created,
+        cmd=prepare_cmd,
+    )
 
-    return flask.jsonify({'procedure': make_public_summary(summary)}), 201
+    return flask.jsonify({"procedure": make_public_summary(summary)}), 201
 
 
 def call_and_respond(request_topic, response_topic, *args, **kwargs):
@@ -220,10 +225,12 @@ def call_and_respond(request_topic, response_topic, *args, **kwargs):
 
     pub.subscribe(callback, response_topic)
 
-    msg_src = flask.current_app.config['msg_src']
+    msg_src = flask.current_app.config["msg_src"]
 
     # With the callback now setup, publish an event to mark the user request event
-    pub.sendMessage(request_topic, msg_src=msg_src, request_id=my_request_id, *args, **kwargs)
+    pub.sendMessage(
+        request_topic, msg_src=msg_src, request_id=my_request_id, *args, **kwargs
+    )
 
     try:
         result = q.get(timeout=TIMEOUT)
@@ -231,27 +238,29 @@ def call_and_respond(request_topic, response_topic, *args, **kwargs):
         if isinstance(result, Exception):
             if isinstance(result, OSError):
                 description = {
-                        'type': result.__class__.__name__,
-                        'Message': f'{result.strerror}: {result.filename}'
-                    }
+                    "type": result.__class__.__name__,
+                    "Message": f"{result.strerror}: {result.filename}",
+                }
             else:
                 description = {
-                        'type': result.__class__.__name__,
-                        'Message': str(result)
-                    }
+                    "type": result.__class__.__name__,
+                    "Message": str(result),
+                }
             flask.abort(500, description=description)
 
         return result
 
     except Empty:
         description = {
-                    'Message': f'Timeout waiting for msg #{my_request_id} on topic {response_topic}',
-                    'type':'Timeout Error'
-                }
+            "Message": (
+                f"Timeout waiting for msg #{my_request_id} on topic {response_topic}"
+            ),
+            "type": "Timeout Error",
+        }
         flask.abort(504, description=description)
 
 
-@API.route('/procedures/<int:procedure_id>', methods=['PUT'])
+@API.route("/procedures/<int:procedure_id>", methods=["PUT"])
 def update_procedure(procedure_id: int):
     """
     Update a Procedure resource using the desired Procedure state described in
@@ -264,51 +273,62 @@ def update_procedure(procedure_id: int):
 
     if not flask.request.json:
         description = {
-                "type": "Empty Response",
-                "Message": "No JSON available in response"
-            }
+            "type": "Empty Response",
+            "Message": "No JSON available in response",
+        }
         flask.abort(400, description=description)
 
-    if 'script_args' in flask.request.json \
-            and not isinstance(flask.request.json['script_args'], dict):
+    if "script_args" in flask.request.json and not isinstance(
+        flask.request.json["script_args"], dict
+    ):
         description = {
-                "type": "Malformed Response",
-                "Message": "Malformed script_args in response"
-            }
+            "type": "Malformed Response",
+            "Message": "Malformed script_args in response",
+        }
         flask.abort(400, description=description)
-    script_args = flask.request.json.get('script_args', {})
+    script_args = flask.request.json.get("script_args", {})
 
     old_state = summary.state
-    new_state = domain.ProcedureState[flask.request.json.get('state', summary.state.name)]
+    new_state = domain.ProcedureState[
+        flask.request.json.get("state", summary.state.name)
+    ]
 
     if new_state is domain.ProcedureState.STOPPED:
         if old_state is domain.ProcedureState.RUNNING:
-            run_abort = flask.request.json.get('abort')
+            run_abort = flask.request.json.get("abort")
             cmd = application.StopProcessCommand(procedure_id, run_abort=run_abort)
-            result = call_and_respond(topics.request.procedure.stop, topics.procedure.lifecycle.stopped, cmd=cmd)
+            result = call_and_respond(
+                topics.request.procedure.stop,
+                topics.procedure.lifecycle.stopped,
+                cmd=cmd,
+            )
             # result is list of process summaries started in response to abort
             # If script was stopped and no post-termination abort script was run,
             # the result list will be empty.
+            msg = f"Successfully stopped script with ID {procedure_id}"
             if result:
-                msg = f'Successfully stopped script with ID {procedure_id} and aborted subarray activity '
-            else:
-                msg = f'Successfully stopped script with ID {procedure_id}'
-            return flask.jsonify({'abort_message': msg})
+                msg += " and aborted subarray activity"
+            return flask.jsonify({"abort_message": msg})
 
         else:
-            msg = f'Cannot stop script with ID {procedure_id}: Script is not running'
-            return flask.jsonify({'abort_message': msg})
+            msg = f"Cannot stop script with ID {procedure_id}: Script is not running"
+            return flask.jsonify({"abort_message": msg})
 
-    elif old_state is domain.ProcedureState.CREATED and new_state is domain.ProcedureState.RUNNING:
-        run_dict = script_args.get('run', {})
-        run_args = run_dict.get('args', [])
-        run_kwargs = run_dict.get('kwargs', {})
+    elif (
+        old_state is domain.ProcedureState.CREATED
+        and new_state is domain.ProcedureState.RUNNING
+    ):
+        run_dict = script_args.get("run", {})
+        run_args = run_dict.get("args", [])
+        run_kwargs = run_dict.get("kwargs", {})
         procedure_input = domain.ProcedureInput(*run_args, **run_kwargs)
         cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
 
-        summary = call_and_respond(topics.request.procedure.start, topics.procedure.lifecycle.started, cmd=cmd)
+        summary = call_and_respond(
+            topics.request.procedure.start, topics.procedure.lifecycle.started, cmd=cmd
+        )
 
-    return flask.jsonify({'procedure': make_public_summary(summary)})
+    return flask.jsonify({"procedure": make_public_summary(summary)})
 
 
 def make_public_summary(procedure: domain.ProcedureSummary):
@@ -321,20 +341,26 @@ def make_public_summary(procedure: domain.ProcedureSummary):
     :param procedure: Procedure to convert
     :return: safe JSON representation
     """
-    script_args = {method_name: {'args': method_args.args, 'kwargs': method_args.kwargs}
-                   for method_name, method_args in procedure.script_args.items()}
+    script_args = {
+        method_name: {"args": method_args.args, "kwargs": method_args.kwargs}
+        for method_name, method_args in procedure.script_args.items()
+    }
 
     procedure_history = {
-        'process_states': {state.name: time for state, time in procedure.history.process_states.items()},
-        'stacktrace': procedure.history.stacktrace
+        "process_states": {
+            state.name: time for state, time in procedure.history.process_states.items()
+        },
+        "stacktrace": procedure.history.stacktrace,
     }
 
     return {
-        'uri': flask.url_for('api.get_procedure', procedure_id=procedure.id, _external=True),
-        'script_uri': procedure.script_uri,
-        'script_args': script_args,
-        'history': procedure_history,
-        'state': procedure.state.name
+        "uri": flask.url_for(
+            "api.get_procedure", procedure_id=procedure.id, _external=True
+        ),
+        "script_uri": procedure.script_uri,
+        "script_args": script_args,
+        "history": procedure_history,
+        "state": procedure.state.name,
     }
 
 
@@ -345,7 +371,7 @@ def make_public_summary(procedure: domain.ProcedureSummary):
 def server_error_response(cause):
     """
     Custom error handler for Procedure API.
-    This is overloaded for 400, 404, 500 and 504 and could conceivably be 
+    This is overloaded for 400, 404, 500 and 504 and could conceivably be
     extended for other errors by adding the appropriate errorhander decorator.
 
     :param cause: root exception for failure (e.g., KeyError)
@@ -354,15 +380,15 @@ def server_error_response(cause):
     response = cause.get_response()
     if isinstance(cause.description, dict):
         response_data = {
-            'error': f'{cause.code} {cause.name}',
-            'type': cause.description['type'],
-            'Message': cause.description['Message']
+            "error": f"{cause.code} {cause.name}",
+            "type": cause.description["type"],
+            "Message": cause.description["Message"],
         }
     else:
         response_data = {
-            'error': f'{cause.code} {cause.name}',
-            'type': cause.name,
-            'Message': cause.description
+            "error": f"{cause.code} {cause.name}",
+            "type": cause.name,
+            "Message": cause.description,
         }
     response.content_type = "application/json"
     response.data = json.dumps(response_data)
@@ -380,9 +406,9 @@ def create_app(config_filename):
     # TODO get application config working
     # app.config.from_pyfile(config_filename)
 
-    app.register_blueprint(API, url_prefix='/api/v1.0')
+    app.register_blueprint(API, url_prefix="/api/v1.0")
 
-    sse = ServerSentEventsBlueprint('sse', __name__)
+    sse = ServerSentEventsBlueprint("sse", __name__)
     sse.add_url_rule(rule="", endpoint="stream", view_func=sse.stream)
     app.register_blueprint(sse, url_prefix="/api/v1.0/stream")
 
