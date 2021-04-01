@@ -147,7 +147,7 @@ def test_script_execution_service_worker_handles_request_to_list_invalid_id(capl
 
 def test_script_execution_service_worker_verify_start_method_called(caplog):
     """
-    SES.start should be called when 'request.procedure.started' message is received
+    SES.start should be called when 'request.procedure.start' message is received
     """
     cmd = application.StartProcessCommand(
         process_uid=123, run_args=domain.ProcedureInput()
