@@ -6,7 +6,7 @@ import os.path
 
 from pkg_resources import resource_filename
 from pubsub import pub
-from ska.logging import configure_logging
+from ska_ser_logging import configure_logging
 from tblib import pickling_support
 
 import oet.event.topics

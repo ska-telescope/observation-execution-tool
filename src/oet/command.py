@@ -14,7 +14,7 @@ from queue import Queue
 from typing import Dict
 
 import tango
-from skuid.client import SkuidClient
+from ska_ser_skuid.client import SkuidClient
 
 LOGGER = logging.getLogger(__name__)
 

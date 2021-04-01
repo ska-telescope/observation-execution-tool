@@ -285,7 +285,7 @@ def test_remote_scan_id_generator_increments_on_next():
     Confirm that the scan ID generator increments by one each call.
     """
     generator = None
-    with patch("skuid.client.requests.get") as mocked_req:
+    with patch("ska_ser_skuid.client.requests.get") as mocked_req:
         res = MagicMock()
         res.json.side_effect = [
             json.dumps({"scan_id": 1}),
@@ -307,7 +307,7 @@ def test_remote_scan_id_generator_does_not_increment_when_reading_value():
     reading the current value.
     """
     generator = None
-    with patch("skuid.client.requests.get") as mocked_req:
+    with patch("ska_ser_skuid.client.requests.get") as mocked_req:
         res = MagicMock()
         res.json.side_effect = [
             json.dumps({"scan_id": 1}),
@@ -327,7 +327,7 @@ def test_remote_scan_id_call_order():
     Confirm that either value or next can be called first
     """
     generator = None
-    with patch("skuid.client.requests.get") as mocked_req:
+    with patch("ska_ser_skuid.client.requests.get") as mocked_req:
         res = MagicMock()
         res.json.side_effect = [
             json.dumps({"scan_id": 1}),
@@ -339,7 +339,7 @@ def test_remote_scan_id_call_order():
         assert generator.value == 1
 
     generator = None
-    with patch("skuid.client.requests.get") as mocked_req:
+    with patch("ska_ser_skuid.client.requests.get") as mocked_req:
         res = MagicMock()
         res.json.side_effect = [
             json.dumps({"scan_id": 1}),
@@ -358,7 +358,7 @@ def test_remote_scan_id_set_backing():
     Checking to make sure it does update and fetches next afterwards.
     """
     generator = None
-    with patch("skuid.client.requests.get") as mocked_req:
+    with patch("ska_ser_skuid.client.requests.get") as mocked_req:
         res = MagicMock()
         res.json.side_effect = [
             json.dumps({"scan_id": 98}),
