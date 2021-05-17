@@ -33,7 +33,12 @@ setuptools.setup(
     test_suite='tests/unit',
     install_requires=[
         'fire',
-        'flask',
+        "Flask==1.1.2",  # AT2-813 hot fix
+        "Jinja2==2.11.2",  # AT2-813 hot fix
+        "itsdangerous==1.1.0",  # AT2-813 hot fix
+        "Werkzeug==1.0.1",  # AT2-813 hot fix
+        "MarkupSafe==1.1.1",  # AT2-813 hot fix
+        "click==7.1.2",  # AT2-813 hot fix
         'jsonpickle',
         'pypubsub',
         'pytango',
