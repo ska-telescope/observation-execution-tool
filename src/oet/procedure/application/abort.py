@@ -44,7 +44,7 @@ def _main(subarray_id: int, *args, **kwargs):
 
     LOG.info(f"Called with main(subarray_id={subarray_id})")
 
-    subarray_fqdn = "ska_mid/tm_subarray_node/" + str(subarray_id)
+    subarray_fqdn = os.getenv('SUBARRAYNODE_FQDN_PREFIX', 'ska_mid/tm_subarray_node') + "/" + str(subarray_id)
     cmd = Command(subarray_fqdn, "Abort")
     attr = Attribute(subarray_fqdn, "obsState")
 
