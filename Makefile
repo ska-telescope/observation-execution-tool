@@ -11,7 +11,7 @@
 # nexus.engageska-portugal.pt/tango-example/powersupply
 #
 DOCKER_REGISTRY_USER:=ska-telescope
-PROJECT = observation-execution-tool
+PROJECT = ska-oso-oet
 
 # KUBE_NAMESPACE defines the Kubernetes Namespace that will be deployed to
 # using Helm.  If this does not already exist it will be created
@@ -44,7 +44,7 @@ DOCKER_VOLUMES ?= /var/run/docker.sock:/var/run/docker.sock
 # registry credentials - user/pass/registry - set these in PrivateRules.mak
 DOCKER_REGISTRY_USER_LOGIN ?=  ## registry credentials - user - set in PrivateRules.mak
 CI_REGISTRY_PASS_LOGIN ?=  ## registry credentials - pass - set in PrivateRules.mak
-CI_REGISTRY ?= gitlab.com/ska-telescope/observation-execution-tool
+CI_REGISTRY ?= gitlab.com/ska-telescope/ska-oso-oet
 
 CI_PROJECT_DIR ?= .
 

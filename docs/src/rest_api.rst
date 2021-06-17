@@ -137,7 +137,7 @@ procedure is returned as JSON. Note that in the return JSON the procedure URI
 is defined. This URI can be used in a PUT request that commences script
 execution::
 
-    tangodev@buster:~/ska/observation-execution-tool$ curl -i -H "Content-Type: application/json" -X POST -d '{"script_uri":"file:///path/to/observing_script.py", "script_args": {"init": { "kwargs": {"subarray_id": 1, "sb_uri": "file:///path/to/scheduling_block_123.json"} } }}' http://localhost:5000/api/v1.0/procedures
+    tangodev@buster:~/ska/ska-oso-oet$ curl -i -H "Content-Type: application/json" -X POST -d '{"script_uri":"file:///path/to/observing_script.py", "script_args": {"init": { "kwargs": {"subarray_id": 1, "sb_uri": "file:///path/to/scheduling_block_123.json"} } }}' http://localhost:5000/api/v1.0/procedures
     HTTP/1.0 201 CREATED
     Content-Type: application/json
     Content-Length: 424
@@ -177,7 +177,7 @@ The session below lists all procedures, both running and non-running. This
 example shows two procedures have been created: procedure #1 that will run
 resource_allocation.py, and procedure #2 that will run observing_script.py::
 
-    tangodev@buster:~/ska/observation-execution-tool$ curl -i http://localhost:5000/api/v1.0/procedures
+    tangodev@buster:~/ska/ska-oso-oet$ curl -i http://localhost:5000/api/v1.0/procedures
     HTTP/1.0 200 OK
     Content-Type: application/json
     Content-Length: 913
@@ -245,7 +245,7 @@ Listing one procedure
 A specific procedure can be listed by a GET request to its specific URI. The
 session below lists procedure #1::
 
-    tangodev@buster:~/ska/observation-execution-tool$ curl -i http://localhost:5000/api/v1.0/procedures/1
+    tangodev@buster:~/ska/ska-oso-oet$ curl -i http://localhost:5000/api/v1.0/procedures/1
     HTTP/1.0 200 OK
     Content-Type: application/json
     Content-Length: 417
@@ -292,7 +292,7 @@ should be defined in the ‘run’ script_args key.
 The example below requests execution of procedure #2, with late binding kw
 argument scan_duration=14::
 
-    tangodev@buster:~/ska/observation-execution-tool$ curl -i -H "Content-Type: application/json" -X PUT -d '{"script_args": {"run": {"kwargs": {"scan_duration": 14.0}}}, "state": "RUNNING"}' http://localhost:5000/api/v1.0/procedures/2
+    tangodev@buster:~/ska/ska-oso-oet$ curl -i -H "Content-Type: application/json" -X PUT -d '{"script_args": {"run": {"kwargs": {"scan_duration": 14.0}}}, "state": "RUNNING"}' http://localhost:5000/api/v1.0/procedures/2
     HTTP/1.0 200 OK
     Content-Type: application/json
     Content-Length: 467
@@ -338,7 +338,7 @@ The signal to abort script mid-execution is to change the state of a procedure t
 that will send Abort command to the sub-array device. The default value of `abort` is
 False. ::
 
-    tangodev@buster:~/ska/observation-execution-tool$ curl -i -H "Content-Type: application/json" -X PUT -d '{"abort": true, "state": "STOPPED"}' http://localhost:5000/api/v1.0/procedures/2
+    tangodev@buster:~/ska/ska-oso-oet$ curl -i -H "Content-Type: application/json" -X PUT -d '{"abort": true, "state": "STOPPED"}' http://localhost:5000/api/v1.0/procedures/2
     HTTP/1.0 200 OK
     Content-Type: application/json
     Content-Length: 467
@@ -353,7 +353,7 @@ errors in a consistent computer-readable way.
 
 The session below attempts to list a procedure which does not exist::
 
-    tangodev@buster:~/ska/observation-execution-tool$ curl -i http://localhost:5000/api/v1.0/procedures/4
+    tangodev@buster:~/ska/ska-oso-oet$ curl -i http://localhost:5000/api/v1.0/procedures/4
     HTTP/1.0 404 NOT FOUND
     Content-Type: application/json
     Content-Length: 103
@@ -367,7 +367,7 @@ Listen real time oet events
 The session below lists all events published by oet scripts. This
 example shows two events, #1 request to available procedures #2 get the details of all the created procedures ::
 
-    tangodev@buster:~/ska/observation-execution-tool$ curl -i http://localhost:5000/api/v1.0/stream
+    tangodev@buster:~/ska/ska-oso-oet$ curl -i http://localhost:5000/api/v1.0/stream
     HTTP/1.0 200 OK
     Content-Type: text/event-stream; charset=utf-8
     Connection: close

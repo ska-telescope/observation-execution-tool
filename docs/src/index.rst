@@ -27,13 +27,13 @@
   :hidden:
 
 ==========================
-observation-execution-tool
+Observation Execution Tool
 ==========================
 
 Project description
 ===================
 
-This project contains the code for the Observation Execution Tool (OET), the
+The `ska-oso-oet` project contains the code for the Observation Execution Tool (OET), the
 application which provides on-demand Python script execution for the SKA.
 
 Overview
