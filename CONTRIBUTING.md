@@ -4,7 +4,7 @@
 
 The following is a set of guidelines for contributing to the SKA Observation
 Execution Tool and its packages, which are hosted in the
-[oet](https://gitlab.com/ska-telescope/observation-execution-tool) project on
+[oet](https://gitlab.com/ska-telescope/ska-oso-oet) project on
 GitLab. These are mostly guidelines, not rules. Use your best judgment, and
 feel free to propose changes to this document in a merge request.
 
@@ -64,7 +64,7 @@ The process described here has several goals:
 Please follow these steps to have your contribution considered by the maintainers:
 
 1. Follow the [styleguides](#styleguides)
-2. After you submit your merge request, verify that your [CI pipeline](https://gitlab.com/ska-telescope/observation-execution-tool/-/pipelines)
+2. After you submit your merge request, verify that your [CI pipeline](https://gitlab.com/ska-telescope/ska-oso-oet/-/pipelines)
    tests are passing
    <details><summary>What if the CI pipelines are failing?</summary>If a
    CI pipeline is failing, and you believe that the failure is unrelated to

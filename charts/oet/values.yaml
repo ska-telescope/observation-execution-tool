@@ -5,7 +5,7 @@ minikube: true
 
 system: TM-mid
 telescope: SKA-mid
-subsystem: observation-execution-tool
+subsystem: oet
 
 global:
   minikube: true
@@ -22,7 +22,7 @@ rest:
     enabled: false
   image:
     registry: nexus.engageska-portugal.pt/ska-telescope
-    image: observation-execution-tool
+    image: ska-oso-oet
     tag: 2.8.0
     pullPolicy: IfNotPresent
   resources:

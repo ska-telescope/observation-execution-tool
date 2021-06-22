@@ -6,8 +6,8 @@ LINTING_OUTPUT=$(shell helm lint charts/* | grep ERROR -c | tail -1)
 
 CHARTS ?= oet oet-umbrella  ## list of charts
 
-CI_PROJECT_PATH_SLUG ?= observation-execution-tool
-CI_ENVIRONMENT_SLUG ?= observation-execution-tool
+CI_PROJECT_PATH_SLUG ?= ska-oso-oet
+CI_ENVIRONMENT_SLUG ?= ska-oso-oet
 
 .DEFAULT_GOAL := help
 
