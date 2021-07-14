@@ -16,7 +16,7 @@ image: $SKA_K8S_TOOLS_DOCKER_BUILDER_IMAGE
 
 # Standardised included jobs
 variables:
-  CHARTS_TO_PUBLISH: oet
+  CHARTS_TO_PUBLISH: ska-oso-oet
 include:
 # Helm Chart Publish
 # https://developer.skatelescope.org/en/latest/development/software_package_release_procedure.html#package-and-publish-helm-charts-to-the-ska-helm-chart-repository

@@ -1,10 +1,11 @@
-HELM_HOST ?= https://nexus.engageska-portugal.pt  ## helm host url https
+CAR_OCI_REGISTRY_HOST ?= artefact.skao.int  ## helm host url https
 MINIKUBE ?= true  ## Minikube or not
 MARK ?= all
+IMAGE_TO_TEST ?= $(CAR_OCI_REGISTRY_HOST)/$(PROJECT):$(VERSION)## docker image that will be run for testing purpose
 TANGO_HOST ?= tango-host-databaseds-from-makefile-$(RELEASE_NAME):10000  ## TANGO_HOST is an input!
 LINTING_OUTPUT=$(shell helm lint charts/* | grep ERROR -c | tail -1)
 
-CHARTS ?= oet oet-umbrella  ## list of charts
+CHARTS ?= ska-oso-oet ska-oso-oet-umbrella  ## list of charts
 
 CI_PROJECT_PATH_SLUG ?= ska-oso-oet
 CI_ENVIRONMENT_SLUG ?= ska-oso-oet
@@ -108,7 +109,7 @@ show: ## show the helm chart
 
 # chart_lint: dep-up ## lint check the helm chart
 chart_lint: dep-up ## lint check the helm chart
-	@mkdir -p charts/oet-umbrella/templates;
+	@mkdir -p charts/ska-oso-oet-umbrella/templates;
 	@mkdir -p build; \
 	helm lint charts/* --with-subcharts; \
 	echo "<testsuites><testsuite errors=\"$(LINTING_OUTPUT)\" failures=\"0\" name=\"helm-lint\" skipped=\"0\" tests=\"0\" time=\"0.000\" timestamp=\"$(shell date)\"> </testsuite> </testsuites>" > build/linting.xml

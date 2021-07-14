@@ -4,11 +4,11 @@
 #
 
 #
-# DOCKER_REGISTRY_HOST, CAR_OCI_REGISTRY_USER and PROJECT are combined to define
+# CAR_OCI_REGISTRY_HOST, CAR_OCI_REGISTRY_USERNAME and PROJECT are combined to define
 # the Docker tag for this project. The definition below inherits the standard
-# value for DOCKER_REGISTRY_HOST (=rnexus.engageska-portugal.pt) and overwrites
-# CAR_OCI_REGISTRY_USER and PROJECT to give a final Docker tag of
-# nexus.engageska-portugal.pt/tango-example/powersupply
+# value for CAR_OCI_REGISTRY_HOST (=rartefact.skao.int) and overwrites
+# CAR_OCI_REGISTRY_USERNAME and PROJECT to give a final Docker tag of
+# artefact.skao.int/ska-tango-examples/powersupply
 #
 CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
@@ -16,14 +16,14 @@ PROJECT = ska-oso-oet
 
 # KUBE_NAMESPACE defines the Kubernetes Namespace that will be deployed to
 # using Helm.  If this does not already exist it will be created
-KUBE_NAMESPACE ?= oet
+KUBE_NAMESPACE ?= ska-oso-oet
 
 # RELEASE_NAME is the release that all Kubernetes resources will be labelled
 # with
 RELEASE_NAME ?= test
 
 # UMBRELLA_CHART_PATH Path of the umbrella chart to work with
-UMBRELLA_CHART_PATH ?= charts/oet-umbrella/
+UMBRELLA_CHART_PATH ?= charts/ska-oso-oet-umbrella/
 
 # Fixed variables
 # Timeout for gitlab-runner when run locally
@@ -59,7 +59,7 @@ CAR_PYPI_REPOSITORY_URL ?= https://artefact.skao.int/repository/pypi-internal/si
 
 # Test runner - run to completion job in K8s
 # name of the pod running the k8s_tests
-TEST_RUNNER = oet-$(CI_JOB_ID)-$(KUBE_NAMESPACE)-$(RELEASE_NAME)
+TEST_RUNNER = ska-oso-oet-$(CI_JOB_ID)-$(KUBE_NAMESPACE)-$(RELEASE_NAME)
 
 #
 # include makefile to pick up the standard Make targets, e.g., 'make build'
@@ -75,7 +75,7 @@ up: namespace install-chart wait
 down: uninstall-chart delete_namespace
 
 rest:  ## start OET REST server
-	docker run --rm -p 5000:5000 -v $(CURDIR):/app -e PYTHONPATH=/app/src -w /app --name=oet-rest $(IMAGE_TO_TEST) python -m oet.procedure.application.main
+	docker run --rm -p 5000:5000 -v $(CURDIR):/app -e PYTHONPATH=/app/src -w /app --name=ska-oso-oet-rest $(IMAGE_TO_TEST) python -m oet.procedure.application.main
 
 post-push:
 	@. $(RELEASE_SUPPORT) ; differsFromRelease || docker push $(IMAGE):$(VERSION) ;
