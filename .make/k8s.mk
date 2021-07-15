@@ -243,7 +243,7 @@ rlint:  ## run lint check on Helm Chart using gitlab-runner
 	--docker-pull-policy always \
 	--timeout $(TIMEOUT) \
 	--env "DOCKER_HOST=$(DOCKER_HOST)" \
-  --env "DOCKER_REGISTRY_USER_LOGIN=$(DOCKER_REGISTRY_USER_LOGIN)" \
+  --env "CAR_OCI_REGISTRY_USER_LOGIN=$(CAR_OCI_REGISTRY_USER_LOGIN)" \
   --env "CI_REGISTRY_PASS_LOGIN=$(CI_REGISTRY_PASS_LOGIN)" \
   --env "CI_REGISTRY=$(CI_REGISTRY)" \
 	lint-check-chart || true
@@ -270,7 +270,7 @@ rk8s_test:  ## run k8s_test on K8s using gitlab-runner
 	--docker-pull-policy always \
 	--timeout $(TIMEOUT) \
 	--env "DOCKER_HOST=$(DOCKER_HOST)" \
-	--env "DOCKER_REGISTRY_USER_LOGIN=$(DOCKER_REGISTRY_USER_LOGIN)" \
+	--env "CAR_OCI_REGISTRY_USER_LOGIN=$(CAR_OCI_REGISTRY_USER_LOGIN)" \
 	--env "CI_REGISTRY_PASS_LOGIN=$(CI_REGISTRY_PASS_LOGIN)" \
 	--env "CI_REGISTRY=$(CI_REGISTRY)" \
 	--env "KUBE_CONFIG_BASE64=$(KUBE_CONFIG_BASE64)" \
