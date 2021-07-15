@@ -14,4 +14,4 @@ dependencies:
   repository: https://nexus.engageska-portugal.pt/repository/helm-chart
 - name: ska-oso-oet
   version: 0.2.0
-  repository: file://../oet
+  repository: file://../ska-oso-oet
