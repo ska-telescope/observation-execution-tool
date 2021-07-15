@@ -194,7 +194,7 @@ kubeconfig: ## export current KUBECONFIG as base64 ready for KUBE_CONFIG_BASE64
 k8s_test = tar -c tests/ | \
 		kubectl run $(TEST_RUNNER) \
 		--namespace $(KUBE_NAMESPACE) -i --wait --restart=Never \
-		--image-pull-policy=Always \
+		--image-pull-policy=IfNotPresent \
 		--image=$(IMAGE_TO_TEST) -- \
 		/bin/bash -c "mkdir testing && tar xv --directory testing --strip-components 1 --warning=all && cd testing && \
 		make KUBE_NAMESPACE=$(KUBE_NAMESPACE) HELM_RELEASE=$(RELEASE_NAME) TANGO_HOST=$(TANGO_HOST) MARK=$(MARK) $1 && \
