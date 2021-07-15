@@ -1,10 +1,11 @@
 ARG CAR_OCI_REGISTRY_HOST
-ARG CAR_PYPI_REPOSITORY_URL
 
 FROM $CAR_OCI_REGISTRY_HOST/ska-tango-images-pytango-builder:9.3.10 AS buildenv
 FROM $CAR_OCI_REGISTRY_HOST/ska-tango-images-pytango-runtime:9.3.10 AS runtime
 
-ENV PIP_INDEX_URL=${CAR_PYPI_REPOSITORY_URL}
+ARG CAR_PYPI_REPOSITORY_URL
+ENV PIP_INDEX_URL ${CAR_PYPI_REPOSITORY_URL}/simple
+
 ENV PATH="/home/tango/.local/bin:${PATH}"
 RUN python3 -m pip install \
     --use-feature=in-tree-build \

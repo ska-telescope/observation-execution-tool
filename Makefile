@@ -1,6 +1,6 @@
 #
 # Project makefile for a Tango project. You should normally only need to modify
-# CAR_OCI_REGISTRY_USER and PROJECT below.
+# CAR_OCI_REGISTRY_USERNAME and PROJECT below.
 #
 
 #
@@ -52,7 +52,7 @@ CI_PROJECT_DIR ?= .
 KUBE_CONFIG_BASE64 ?=  ## base64 encoded kubectl credentials for KUBECONFIG
 KUBECONFIG ?= /etc/deploy/config ## KUBECONFIG location
 
-CAR_PYPI_REPOSITORY_URL ?= https://artefact.skao.int/repository/pypi-internal/simple
+CAR_PYPI_REPOSITORY_URL ?= https://artefact.skao.int/repository/pypi-internal
 
 # define private overrides for above variables in here
 -include PrivateRules.mak
