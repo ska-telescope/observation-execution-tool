@@ -1,7 +1,7 @@
 {{ if .Values.rest.enabled }}
 {{ if .Values.rest.ingress.enabled }}
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
@@ -13,17 +13,19 @@ metadata:
     domain: {{ .Values.rest.domain }}
     intent: production
   annotations:
-    kubernetes.io/ingress.class: traefik
-    traefik.ingress.kubernetes.io/rule-type: PathPrefix
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   rules:
-    - host: {{ tpl .Values.ingress.hostname . }}
-      http:
+    - http:
         paths:
-        - path: /api
-          backend:
-           serviceName: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
-           servicePort: 5000
+          - path: /{{ .Release.Namespace }}/(api.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+                port:
+                  number: 5000
 {{ end }}
 ---
 apiVersion: v1
