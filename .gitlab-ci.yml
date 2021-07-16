@@ -138,16 +138,3 @@ pages:
     paths:
       - public
     expire_in: 7 days
-
-push_OET_image:
-  tags:
-    - k8srunner
-  stage: publish
-  before_script:
-    - echo $CAR_OCI_REGISTRY_PASSWORD | docker login -u $CAR_OCI_REGISTRY_USERNAME --password-stdin $CAR_OCI_REGISTRY_HOST
-  script:
-    - make push
-  only:
-    - tags
-  except:
-    - branches
