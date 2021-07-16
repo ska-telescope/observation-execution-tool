@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "oet.name" -}}
+{{- define "ska-oso-oet.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "oet.fullname" -}}
+{{- define "ska-oso-oet.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -27,9 +27,9 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Common labels
 */}}
-{{- define "oet.labels" }}
-app: {{ template "oet.name" . }}
-chart: {{ template "oet.chart" . }}
+{{- define "ska-oso-oet.labels" }}
+app: {{ template "ska-oso-oet.name" . }}
+chart: {{ template "ska-oso-oet.chart" . }}
 release: {{ .Release.Name }}
 heritage: {{ .Release.Service }}
 system: {{ .Values.system }}
@@ -40,6 +40,6 @@ telescope: {{ .Values.telescope }}
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "oet.chart" -}}
+{{- define "ska-oso-oet.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}

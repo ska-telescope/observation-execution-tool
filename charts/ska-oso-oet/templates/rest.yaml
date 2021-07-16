@@ -1,55 +1,57 @@
 {{ if .Values.rest.enabled }}
 {{ if .Values.rest.ingress.enabled }}
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "oet.labels" . | indent 4 }}
+    {{- include "ska-oso-oet.labels" . | indent 4 }}
     component: {{ .Values.rest.component }}
     function: {{ .Values.rest.function }}
     domain: {{ .Values.rest.domain }}
     intent: production
   annotations:
-    kubernetes.io/ingress.class: traefik
-    traefik.ingress.kubernetes.io/rule-type: PathPrefix
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   rules:
-    - host: {{ tpl .Values.ingress.hostname . }}
-      http:
+    - http:
         paths:
-        - path: /api
-          backend:
-           serviceName: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
-           servicePort: 5000
+          - path: /{{ .Release.Namespace }}/(api.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+                port:
+                  number: 5000
 {{ end }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "oet.labels" . | indent 4 }}
+    {{- include "ska-oso-oet.labels" . | indent 4 }}
     component: {{ .Values.rest.component }}
     function: {{ .Values.rest.function }}
     domain: {{ .Values.rest.domain }}
     intent: production
 spec:
   ports:
-  - name: oet-rest
+  - name: ska-oso-oet-rest
     port: 5000
   clusterIP: None
   selector:
-    app: {{ template "oet.name" . }}
+    app: {{ template "ska-oso-oet.name" . }}
     component: {{ .Values.rest.component }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-scripts
+  name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-scripts
   namespace: {{ .Release.Namespace }}
 binaryData:
   hello_world.py: |-
@@ -58,10 +60,10 @@ binaryData:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+  name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "oet.labels" . | indent 4 }}
+    {{- include "ska-oso-oet.labels" . | indent 4 }}
     component: {{ .Values.rest.component }}
     function: {{ .Values.rest.function }}
     domain: {{ .Values.rest.domain }}
@@ -69,14 +71,14 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: {{ template "oet.name" . }}
+      app: {{ template "ska-oso-oet.name" . }}
       component: {{ .Values.rest.component }}
-  serviceName: rest-{{ template "oet.name" . }}-{{ .Release.Name }}
+  serviceName: rest-{{ template "ska-oso-oet.name" . }}-{{ .Release.Name }}
   replicas: 1
   template:
     metadata:
       labels:
-        {{- include "oet.labels" . | indent 8 }}
+        {{- include "ska-oso-oet.labels" . | indent 8 }}
         component: {{ .Values.rest.component }}
         function: {{ .Values.rest.function }}
         domain: {{ .Values.rest.domain }}
@@ -93,7 +95,7 @@ spec:
           - --
           - echo databaseds ready
       containers:
-      - name: oet-rest
+      - name: ska-oso-oet-rest
         image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{ .Values.rest.image.tag }}"
         imagePullPolicy: {{ .Values.rest.image.pullPolicy }}
         command: ["python"]
@@ -104,10 +106,10 @@ spec:
           - name: SKUID_URL
             value: "skuid-skuid-{{ .Release.Namespace }}-{{ .Release.Name }}.{{ .Release.Namespace }}.svc.cluster.local:9870"
         ports:
-          - name: oet-rest
+          - name: ska-oso-oet-rest
             containerPort: 5000
         volumeMounts:
-          - name: oet-scripts-volume
+          - name: ska-oso-oet-scripts-volume
             mountPath: /scripts
         resources:
 {{ toYaml .Values.rest.resources | indent 10 }}
@@ -128,9 +130,9 @@ spec:
           successThreshold: {{ .Values.rest.livenessProbe.successThreshold }}
           failureThreshold: {{ .Values.rest.livenessProbe.failureThreshold }}
       volumes:
-        - name: oet-scripts-volume
+        - name: ska-oso-oet-scripts-volume
           configMap:
-            name: {{ template "oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-scripts
+            name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-scripts
             items:
               - key: hello_world.py
                 path: hello_world.py

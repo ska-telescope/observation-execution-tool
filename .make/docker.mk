@@ -1,7 +1,7 @@
 #
 # IMAGE_TO_TEST defines the tag of the Docker image to test
 #
-IMAGE_TO_TEST = $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):$(VERSION)
+IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(PROJECT):$(VERSION)
 
 CACHE_VOLUME = $(PROJECT)-test-cache
 
@@ -66,7 +66,7 @@ lint: build  ## lint the application
 .DEFAULT_GOAL := help
 
 pull_release:  ## download the latest release of the application
-	docker pull $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):$(RELEASE)
+	docker pull $(CAR_OCI_REGISTRY_HOST)/$(PROJECT):$(RELEASE)
 
 interactive: build  ## start an interactive session using the project image (caution: R/W mounts source directory to /app)
 	docker run --rm -it --name=$(CONTAINER_NAME_PREFIX)dev -e TANGO_HOST=$(TANGO_HOST) \
@@ -74,7 +74,7 @@ interactive: build  ## start an interactive session using the project image (cau
 
 prune:  ## delete stale Docker images
 	docker images --format '{{.ID}} {{.Repository}}:{{.Tag}}' |\
-		grep '$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT)' |\
+		grep '$(CAR_OCI_REGISTRY_HOST)/$(PROJECT)' |\
 		grep -v ':latest$$' |\
 		grep -v '$(RELEASE)$$' |\
 		grep -v '$(VERSION)$$' |\

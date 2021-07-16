@@ -1,10 +1,11 @@
-HELM_HOST ?= https://nexus.engageska-portugal.pt  ## helm host url https
+CAR_OCI_REGISTRY_HOST ?= artefact.skao.int  ## helm host url https
 MINIKUBE ?= true  ## Minikube or not
 MARK ?= all
+IMAGE_TO_TEST ?= $(CAR_OCI_REGISTRY_HOST)/$(PROJECT):$(VERSION)## docker image that will be run for testing purpose
 TANGO_HOST ?= tango-host-databaseds-from-makefile-$(RELEASE_NAME):10000  ## TANGO_HOST is an input!
 LINTING_OUTPUT=$(shell helm lint charts/* | grep ERROR -c | tail -1)
 
-CHARTS ?= oet oet-umbrella  ## list of charts
+CHARTS ?= ska-oso-oet ska-oso-oet-umbrella  ## list of charts
 
 CI_PROJECT_PATH_SLUG ?= ska-oso-oet
 CI_ENVIRONMENT_SLUG ?= ska-oso-oet
@@ -108,7 +109,7 @@ show: ## show the helm chart
 
 # chart_lint: dep-up ## lint check the helm chart
 chart_lint: dep-up ## lint check the helm chart
-	@mkdir -p charts/oet-umbrella/templates;
+	@mkdir -p charts/ska-oso-oet-umbrella/templates;
 	@mkdir -p build; \
 	helm lint charts/* --with-subcharts; \
 	echo "<testsuites><testsuite errors=\"$(LINTING_OUTPUT)\" failures=\"0\" name=\"helm-lint\" skipped=\"0\" tests=\"0\" time=\"0.000\" timestamp=\"$(shell date)\"> </testsuite> </testsuites>" > build/linting.xml
@@ -193,7 +194,7 @@ kubeconfig: ## export current KUBECONFIG as base64 ready for KUBE_CONFIG_BASE64
 k8s_test = tar -c tests/ | \
 		kubectl run $(TEST_RUNNER) \
 		--namespace $(KUBE_NAMESPACE) -i --wait --restart=Never \
-		--image-pull-policy=Always \
+		--image-pull-policy=IfNotPresent \
 		--image=$(IMAGE_TO_TEST) -- \
 		/bin/bash -c "mkdir testing && tar xv --directory testing --strip-components 1 --warning=all && cd testing && \
 		make KUBE_NAMESPACE=$(KUBE_NAMESPACE) HELM_RELEASE=$(RELEASE_NAME) TANGO_HOST=$(TANGO_HOST) MARK=$(MARK) $1 && \
@@ -242,7 +243,7 @@ rlint:  ## run lint check on Helm Chart using gitlab-runner
 	--docker-pull-policy always \
 	--timeout $(TIMEOUT) \
 	--env "DOCKER_HOST=$(DOCKER_HOST)" \
-  --env "DOCKER_REGISTRY_USER_LOGIN=$(DOCKER_REGISTRY_USER_LOGIN)" \
+  --env "CAR_OCI_REGISTRY_USER_LOGIN=$(CAR_OCI_REGISTRY_USER_LOGIN)" \
   --env "CI_REGISTRY_PASS_LOGIN=$(CI_REGISTRY_PASS_LOGIN)" \
   --env "CI_REGISTRY=$(CI_REGISTRY)" \
 	lint-check-chart || true
@@ -269,7 +270,7 @@ rk8s_test:  ## run k8s_test on K8s using gitlab-runner
 	--docker-pull-policy always \
 	--timeout $(TIMEOUT) \
 	--env "DOCKER_HOST=$(DOCKER_HOST)" \
-	--env "DOCKER_REGISTRY_USER_LOGIN=$(DOCKER_REGISTRY_USER_LOGIN)" \
+	--env "CAR_OCI_REGISTRY_USER_LOGIN=$(CAR_OCI_REGISTRY_USER_LOGIN)" \
 	--env "CI_REGISTRY_PASS_LOGIN=$(CI_REGISTRY_PASS_LOGIN)" \
 	--env "CI_REGISTRY=$(CI_REGISTRY)" \
 	--env "KUBE_CONFIG_BASE64=$(KUBE_CONFIG_BASE64)" \
