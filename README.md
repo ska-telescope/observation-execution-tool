@@ -33,6 +33,6 @@ make interactive
 ```
 
 
-[![Documentation Status](https://readthedocs.org/projects/ska-telescope-observation-execution-tool/badge/?version=latest)](https://developer.skatelescope.org/projects/observation-execution-tool/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/ska-telescope-ska-oso-oet/badge/?version=latest)](https://developer.skao.int/projects/ska-oso-oet/en/latest/?badge=latest)
 
 Documentation can be found in the ``docs`` folder.
