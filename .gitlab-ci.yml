@@ -15,15 +15,6 @@ stages:
   - pages
   - publish
 
-#build:
-#  stage: build
-#  tags:
-#    - k8srunner
-#  before_script:
-#    - echo $CAR_OCI_REGISTRY_PASSWORD | docker login -u $CAR_OCI_REGISTRY_USERNAME --password-stdin $CAR_OCI_REGISTRY_HOST
-#  script:
-#    - PROJECT=$PROJECT CAR_OCI_REGISTRY_HOST=$CAR_OCI_REGISTRY_HOST DOCKER_BUILD_CONTEXT=$DOCKER_BUILD_CONTEXT DOCKER_FILE_PATH=$DOCKER_FILE_PATH VERSION=$VERSION TAG=$TAG /usr/local/bin/docker-build.sh
-
 lint-check-chart:
   stage: lint
   tags:
@@ -120,3 +111,4 @@ include:
 
 - project: 'ska-telescope/templates-repository'
   file: 'gitlab-ci/includes/build_wheel.yml'
+
