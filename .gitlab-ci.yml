@@ -45,19 +45,6 @@ stages:
   - pages
   - publish
 
-build:
-  stage: build
-  tags:
-    - k8srunner
-  before_script:
-    - echo $CAR_OCI_REGISTRY_PASSWORD | docker login -u $CAR_OCI_REGISTRY_USERNAME --password-stdin $CAR_OCI_REGISTRY_HOST
-  script:
-    - make build
-  artifacts:
-    when: always
-    paths:
-      - build
-
 lint-check-chart:
   stage: lint
   tags:
