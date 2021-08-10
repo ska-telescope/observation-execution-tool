@@ -37,8 +37,6 @@ lint-check-chart:
 
 test:
   stage: test
-  dependencies:
-    - build
   tags:
     - k8srunner
   script:
@@ -94,9 +92,6 @@ pages:
   tags:
     - k8srunner
   stage: pages
-  dependencies:
-    - test
-    - lint
   script:
     - mkdir public
     - cp -R build public
