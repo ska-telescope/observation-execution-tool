@@ -49,7 +49,7 @@ rest:
 ingress:
   enabled: true
   nginx: true
-  hostname: integration.engageska-portugal.pt
+  hostname: k8s.stfc.skao.int
 
 nodeSelector: {}
 
