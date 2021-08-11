@@ -10,7 +10,7 @@ dependencies:
   version: 0.2.25
   repository: https://artefact.skao.int/repository/helm-internal
 - name: ska-ser-skuid
-  version: 0.2.1
+  version: 0.3.0
   repository: https://artefact.skao.int/repository/helm-internal
 - name: ska-oso-oet
   version: 0.2.0
