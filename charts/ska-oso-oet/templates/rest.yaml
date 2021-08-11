@@ -104,7 +104,7 @@ spec:
           - name: TANGO_HOST
             value: {{ if .Values.global.tango_host -}} {{ .Values.global.tango_host }} {{- else -}} databaseds-tango-base-{{ .Release.Name }}:10000 {{- end }}
           - name: SKUID_URL
-            value: "skuid-skuid-{{ .Release.Namespace }}-{{ .Release.Name }}.{{ .Release.Namespace }}.svc.cluster.local:9870"
+            value: "ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:9870"
         ports:
           - name: ska-oso-oet-rest
             containerPort: 5000
