@@ -1,0 +1,81 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+
+skinparam responseMessageBelowArrow true
+participant Client order 10
+participant TangoExecutor order 10
+participant SingleQueueEventHandlingStrategy order 10
+'participant Queue order 10
+participant SubscriptionManager order 10
+participant Callback order 10
+participant DeviceProxy order 10
+
+note across
+The SubscriptionManager exists to hold and manage Tango event subscriptions. The SubscriptionManager inserts itself as a
+proxy between client and Tango event subscriptions, moving the pub/sub layer accessed by clients away from the Tango
+layer and into the OET layer. Clients register with the SubscriptionManager as observers of an attribute. If required,
+one long-lived Tango subscription per attribute is created on demand by the SubscriptionManager. The SubscriptionManager
+relays received Tango events to all attribute observers registered at the time of event reception. Unregistering an
+observer from the SubscriptionManager prevents subsequent notifications but does not affect the underlying Tango event
+subscription, which continues to operate until the Python interpreter exits.
+
+Legacy calling code expects a maximum of one subscription to be active at any one time. Additionally, the caller always
+sandwiched ""read_event"" calls between ""subscribe_attribute"" and ""unsubscribe_attribute"" calls. Together, this
+meant subscriptions were short-lived, existing for the duration of a single attribute monitoring operation, and that one
+Queue to hold events was sufficient as there would only ever be one Tango event subscription. To maintain this legacy
+behaviour, ""subscribe_attribute"" and ""unsubscribe_attribute"" register and unregister the TangoExecutor as an
+observer of events, with the ""TangoExecutor.notify"" method adding received events to the TangoExecutor queue read by
+the legacy ""TangoExecutor.read_event"" method.
+end note
+
+==event subscription==
+Client -> TangoExecutor: subscribe_event(attr: Attribute)
+TangoExecutor -> SingleQueueEventHandlingStrategy: subscribe_event(attr: Attribute)
+SingleQueueEventHandlingStrategy -> SubscriptionManager: register_observer(attr: Attribute, observer = self)
+
+alt is first subscription to attribute
+create Callback
+SubscriptionManager -> Callback: ~__init__()
+end
+SubscriptionManager -> Callback: register_observer(observer)
+alt is first subscription to attribute
+note left
+Observer registration occurs before Tango event
+subscription to ensure the first event is not lost.
+end note
+create DeviceProxy
+SubscriptionManager -> DeviceProxy: ~__init__(device: str = attr.device, attr: str = attr.attr)
+SubscriptionManager -> DeviceProxy: subscribe_event(attr: Attribute, cb=Callback)
+end
+
+==event reception==
+par
+note across
+The callback is invoked in a separate thread by DeviceProxy, hence this code all runs in parallel with the main thead of execution.
+end note
+DeviceProxy<--] : evt: ChangeEvent
+Callback <-- DeviceProxy: evt: ChangeEvent
+SingleQueueEventHandlingStrategy <- Callback: notify(evt: EventData)
+SingleQueueEventHandlingStrategy -> SingleQueueEventHandlingStrategy: add to event queue
+'SingleQueueEventHandlingStrategy -> Queue: add(evt: EventData)
+else
+Client -> TangoExecutor: read_event(attr: Attribute)
+TangoExecutor -> SingleQueueEventHandlingStrategy: read_event(attr: Attribute)
+'TangoExecutor -> Queue: get(block=True)
+note right
+This blocks until the callback activity above adds an event to the strategy's Queue.
+end note
+TangoExecutor <- SingleQueueEventHandlingStrategy: evt: EventData
+TangoExecutor -> Client: evt: EventData
+end
+
+==event unsubscribe==
+Client -> TangoExecutor: unsubscribe_event(attr: Attribute, subscription_id: int)
+TangoExecutor -> SingleQueueEventHandlingStrategy: unsubscribe_event(attr: Attribute, subscription_id: int)
+SingleQueueEventHandlingStrategy -> SubscriptionManager: unregister_observer(attr: Attribute, observer=self)
+SubscriptionManager -> Callback: unregister_observer(observer)
+SingleQueueEventHandlingStrategy -> SingleQueueEventHandlingStrategy: drain any remaining events
+
+@enduml

@@ -1,0 +1,89 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class TangoExecutor {
+_proxy_factory: ProxyFactory
+_device_proxies: Dict[str, DeviceProxy]
+queue: Queue
+execute(cmd: Command, **kwargs)
+read(attribute: Attribute)
+
+subscribe_event(attribute: Attribute) -> int
+unsubscribe_event(attribute: Attribute, event_id: int)
+read_event(attr: Attribute) -> tango.EventData
+}
+
+class EventHandlingStrategy {
+subscribe_event(attribute: Attribute) -> int
+unsubscribe_event(attribute: Attribute, event_id: int)
+read_event(attr: Attribute) -> tango.EventData
+}
+note top of EventHandlingStrategy
+This protocol is implied rather than implemented
+at this stage to avoid overcomplicating the code.
+The code just has a SingleQueueEventStrategy
+directly.
+end note
+
+class SingleQueueEventStrategy {
+}
+SingleQueueEventStrategy -|> EventHandlingStrategy
+SingleQueueEventStrategy -|> Observer
+SingleQueueEventStrategy *-- SubscriptionManager
+
+class Observer {
+notify(evt: tango.EventData)
+}
+
+class SubscriptionManager {
+_proxy_factory: ProxyFactory
+_subscriptions: Dict[Attribute, Callback]
+register_observer(attr: Attribute, obs: Observer)
+unregister_observer(attr: Attribute, obs: Observer)
+}
+
+
+class Callback {
+_observers: weakref.WeakSet[Observer]
+register_observer(observer: Observer)
+unregister_observer(observer: Observer)
+notify_observers(evt: EventData)
+__call__(evt: tango.EventData)
+}
+
+TangoExecutor *-- EventHandlingStrategy
+TangoExecutor *-- SubscriptionManager
+SubscriptionManager *-- Callback
+
+'class EventStream {
+'subscription_id: int
+'_queue: Queue
+'__iter__()
+'}
+'
+'
+'class Device {
+'__key__()
+'__getattr__()
+'add_attribute(attr: Attribute)
+'}
+'
+'class Attribute {
+'name: str
+'__exec__()
+'value
+'stream: AttributeValueStream
+'}
+'
+'class ValueStream {
+'_q: Queue
+'_observers: List
+'__iter__()
+'}
+'
+'class TangoAttributeValueStream {
+'
+'}
+'TangoAttributeValueStream --|> ValueStream
+
+@enduml
