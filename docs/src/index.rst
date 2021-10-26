@@ -26,6 +26,10 @@
   :caption: Public API Documentation
   :hidden:
 
+  package/oet/command
+  package/oet/features
+
+
 ==========================
 Observation Execution Tool
 ==========================
