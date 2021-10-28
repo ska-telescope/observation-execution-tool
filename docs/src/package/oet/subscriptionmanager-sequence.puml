@@ -1,0 +1,63 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+'autonumber
+
+skinparam responseMessageBelowArrow true
+participant Client order 10
+participant TangoExecutor order 10
+participant SingleQueueEventHandlingStrategy order 10
+'participant Queue order 10
+participant SubscriptionManager order 10
+participant Callback order 10
+participant DeviceProxy order 10
+
+==event subscription==
+Client -> TangoExecutor: subscribe_event(attr: Attribute)
+TangoExecutor -> SingleQueueEventHandlingStrategy: subscribe_event(attr: Attribute)
+SingleQueueEventHandlingStrategy -> SubscriptionManager: register_observer(attr: Attribute, observer = self)
+
+alt is first subscription to attribute
+create Callback
+SubscriptionManager -> Callback: ~__init__()
+end
+SubscriptionManager -> Callback: register_observer(observer)
+alt is first subscription to attribute
+note left
+Observer registration occurs before Tango event
+subscription to ensure the first event is not lost.
+end note
+create DeviceProxy
+SubscriptionManager -> DeviceProxy: ~__init__(device: str = attr.device, attr: str = attr.attr)
+SubscriptionManager -> DeviceProxy: subscribe_event(attr: Attribute, cb=Callback)
+end
+
+==event reception==
+par
+note across
+The callback is invoked in a separate thread by DeviceProxy, hence this code all runs in parallel with the main thead of execution.
+end note
+DeviceProxy<--] : evt: ChangeEvent
+Callback <-- DeviceProxy: evt: ChangeEvent
+SingleQueueEventHandlingStrategy <- Callback: notify(evt: EventData)
+SingleQueueEventHandlingStrategy -> SingleQueueEventHandlingStrategy: add to event queue
+'SingleQueueEventHandlingStrategy -> Queue: add(evt: EventData)
+else
+Client -> TangoExecutor: read_event(attr: Attribute)
+TangoExecutor -> SingleQueueEventHandlingStrategy: read_event(attr: Attribute)
+'TangoExecutor -> Queue: get(block=True)
+note right
+This blocks until the callback activity above adds an event to the strategy's Queue.
+end note
+TangoExecutor <- SingleQueueEventHandlingStrategy: evt: EventData
+TangoExecutor -> Client: evt: EventData
+end
+
+==event unsubscribe==
+Client -> TangoExecutor: unsubscribe_event(attr: Attribute, subscription_id: int)
+TangoExecutor -> SingleQueueEventHandlingStrategy: unsubscribe_event(attr: Attribute, subscription_id: int)
+SingleQueueEventHandlingStrategy -> SubscriptionManager: unregister_observer(attr: Attribute, observer=self)
+SubscriptionManager -> Callback: unregister_observer(observer)
+SingleQueueEventHandlingStrategy -> SingleQueueEventHandlingStrategy: drain any remaining events
+
+@enduml

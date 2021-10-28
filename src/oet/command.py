@@ -7,11 +7,16 @@ managed and executed by a proxy. This allows the proxy to execute commands
 asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
+from __future__ import annotations
+import atexit
 import logging
 import multiprocessing
 import os
-from queue import Queue
-from typing import Dict
+import queue
+import threading
+import weakref
+from typing import Dict, Tuple
+
 
 import tango
 from ska_ser_skuid.client import SkuidClient
@@ -101,6 +106,92 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
     calling code.
     """
 
+    class SingleQueueEventStrategy:
+        """
+        SingleQueueEventStrategy encapsulates the event handling behaviour of
+        the TangoExecutor from ~October 2021, when all events were added to a
+        single queue and subscriptions were created and released after each
+        attribute read operation.
+
+        We hope to replace this with a more advanced implementation that
+        allows subscriptions to multiple events.
+
+        :param mgr: SubscriptionManager instance used to observe events
+        """
+
+        def __init__(self, mgr: SubscriptionManager):
+            self._subscription_manager = mgr
+            self._subscribed = False
+            self._queue = queue.Queue()
+
+        def subscribe_event(self, attr: Attribute) -> int:
+            """
+            Subscribe to change events published by a Tango attribute.
+
+            This strategy only supports one active subscription at any time.
+            An exception will be raised if a second subscription is attempted.
+
+            This method returns a subscription identifier which should be
+            supplied to a subsequent unsubscribe_event method.
+
+            :param attr: attribute to subscribe to
+            :return: subscription identifier
+            """
+            if self._subscribed:
+                raise Exception("Multiple subscriptions not allowed: %s", attr)
+
+            LOGGER.debug("Observing %s/%s", attr.device, attr.name)
+            self._subscription_manager.register_observer(attr, self)
+            return -1
+
+        def unsubscribe_event(self, attr: Attribute, subscription_id: int) -> None:
+            """
+            Unsubscribe to change events published by a Tango attribute.
+
+            This strategy only supports one active subscription at any time.
+            An exception will be raised if a second subscription is attempted.
+
+            :param attr: attribute to unsubscribe from
+            :param subscription_id: subscription identifier
+            """
+            LOGGER.debug("Unobserving %s/%s", attr.device, attr.name)
+            self._subscription_manager.unregister_observer(attr, self)
+            self._drain()
+            self._subscribed = False
+
+        def _drain(self):
+            """
+            Drains all events from the queue, blocking until the queue is empty.
+            """
+            drained = False
+            while not drained:
+                try:
+                    self._queue.get(block=False)
+                except queue.Empty:
+                    drained = True
+
+        def read_event(self, attr: Attribute) -> tango.EventData:
+            """
+            Read an event from the queue.
+
+            With a single subscription active at any one time, the attribute
+            is ignored by this implementation but is expected to be required
+            by strategy that support multiple attribute subscriptions.
+            """
+            return self._queue.get()  # TODO: 1. implement timeout functionality
+
+        def notify(self, evt: tango.EventData):
+            """
+            This implements the SubscriptionManager EventObserver interface. Tango
+            ChangeEvents republished by the SubscriptionManager are received via
+            this method.
+
+            Queue is thread-safe so we do not need to synchronise this method with
+            read_event.
+            """
+            LOGGER.debug('Received event: %s', evt)
+            self._queue.put(evt)
+
     def __init__(self, proxy_factory=TangoDeviceProxyFactory()):
         """
         Create a new TangoExecutor.
@@ -110,10 +201,15 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         """
         self._proxy_factory = proxy_factory
 
-        self._device_proxies: Dict[str, tango.DeviceProxy] = {}
+        # maps
+        subscription_manager = SubscriptionManager(proxy_factory)
+        self._evt_strategy = TangoExecutor.SingleQueueEventStrategy(subscription_manager)
 
-        # subscription
-        self.queue = Queue(maxsize=0)
+        # maps device names to device proxies. These proxies are used for
+        # command execution and polling reads. There is scope for these to be
+        # unified with the proxies used for event management.
+        # TODO modify TangoDeviceProxyFactory to cache proxies?
+        self._device_proxies: Dict[str, tango.DeviceProxy] = {}
 
     def execute(self, command: Command, **kwargs):
         """
@@ -147,57 +243,28 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
 
     def subscribe_event(self, attribute: Attribute):
         """
-        subscribe event on a Tango device.
+        Subscribe event on a Tango device.
 
-        :param attribute: the attribute to subscribe
-        :return: the subscribe id
+        :param attribute: the attribute to subscribe to
+        :return: subscription ID
         """
+        return self._evt_strategy.subscribe_event(attribute)
 
-        proxy = self._get_proxy(attribute.device)
-        LOGGER.debug("%s Subscribing to %s", attribute.device, attribute.name)
-        event_id = proxy.subscribe_event(
-            attribute.name, tango.EventType.CHANGE_EVENT, self.handle_state_change
-        )
-        LOGGER.debug(
-            "%s Subscribed to %s (event type: %s, event id: %d)",
-            attribute.device,
-            attribute.name,
-            tango.EventType.CHANGE_EVENT,
-            event_id,
-        )
-        return event_id
-
-    def handle_state_change(self, event: tango.EventData):
+    def read_event(self, attr: Attribute) -> tango.EventData:
         """
-        callback method triggered when subscribe event called
-        successfully
-
-        :param event:
-        :return:
+        Get an event for the specified attribute.
         """
-        LOGGER.debug(f"Event callback, type: {event.event}, error: {event.err}")
-        self.queue.put(event)
-
-    def read_event(self) -> tango.EventData:
-        """
-        Read an event from the queue
-
-        :param :
-        :return:
-        """
-        return self.queue.get()  # TODO: 1. implement timeout functionality
+        return self._evt_strategy.read_event(attr)  # TODO: 1. implement timeout functionality
 
     def unsubscribe_event(self, attribute: Attribute, event_id: int):
         """
         unsubscribe event on a Tango device.
 
-        :param event_id: event subscribe id
         :param attribute: the attribute to unsubscribe
+        :param event_id: event subscribe id
         :return:
         """
-        proxy = self._get_proxy(attribute.device)
-        LOGGER.debug("Unsubscribe event: %s/%s", attribute.device, attribute.name)
-        return proxy.unsubscribe_event(event_id)
+        self._evt_strategy.unsubscribe_event(attribute, event_id)
 
     def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
         # It takes time to construct and connect a device proxy to the remote
@@ -262,6 +329,132 @@ class RemoteScanIdGenerator:  # pylint: disable=too-few-public-methods
         with self.backing.get_lock():
             self.backing.value = self.skuid_client.fetch_scan_id()
             return self.backing.value
+
+
+# class EventObserver(Protocol):
+#     def notify(self, evt: tango.EventData) -> None:
+#         ...
+
+
+class Callback:
+    """
+    Callback is an observable that distributes Tango events received by the
+    callback instance to all observers registered at the moment of event
+    reception.
+    """
+
+    def __init__(self):
+        # observers should not be kept alive due to registration
+        # self.observers: weakref.WeakSet[EventObserver] = weakref.WeakSet()
+        self._observers = weakref.WeakSet()
+
+        # Observer notification is likely to run on a different thread from
+        # observer registration, hence the observers set is locked before any
+        # operation.
+        self._observers_lock = threading.Lock()
+
+    def register_observer(self, observer):
+        """
+        Register an EventObserver.
+
+        Once registered, the observer will be notified of all Tango events
+        received by this instance.
+
+        :param observer: observer to register
+        """
+        with self._observers_lock:
+            self._observers.add(observer)
+
+    def unregister_observer(self, observer):
+        """
+        Unregister an EventObserver.
+
+        Unsubscribed observers will not receive Tango events subsequently
+        received by this instance.
+
+        :param observer: observer to register
+        """
+        with self._observers_lock:
+            self._observers.discard(observer)
+
+    def notify_observers(self, evt: tango.EventData):
+        """
+        Distribute an event to all registered observers.
+
+        :param evt: event to distribute
+        """
+        # take a snapshot of observers to give stable state to iterate over.
+        # We iterate over a copy rather than notifying while holding the lock
+        # as we do not know how observer event processing will take.
+        with self._observers_lock:
+            observers_copy = set(self._observers)
+
+        for o in observers_copy:
+            o.notify(evt)
+
+    def __call__(self, evt: tango.EventData):
+        """
+        Called by Tango DeviceProxy on event reception. Tango expects a
+        function, hence we implement __call__ to provide a function-like
+        interface.
+        """
+        self.notify_observers(evt)
+
+
+class SubscriptionManager:
+    def __init__(self, proxy_factory=TangoDeviceProxyFactory()):
+        self._proxy_factory = proxy_factory
+        self._proxies: Dict[str, tango.DeviceProxy] = {}
+        self._callbacks: Dict[Tuple[str, str], Callback] = {}
+        # maps (device name, device attribute) to event subscription ID
+        self._subscription_ids: Dict[Tuple[str, str], int] = {}
+
+        atexit.register(self._unsubscribe_all)
+
+# py3.8
+# def register_observer(self, attr: Attribute, observer: EventObserver):
+    def register_observer(self, attr: Attribute, observer):
+        # the observer must be registered before the subscription is
+        # established to prevent a window where an event could be received but
+        # not distributed
+        callback = self._get_callback(attr)
+        callback.register_observer(observer)
+        self._subscribe(callback, attr)
+
+    def _subscribe(self, callback, attr):
+        k = (attr.device, attr.name)
+        if k not in self._subscription_ids:
+            proxy = self._get_proxy(attr.device)
+            sub_id = proxy.subscribe_event(attr.name, tango.EventType.CHANGE_EVENT, callback)
+            self._subscription_ids[k] = sub_id
+
+# py3.8
+# def register_observer(self, attr: Attribute, observer: EventObserver):
+    def unregister_observer(self, attr: Attribute, observer):
+        callback = self._get_callback(attr)
+        callback.unregister_observer(observer)
+
+    def _get_proxy(self, device_name: str) -> tango.DeviceProxy:
+        if device_name not in self._proxies:
+            proxy = self._proxy_factory(device_name)
+            self._proxies[device_name] = proxy
+        return self._proxies[device_name]
+
+    def _get_callback(self, attr: Attribute) -> Callback:
+        k = (attr.device, attr.name)
+        if k in self._callbacks:
+            return self._callbacks[k]
+
+        callback = Callback()
+        self._callbacks[k] = callback
+        return callback
+
+    def _unsubscribe_all(self):
+        for (device, attr), pid in self._subscription_ids.items():
+            proxy = self._get_proxy(device)
+            LOGGER.debug('Unsubscribing ID %s (%s/%s)', pid, device, attr)
+            proxy.unsubscribe_event(pid)
+        self._subscription_ids.clear()
 
 
 # hold scan ID generator at the module level
