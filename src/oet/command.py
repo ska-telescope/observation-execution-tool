@@ -443,6 +443,7 @@ class SubscriptionManager:
         k = (attr.device, attr.name)
         if k not in self._subscription_ids:
             proxy = self._get_proxy(attr.device)
+            LOGGER.debug("Subscribing to %s/%s", attr.device, attr.name)
             sub_id = proxy.subscribe_event(
                 attr.name, tango.EventType.CHANGE_EVENT, callback
             )
