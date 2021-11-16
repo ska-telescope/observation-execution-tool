@@ -179,11 +179,13 @@ class TestTangoExecutor:
         with call_via_mocks() as (_, mock_proxy):
             mock_proxy.subscribe_event.side_effect = fake_subscribe
             executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
-            _ = executor.subscribe_event(attr)
-            received_evt = executor.read_event(attr)
+
+            with patch("oet.command.FEATURES") as mock_features:
+                mock_features.discard_first_event = False
+                _ = executor.subscribe_event(attr)
+                received_evt = executor.read_event(attr)
 
         assert received_evt == expected_evt
-
 
     def test_unsubscribe_keeps_tango_subscription(self):
         """
@@ -409,7 +411,6 @@ class TestSubscriptionManager:
         assert not mock_call.called
 
 
-
 class TestCallback:
     def test_all_observers_are_notified_of_received_events(self):
         cb = Callback()
@@ -419,7 +420,24 @@ class TestCallback:
             cb.register_observer(o)
 
         mock_event = Mock(spec=tango.EventData)
-        cb(mock_event)
+        with patch("oet.command.FEATURES") as mock_features:
+            mock_features.discard_first_event = False
+            cb(mock_event)
 
         for o in observers:
             o.notify.assert_called_once_with(mock_event)
+
+    def test_first_event_is_discarded_when_toggled(self):
+        cb = Callback()
+
+        observer = Mock()
+        cb.register_observer(observer)
+
+        evt_1 = Mock(spec=tango.EventData)
+        evt_2 = Mock(spec=tango.EventData)
+        with patch("oet.command.FEATURES") as mock_features:
+            mock_features.discard_first_event = True
+            cb(evt_1)
+            cb(evt_2)
+
+        observer.notify.assert_called_once_with(evt_2)
