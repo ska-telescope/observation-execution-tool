@@ -8,6 +8,7 @@ asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
 from __future__ import annotations
+
 import atexit
 import logging
 import multiprocessing
@@ -17,9 +18,10 @@ import threading
 import weakref
 from typing import Dict, Tuple
 
-
 import tango
 from ska_ser_skuid.client import SkuidClient
+
+from . import FEATURES
 
 LOGGER = logging.getLogger(__name__)
 
@@ -189,7 +191,7 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
             Queue is thread-safe so we do not need to synchronise this method with
             read_event.
             """
-            LOGGER.debug('Received event: %s', evt)
+            LOGGER.debug("Received event: %s", evt)
             self._queue.put(evt)
 
     def __init__(self, proxy_factory=TangoDeviceProxyFactory()):
@@ -203,7 +205,9 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
 
         # maps
         subscription_manager = SubscriptionManager(proxy_factory)
-        self._evt_strategy = TangoExecutor.SingleQueueEventStrategy(subscription_manager)
+        self._evt_strategy = TangoExecutor.SingleQueueEventStrategy(
+            subscription_manager
+        )
 
         # maps device names to device proxies. These proxies are used for
         # command execution and polling reads. There is scope for these to be
@@ -254,7 +258,9 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
         """
         Get an event for the specified attribute.
         """
-        return self._evt_strategy.read_event(attr)  # TODO: 1. implement timeout functionality
+        return self._evt_strategy.read_event(
+            attr
+        )  # TODO: 1. implement timeout functionality
 
     def unsubscribe_event(self, attribute: Attribute, event_id: int):
         """
@@ -353,6 +359,13 @@ class Callback:
         # operation.
         self._observers_lock = threading.Lock()
 
+        # Tango (or SKA implementation?) emits an event containing the current
+        # device value when subscribing to attribute change events. This is
+        # confusing as it's not a change in a value, just a statement of the
+        # initial value. This flag is set if the 'discard first event' feature
+        # flag is set and the first event is discarded.
+        self._first_event_discarded = False
+
     def register_observer(self, observer):
         """
         Register an EventObserver.
@@ -386,6 +399,11 @@ class Callback:
         # take a snapshot of observers to give stable state to iterate over.
         # We iterate over a copy rather than notifying while holding the lock
         # as we do not know how observer event processing will take.
+        if FEATURES.discard_first_event and not self._first_event_discarded:
+            self._first_event_discarded = True
+            LOGGER.debug("Discarding first event: %s", evt)
+            return
+
         with self._observers_lock:
             observers_copy = set(self._observers)
 
@@ -411,8 +429,8 @@ class SubscriptionManager:
 
         atexit.register(self._unsubscribe_all)
 
-# py3.8
-# def register_observer(self, attr: Attribute, observer: EventObserver):
+    # py3.8
+    # def register_observer(self, attr: Attribute, observer: EventObserver):
     def register_observer(self, attr: Attribute, observer):
         # the observer must be registered before the subscription is
         # established to prevent a window where an event could be received but
@@ -425,11 +443,13 @@ class SubscriptionManager:
         k = (attr.device, attr.name)
         if k not in self._subscription_ids:
             proxy = self._get_proxy(attr.device)
-            sub_id = proxy.subscribe_event(attr.name, tango.EventType.CHANGE_EVENT, callback)
+            sub_id = proxy.subscribe_event(
+                attr.name, tango.EventType.CHANGE_EVENT, callback
+            )
             self._subscription_ids[k] = sub_id
 
-# py3.8
-# def register_observer(self, attr: Attribute, observer: EventObserver):
+    # py3.8
+    # def register_observer(self, attr: Attribute, observer: EventObserver):
     def unregister_observer(self, attr: Attribute, observer):
         callback = self._get_callback(attr)
         callback.unregister_observer(observer)
@@ -452,7 +472,7 @@ class SubscriptionManager:
     def _unsubscribe_all(self):
         for (device, attr), pid in self._subscription_ids.items():
             proxy = self._get_proxy(device)
-            LOGGER.debug('Unsubscribing ID %s (%s/%s)', pid, device, attr)
+            LOGGER.debug("Unsubscribing ID %s (%s/%s)", pid, device, attr)
             proxy.unsubscribe_event(pid)
         self._subscription_ids.clear()
 
