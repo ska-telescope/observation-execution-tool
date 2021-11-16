@@ -55,35 +55,4 @@ TangoExecutor *-- EventHandlingStrategy
 TangoExecutor *-- SubscriptionManager
 SubscriptionManager *-- Callback
 
-'class EventStream {
-'subscription_id: int
-'_queue: Queue
-'__iter__()
-'}
-'
-'
-'class Device {
-'__key__()
-'__getattr__()
-'add_attribute(attr: Attribute)
-'}
-'
-'class Attribute {
-'name: str
-'__exec__()
-'value
-'stream: AttributeValueStream
-'}
-'
-'class ValueStream {
-'_q: Queue
-'_observers: List
-'__iter__()
-'}
-'
-'class TangoAttributeValueStream {
-'
-'}
-'TangoAttributeValueStream --|> ValueStream
-
 @enduml

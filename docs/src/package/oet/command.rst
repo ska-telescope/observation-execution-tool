@@ -22,12 +22,12 @@ behaviour, ``subscribe_attribute`` and ``unsubscribe_attribute`` register and un
 observer of events, with the ``TangoExecutor.notify`` method adding received events to the TangoExecutor queue read by
 the legacy ``TangoExecutor.read_event`` method.
 
-.. figure:: subscriptionmanager-class.png
+.. figure:: subscriptionmanager-class.svg
    :align: center
 
    Class diagram for components involved in OET event handling
 
-.. figure:: subscriptionmanager-sequence.png
+.. figure:: subscriptionmanager-sequence.svg
    :align: center
 
    Sequence diagram from OET event handling
