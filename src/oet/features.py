@@ -24,21 +24,18 @@ class Features:
         # the ini file, else from code default. The requirement to convert
         # environment variable strings to booleans makes this uglier than
         # ideal.
-        if "OET_READ_VIA_PUBSUB" in os.environ:
-            env_value = os.environ.get("OET_READ_VIA_PUBSUB")
-            self._use_pubsub = bool(distutils.util.strtobool(env_value))
+        discard_env = "OET_DISCARD_FIRST_EVENT"
+        if discard_env in os.environ:
+            env_value = os.environ.get(discard_env)
+            self._discard_first_event = bool(distutils.util.strtobool(env_value))
         else:
-            self._use_pubsub = config_parser.getboolean(
-                "tango", "read_via_pubsub", fallback=False
+            self._discard_first_event = config_parser.getboolean(
+                "tango", "discard_first_event", fallback=True
             )
 
     @property
-    def use_pubsub_to_read_tango_attributes(self) -> bool:
-        return self._use_pubsub
-
-    @property
-    def use_polling_to_read_tango_attributes(self) -> bool:
-        return not self._use_pubsub
+    def discard_first_event(self) -> bool:
+        return self._discard_first_event
 
     @staticmethod
     def create_from_config_files(*paths) -> "Features":
