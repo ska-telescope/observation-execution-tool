@@ -40,13 +40,24 @@ test:
     expire_in: 7 days
 
 
+diagrams:
+  stage: diagrams
+  tags:
+    - k8srunner
+  artifacts:
+    untracked: true
+  script:
+    - make diagrams
+
+
 docs:
   stage: docs
+  dependencies:
+    - diagrams
   tags:
     - k8srunner
   image: readthedocs/build:latest
   before_script:
-    - make diagrams
     - echo "error" > .docs_status
     - python3 -m pip install --exists-action=w --no-cache-dir --disable-pip-version-check -r docs/requirements.txt
     - python3 -m pip install anybadge
