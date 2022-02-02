@@ -9,8 +9,8 @@ comprises a Python script and a set of arguments, some of which will be
 set when the script is loaded and some at run-time.
 
 The management of 'Procedures' and the processes which execute them is
-handled by the :doc:`rest_server`, which implements the methods
-described in the :doc:`rest_api`. The :doc:`rest_server` lets the user:
+handled by the OET backend, which implements the methods
+described in the :doc:`architecture_module_rest_api`. The OET backend lets the user:
 
 * Load requested Procedure scripts with initialization arguments and
   have them ready for execution.
@@ -19,7 +19,7 @@ described in the :doc:`rest_api`. The :doc:`rest_server` lets the user:
 * Stop the script mid-execution by terminating the process executing it.
 
 The REST Client provides a command line interface (CLI) through which
-the user can communicate with the :doc:`rest_server` remotely.  The
+the user can communicate with the backend remotely.  The
 address of the remote REST server can be specified at the command line
 via the ``server-url`` argument, or set session-wide by setting the
 ``OET_REST_URI`` environment variable, e.g.,::
@@ -33,7 +33,7 @@ client within SKAMPI via the oet-ssh or oet-jupyter services, the
 ``OET_REST_URI`` variable is automatically set.
 
 The methods available through the REST Client map closely to the
-:doc:`rest_api` of the server and are described below.
+:doc:`architecture_module_rest_api` of the server and are described below.
 
 +--------------------+---------------+--------------------------------------------+-------------------------------------+
 | REST Client Method | Parameters    | Default                                    | Description                         |

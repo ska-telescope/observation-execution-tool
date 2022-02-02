@@ -1,101 +1,92 @@
-.. _rest-api:
+.. _architecture_module_rest_api:
 
 ********
 REST API
 ********
 
-A ‘Procedure’ represents a script along with its load-time arguments and
-runtime arguments. The REST API operates on procedures.
+1. Interface Identity
+=====================
+OET REST API presents REST resources that can be used to manage the lifecycle of Python scripts running on a remote
+server and to inspect their status.
 
-The workflow for the script execution service is to:
+2. Resources
+============
+A ‘Procedure’ represents a Python script to run, or that is running, on the backend. The REST API operates on
+Procedures.
 
-* Load a requested Python script(s) ready for execution;
-* When requested, start execution of the requested script;
-* Abort the script mid-execution if requested with an option to send the abort command to sub-array.
+The standard workflow is to use the API to:
 
-This workflow has been mapped to the following REST API:
+1. Instruct the backend to prepare a script for execution by using HTTP POST to upload a JSON ``Procedure`` to
+   /api/v1/procedures
+2. Start script execution by uploading an updated JSON ``Procedure`` with a ``ProcedureState`` of ``RUNNING``.
+3. (optional) a running script can be terminated by using PUT to upload a JSON ``Procedure`` with a ``ProcedureState``
+   of ``STOPPED``.
 
-+-------------+-------------------------+-------------------------------------+
-| HTTP Method | Resource URL            | Description                         |
-+=============+=========================+=====================================+
-| GET         | /api/v1/procedures      | **List procedures**:                |
-|             |                         | Return the collection of all        |
-|             |                         | prepared and running procedures     |
-+-------------+-------------------------+-------------------------------------+
-| GET         | /api/v1/procedures/<id> | Return a procedure definition       |
-+-------------+-------------------------+-------------------------------------+
-| GET         | /api/v1/stream          | **Streaming real time oet events**: |
-|             |                         | Return a real time oet events       |
-|             |                         | published by scripts                |
-+-------------+-------------------------+-------------------------------------+
-| POST        | /api/v1/procedures      | **Prepare a new procedure**         |
-|             |                         | Loads the requested script and      |
-|             |                         | prepares it for execution           |
-+-------------+-------------------------+-------------------------------------+
-| PUT         | /api/v1/procedures/<id> | **Modify a procedure**              |
-|             |                         | Modifies the state of a prepared    |
-|             |                         | procedure. This can be used to      |
-|             |                         | start execution by setting the      |
-|             |                         | ‘state’ procedure attribute to      |
-|             |                         | ``RUNNING`` or stop execution by    |
-|             |                         | setting ‘state’ to ``STOPPED``.     |
-+-------------+-------------------------+-------------------------------------+
+The current status of a script execution can be inspected at any time by reading the JSON ``Procedure`` with HTTP GET.
 
-Procedures are defined as JSON objects with the following fields:
+This workflow has been mapped to the following REST resources:
 
-+-------------+------------+----------------------------------------------------------------------+
-| Field       | JSON Type  | Description                                                          |
-+=============+============+======================================================================+
-| uri         | string     | Read-only procedure URI. Defined by server on procedure creation.    |
-+-------------+------------+----------------------------------------------------------------------+
-| script_uri  | string     | URI of the script to execute, e.g., file:///path/to/obsscript.py     |
-+-------------+------------+----------------------------------------------------------------------+
-| script_args | object     | **TO BE REFINED!** Dict of input arguments to provide to methods in  |
-|             |            | the script. Only two methods are recognised at the moment: ‘init’,   |
-|             |            | called at script creation time, and ‘run’, called to commence script |
-|             |            | execution.                                                           |
-|             |            |                                                                      |
-|             |            | Keys are the name of the script method, values are dicts with two    |
-|             |            | keys (‘args’ and ‘kwargs’) for positional arguments and              |
-|             |            | keyword/value arguments respectively. For example, below represents  |
-|             |            | a call to init(1,2,3,subarray_id=1)::                                |
-|             |            |                                                                      |
-|             |            |    "script_args": {                                                  |
-|             |            |      "init": {                                                       |
-|             |            |        "args": [                                                     |
-|             |            |          1,                                                          |
-|             |            |          2,                                                          |
-|             |            |          3                                                           |
-|             |            |        ],                                                            |
-|             |            |        "kwargs": {                                                   |
-|             |            |          "subarray_id": "1"                                          |
-|             |            |        }                                                             |
-|             |            |      }                                                               |
-|             |            |    }                                                                 |
-+-------------+------------+----------------------------------------------------------------------+
-| state       | str        | Script execution state: CREATED, RUNNING, STOPPED, COMPLETED,        |
-|             |            | FAILED.                                                              |
-+-------------+------------+----------------------------------------------------------------------+
-| history     | object     | history contains a Dict of process_states and stacktrace.            |
-|             |            |                                                                      |
-|             |            | process_states which contains a Dict of ProcedureStates and          |
-|             |            | timestamps for each state (e.g. {'CREATED': 18392174.543,            |
-|             |            | 'RUNNING': 18392143.546, 'COMPLETED': 183925456.744}).               |
-|             |            |                                                                      |
-|             |            | stacktrace which is None on default and will be populated with       |
-|             |            | the stacktrace from the script if script execution raises an         |
-|             |            | exception.                                                           |
-|             |            |                                                                      |
-+-------------+------------+----------------------------------------------------------------------+
+.. list-table:: REST resources
+   :widths: 5 15 80
+   :header-rows: 1
 
-Below is a JSON representation of an example procedure resource. This resource
+   * - HTTP Method
+     - Resource URL
+     - Description
+   * - GET
+     - ``/api/v1/procedures``
+     - **List procedures**
+       |br|
+       |br|
+       Return the collection of all prepared and running procedures.
+   * - GET
+     - ``/api/v1/procedures/<id>``
+     - Return a procedure definition
+   * - GET
+     - ``/api/v1/stream``
+     - **Streaming realtime OET events**
+       |br|
+       |br|
+       Return an SSE data stream of OET events as they are published by the OET and scripts.
+   * - POST
+     - ``/api/v1/procedures``
+     - **Prepare a new procedure**
+       |br|
+       |br|
+       Loads the requested script and prepares it for execution.
+   * - PUT
+     - ``/api/v1/procedures/<id>``
+     - **Modify the state of a prepared procedure**
+       |br|
+       |br|
+       This can be used to start execution by setting the Procedure ``state`` attribute to ``RUNNING`` or stop execution
+       by setting ``state`` to ``STOPPED``.
+
+
+
+3. Data Types and Constants
+===========================
+
+Type: ``Procedure``
+-------------------
+``Procedure`` is used to represent a Python script running in a Python process on the OET backend. Attributes are:
+
+  * ``string uri``: read-only URI of this procedure. Defined by the server on procedure creation.
+  * ``string script_uri``: URI of the script to execute, e.g., ``file:///path/to/obsscript.py``.
+  * ``CallArgs script_args``: arguments provided to the script at initialisation time and main execution time.
+  * ``ProcedureState state``: current state of this ``Procedure``.
+  * ``ProcedureHistory history``: timestamped execution history for this ``Procedure``.
+
+Example
+```````
+Below is an example ``Procedure`` JSON object. This resource
 (located at URI http://localhost:5000/api/v1.0/procedures/1), represents a
 script (located on disk at /path/to/observing_script.py), that has been loaded
 and its initialisation method called with two arguments (e.g, the script init
 function was called as
 ``init(subarray_id=1, sb_uri=’file:///path/to/scheduling_block_123.json’)``. The
 script is ready to execute but is not yet executing, as shown by its state
-being `CREATED``::
+being ``CREATED``::
 
     {
         "script_args": {
@@ -122,9 +113,78 @@ being `CREATED``::
         "uri": "http://localhost:5000/api/v1.0/procedures/1"
     }
 
-Examples
-========
 
+Type: ``CallArgs``
+------------------
+``CallArgs`` represents the arguments to be passed to functions in the user script when those functions are called.
+Attributes are:
+
+  * ``FunctionArgs init``: arguments passed to the script ``init`` function at script creation and initialisation time.
+  * ``FunctionArgs run``: arguments passed to the script ``main`` function when the main execution function is called.
+
+Type: ``FunctionArgs``
+----------------------
+``FunctionArgs`` captures the positional arguments and keywords arguments (to be) passed to a Python
+function. Attribute are:
+
+  * ``list args``: list of positional arguments for the Python function, e.g., ``"args": [1, 2, 3]``
+  * ``dict kwargs``: dictionary of keywords arguments, e.g., ``"kwargs": {"subarray_id": 1}``
+
+Type: ``ProcedureState``
+------------------------
+``ProcedureState`` is an enumeration representing the current lifecycle state of the Python process running the user
+script. It can be one of:
+
+  * ``CREATED``: script was successfully loaded by a Python subprocess and ``init`` function was successfully called.
+  * ``RUNNING``: script is running, i.e., the script's ``main`` function is currently executing.
+  * ``STOPPED``: script was terminated by the OET before the script could complete.
+  * ``COMPLETED``: the script completed successfully, i.e., the ``main`` function completed and no exception was raised.
+  * ``FAILED``: an exception was raised during script execution.
+
+Type: ``ProcedureHistory``
+--------------------------
+``ProcedureHistory`` represents a timeline of ``ProcedureStates`` that the ``Procedure`` has passed through. Attributes
+are:
+
+  * ``dict process_states``: a dictionary of ``ProcedureStates`` and timestamps when that ``ProcedureState`` was
+    reached, e.g. ``process_states: {'CREATED': 18392174.543, 'RUNNING': 18392143.546, 'COMPLETED': 183925456.744})``.
+  * ``string stacktrace``: populated with the stacktrace from the script if the final ``ProcedureState`` is ``FAILED``.
+    This attribute is set to None for any other final state.
+
+
+4. Error Handling
+=================
+
+Accessing the URL of a ``Procedure`` that does not exist on the backend or whose history has expired will result in a
+HTTP 404 error::
+
+    tangodev@buster:~/ska/ska-oso-oet$ curl -i http://localhost:5000/api/v1.0/procedures/4
+    HTTP/1.0 404 NOT FOUND
+    Content-Type: application/json
+    Content-Length: 103
+    Server: Werkzeug/1.0.1 Python/3.7.3
+    Date: Thu, 18 Feb 2021 17:40:30 GMT
+
+    {"error": "404 Not Found", "type": "ResourceNotFound", "Message": "No information available for PID=4"}
+
+
+5. Variability
+==============
+None
+
+6. Quality Attribute Characteristics
+====================================
+None
+
+7. Rationale and Design Issues
+==============================
+The procedure history is limited, and at some point a Procedure REST resource will become unavailable as it becomes
+superseded by new Procedures and that history slot is reclaimed. This is not expected to be a problem as a maximum of
+one script can run at any one time, so even a small history allows a reasonable amount of time for that Procedure
+history to be inspected.
+
+8. Usage Guide
+==============
 The following examples show some interactions with the REST service from the
 command line, using curl to send input to the service and with responses
 output to the terminal.
@@ -330,8 +390,8 @@ argument scan_duration=14::
     }
 
 
-Aborting process execution
---------------------------
+Terminate process execution
+---------------------------
 The signal to abort script mid-execution is to change the state of a procedure to
 ``STOPPED``. This is achieved with a PUT request to the resource. Additional argument
 `abort` can be provided in the request which, when true, will execute an abort script
@@ -346,24 +406,8 @@ False. ::
     Date: Wed, 15 Jan 2020 10:14:09 GMT
     {"abort_message":"Successfully stopped script with ID 2 and aborted subarray activity "}
 
-When an error occurs
+Listen to OET events
 --------------------
-If there is a mistake in the User input it is desirable that the API produces
-errors in a consistent computer-readable way.
-
-The session below attempts to list a procedure which does not exist::
-
-    tangodev@buster:~/ska/ska-oso-oet$ curl -i http://localhost:5000/api/v1.0/procedures/4
-    HTTP/1.0 404 NOT FOUND
-    Content-Type: application/json
-    Content-Length: 103
-    Server: Werkzeug/1.0.1 Python/3.7.3
-    Date: Thu, 18 Feb 2021 17:40:30 GMT
-
-    {"error": "404 Not Found", "type": "ResourceNotFound", "Message": "No information available for PID=4"}
-
-Listen real time oet events
----------------------------
 The session below lists all events published by oet scripts. This
 example shows two events, #1 request to available procedures #2 get the details of all the created procedures ::
 
@@ -385,3 +429,8 @@ example shows two events, #1 request to available procedures #2 get the details 
 
     data:{"msg_src": "SESWorker", "result": {"py/object": "oet.procedure.application.application.ProcedureSummary", "id": 1, "script_uri": "file://scripts/eventbus.py", "script_args": {"init": {"py/object": "oet.procedure.domain.ProcedureInput", "args": {"py/tuple": []}, "kwargs": {"subarray_id": 1}}, "run": {"py/object": "oet.procedure.domain.ProcedureInput", "args": {"py/tuple": []}, "kwargs": {}}}, "history": {"py/object": "oet.procedure.domain.ProcedureHistory", "process_states": {"py/reduce": [{"py/type": "collections.OrderedDict"}, {"py/tuple": []}, null, null, {"py/tuple": [{"py/tuple": [{"py/reduce": [{"py/type": "oet.procedure.domain.ProcedureState"}, {"py/tuple": [1]}]}, 1605017786.0569353]}]}]}, "stacktrace": null}, "state": {"py/id": 5}}, "topic": "procedure.lifecycle.created"}
     id:1605017784.1536236
+
+
+.. |br| raw:: html
+
+      <br>

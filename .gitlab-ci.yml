@@ -84,6 +84,7 @@ pages:
     - k8srunner
   stage: pages
   script:
+    - make diagrams
     - mkdir public
     - cp -R build public
   artifacts:
@@ -111,4 +112,3 @@ include:
 
 - project: 'ska-telescope/templates-repository'
   file: 'gitlab-ci/includes/build_wheel.yml'
-

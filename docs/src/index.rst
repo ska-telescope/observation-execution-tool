@@ -13,9 +13,17 @@
   :caption: Home
   :hidden:
 
-  rest_server
   rest_client
-  rest_api
+
+
+.. toctree::
+  :maxdepth: 1
+  :caption: Architecture
+  :hidden:
+
+  architecture_backend_candc
+  architecture_module_rest_api
+
 
 .. COMMUNITY SECTION ==================================================
 
@@ -49,17 +57,18 @@ API for the script execution engine available via REST over HTTP.
 The REST layer is made up of two components that work together to provide the
 remote script execution functionality:
 
-- The OET :doc:`rest_server` maintains a list of the scripts that have been
+- The OET REST server maintains a list of the scripts that have been
   loaded and their current state. The server implements the interface specified
-  by the OET :doc:`rest_api`.
+  by the OET :doc:`architecture_module_rest_api`.
 - The OET :doc:`rest_client` provides a Command Line Interface (CLI) to the
-  OET :doc:`rest_server`. It does this by translating and communicating HTTP
-  messages to and from the server.
+  OET backend.
+
+More details on the OET architecture can be found in :doc:`architecture_backend_candc`.
 
 .. note::
    SKA control scripts are not packaged as part of this project. The repository
    of observing scripts executed by the OET can be found in the
-   `OET Scripts <https://developer.skatelescope.org/projects/oet-scripts/en/latest/index.html>`_
+   `ska-oso-scripting <https://developer.skatelescope.org/projects/ska-oso-scripting/en/latest/index.html>`_
    project.
 
 Quickstart
@@ -148,7 +157,7 @@ inclusion in the CI server's downloadable artefacts.
 REST server
 -----------
 ``make rest`` starts the OET REST server. Details of the REST API can be
-found in :doc:`rest_api`. Instructions on how to use the REST client
+found in :doc:`architecture_module_rest_api`. Instructions on how to use the REST client
 can be found here: :doc:`rest_client`.
 
 Feature flags
@@ -163,12 +172,4 @@ Feature flags are read in this order:
 #. oet.ini configuration file;
 #. default flag value as specified in OET code.
 
-Available feature flags are:
-
-+----------------------+-------------------+---------+----------------------------+---------+
-| environment variable | oet.ini setting   | Type    | Description                | Default |
-+======================+===================+=========+============================+=========+
-| OET_READ_VIA_PUBSUB  | read_via_pubsub   | Boolean | sets whether pubsub or     | False   |
-|                      |                   |         | the alternative, polling,  |         |
-|                      |                   |         | is used to read from tango |         |
-+----------------------+-------------------+---------+----------------------------+---------+
+No feature flags are available at this time.
