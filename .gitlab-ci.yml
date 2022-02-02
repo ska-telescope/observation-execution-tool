@@ -12,6 +12,7 @@ stages:
   - build
   - test
   - lint
+  - diagrams
   - pages
   - publish
 
@@ -37,6 +38,19 @@ test:
     paths:
       - build
     expire_in: 7 days
+
+diagrams:
+  stage: diagrams
+  tags:
+    - k8srunner
+  script:
+    - make diagrams
+  artifacts:
+    name: "$CI_PROJECT_NAME-$CI_JOB_ID"
+    paths:
+      - build
+    expire_in: 7 days
+
 
 #integration_test:
 #  stage: test
@@ -84,7 +98,6 @@ pages:
     - k8srunner
   stage: pages
   script:
-    - make diagrams
     - mkdir public
     - cp -R build public
   artifacts:
