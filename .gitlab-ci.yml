@@ -19,28 +19,28 @@ stages:
 #  - pages
 #  - publish
 
-lint-check-chart:
-  stage: lint
-  tags:
-    - k8srunner
-  image: $SKA_K8S_TOOLS_DEPLOY_IMAGE
-  script:
-    - make chart_lint
-  artifacts:
-    paths:
-      - build
-
-test:
-  stage: test
-  tags:
-    - k8srunner
-  script:
-    - make test
-  artifacts:
-    name: "$CI_PROJECT_NAME-$CI_JOB_ID"
-    paths:
-      - build
-    expire_in: 7 days
+#lint-check-chart:
+#  stage: lint
+#  tags:
+#    - k8srunner
+#  image: $SKA_K8S_TOOLS_DEPLOY_IMAGE
+#  script:
+#    - make chart_lint
+#  artifacts:
+#    paths:
+#      - build
+#
+#test:
+#  stage: test
+#  tags:
+#    - k8srunner
+#  script:
+#    - make test
+#  artifacts:
+#    name: "$CI_PROJECT_NAME-$CI_JOB_ID"
+#    paths:
+#      - build
+#    expire_in: 7 days
 
 
 diagrams:
@@ -54,29 +54,29 @@ diagrams:
     - make diagrams
 
 
-docs:
-  stage: docs
-  dependencies:
-    - diagrams
-  tags:
-    - k8srunner
-  image: readthedocs/build:latest
-  before_script:
-    - echo "error" > .docs_status
-    - python3 -m pip install --exists-action=w --no-cache-dir --disable-pip-version-check -r docs/requirements.txt
-    - python3 -m pip install anybadge
-  script:
-    - python3 -m sphinx -T -E -b html -n -W --keep-going docs/source docs/build/html
-    - echo "pass" > .docs_status
-  after_script:
-    - mkdir -p build/badges
-    - anybadge --label=docs --value=$(cat .docs_status) --file=build/badges/docs.svg pass=green error=red
-  artifacts:
-    paths:
-      - ./build
-      - ./docs/build/html
-    expire_in: 7 days
-  when: always
+#docs:
+#  stage: docs
+#  dependencies:
+#    - diagrams
+#  tags:
+#    - k8srunner
+#  image: readthedocs/build:latest
+#  before_script:
+#    - echo "error" > .docs_status
+#    - python3 -m pip install --exists-action=w --no-cache-dir --disable-pip-version-check -r docs/requirements.txt
+#    - python3 -m pip install anybadge
+#  script:
+#    - python3 -m sphinx -T -E -b html -n -W --keep-going docs/source docs/build/html
+#    - echo "pass" > .docs_status
+#  after_script:
+#    - mkdir -p build/badges
+#    - anybadge --label=docs --value=$(cat .docs_status) --file=build/badges/docs.svg pass=green error=red
+#  artifacts:
+#    paths:
+#      - ./build
+#      - ./docs/build/html
+#    expire_in: 7 days
+#  when: always
 
 
 
@@ -110,28 +110,28 @@ docs:
 #      - build
 #    expire_in: 7 days
 
-lint:
-  stage: lint
-  tags:
-    - k8srunner
-  script:
-    - make lint
-  artifacts:
-    paths:
-      - build
-
-pages:
-  when: always
-  tags:
-    - k8srunner
-  stage: pages
-  script:
-    - mkdir public
-    - cp -R build public
-  artifacts:
-    paths:
-      - public
-    expire_in: 7 days
+#lint:
+#  stage: lint
+#  tags:
+#    - k8srunner
+#  script:
+#    - make lint
+#  artifacts:
+#    paths:
+#      - build
+#
+#pages:
+#  when: always
+#  tags:
+#    - k8srunner
+#  stage: pages
+#  script:
+#    - mkdir public
+#    - cp -R build public
+#  artifacts:
+#    paths:
+#      - public
+#    expire_in: 7 days
 
 
 ## Standardised included jobs
