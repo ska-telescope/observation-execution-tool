@@ -88,7 +88,7 @@ diagrams:  ## recreate PlantUML diagrams whose source has been modified
 		echo "Recreating $${i%%.*}.png"; \
 		cat $$i | docker run --rm think/plantuml -tsvg $$i > $${i%%.*}.svg; \
 	done
-	@docker run -v $(CURDIR):/data rlespinasse/drawio-export --format=svg --on-changes --remove-page-suffix docs/src/diagrams
+	docker run -v $(CURDIR):/data rlespinasse/drawio-export --format=svg --on-changes --remove-page-suffix docs/src/diagrams
 
 
 
