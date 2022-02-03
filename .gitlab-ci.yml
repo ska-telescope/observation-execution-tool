@@ -12,6 +12,7 @@ stages:
   - build
   - test
   - lint
+  - diagrams
   - docs
   - pages
   - publish
