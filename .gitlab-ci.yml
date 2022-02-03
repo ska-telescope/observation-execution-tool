@@ -9,13 +9,13 @@ image: $SKA_K8S_TOOLS_DOCKER_BUILDER_IMAGE
 # It is also specified that only the master branch will be subject of this job.
 
 stages:
-  - build
-  - test
-  - lint
+#  - build
+#  - test
+#  - lint
   - diagrams
-  - docs
-  - pages
-  - publish
+#  - docs
+#  - pages
+#  - publish
 
 lint-check-chart:
   stage: lint
@@ -48,6 +48,7 @@ diagrams:
   artifacts:
     untracked: true
   script:
+    - ls
     - make diagrams
 
 
