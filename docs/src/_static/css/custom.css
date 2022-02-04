@@ -76,3 +76,8 @@ SKA Earth Green: rgb(166, 206, 57)
 	width: 186px;
 	height: 135px;
 }
+
+/* override table no-wrap */
+.wy-table-responsive table td, .wy-table-responsive table th {
+    white-space: normal;
+}
