@@ -45,13 +45,13 @@ stages:
 
 diagrams:
   stage: diagrams
+  image: rlespinasse/drawio-export:latest
   tags:
     - k8srunner
   artifacts:
     untracked: true
   script:
-    - ls
-    - make diagrams
+    - /opt/drawio-desktop/entrypoint.sh --format=svg --on-changes --remove-page-suffix docs/src/diagrams
 
 
 #docs:
