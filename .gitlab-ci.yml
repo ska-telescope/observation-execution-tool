@@ -68,6 +68,7 @@ docs:
     - echo "pass" > .docs_status
   after_script:
     - mkdir -p build/badges
+    - anybadge --label=docs --value=$(cat .docs_status) --file=build/badges/docs.svg pass=green error=red
   artifacts:
     paths:
       - ./build
