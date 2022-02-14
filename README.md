@@ -32,6 +32,21 @@ inside the container:
 make interactive
 ```
 
+An interactive session can be useful for rebuilding the project documentation.
+From an interactive session, run
+
+```
+cd docs
+make html
+# open build/html/index.html in browser to see regenerated docs
+```
+
+To rebuild the PlantUML and drawio diagrams after modification, from a
+non-interactive session run
+
+```
+make diagrams
+```
 
 [![Documentation Status](https://readthedocs.org/projects/ska-telescope-ska-oso-oet/badge/?version=latest)](https://developer.skao.int/projects/ska-oso-oet/en/latest/?badge=latest)
 
