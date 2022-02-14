@@ -20,20 +20,51 @@
 import sphinx_rtd_theme
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../'))
+import typing
+
+# WORKAROUND: https://github.com/sphinx-doc/sphinx/issues/9243
+import sphinx.builders.html
+import sphinx.builders.latex
+import sphinx.builders.texinfo
+import sphinx.builders.text
+import sphinx.ext.autodoc
+
+sys.path.insert(0, os.path.abspath('../../src'))
 
 autodoc_mock_imports = [
     'astropy',
+    'fire',
+    'flask',
+    'jsonpickle',
     'marshmallow',
-    'ska',
+    'pubsub',
     'ska_ser_skuid',
+    'ska_ser_logging',
+    'sseclient',
+    'tabulate',
     'tango',
+    'tblib'
 ]
+
+autodoc_default_options = {
+    "members": True,
+    "special-members": "__init__",
+}
 
 
 def setup(app):
     app.add_css_file('css/custom.css')
     app.add_js_file('js/github.js')
+
+
+# Add any Sphinx extension module names here, as strings. They can be
+# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
+# ones.
+nitpick_ignore = [
+    ("py:class", "tango.EventData"),
+    ("py:class", "oet.command.SubscriptionManager"),
+]
+
 
 # -- General configuration ------------------------------------------------
 

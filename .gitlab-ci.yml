@@ -38,6 +38,45 @@ test:
       - build
     expire_in: 7 days
 
+
+#diagrams:
+#  stage: diagrams
+#  image: rlespinasse/drawio-export:latest
+#  tags:
+#    - k8srunner
+#  artifacts:
+#    untracked: true
+#  script:
+#    - /opt/drawio-desktop/entrypoint.sh --format=svg --on-changes --remove-page-suffix docs/src/diagrams
+
+
+#docs:
+#  stage: docs
+#  dependencies:
+#    - diagrams
+#  tags:
+#    - k8srunner
+#  image: readthedocs/build:latest
+#  before_script:
+#    - echo "error" > .docs_status
+#    - python3 -m pip install --exists-action=w --no-cache-dir --disable-pip-version-check -r docs/requirements.txt
+#    - python3 -m pip install anybadge
+#    - pyenv rehash
+#  script:
+#    - python3 -m sphinx -T -E -b html -n -W --keep-going docs/src docs/build/html
+#    - echo "pass" > .docs_status
+#  after_script:
+#    - mkdir -p build/badges
+#    - anybadge --label=docs --value=$(cat .docs_status) --file=build/badges/docs.svg pass=green error=red
+#  artifacts:
+#    paths:
+#      - ./build
+#      - ./docs/build/html
+#    expire_in: 7 days
+#  when: always
+
+
+
 #integration_test:
 #  stage: test
 #  dependencies:
@@ -111,4 +150,3 @@ include:
 
 - project: 'ska-telescope/templates-repository'
   file: 'gitlab-ci/includes/build_wheel.yml'
-
