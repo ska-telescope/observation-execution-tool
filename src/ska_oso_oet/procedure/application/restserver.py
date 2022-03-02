@@ -8,10 +8,10 @@ import jsonpickle
 from flask import Blueprint, current_app, stream_with_context
 from pubsub import pub
 
-from oet.event import topics
-from oet.mptools import MPQueue
-from oet.procedure import domain
-from oet.procedure.application import application
+from ska_oso_oet.event import topics
+from ska_oso_oet.mptools import MPQueue
+from ska_oso_oet.procedure import domain
+from ska_oso_oet.procedure.application import application
 
 # from werkzeug.serving import WSGIRequestHandler
 # WSGIRequestHandler.protocol_version = "HTTP/1.1"

@@ -11,7 +11,7 @@ import time
 
 import pytest
 
-from oet.mptools import (
+from ska_oso_oet.mptools import (
     MPQueue,
     _sleep_secs,
     SignalObject,

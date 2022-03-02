@@ -1,5 +1,5 @@
 """
-Unit tests for the oet.command module.
+Unit tests for the ska_oso_oet.command module.
 """
 import threading
 from contextlib import contextmanager
@@ -9,7 +9,7 @@ from unittest.mock import patch, Mock, MagicMock
 
 import tango
 
-from oet.command import (
+from ska_oso_oet.command import (
     Attribute,
     Callback,
     Command,
@@ -180,7 +180,7 @@ class TestTangoExecutor:
             mock_proxy.subscribe_event.side_effect = fake_subscribe
             executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
 
-            with patch("oet.command.FEATURES") as mock_features:
+            with patch("ska_oso_oet.command.FEATURES") as mock_features:
                 mock_features.discard_first_event = False
                 _ = executor.subscribe_event(attr)
                 received_evt = executor.read_event(attr)
@@ -230,7 +230,7 @@ def test_tango_device_proxy_creates_device_proxy_to_named_device():
     Confirm that the TangoDeviceProxyFactory creates a DeviceProxy using the
     device name given as an argument.
     """
-    with patch("oet.command.tango") as mock_pytango:
+    with patch("ska_oso_oet.command.tango") as mock_pytango:
         _ = TangoDeviceProxyFactory()("my device")
     mock_pytango.DeviceProxy.assert_called_once_with("my device")
 
@@ -327,7 +327,7 @@ class TestRemoteScanIdGenerator:
 
     def test_set_backing(self):
         """
-        class `oet.procedure.domain::Procedure` can set the scan id itself if it's
+        class `ska_oso_oet.procedure.domain::Procedure` can set the scan id itself if it's
         provided with one.
         Checking to make sure it does update and fetches next afterwards.
         """
@@ -420,7 +420,7 @@ class TestCallback:
             cb.register_observer(o)
 
         mock_event = Mock(spec=tango.EventData)
-        with patch("oet.command.FEATURES") as mock_features:
+        with patch("ska_oso_oet.command.FEATURES") as mock_features:
             mock_features.discard_first_event = False
             cb(mock_event)
 
@@ -435,7 +435,7 @@ class TestCallback:
 
         evt_1 = Mock(spec=tango.EventData)
         evt_2 = Mock(spec=tango.EventData)
-        with patch("oet.command.FEATURES") as mock_features:
+        with patch("ska_oso_oet.command.FEATURES") as mock_features:
             mock_features.discard_first_event = True
             cb(evt_1)
             cb(evt_2)

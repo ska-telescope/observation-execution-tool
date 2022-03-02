@@ -17,7 +17,7 @@ setuptools.setup(
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
     entry_points={
-        'console_scripts': ['oet=oet.procedure.application.restclient:main']
+        'console_scripts': ['oet=ska_oso_oet.procedure.application.restclient:main']
     },
     include_package_data=True,
     license="BSD license",
@@ -33,12 +33,7 @@ setuptools.setup(
     test_suite='tests/unit',
     install_requires=[
         'fire',
-        "Flask==1.1.2",  # AT2-813 hot fix
-        "Jinja2==2.11.2",  # AT2-813 hot fix
-        "itsdangerous==1.1.0",  # AT2-813 hot fix
-        "Werkzeug==1.0.1",  # AT2-813 hot fix
-        "MarkupSafe==1.1.1",  # AT2-813 hot fix
-        "click==7.1.2",  # AT2-813 hot fix
+        'Flask',
         'jsonpickle',
         'pypubsub',
         'pytango',

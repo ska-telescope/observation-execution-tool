@@ -1,18 +1,18 @@
 """
-Unit tests for the oet.procedure.application module.
+Unit tests for the ska_oso_oet.procedure.application module.
 """
 
 import unittest.mock as mock
 
 import pytest
 
-from oet.procedure.application.application import (
+from ska_oso_oet.procedure.application.application import (
     PrepareProcessCommand,
     ScriptExecutionService,
     StartProcessCommand,
     StopProcessCommand,
 )
-from oet.procedure.domain import (
+from ska_oso_oet.procedure.domain import (
     Procedure,
     ProcedureHistory,
     ProcedureInput,
@@ -66,7 +66,7 @@ def test_ses_create_summary_returns_empty_list_when_no_procedures_present():
     have been requested.
     """
     with mock.patch(
-        "oet.procedure.application.application.domain.ProcessManager"
+        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         instance = mock_pm.return_value
         instance.procedures = {}
@@ -90,7 +90,7 @@ def test_ses_create_summary_returns_expected_object():
         state=procedure.state,
     )
     with mock.patch(
-        "oet.procedure.application.application.domain.ProcessManager"
+        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         instance = mock_pm.return_value
         instance.procedures = procedures
@@ -117,7 +117,7 @@ def test_ses_prepare_call_sequence_and_returns_summary_for_created_process():
     )
 
     with mock.patch(
-        "oet.procedure.application.application.domain.ProcessManager"
+        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
@@ -154,7 +154,7 @@ def test_ses_start_calls_process_manager_function_and_returns_summary():
     )
 
     with mock.patch(
-        "oet.procedure.application.application.domain.ProcessManager"
+        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
@@ -190,7 +190,7 @@ def test_ses_summarise_returns_summaries_for_requested_pids():
     ]
 
     with mock.patch(
-        "oet.procedure.application.application.domain.ProcessManager"
+        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
@@ -215,7 +215,7 @@ def test_ses_summarise_fails_when_invalid_pid_requested():
     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
 
     with mock.patch(
-        "oet.procedure.application.application.domain.ProcessManager"
+        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
@@ -245,7 +245,7 @@ def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
     ]
 
     with mock.patch(
-        "oet.procedure.application.application.domain.ProcessManager"
+        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
@@ -311,7 +311,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     ]
 
     with mock.patch(
-        "oet.procedure.application.application.domain.ProcessManager"
+        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         # get the mock ProcessManager instance, preparing it for SES access
         instance = mock_pm.return_value
@@ -365,7 +365,7 @@ def test_ses_stop_calls_process_manager_function_with_no_script_execution(abort_
     expected = []
 
     with mock.patch(
-        "oet.procedure.application.application.domain.ProcessManager"
+        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         # get the mock ProcessManager instance, preparing it for SES access
         instance = mock_pm.return_value
@@ -401,7 +401,7 @@ def test_ses_get_subarray_id_for_requested_pid():
     expected = [process_summary]
 
     with mock.patch(
-        "oet.procedure.application.application.domain.ProcessManager"
+        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
@@ -426,7 +426,7 @@ def test_ses_get_subarray_id_fails_on_missing_subarray_id():
     procedures = {1: procedure}
 
     with mock.patch(
-        "oet.procedure.application.application.domain.ProcessManager"
+        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value

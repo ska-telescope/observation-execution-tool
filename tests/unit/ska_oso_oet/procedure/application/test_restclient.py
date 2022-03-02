@@ -8,8 +8,8 @@ from http import HTTPStatus
 import fire
 import requests_mock
 
-import oet
-from oet.procedure.application.restclient import (
+import ska_oso_oet
+from ska_oso_oet.procedure.application.restclient import (
     ProcedureSummary,
     RestAdapter,
     RestClientUI,
@@ -311,7 +311,7 @@ def test_stop_procedure_sends_command_with_abort_true():
 
 
 def test_restclientui_returns_error_when_not_passed_an_invalid_command():
-    restclient = oet.procedure.application.restclient.__file__
+    restclient = ska_oso_oet.procedure.application.restclient.__file__
     result = subprocess.run(
         ["python3", restclient, "blah"], capture_output=True, text=True
     )
@@ -384,17 +384,17 @@ RESTUI_LIST_RESPONSE_WITH_STACKTRACE = [
                     "RUNNING": 1603801921.3464086,
                 },
                 "stacktrace": """Traceback (most recent call last):
-  File "/app/oet/procedure/domain.py", line 132, in run
+  File "/app/ska_oso_oet/procedure/domain.py", line 132, in run
     self.user_module.main(*args, **kwargs)
   File "/app/scripts/allocate.py", line 47, in _main
     allocated = subarray.allocate(allocation)
-  File "/app/oet/domain.py", line 363, in allocate
+  File "/app/ska_oso_oet/domain.py", line 363, in allocate
     allocated = observingtasks.allocate_resources(self, resources)
-  File "/app/oet/observingtasks.py", line 352, in allocate_resources
+  File "/app/ska_oso_oet/observingtasks.py", line 352, in allocate_resources
     command = get_allocate_resources_command(subarray, resources)
-  File "/app/oet/observingtasks.py", line 259, in get_allocate_resources_command
+  File "/app/ska_oso_oet/observingtasks.py", line 259, in get_allocate_resources_command
     request = get_allocate_resources_request(subarray, resources, template_request)
-  File "/app/oet/observingtasks.py", line 228, in get_allocate_resources_request
+  File "/app/ska_oso_oet/observingtasks.py", line 228, in get_allocate_resources_request
     template_sdp_config = template_request.sdp_config
     AttributeError: 'NoneType' object has no attribute 'sdp_config'
 """,

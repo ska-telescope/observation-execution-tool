@@ -62,7 +62,7 @@ def setup(app):
 # ones.
 nitpick_ignore = [
     ("py:class", "tango.EventData"),
-    ("py:class", "oet.command.SubscriptionManager"),
+    ("py:class", "ska_oso_oet.command.SubscriptionManager"),
 ]
 
 

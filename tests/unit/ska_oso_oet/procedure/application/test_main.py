@@ -1,25 +1,25 @@
 """
-Unit tests for the oet.procedure.application.main module.
+Unit tests for the ska_oso_oet.procedure.application.main module.
 """
 import multiprocessing as mp
 import unittest.mock as mock
 from functools import partial
 
-from oet.event import topics
-from oet.mptools import (
+from ska_oso_oet.event import topics
+from ska_oso_oet.mptools import (
     EventMessage,
     MPQueue,
 )
-from oet.procedure import domain
-from oet.procedure.application import application
-from oet.procedure.application.main import (
+from ska_oso_oet.procedure import domain
+from ska_oso_oet.procedure.application import application
+from ska_oso_oet.procedure.application.main import (
     EventBusWorker,
     FlaskWorker,
     ScriptExecutionServiceWorker,
     main_loop,
 )
-from tests.unit.oet.mptools.test_mptools import _proc_worker_wrapper_helper
-from tests.unit.oet.procedure.application.test_restserver import PubSubHelper
+from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
+from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
 
 
 def test_event_bus_worker_verify_message_publishes_when_message_in_work_queue(caplog):
@@ -92,7 +92,7 @@ def test_script_execution_service_worker_verify_list_method_called(caplog):
     event = mp.Event()
 
     with mock.patch(
-        "oet.procedure.application.main.ScriptExecutionService.summarise"
+        "ska_oso_oet.procedure.application.main.ScriptExecutionService.summarise"
     ) as mock_cls:
         mock_cls.side_effect = partial(set_event, event)
         _proc_worker_wrapper_helper(
@@ -126,7 +126,7 @@ def test_script_execution_service_worker_handles_request_to_list_invalid_id(capl
     work_q.put(msg)
 
     with mock.patch(
-        "oet.procedure.application.main.ScriptExecutionService.summarise"
+        "ska_oso_oet.procedure.application.main.ScriptExecutionService.summarise"
     ) as mock_cls:
         mock_cls.side_effect = ValueError
         _proc_worker_wrapper_helper(
@@ -153,7 +153,7 @@ def test_script_execution_service_worker_verify_start_method_called(caplog):
         process_uid=123, run_args=domain.ProcedureInput()
     )
     with mock.patch(
-        "oet.procedure.application.main.ScriptExecutionService.start"
+        "ska_oso_oet.procedure.application.main.ScriptExecutionService.start"
     ) as mock_method:
         assert_command_request_and_response(
             caplog,
@@ -172,7 +172,7 @@ def test_script_execution_service_worker_verify_prepare_method_called(caplog):
         script_uri="test:///hi", init_args=domain.ProcedureInput()
     )
     with mock.patch(
-        "oet.procedure.application.main.ScriptExecutionService.prepare"
+        "ska_oso_oet.procedure.application.main.ScriptExecutionService.prepare"
     ) as mock_method:
         assert_command_request_and_response(
             caplog,
@@ -189,7 +189,7 @@ def test_script_execution_service_worker_verify_stop_method_called(caplog):
     """
     cmd = application.StopProcessCommand(process_uid=123, run_abort=False)
     with mock.patch(
-        "oet.procedure.application.main.ScriptExecutionService.stop"
+        "ska_oso_oet.procedure.application.main.ScriptExecutionService.stop"
     ) as mock_method:
         assert_command_request_and_response(
             caplog,

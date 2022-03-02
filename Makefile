@@ -75,7 +75,7 @@ up: namespace install-chart wait
 down: uninstall-chart delete_namespace
 
 rest:  ## start OET REST server
-	docker run --rm -p 5000:5000 -v $(CURDIR):/app -e PYTHONPATH=/app/src -w /app --name=ska-oso-oet-rest $(IMAGE_TO_TEST) python -m oet.procedure.application.main
+	docker run --rm -p 5000:5000 -v $(CURDIR):/app -e PYTHONPATH=/app/src -w /app --name=ska-oso-oet-rest $(IMAGE_TO_TEST) python -m ska_oso_oet.procedure.application.main
 
 post-push:
 	@. $(RELEASE_SUPPORT) ; differsFromRelease || docker push $(IMAGE):$(VERSION) ;

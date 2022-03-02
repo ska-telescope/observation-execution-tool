@@ -1,5 +1,5 @@
 """
-The oet.procedure.application module holds classes and functionality that
+The ska_oso_oet.procedure.application module holds classes and functionality that
 belong in the application layer of the OET. This layer holds the application
 interface, delegating to objects in the domain layer for business rules and
 actions.

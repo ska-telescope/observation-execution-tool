@@ -3,18 +3,17 @@ Unit tests for the features module
 """
 import os
 from configparser import ConfigParser
+from importlib import resources
 from unittest import mock
 
-from pkg_resources import resource_exists
-
-from oet.features import Features
+from ska_oso_oet.features import Features
 
 
 def test_pubsub_precedence():
     """
     Test that feature flags are set in the expected order:
       1. by environment variable
-      2. by oet.ini file
+      2. by ska_oso_oet.ini file
       3. default value set in code
     """
     # get the default value by supplying a parser with no flags set
@@ -101,4 +100,4 @@ def test_default_config_file_is_packaged():
     Test to make sure that the default config file is packaged.
     Added to catch a bug found during code review.
     """
-    assert resource_exists("oet", "oet.ini") is True
+    assert resources.is_resource("ska_oso_oet", "ska_oso_oet.ini")

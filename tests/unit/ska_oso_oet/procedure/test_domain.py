@@ -1,12 +1,12 @@
 """
-Unit tests for the oet.procedure.domain module.
+Unit tests for the ska_oso_oet.procedure.domain module.
 """
 import multiprocessing
 from unittest.mock import MagicMock
 
 import pytest
 
-from oet.procedure.domain import (
+from ska_oso_oet.procedure.domain import (
     Procedure,
     ProcedureInput,
     ProcedureHistory,
@@ -86,7 +86,7 @@ def script_that_increments_and_returns_scan_id(tmpdir):
 
     path.write(
         """
-from oet.command import SCAN_ID_GENERATOR
+from ska_oso_oet.command import SCAN_ID_GENERATOR
 
 def main(queue):
     queue.put(SCAN_ID_GENERATOR.next())

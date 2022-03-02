@@ -7,8 +7,8 @@ import requests
 from flask import request
 from pubsub import pub
 
-from oet.event import topics
-from oet.mptools import (
+from ska_oso_oet.event import topics
+from ska_oso_oet.mptools import (
     EventMessage,
     MainContext,
     MPQueue,
@@ -16,8 +16,8 @@ from oet.mptools import (
     default_signal_handler,
     init_signals,
 )
-from oet.procedure.application import restserver
-from oet.procedure.application.application import (
+from ska_oso_oet.procedure.application import restserver
+from ska_oso_oet.procedure.application.application import (
     PrepareProcessCommand,
     ScriptExecutionService,
     StartProcessCommand,

@@ -13,15 +13,15 @@ import flask
 import pytest
 from pubsub import pub
 
-import oet.procedure.domain as domain
-from oet.event import topics
-from oet.procedure.application import restserver
-from oet.procedure.application.application import (
+import ska_oso_oet.procedure.domain as domain
+from ska_oso_oet.event import topics
+from ska_oso_oet.procedure.application import restserver
+from ska_oso_oet.procedure.application.application import (
     PrepareProcessCommand,
     StartProcessCommand,
     StopProcessCommand,
 )
-from oet.procedure.domain import ProcedureInput, ProcedureSummary
+from ska_oso_oet.procedure.domain import ProcedureInput, ProcedureSummary
 
 # Endpoint for the REST API
 ENDPOINT = "api/v1.0/procedures"
@@ -709,7 +709,7 @@ def test_sse_string_messages_are_streamed_correctly(client):
     msg = restserver.Message("foo", type="message")
 
     with mock.patch(
-        "oet.procedure.application.restserver.ServerSentEventsBlueprint.messages"
+        "ska_oso_oet.procedure.application.restserver.ServerSentEventsBlueprint.messages"
     ) as mock_messages:
         mock_messages.return_value = [msg]
         response = client.get("/api/v1.0/stream")
@@ -729,7 +729,7 @@ def test_sse_complex_messages_are_streamed_correctly(client):
     msg = restserver.Message({"foo": "bar"}, type="message", id=123)
 
     with mock.patch(
-        "oet.procedure.application.restserver.ServerSentEventsBlueprint.messages"
+        "ska_oso_oet.procedure.application.restserver.ServerSentEventsBlueprint.messages"
     ) as mock_messages:
         mock_messages.return_value = [msg]
         response = client.get("/api/v1.0/stream")

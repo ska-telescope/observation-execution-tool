@@ -1,5 +1,5 @@
 """
-The oet.procedure.domain module holds domain entities from the script
+The ska_oso_oet.procedure.domain module holds domain entities from the script
 execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
@@ -19,8 +19,8 @@ from multiprocessing.dummy import Pool
 
 from pubsub import pub
 
-from oet.command import SCAN_ID_GENERATOR
-from oet.event import topics
+from ska_oso_oet.command import SCAN_ID_GENERATOR
+from ska_oso_oet.event import topics
 
 LOGGER = logging.getLogger(__name__)
 

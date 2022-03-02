@@ -163,13 +163,13 @@ can be found here: :doc:`rest_client`.
 Feature flags
 -------------
 OET feature flags are configured via environment variables and configuration
-files. The configuration file, oet.ini, can be located either in the user's
+files. The configuration file, ska_oso_oet.ini, can be located either in the user's
 home directory, or the root of the installation folder.
 
 Feature flags are read in this order:
 
 #. environment variable;
-#. oet.ini configuration file;
+#. ska_oso_oet.ini configuration file;
 #. default flag value as specified in OET code.
 
 No feature flags are available at this time.
