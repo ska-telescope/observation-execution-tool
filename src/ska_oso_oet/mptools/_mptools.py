@@ -611,6 +611,9 @@ class MainContext:
     # Grace period after setting shutdown_event before processes are forcibly terminated
     STOP_WAIT_SECS = 3.0
 
+    # Seconds to wait for processes to respond to terminate before retrying
+    TERMINATE_TIMEOUT_SECS = 0.1
+
     def __init__(self):
         self.procs: List[Proc] = []
         self.queues: List[MPQueue] = []
@@ -697,7 +700,7 @@ class MainContext:
         while self.procs:
             proc = self.procs.pop()
             if proc.proc.is_alive():
-                if proc.terminate():
+                if proc.terminate(timeout=self.TERMINATE_TIMEOUT_SECS):
                     num_terminated += 1
                 else:
                     still_running.append(proc)

@@ -27,6 +27,11 @@ from ska_oso_oet.mptools import (
 )
 
 
+# Seconds to wait for the coverage cleanup function to complete before
+# assessing process liveness
+COVERAGE_PROCESS_END_OVERHEAD_SECS = 0.3
+
+
 @pytest.fixture(autouse=True)
 def restore_default_signal_handlers():
     original_sigint_handler = signal.getsignal(signal.SIGINT)
@@ -375,6 +380,10 @@ def test_proc_full_stop_need_terminate(caplog):
     caplog.set_level(logging.INFO)
     proc = Proc("TEST", NeedTerminateWorker, shutdown_evt, event_q)
     proc.full_stop(wait_time=0.1)
+    # additional delay is required for coverage cleanup to complete, at which
+    # point the process will _finally_ be dead
+    proc.proc.join(timeout=COVERAGE_PROCESS_END_OVERHEAD_SECS)
+    assert not proc.proc.is_alive()
 
 
 def test_main_context_stop_queues():
@@ -389,15 +398,39 @@ def test_main_context_stop_queues():
 
 
 def _test_stop_procs(cap_log, proc_name, worker_class, *args):
+    """
+    Arrange for stop_procs to be called on a running worker class, collecting
+    stats on whether the worker was identified as failing, responding to
+    forcible termination, or zombie (not responding to shutdown events o
+    Terminateinterrupts).
+    """
     cap_log.set_level(logging.DEBUG)
     with MainContext() as mctx:
-        mctx.STOP_WAIT_SECS = 0.1
+        # Reduce grace period before MainContext starts terminating Procs for
+        # quicker testing. IMPORTANT! This delay must be sufficient for
+        # coverage to complete cleanup, which is registered as an atexit
+        # function to be run on subprocess exit. The _clean test will fail if
+        # this delay is insufficient, as the process will still be alive and
+        # running coverage code when the MainContext checks shutdown state,
+        # making it think further termination is required.
+        mctx.STOP_WAIT_SECS = COVERAGE_PROCESS_END_OVERHEAD_SECS
+        # Just as for STOP_WAIT_SECS, this must be sufficient for coverage
+        # cleanup to complete. This affects the hung_soft test, where the
+        # main loop exits but the cleanup routine keeps the ProcWorker alive.
+        mctx.TERMINATE_TIMEOUT_SECS = COVERAGE_PROCESS_END_OVERHEAD_SECS
         mctx.Proc(proc_name, worker_class, *args)
-        time.sleep(0.05)
 
+    # send SIGTERM again, thus ending the hard_hang worker that ignores the
+    # first TerminateInterrupt but respects the second
     for proc in mctx.procs:
         proc.terminate()
-    return mctx._stopped_procs_result, len(mctx.procs)
+
+    # MainContext.stop_procs is called as the context manager completes, which
+    # then sets _stopped_procs_result. It's private but contains the stats we
+    # need.
+    num_failed, num_terminated = mctx._stopped_procs_result
+    num_still_running = len(mctx.procs)
+    return num_failed, num_terminated, num_still_running
 
 
 def test_main_context_exception():
@@ -413,7 +446,7 @@ class CleanProcWorker(ProcWorker):
 
 
 def test_main_context_stop_procs_clean(caplog):
-    (num_failed, num_terminated), num_still_running = _test_stop_procs(
+    num_failed, num_terminated, num_still_running = _test_stop_procs(
         caplog, "CLEAN", CleanProcWorker
     )
     assert num_failed == 0
@@ -431,7 +464,7 @@ class FailProcWorker(ProcWorker):
 
 def test_main_context_stop_procs_fail(caplog):
     caplog.set_level(logging.DEBUG)
-    (num_failed, num_terminated), num_still_running = _test_stop_procs(
+    num_failed, num_terminated, num_still_running = _test_stop_procs(
         caplog, "FAIL", FailProcWorker
     )
     assert num_failed == 1
@@ -463,7 +496,11 @@ def _test_main_context_hang(cap_log, is_hard):
 
 
 def test_main_context_stop_procs_hung_soft(caplog):
-    (num_failed, num_terminated), num_still_running = _test_main_context_hang(
+    """
+    Verify stop_procs behaviour when processes do not respond to settomg
+    shutdown events but does respond to TerminateInterrupt.
+    """
+    num_failed, num_terminated, num_still_running = _test_main_context_hang(
         caplog, is_hard=False
     )
     assert num_failed == 0
@@ -472,7 +509,11 @@ def test_main_context_stop_procs_hung_soft(caplog):
 
 
 def test_main_context_stop_procs_hung_hard(caplog):
-    (num_failed, num_terminated), num_still_running = _test_main_context_hang(
+    """
+    Verify stop_procs behaviour when processes do not respond to setting
+    shutdown event or to TerminateInterrupts.
+    """
+    num_failed, num_terminated, num_still_running = _test_main_context_hang(
         caplog, is_hard=True
     )
     assert num_failed == 0
