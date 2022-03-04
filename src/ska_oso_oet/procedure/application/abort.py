@@ -56,15 +56,15 @@ def _main(subarray_id: int, *args, **kwargs):
     event_id = EXECUTOR.subscribe_event(attr)
 
     EXECUTOR.execute(cmd)
-    _wait_for_abort_state()
+    _wait_for_abort_state(attr)
     EXECUTOR.unsubscribe_event(attr, event_id)
 
     LOG.info("Abort script complete")
 
 
-def _wait_for_abort_state():
+def _wait_for_abort_state(attr: Attribute):
     while True:
-        event = EXECUTOR.read_event()
+        event = EXECUTOR.read_event(attr)
         if event.attr_value.value == 7:
             LOG.info("Subarray reached state ABORTED")
             return True
