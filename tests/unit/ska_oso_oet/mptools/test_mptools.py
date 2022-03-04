@@ -1,8 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""Tests for `mptools` package."""
-
+"""
+Unit tests for mptools package.
+"""
 import logging
 import multiprocessing as mp
 import os
@@ -329,7 +327,7 @@ def test_queue_proc_worker(caplog):
 
 
 class StartHangWorker(ProcWorker):
-    def startup(self):
+    def startup(self, *_):
         while True:
             time.sleep(1.0)
 
@@ -434,15 +432,22 @@ def _test_stop_procs(cap_log, proc_name, worker_class, *args):
 
 
 def test_main_context_exception():
+    """
+    Verify that MainContext does not swallow exceptions raised while the
+    MainContext is in scope.
+    """
     with pytest.raises(ValueError):
         with MainContext():
             raise ValueError("Yep, this is a value Error")
 
 
 class CleanProcWorker(ProcWorker):
+    """
+    Well-behaved process that completes successfully
+    """
+
     def main_func(self):
-        time.sleep(0.001)
-        return
+        pass
 
 
 def test_main_context_stop_procs_clean(caplog):
@@ -455,14 +460,19 @@ def test_main_context_stop_procs_clean(caplog):
 
 
 class FailProcWorker(ProcWorker):
+    """
+    Worker process that always raises an exception in its main loop.
+    """
+
     def main_func(self):
-        self.log(logging.DEBUG, "main_func called")
-        time.sleep(0.001)
-        self.log(logging.DEBUG, "main_func raising")
         raise ValueError("main func value error")
 
 
 def test_main_context_stop_procs_fail(caplog):
+    """
+    Verify stop_procs behaviour for a ProcWorker that fails due to an
+    exception.
+    """
     caplog.set_level(logging.DEBUG)
     num_failed, num_terminated, num_still_running = _test_stop_procs(
         caplog, "FAIL", FailProcWorker
@@ -473,14 +483,19 @@ def test_main_context_stop_procs_fail(caplog):
 
 
 class HangingProcWorker(ProcWorker):
+    """
+    A ProcWorker that ignores shutdown_event, forcing the signal handler to
+    raise TerminateInterrupts. The worker main loop will end on the first
+    TerminateInterrupt when if is_hard is False, or on the second
+    TerminateInterrupt when is_hard is True.
+    """
+
     def init_args(self, args):
         (self.is_hard,) = args
 
-    # def __init__(self, name, startup_event, shutdown_event, event_q, is_hard):
-    #     self.is_hard = is_hard
-    #     super().__init__(name, startup_event, shutdown_event, event_q)
-
     def main_loop(self):
+        # note that main_loop ignores shutdown_event, forcing the signal
+        # handler to start raising TerminateInterrupts.
         MAX_TERMINATES = 2 if self.is_hard else 1
         num_terminates = 0
         while num_terminates < MAX_TERMINATES:
@@ -489,6 +504,10 @@ class HangingProcWorker(ProcWorker):
                     time.sleep(5.0)
             except TerminateInterrupt:
                 num_terminates += 1
+        self.log(
+            level=logging.DEBUG,
+            msg=f'Terminating HangingProcworker loop after {num_terminates} signals'
+        )
 
 
 def _test_main_context_hang(cap_log, is_hard):

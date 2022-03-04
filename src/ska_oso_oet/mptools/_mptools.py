@@ -39,6 +39,7 @@ import sys
 import threading
 import time
 from queue import Empty, Full
+from types import FrameType
 from typing import Any, List, Tuple, Type, Union
 
 MPQUEUE_TIMEOUT = 0.02
@@ -122,29 +123,74 @@ class TerminateInterrupt(BaseException):
 
 
 class SignalObject:
+    """
+    SignalObject is a struct holding properties and state referenced by
+    mptools signal handlers during their processing.
+
+    Setting the SignalObject.shutdown_event will request all MPTools processes
+    cooperatively shut down. SignalObject also records how many times a signal
+    has been received, allowing escalation for processes that do not
+    co-operate with shutdown_event requests.
+    """
+
+    # Number of times terminate can be retried before hard kill
     MAX_TERMINATE_CALLED = 3
 
     def __init__(self, shutdown_event: mps.Event):
+        """
+        Create a new SignalObject.
+
+        :param shutdown_event: shutdown Event shared between all MPTools
+            processes
+        """
         self.terminate_called = 0
         self.shutdown_event = shutdown_event
 
 
 def default_signal_handler(
-    signal_object: SignalObject, exception_class, signal_num: int, current_stack_frame
-):
+    signal_object: SignalObject,
+    exception_class,
+    signal_num: int,
+    current_stack_frame: Union[FrameType, None],
+) -> None:
+    """
+    Custom signal handling function that requests co-operative ProcWorker
+    shutdown by setting the shared Event, forcibly terminating the process by
+    raising an instance of the given exception class if call limit has been
+    exceeded.
+
+    :param signal_object: SignalObject to modify to reflect signal-handling
+        state
+    :param exception_class: Exception type to raise when call limit is
+        exceeded
+    :param signal_num: POSIX signal ID
+    :param current_stack_frame: current stack frame
+    """
     signal_object.terminate_called += 1
     signal_object.shutdown_event.set()
     if signal_object.terminate_called >= signal_object.MAX_TERMINATE_CALLED:
         raise exception_class()
 
 
-def init_signal(signal_num, signal_object: SignalObject, exception_class, handler):
+def init_signal(signal_num: Any, signal_object: SignalObject, exception_class, handler):
+    # Pass each signal handler the SignalObject and exception class when called
     handler = functools.partial(handler, signal_object, exception_class)
     signal.signal(signal_num, handler)
     signal.siginterrupt(signal_num, False)
 
 
-def init_signals(shutdown_event, int_handler, term_handler):
+def init_signals(shutdown_event, int_handler, term_handler) -> SignalObject:
+    """
+    Install SIGINT and SIGTERM signal handlers for the running Python process.
+
+    This function returns the SignalObject shared with signal handlers that
+    the handlers use to store signal handling state.
+
+    :param shutdown_event: Event to set when SIGINT or SIGTERM is received
+    :param int_handler: SIGINT handler function to install
+    :param term_handler: SIGTERM handler function to install
+    :return: SignalObject processed by signal handlers
+    """
     signal_object = SignalObject(shutdown_event)
     init_signal(signal.SIGINT, signal_object, KeyboardInterrupt, int_handler)
     init_signal(signal.SIGTERM, signal_object, TerminateInterrupt, term_handler)
@@ -160,7 +206,7 @@ class ProcWorker:
     Python interpreter process.
 
     ProcWorker contains the standard boilerplate code required to set up a
-    well behaved child process. It handles starting the process, connecting
+    well-behaved child process. It handles starting the process, connecting
     signal handlers, signalling the parent that startup completed, etc.
     ProcWorker does not contain any business logic, which should be defined
     in a subclass of ProcWorker.
@@ -168,7 +214,7 @@ class ProcWorker:
     The core ProcWorker template method is main_loop, which is called once
     startup is complete and main execution begins. In ProcWorker this method
     is left blank and should be overridden by the class extending ProcWorker.
-    Once the main_loop method is complete, the ProcWorker is shutdown.
+    Once the main_loop method is complete, the ProcWorker is shut down.
 
     MPTools provides some ProcWorker subclasses with main_loop implementations
     that provide different kinds of behaviour. For instance,
@@ -178,12 +224,9 @@ class ProcWorker:
       a function with every item received.
     """
 
-    # Number of times terminate is retried before
-    MAX_TERMINATE_CALLED = 3
-
-    # signal handler for SIGINT
+    # set default_signal_handler function as SIGINT and SIGTERM handlers for
+    # this class
     int_handler = staticmethod(default_signal_handler)
-    # signal handler for SIGTERM
     term_handler = staticmethod(default_signal_handler)
 
     def __init__(
@@ -229,7 +272,10 @@ class ProcWorker:
 
     def init_signals(self) -> SignalObject:
         """
-        Initialise the signal handler
+        Initialise signal handlers for this worker process.
+
+        Calling this method will install SIGTERM and SIGINT signal handlers
+        for the running process.
         """
         self.log(logging.DEBUG, "Entering init_signals")
         signal_object = init_signals(
@@ -275,7 +321,7 @@ class ProcWorker:
             # Start main loop execution
             self.main_loop()
 
-            # A well behaved main_loop exits when the shutdown event is set or
+            # A well-behaved main_loop exits when the shutdown event is set or
             # the END sentinel message is received. When this occurs, control
             # flow moves here and we broadcast that a normal shutdown occurred.
             self.log(logging.INFO, "Normal Shutdown")
@@ -283,9 +329,8 @@ class ProcWorker:
             return 0
 
         except BaseException as exc:
-            # We get here if an exception was raised in the main_loop.
-
-            # -- Catch ALL exceptions, even Terminate and Keyboard interrupt
+            # We get here if an exception was raised in the main_loop, even
+            # TerminateInterrupt and KeyboardInterrupt
             self.log(logging.ERROR, f"Exception Shutdown: {exc}", exc_info=True)
             self.event_q.safe_put(EventMessage(self.name, "FATAL", f"{exc}"))
             # -- TODO: call raise if in some sort of interactive mode
@@ -368,9 +413,9 @@ class QueueProcWorker(ProcWorker):
         """
         self.log(logging.DEBUG, "Entering QueueProcWorker.main_loop")
 
-        # stop processing as soon as the shutdown_event is set. When set, this
-        # breaks out of the while loop, thus ending main_loop and starting
-        # shutdown of this ProcWorker.
+        # stop processing as soon as the shutdown_event is set. Once set, this
+        # while loop terminates, thus ending main_loop and starting shutdown
+        # of this ProcWorker.
         while not self.shutdown_event.is_set():
 
             # Get next work item. This call returns after the default safe_get
@@ -515,7 +560,7 @@ class Proc:
             kwargs=dict(logging_config=logging_config),
         )
 
-        # At this point the mp.Process has been prepared, but it's not yet
+        # At this point the mp.Process has been instantiated, but it's not yet
         # running. Calling start() will cause the new interpreter to be
         # launched and the ProcWorker to start executing. If the ProcWorker
         # starts successfully, it will set the startup event.
@@ -546,7 +591,7 @@ class Proc:
 
         :param wait_time: grace time before sending SIGTERM signals
         """
-        self.log(logging.DEBUG, "Proc.full_stop stopping: %s", self.name)
+        self.log(logging.DEBUG, "Proc.full_stop stopping %s", self.name)
         self.shutdown_event.set()
         self.proc.join(wait_time)
         if self.proc.is_alive():
@@ -564,7 +609,7 @@ class Proc:
         :param timeout: second to wait before retry
         :return: True if process termination was successful
         """
-        self.log(logging.DEBUG, f"Proc.terminate terminating : {self.name}")
+        self.log(logging.DEBUG, "Proc.terminate terminating %s", self.name)
         attempt = 0
         while self.proc.is_alive():
             self.proc.terminate()
@@ -572,6 +617,11 @@ class Proc:
             attempt += 1
             if attempt >= max_retries:
                 break
+
+        # Insufficient timeout can mean pycoverage cleanup is still running at
+        # this point even if the ProcWorker loop ended and all OET code
+        # completed. This gives a misleading .is_alive(), breaking the
+        # hung_soft unit test
 
         if self.proc.is_alive():
             self.log(
@@ -586,19 +636,9 @@ class Proc:
                 logging.INFO,
                 "Proc.terminate terminated %s after %s attempt(s)",
                 self.name,
-                max_retries - attempt,
+                attempt,
             )
             return True
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """
-        Context manager that halts ProcWorker when the Proc falls out of scope.
-        """
-        self.full_stop()
-        return not exc_type
 
 
 # -- Main Wrappers
