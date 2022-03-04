@@ -1,9 +1,89 @@
+[tool.poetry]
+name = "ska-oso-oet"
+version = "2.13.2"
+description = "SKA Observation Execution Tool"
+authors = ["Team Buttons"]
+license = "BSD-3-Clause"
+readme = "README.md"
+repository = "https://github.com/ska-telescope/ska-oso-oet"
+documentation = "https://developer.skao.int/projects/ska-oso-oet/en/latest/index.html"
+keywords = ["SKA OSO"]
+packages = [
+    { include = "ska_oso_oet", from = "src" }
+]
+include = [
+    "src/ska_oso_oet/ska_oso_oet.ini",
+    { path = 'tests' }
+]
+classifiers = [
+    'Development Status :: 2 - Pre-Alpha',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: BSD License',
+    'Natural Language :: English',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.7',
+]
+
+[[tool.poetry.source]]
+name = 'ska-nexus'
+url = 'https://artefact.skao.int/repository/pypi-internal/simple'
+
+[tool.poetry.dependencies]
+python = "^3.7"
+fire = "^0.4.0"
+numpy = "1.17.2"
+pytango = "^9.3.3"
+Flask = "^2.0.3"
+jsonpickle = "^2.1.0"
+PyPubSub = "^4.0.3"
+requests = "^2.27.1"
+ska-ser-logging = "^0.4.1"
+ska-ser-skuid = "^3.3.3"
+sseclient = "^0.0.27"
+tabulate = "^0.8.9"
+tblib = "^1.7.0"
+
+[tool.poetry.dev-dependencies]
+black = "^21.12b0"
+pylint = "^2.12.2"
+pytest = "^6.2.5"
+pytest-bdd = "^5.0.0"
+pytest-cov = "^2.10.1"
+pytest-env = "^0.6.2"
+pytest-json-report = "^1.4.1"
+pylint-junit = "^0.3.2"
+pytest-mock = "^3.6.1"
+isort = "^5.10.1"
+flake8 = "^4.0.1"
+coverage = "^6.2"
+mock = "^4.0.3"
+requests-mock = "^1.9.3"
+
+[tool.poetry.scripts]
+oet = "ska_oso_oet.procedure.application.restclient:main"
+
+[tool.pytest.ini_options]
+log_cli_level = "DEBUG"
+log_cli_format = "%(asctime)s.%(msecs)03dZ|%(levelname)s|%(threadName)s|%(funcName)s|%(filename)s#%(lineno)d||%(message)s"
+log_cli_date_format = "%Y-%m-%dT%H:%M:%S"
+log_file = "pytest-logs.txt"
+log_file_format = "%(asctime)s.%(msecs)03dZ|%(levelname)s|%(threadName)s|%(funcName)s|%(filename)s#%(lineno)d||%(message)s"
+log_file_level = "DEBUG"
+env = [
+    "OET_REST_URI = http://ska-oso-oet-rest-test:5000/api/v1.0/procedures",
+]
+
+[tool.coverage.run]
+parallel = true
+branch = true
+data_file = ".coverage/.coverage"
+
 [tool.black]
 line-length = 88
+experimental-string-processing = true
 target-version = ['py37']
 include = '\.pyi?$'
 exclude = '''
-
 (
   /(
       \.eggs         # exclude a few common directories in the
@@ -21,3 +101,11 @@ exclude = '''
                      # the root of the project
 )
 '''
+
+[tool.isort]
+profile = "black"
+line_length = 79
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

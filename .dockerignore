@@ -21,8 +21,8 @@ coverage.xml
 
 .make
 Makefile
+PrivateRules.mak
 Dockerfile
 .release
 .gitlab-ci.yml
 .gitignore
-.tox
