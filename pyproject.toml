@@ -80,7 +80,7 @@ data_file = ".coverage/.coverage"
 
 [tool.black]
 line-length = 88
-experimental-string-processing = true
+preview = true
 target-version = ['py37']
 include = '\.pyi?$'
 exclude = '''
@@ -104,7 +104,7 @@ exclude = '''
 
 [tool.isort]
 profile = "black"
-line_length = 79
+line_length = 88
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

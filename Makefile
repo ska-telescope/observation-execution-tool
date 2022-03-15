@@ -26,6 +26,10 @@ PYTHON_TEST_FILE = tests/unit/
 
 K8S_CHART = ska-oso-oet-umbrella
 
+# unset defaults so settings in pyproject.toml take effect
+PYTHON_SWITCHES_FOR_BLACK =
+PYTHON_SWITCHES_FOR_ISORT =
+
 
 dev-up: K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION) --set ska-oso-oet.rest.ingress.enabled=true
 dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deployment
