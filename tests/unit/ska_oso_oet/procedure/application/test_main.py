@@ -6,10 +6,7 @@ import unittest.mock as mock
 from functools import partial
 
 from ska_oso_oet.event import topics
-from ska_oso_oet.mptools import (
-    EventMessage,
-    MPQueue,
-)
+from ska_oso_oet.mptools import EventMessage, MPQueue
 from ska_oso_oet.procedure import domain
 from ska_oso_oet.procedure.application import application
 from ska_oso_oet.procedure.application.main import (

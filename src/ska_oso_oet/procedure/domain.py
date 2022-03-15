@@ -98,7 +98,7 @@ class ProcedureHistory:
         p_history = ", ".join(
             ["({!s}, {!r})".format(s, t) for s, t in self.process_states.items()]
         )
-        return "<ProcessHistory(process_states=[{}], " "stacktrace={})>".format(
+        return "<ProcessHistory(process_states=[{}], stacktrace={})>".format(
             p_history, self.stacktrace
         )
 

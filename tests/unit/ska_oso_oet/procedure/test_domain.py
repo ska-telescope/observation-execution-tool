@@ -7,12 +7,12 @@ from unittest.mock import MagicMock
 import pytest
 
 from ska_oso_oet.procedure.domain import (
+    PROCEDURE_QUEUE_MAX_LENGTH,
     Procedure,
-    ProcedureInput,
     ProcedureHistory,
+    ProcedureInput,
     ProcedureState,
     ProcessManager,
-    PROCEDURE_QUEUE_MAX_LENGTH,
 )
 
 

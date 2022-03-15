@@ -576,7 +576,7 @@ class Proc:
             self.terminate()
             raise RuntimeError(
                 f"Process {name} failed to startup after {Proc.STARTUP_WAIT_SECS} "
-                f"seconds"
+                "seconds"
             )
 
     def full_stop(self, wait_time=SHUTDOWN_WAIT_SECS) -> None:

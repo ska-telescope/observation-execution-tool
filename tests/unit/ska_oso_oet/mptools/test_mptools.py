@@ -10,20 +10,19 @@ import time
 import pytest
 
 from ska_oso_oet.mptools import (
-    MPQueue,
-    _sleep_secs,
-    SignalObject,
-    init_signal,
-    default_signal_handler,
-    ProcWorker,
-    proc_worker_wrapper,
-    TimerProcWorker,
-    QueueProcWorker,
-    Proc,
     MainContext,
+    MPQueue,
+    Proc,
+    ProcWorker,
+    QueueProcWorker,
+    SignalObject,
     TerminateInterrupt,
+    TimerProcWorker,
+    _sleep_secs,
+    default_signal_handler,
+    init_signal,
+    proc_worker_wrapper,
 )
-
 
 # Seconds to wait for the coverage cleanup function to complete before
 # assessing process liveness
@@ -506,7 +505,7 @@ class HangingProcWorker(ProcWorker):
                 num_terminates += 1
         self.log(
             level=logging.DEBUG,
-            msg=f'Terminating HangingProcworker loop after {num_terminates} signals'
+            msg=f"Terminating HangingProcworker loop after {num_terminates} signals",
         )
 
 

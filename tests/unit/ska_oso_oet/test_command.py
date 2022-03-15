@@ -1,11 +1,11 @@
 """
 Unit tests for the ska_oso_oet.command module.
 """
-import threading
-from contextlib import contextmanager
 import json
 import multiprocessing
-from unittest.mock import patch, Mock, MagicMock
+import threading
+from contextlib import contextmanager
+from unittest.mock import MagicMock, Mock, patch
 
 import tango
 
@@ -13,11 +13,11 @@ from ska_oso_oet.command import (
     Attribute,
     Callback,
     Command,
-    TangoExecutor,
-    TangoDeviceProxyFactory,
     LocalScanIdGenerator,
     RemoteScanIdGenerator,
-    SubscriptionManager
+    SubscriptionManager,
+    TangoDeviceProxyFactory,
+    TangoExecutor,
 )
 
 
@@ -61,7 +61,9 @@ class TestCommand:
         Verify that the repr string for a Command is correctly formatted.
         """
         cmd = Command("device", "command name", 1, "def", 3, kw1="abc")
-        assert repr(cmd) == "<Command('device', 'command name', 1, 'def', 3, kw1='abc')>"
+        assert (
+            repr(cmd) == "<Command('device', 'command name', 1, 'def', 3, kw1='abc')>"
+        )
 
     def test_command_eq(self):
         """
@@ -87,7 +89,7 @@ def call_via_mocks():
     mock_proxy.subscribe_event.side_effect = range(100)
 
     with patch.object(
-            TangoDeviceProxyFactory, "__call__", return_value=mock_proxy
+        TangoDeviceProxyFactory, "__call__", return_value=mock_proxy
     ) as mock_call:
         try:
             yield mock_call, mock_proxy
@@ -352,7 +354,7 @@ class TestRemoteScanIdGenerator:
 
 class TestSubscriptionManager:
     def test_device_proxy_is_created_for_initial_observer(self):
-        attr = Attribute('device', 'attribute')
+        attr = Attribute("device", "attribute")
         with call_via_mocks() as (mock_call, _):
             mgr = SubscriptionManager(proxy_factory=TangoDeviceProxyFactory())
             mgr.register_observer(attr, Mock())
@@ -365,13 +367,13 @@ class TestSubscriptionManager:
         with call_via_mocks() as (mock_call, _):
             mgr = SubscriptionManager(proxy_factory=TangoDeviceProxyFactory())
             for i in range(10):
-                attr = Attribute('device', 'attribute')
+                attr = Attribute("device", "attribute")
                 mgr.register_observer(attr, Mock())
 
         mock_call.assert_called_once_with("device")
 
     def test_register_observer_adds_observer_to_appropriate_callback(self):
-        attr = Attribute('device', 'attribute')
+        attr = Attribute("device", "attribute")
         observer = Mock()
 
         with call_via_mocks() as (mock_call, _):
@@ -380,7 +382,7 @@ class TestSubscriptionManager:
             assert observer in mgr._get_callback(attr)._observers
 
     def test_unregister_observer_removes_observer_from_appropriate_callback(self):
-        attr = Attribute('device', 'attribute')
+        attr = Attribute("device", "attribute")
         observer = Mock()
 
         with call_via_mocks() as (mock_call, _):
@@ -393,7 +395,7 @@ class TestSubscriptionManager:
         with call_via_mocks() as (mock_call, mock_proxy):
             mgr = SubscriptionManager(proxy_factory=TangoDeviceProxyFactory())
             for i in range(10):
-                attr = Attribute('device', f'attr{i}')
+                attr = Attribute("device", f"attr{i}")
                 mgr.register_observer(attr, Mock())
             mgr._unsubscribe_all()
 
@@ -401,7 +403,7 @@ class TestSubscriptionManager:
             mock_proxy.unsubscribe_event.assert_any_call(i)
 
     def test_unregistering_does_not_create_a_new_subscription(self):
-        attr = Attribute('device', 'attribute')
+        attr = Attribute("device", "attribute")
         observer = Mock()
 
         with call_via_mocks() as (mock_call, _):

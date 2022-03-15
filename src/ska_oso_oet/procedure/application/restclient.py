@@ -104,52 +104,31 @@ class RestClientUI:
 
     TOPIC_DICT = {
         "request.procedure.create": (
-            lambda evt: (
-                f'User request: prepare {evt["cmd"]["script_uri"]} for execution on '
-                f'subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]}'
-            )
+            lambda evt: f'User request: prepare {evt["cmd"]["script_uri"]} for execution on subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]}'
         ),
         "request.procedure.list": (
             lambda evt: "User request to list all the procedures is received"
         ),
         "request.procedure.start": (
-            lambda evt: (
-                f"User request: start execution of process "
-                f'#{evt["cmd"]["process_uid"]}'
-            )
+            lambda evt: f'User request: start execution of process #{evt["cmd"]["process_uid"]}'
         ),
         "request.procedure.stop": (
-            lambda evt: (
-                f'User request: stop procedure #{evt["cmd"]["process_uid"]} with '
-                f'{"" if evt["cmd"]["run_abort"] else "no"} abort'
-            )
+            lambda evt: f'User request: stop procedure #{evt["cmd"]["process_uid"]} with {"" if evt["cmd"]["run_abort"] else "no"} abort'
         ),
         "procedure.pool.list": (
             lambda evt: "Enumerating current procedures and status"
         ),
         "procedure.lifecycle.created": (
-            lambda evt: (
-                f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) '
-                f"ready for execution on subarray "
-                f'{evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
-            )
+            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) ready for execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
         ),
         "procedure.lifecycle.started": (
-            lambda evt: (
-                f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) '
-                f"started execution on subarray "
-                f'{evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
-            )
+            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) started execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
         ),
         "procedure.lifecycle.stopped": (
             lambda evt: RestClientUI._extract_result_from_abort_result(evt)
         ),
         "procedure.lifecycle.failed": (
-            lambda evt: (
-                f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) '
-                f"execution failed on subarray "
-                f'{evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
-            )
+            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) execution failed on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
         ),
         "user.script.announce": lambda evt: f'Script message: {evt["msg"]}',
         "sb.lifecycle.allocated": (
@@ -186,14 +165,10 @@ class RestClientUI:
             lambda evt: f'SB {evt["sb_id"]}: configuring for scan {evt["scan_id"]}'
         ),
         "scan.lifecycle.configure.complete": (
-            lambda evt: (
-                f'SB {evt["sb_id"]}: scan {evt["scan_id"]} configuration complete'
-            )
+            lambda evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} configuration complete'
         ),
         "scan.lifecycle.configure.failed": (
-            lambda evt: (
-                f'SB {evt["sb_id"]}: scan {evt["scan_id"]} configuration failed'
-            )
+            lambda evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} configuration failed'
         ),
         "scan.lifecycle.start": (
             lambda evt: f'SB {evt["sb_id"]}: scan {evt["scan_id"]} starting'
@@ -268,7 +243,7 @@ class RestClientUI:
                 p.script_uri,
                 datetime.datetime.fromtimestamp(
                     p.history["process_states"]["CREATED"], tz=datetime.timezone.utc
-                ).strftime("%Y-%m-%d " "%H:%M:%S"),
+                ).strftime("%Y-%m-%d %H:%M:%S"),
                 p.state,
             )
             for p in procedures
