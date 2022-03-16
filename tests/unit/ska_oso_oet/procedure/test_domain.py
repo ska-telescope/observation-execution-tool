@@ -1,3 +1,5 @@
+# pylint: disable=W0613
+# - W0613(unused-argument) - these are fixtures, not function args
 """
 Unit tests for the ska_oso_oet.procedure.domain module.
 """

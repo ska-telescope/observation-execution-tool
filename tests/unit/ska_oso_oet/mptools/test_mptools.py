@@ -1,3 +1,9 @@
+# pylint: disable=W0221,W0613,W0212
+# - W0221(arguments-differ) - ignore complaints about test ProcWorkers
+#   removing variadic args from API. These test workers don't use them anyway.
+# - W0613(unused-argument) - these are fixtures, not function args
+# - W0212(protected-access) - tests need access to protected members to prove
+#   correctness
 """
 Unit tests for mptools package.
 """
@@ -26,7 +32,7 @@ from ska_oso_oet.mptools import (
 
 # Seconds to wait for the coverage cleanup function to complete before
 # assessing process liveness
-COVERAGE_PROCESS_END_OVERHEAD_SECS = 0.3
+COVERAGE_PROCESS_END_OVERHEAD_SECS = 0.5
 
 
 @pytest.fixture(autouse=True)
@@ -212,7 +218,7 @@ def test_proc_worker_run(caplog):
     assert item.msg_src == "TEST"
     assert item.msg_type == "SHUTDOWN"
     assert item.msg == "Normal"
-    assert f"MAIN_FUNC: ('ARG1', 'ARG2')" in caplog.text
+    assert "MAIN_FUNC: ('ARG1', 'ARG2')" in caplog.text
 
 
 def _proc_worker_wrapper_helper(
@@ -258,7 +264,7 @@ def test_proc_worker_wrapper(caplog):
 
     items = _proc_worker_wrapper_helper(caplog, ProcWorkerTest, ("ARG1", "ARG2"))
     assert not items
-    assert f"MAIN_FUNC: ('ARG1', 'ARG2')" in caplog.text
+    assert "MAIN_FUNC: ('ARG1', 'ARG2')" in caplog.text
 
 
 def test_proc_worker_exception(caplog):
@@ -283,7 +289,7 @@ def test_proc_worker_exception(caplog):
     assert item.msg_type == "FATAL"
     assert item.msg == "Because this doesn't happen often"
 
-    assert f"Exception Shutdown" in caplog.text
+    assert "Exception Shutdown" in caplog.text
 
 
 class TimerProcWorkerTest(TimerProcWorker):

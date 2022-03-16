@@ -22,9 +22,9 @@ def main(*args, **kwargs):
 
 
 def init(subarray_id: int):
-    global main
+    global main  # pylint: disable=global-statement
     main = functools.partial(_main, subarray_id)
-    LOG.info(f"Script bound to sub-array {subarray_id}")
+    LOG.info("Script bound to sub-array %s", subarray_id)
 
 
 def _main(subarray_id: int, *args, **kwargs):
@@ -35,14 +35,14 @@ def _main(subarray_id: int, *args, **kwargs):
     :param subarray_id: numeric subarray ID
     :return:
     """
-    LOG.info(f"Running abort script in OS process {os.getpid()}")
+    LOG.info("Running abort script in OS process %s", os.getpid())
 
     if args:
         LOG.warning("Got unexpected positional args: %s", args)
     if kwargs:
         LOG.warning("Got unexpected named args: %s", kwargs)
 
-    LOG.info(f"Called with main(subarray_id={subarray_id})")
+    LOG.info("Called with main(subarray_id=%s", subarray_id)
 
     subarray_fqdn = (
         os.getenv("SUBARRAYNODE_FQDN_PREFIX", "ska_mid/tm_subarray_node")
@@ -52,7 +52,7 @@ def _main(subarray_id: int, *args, **kwargs):
     cmd = Command(subarray_fqdn, "Abort")
     attr = Attribute(subarray_fqdn, "obsState")
 
-    LOG.info(f"Aborting subarray {subarray_id}")
+    LOG.info("Aborting subarray %s", subarray_id)
     event_id = EXECUTOR.subscribe_event(attr)
 
     EXECUTOR.execute(cmd)

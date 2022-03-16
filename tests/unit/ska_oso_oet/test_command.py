@@ -1,3 +1,6 @@
+# pylint: disable=W0212
+# - W0212(protected-access) - tests need access to protected members to prove
+#   correctness
 """
 Unit tests for the ska_oso_oet.command module.
 """
@@ -27,7 +30,7 @@ class TestAttribute:
         Verify that the repr string for an Attribute is correctly formatted
         """
         attr = Attribute("device", "name")
-        assert repr(attr) == "<Attribute('device', 'name')>"
+        assert repr(attr) == '<Attribute("device", "name")>'
 
     def test_eq(self):
         """
@@ -207,7 +210,7 @@ class TestTangoExecutor:
         """
         attr = Attribute("device", "name")
 
-        with call_via_mocks() as (mock_call, mock_proxy):
+        with call_via_mocks() as (mock_call, _):
             executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
             executor.read(attr)
 
@@ -366,7 +369,7 @@ class TestSubscriptionManager:
     def test_existing_device_proxy_is_reused_for_subsequent_observers(self):
         with call_via_mocks() as (mock_call, _):
             mgr = SubscriptionManager(proxy_factory=TangoDeviceProxyFactory())
-            for i in range(10):
+            for _ in range(10):
                 attr = Attribute("device", "attribute")
                 mgr.register_observer(attr, Mock())
 
@@ -376,7 +379,7 @@ class TestSubscriptionManager:
         attr = Attribute("device", "attribute")
         observer = Mock()
 
-        with call_via_mocks() as (mock_call, _):
+        with call_via_mocks():
             mgr = SubscriptionManager(proxy_factory=TangoDeviceProxyFactory())
             mgr.register_observer(attr, observer)
             assert observer in mgr._get_callback(attr)._observers
@@ -385,14 +388,14 @@ class TestSubscriptionManager:
         attr = Attribute("device", "attribute")
         observer = Mock()
 
-        with call_via_mocks() as (mock_call, _):
+        with call_via_mocks():
             mgr = SubscriptionManager(proxy_factory=TangoDeviceProxyFactory())
             mgr.register_observer(attr, observer)
             mgr.unregister_observer(attr, observer)
             assert observer not in mgr._get_callback(attr)._observers
 
     def test_unsubscribe_all_releases_all_subscriptions(self):
-        with call_via_mocks() as (mock_call, mock_proxy):
+        with call_via_mocks() as (_, mock_proxy):
             mgr = SubscriptionManager(proxy_factory=TangoDeviceProxyFactory())
             for i in range(10):
                 attr = Attribute("device", f"attr{i}")

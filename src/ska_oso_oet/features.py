@@ -35,10 +35,20 @@ class Features:
 
     @property
     def discard_first_event(self) -> bool:
+        """
+        True if the SubscriptionManager should discard the first event
+        received from a new Tango subscription.
+        """
         return self._discard_first_event
 
     @staticmethod
     def create_from_config_files(*paths) -> "Features":
+        """
+        Create a new Features instance from a set of feature flag
+        configuration files.
+
+        :param paths: configuration files to parse
+        """
         config = ConfigParser()
         # config.read() requires an iterable of paths. The paths tuple is
         # enough to satisfy this requirement.

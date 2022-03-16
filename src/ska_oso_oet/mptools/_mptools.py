@@ -71,15 +71,38 @@ class MPQueue(mpq.Queue):
         super().__init__(maxsize, ctx=ctx)
 
     def safe_get(self, timeout: Union[float, None] = MPQUEUE_TIMEOUT):
+        """
+        Remove and return an item from this MPQueue.
+
+        If optional arg timeout is None, safe_get returns an item if one is
+        immediately available. If optional arg timeout is a positive number
+        (the default), safe_get blocks at most timeout seconds for an item to
+        become available. In either case, None is returned if no item is
+        available.
+
+        :param timeout: maximum timeout in seconds, or None for no waiting
+           period
+        :return: None if no item is available
+        """
         try:
             if timeout is None:
                 return self.get(block=False)
-            else:
-                return self.get(block=True, timeout=timeout)
+            return self.get(block=True, timeout=timeout)
         except Empty:
             return None
 
     def safe_put(self, item, timeout: Union[float, None] = MPQUEUE_TIMEOUT) -> bool:
+        """
+        Put an item on this MPQueue.
+
+        safe_put adds an item onto the queue if a free slot is available,
+        blocking at most timeout seconds for a free slot and returning False
+        if no free slot was available within that time.
+
+        :param item: item to add
+        :param timeout: timeout in seconds
+        :return: True if the operation succeeded within the timeout
+        """
         try:
             self.put(item, block=False, timeout=timeout)
             return True
@@ -87,12 +110,22 @@ class MPQueue(mpq.Queue):
             return False
 
     def drain(self):
+        """
+        Drain all items from this MPQueue, yielding each item until all items
+        have been removed.
+        """
         item = self.safe_get()
         while item:
             yield item
             item = self.safe_get()
 
     def safe_close(self) -> int:
+        """
+        Drain and close this MPQueue.
+
+        No more items can be added to this MPQueue one safe_close has been
+        called.
+        """
         num_left = sum(1 for _ in self.drain())
         self.close()
         self.join_thread()
@@ -105,8 +138,12 @@ def _sleep_secs(max_sleep, end_time=sys.float_info.max):
     return max(0.0, min(end_time - time.time(), max_sleep))
 
 
-# -- Standard Event Queue manager
 class EventMessage:
+    """
+    EventMessage holds the message and message metadata for events sent on the
+    event queue between MPTools ProcWorkers.
+    """
+
     def __init__(self, msg_src: str, msg_type: str, msg: Any):
         self.id = time.time()
         self.msg_src = msg_src
@@ -150,8 +187,8 @@ class SignalObject:
 def default_signal_handler(
     signal_object: SignalObject,
     exception_class,
-    signal_num: int,
-    current_stack_frame: Union[FrameType, None],
+    signal_num: int,  # pylint: disable=unused-argument
+    current_stack_frame: Union[FrameType, None],  # pylint: disable=unused-argument
 ) -> None:
     """
     Custom signal handling function that requests co-operative ProcWorker
@@ -294,7 +331,7 @@ class ProcWorker:
     def shutdown(self) -> None:
         self.log(logging.DEBUG, "Entering shutdown")
 
-    def main_func(self, *args):
+    def main_func(self):
         self.log(logging.DEBUG, "Entering main_func")
         raise NotImplementedError(
             f"{self.__class__.__name__}.main_func is not implemented"
@@ -439,6 +476,13 @@ class QueueProcWorker(ProcWorker):
             # otherwise call main function with the queue item
             else:
                 self.main_func(item)
+
+    # Relax pylint as we are deliberately redefining the superclass main_func
+    # signature in this specialised subclass. This is intended to be a
+    # template, hence the implementation doesn't use item.
+    def main_func(self, item):  # pylint: disable=unused-argument,arguments-differ
+        # rely on a call to super to raise NotImplementedError
+        super().main_func()
 
 
 # -- Process Wrapper
@@ -683,6 +727,8 @@ class MainContext:
                 exc_info=(exc_type, exc_val, exc_tb),
             )
 
+        # pylint: disable=attribute-defined-outside-init
+        # these instance props are required for test validation
         self._stopped_procs_result = self.stop_procs()
         self._stopped_queues_result = self.stop_queues()
 
@@ -717,11 +763,24 @@ class MainContext:
         :param kwargs: queue constructor kwargs
         :return: message queue instance
         """
-        q = MPQueue(*args, **kwargs)
-        self.queues.append(q)
-        return q
+        queue = MPQueue(*args, **kwargs)
+        self.queues.append(queue)
+        return queue
 
     def stop_procs(self) -> Tuple[int, int]:
+        """
+        Stop all ProcWorkers managed by this MPContext.
+
+        stop_procs requests cooperative shutdown of running ProcWorkers before
+        escalating to more forceful methods using POSIX signals.
+
+        This function returns with a 2-tuple, the first item indicating the
+        number of ProcWorkers that returned a non-zero exit status on
+        termination, the second item indicating the number of ProcWorkers that
+        required termination.
+
+        :return: tuple of process termination stats
+        """
         # Post END sentinel message and set shutdown event
         self.event_queue.safe_put(EventMessage("stop_procs", "END", "END"))
         self.shutdown_event.set()
@@ -768,13 +827,13 @@ class MainContext:
         num_items_left = 0
 
         # Clear the queues list and close all associated queues
-        for q in self.queues:
-            num_items_left += sum(1 for __ in q.drain())
-            q.close()
+        for queue in self.queues:
+            num_items_left += sum(1 for __ in queue.drain())
+            queue.close()
 
         # Wait for all queue threads to stop
         while self.queues:
-            q = self.queues.pop(0)
-            q.join_thread()
+            queue = self.queues.pop(0)
+            queue.join_thread()
 
         return num_items_left

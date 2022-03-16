@@ -1,3 +1,6 @@
+# pylint: disable=W0212,W0613
+# - W0212(protected-access) - tests need to access protected props
+# - W0613(unused-argument) - these are fixtures, not function args
 """
 Unit tests for the procedure REST API module.
 """
@@ -151,7 +154,7 @@ def client():
     """
     Test fixture that returns a Flask application instance
     """
-    app = restserver.create_app("")  # flask.Flask(__name__)
+    app = restserver.create_app()
     app.config["TESTING"] = True
     app.config["msg_src"] = "unit tests"
     with app.test_client() as client:
@@ -814,7 +817,7 @@ def test_message_raise_exception_on_empty():
     Verify that empty message() raise exception
     """
     with pytest.raises(TypeError):
-        restserver.Message()
+        restserver.Message()  # pylint: disable=no-value-for-parameter
 
 
 def test_message_with_simple_data():

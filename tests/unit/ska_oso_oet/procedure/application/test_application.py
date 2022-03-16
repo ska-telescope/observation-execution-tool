@@ -1,3 +1,5 @@
+# pylint: disable=W0212
+# - W0212(protected-access) - tests need to access protected props
 """
 Unit tests for the ska_oso_oet.procedure.application module.
 """
@@ -317,7 +319,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
         instance = mock_pm.return_value
         instance.procedures = process_manager_procedures
 
-        def create_abort(*args, **kwargs):
+        def create_abort(*_, **__):
             # The real .create() function would add the abort procedure to its
             # internal data structure when called
             process_manager_procedures[abort_pid] = abort_procedure
@@ -410,9 +412,7 @@ def test_ses_get_subarray_id_for_requested_pid():
         instance.procedures = procedures
 
         service = ScriptExecutionService()
-        returned = service._get_subarray_id(
-            process_pid
-        )  # pylint: disable=protected-access
+        returned = service._get_subarray_id(process_pid)
 
         assert returned == expected[0].script_args["init"].kwargs["subarray_id"]
 

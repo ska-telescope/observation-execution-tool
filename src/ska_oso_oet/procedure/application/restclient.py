@@ -1,3 +1,7 @@
+# Relax pylint. We deliberately catch all exceptions in the CLI in order to
+# return a user-friendly message.
+#
+# pylint: disable=broad-except
 """
 Client for the OET REST Service.
 
@@ -33,15 +37,17 @@ LOGGER = logging.getLogger(__name__)
 def iter_content(self):
     if (
         hasattr(self.resp.raw, "_fp")
-        and hasattr(self.resp.raw._fp, "fp")
-        and hasattr(self.resp.raw._fp.fp, "read1")
+        and hasattr(self.resp.raw._fp, "fp")  # pylint: disable=protected-access
+        and hasattr(self.resp.raw._fp.fp, "read1")  # pylint: disable=protected-access
         and not self.resp.raw.chunked
         and not self.resp.raw.getheader("Content-Encoding")
     ):
 
         def generate():
             while True:
-                chunk = self.resp.raw._fp.fp.read1(self.chunk_size)
+                chunk = self.resp.raw._fp.fp.read1(  # pylint: disable=protected-access
+                    self.chunk_size
+                )
                 if not chunk:
                     break
                 yield chunk
@@ -125,6 +131,7 @@ class RestClientUI:
             lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) started execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
         ),
         "procedure.lifecycle.stopped": (
+            # pylint: disable=unnecessary-lambda
             lambda evt: RestClientUI._extract_result_from_abort_result(evt)
         ),
         "procedure.lifecycle.failed": (
@@ -225,10 +232,10 @@ class RestClientUI:
     def _format_error(error_json: str) -> str:
         try:
             error_d = json.loads(error_json)
-            type = error_d["type"]
+            msg_type = error_d["type"]
             message = error_d["Message"]
             error = error_d["error"]
-            msg = f"Server encountered error {error}:\n  {type}: {message}"
+            msg = f"Server encountered error {error}:\n  {msg_type}: {message}"
         except ValueError:
             # ValueError raised if error is not valid JSON. This happens at least when
             # REST server is not running and returns Connection refused error
@@ -310,7 +317,7 @@ class RestClientUI:
             procedures = self._client.list(pid)
             return self._tabulate(procedures)
         except Exception as err:
-            LOGGER.debug(f"received exception {err}")
+            LOGGER.debug("received exception %s", err)
             return self._format_error(str(err))
 
     def create(self, script_uri: str, *args, subarray_id=1, **kwargs) -> str:
@@ -335,7 +342,7 @@ class RestClientUI:
             procedure = self._client.create(script_uri, init_args=init_args)
             return self._tabulate([procedure])
         except Exception as err:
-            LOGGER.debug(f"received exception {err}")
+            LOGGER.debug("received exception %s", err)
             return self._format_error(str(err))
 
     def start(
@@ -394,7 +401,7 @@ class RestClientUI:
                     yield msg
 
         except Exception as err:
-            LOGGER.debug(f"received exception {err}")
+            LOGGER.debug("received exception %s", err)
             yield self._format_error(str(err))
 
     def stop(self, pid=None, run_abort=True) -> str:
@@ -426,7 +433,7 @@ class RestClientUI:
             response = self._client.stop(pid, run_abort)
             return response
         except Exception as err:
-            LOGGER.debug(f"received exception {err}")
+            LOGGER.debug("received exception %s", err)
             return self._format_error(str(err))
 
     def describe(self, pid=None) -> str:
@@ -448,7 +455,7 @@ class RestClientUI:
             procedure = self._client.list(pid)
             return self._tabulate_for_describe(procedure)
         except Exception as err:
-            LOGGER.debug(f"received exception {err}")
+            LOGGER.debug("received exception %s", err)
             return self._format_error(str(err))
 
     def listen(
@@ -479,9 +486,9 @@ class RestClientUI:
                 if output:
                     yield f"- {output}"
         except KeyboardInterrupt as err:
-            LOGGER.debug(f"received exception {err}")
+            LOGGER.debug("received exception %s", err)
         except Exception as err:
-            LOGGER.debug(f"received exception {err}")
+            LOGGER.debug("received exception %s", err)
             return self._format_error(str(err))
 
     @staticmethod

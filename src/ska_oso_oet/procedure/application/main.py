@@ -85,7 +85,10 @@ class EventBusWorker(QueueProcWorker):
         # that have been deleted
         pub.unsubscribe(self.republish, pub.ALL_TOPICS)
 
-    def main_func(self, evt: EventMessage) -> None:
+    # relax pylint to ignore renaming of item to evt. The base class handles
+    # items of any type. We want to constrain this subclass to a more specific
+    # event type.
+    def main_func(self, evt: EventMessage) -> None:  # pylint: disable=arguments-renamed
         """
         Republish external pub/sub message locally.
 
@@ -121,7 +124,7 @@ class FlaskWorker(EventBusWorker):
         # Call super.startup to enable pypubsub <-> event queue republishing
         super().startup()
 
-        app = restserver.create_app(None)
+        app = restserver.create_app()
         # add route to run shutdown_flask() when /shutdown is accessed
         app.add_url_rule("/shutdown", "shutdown", self.shutdown_flask, methods=["POST"])
 
@@ -129,7 +132,11 @@ class FlaskWorker(EventBusWorker):
         app.config.update(msg_src=self.name)
 
         # start Flask in a thread as app.run is a blocking call
-        self.flask = threading.Thread(target=app.run, kwargs=dict(host="0.0.0.0"))
+        # self.flask can't be created in __init__ as we want this thread to belong to
+        # the child process, not the spawning process
+        self.flask = threading.Thread(  # pylint: disable=attribute-defined-outside-init
+            target=app.run, kwargs=dict(host="0.0.0.0")
+        )
         self.flask.start()
 
     def shutdown(self) -> None:
@@ -169,7 +176,13 @@ class ScriptExecutionServiceWorker(EventBusWorker):
     that the ScriptExecutionService itself sends the message.
     """
 
-    def prepare(self, msg_src, request_id: str, cmd: PrepareProcessCommand):
+    def prepare(
+        self,
+        # msg_src MUST be part of method signature for pypubsub to function
+        msg_src,  # pylint: disable=unused-argument
+        request_id: str,
+        cmd: PrepareProcessCommand,
+    ):
         self.log(logging.DEBUG, "Prepare procedure request %s: %s", request_id, cmd)
         try:
             summary = self.ses.prepare(cmd)
@@ -194,7 +207,13 @@ class ScriptExecutionServiceWorker(EventBusWorker):
                 result=summary,
             )
 
-    def start(self, msg_src, request_id: str, cmd: StartProcessCommand):
+    def start(
+        self,
+        # msg_src MUST be part of method signature for pypubsub to function
+        msg_src,  # pylint: disable=unused-argument
+        request_id: str,
+        cmd: StartProcessCommand,
+    ):
         self.log(logging.DEBUG, "Start procedure request %s: %s", request_id, cmd)
         summary = self.ses.start(cmd)
         self.log(logging.DEBUG, "Start procedure %s result: %s", request_id, summary)
@@ -203,7 +222,13 @@ class ScriptExecutionServiceWorker(EventBusWorker):
             topics.procedure.lifecycle.started, request_id=request_id, result=summary
         )
 
-    def list(self, msg_src, request_id: str, pids=None):
+    def list(
+        self,
+        # msg_src MUST be part of method signature for pypubsub to function
+        msg_src,  # pylint: disable=unused-argument
+        request_id: str,
+        pids=None,
+    ):
         self.log(logging.DEBUG, "List procedures for request %s", request_id)
         try:
             summaries = self.ses.summarise(pids)
@@ -216,7 +241,13 @@ class ScriptExecutionServiceWorker(EventBusWorker):
             topics.procedure.pool.list, request_id=request_id, result=summaries
         )
 
-    def stop(self, msg_src, request_id: str, cmd: StopProcessCommand):
+    def stop(
+        self,
+        # msg_src MUST be part of method signature for pypubsub to function
+        msg_src,  # pylint: disable=unused-argument
+        request_id: str,
+        cmd: StopProcessCommand,
+    ):
         self.log(logging.DEBUG, "Stop procedure request %s: %s", request_id, cmd)
         try:
             summary = self.ses.stop(cmd)
@@ -242,7 +273,11 @@ class ScriptExecutionServiceWorker(EventBusWorker):
     def startup(self) -> None:
         super().startup()
 
-        self.ses = ScriptExecutionService()
+        # self.ses can't be created in __init__ as we want the service to belong to
+        # the child process, not the spawning process
+        self.ses = (  # pylint: disable=attribute-defined-outside-init
+            ScriptExecutionService()
+        )
 
         # wire up topics to the corresponding SES methods
         pub.subscribe(self.prepare, topics.request.procedure.create)

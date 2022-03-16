@@ -42,7 +42,7 @@ class Attribute:
         self.name = name
 
     def __repr__(self):
-        return "<Attribute({!r}, {!r})>".format(self.device, self.name)
+        return f'<Attribute("{self.device}", "{self.name}")>'
 
     def __eq__(self, other):
         if not isinstance(other, Attribute):
@@ -69,13 +69,9 @@ class Command:
         self.kwargs = kwargs
 
     def __repr__(self):
-        arg_str = ", ".join(["{!r}".format(o) for o in self.args])
-        kwarg_str = ", ".join(
-            ["{!s}={!r}".format(k, v) for k, v in self.kwargs.items()]
-        )
-        return "<Command({!r}, {!r}, {}, {})>".format(
-            self.device, self.command_name, arg_str, kwarg_str
-        )
+        arg_str = ", ".join([repr(o) for o in self.args])
+        kwarg_str = ", ".join([f"{k}={repr(v)}" for k, v in self.kwargs.items()])
+        return f"<Command({repr(self.device)}, {repr(self.command_name)}, {arg_str}, {kwarg_str})>"
 
     def __eq__(self, other):
         if not isinstance(other, Command):
@@ -140,13 +136,17 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
             :return: subscription identifier
             """
             if self._subscribed:
-                raise Exception("Multiple subscriptions not allowed: %s", attr)
+                raise Exception(f"Multiple subscriptions not allowed: {attr}")
 
             LOGGER.debug("Observing %s/%s", attr.device, attr.name)
             self._subscription_manager.register_observer(attr, self)
             return -1
 
-        def unsubscribe_event(self, attr: Attribute, subscription_id: int) -> None:
+        def unsubscribe_event(
+            self,
+            attr: Attribute,
+            subscription_id: int,  # pylint: disable=unused-argument
+        ) -> None:
             """
             Unsubscribe to change events published by a Tango attribute.
 
@@ -172,7 +172,9 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
                 except queue.Empty:
                     drained = True
 
-        def read_event(self, attr: Attribute) -> tango.EventData:
+        def read_event(
+            self, attr: Attribute  # pylint: disable=unused-argument
+        ) -> tango.EventData:
             """
             Read an event from the queue.
 
@@ -294,6 +296,9 @@ class LocalScanIdGenerator:  # pylint: disable=too-few-public-methods
 
     @property
     def value(self):
+        """
+        Get the current scan ID.
+        """
         with self.backing.get_lock():
             return self.backing.value
 
@@ -320,6 +325,9 @@ class RemoteScanIdGenerator:  # pylint: disable=too-few-public-methods
 
     @property
     def value(self):
+        """
+        Get the current scan ID.
+        """
         with self.backing.get_lock():
             # Default value, scan id's should be > 0
             if self.backing.value == -1:
@@ -407,8 +415,8 @@ class Callback:
         with self._observers_lock:
             observers_copy = set(self._observers)
 
-        for o in observers_copy:
-            o.notify(evt)
+        for observer in observers_copy:
+            observer.notify(evt)
 
     def __call__(self, evt: tango.EventData):
         """
@@ -420,6 +428,19 @@ class Callback:
 
 
 class SubscriptionManager:
+    """
+    SubscriptionManager is a proxy for Tango event subscriptions that prevents
+    duplicate subscriptions and minimises subscribe/unsubscribe calls.
+
+    Previously, each time a script listened to an event, it would subscribe to
+    an event, wait for reception of the appropriate event, then unsubscribe.
+    These multiple subscribe/unsubscribe calls were found to create problems.
+    SubscriptionManager was introduced to manage subscriptions, with the aim of
+    having fewer, longer-lived subscriptions. Clients subscribe to the
+    SubscriptionManager, and the SubscriptionManager handles any required
+    subscriptions to Tango devices.
+    """
+
     def __init__(self, proxy_factory=TangoDeviceProxyFactory()):
         self._proxy_factory = proxy_factory
         self._proxies: Dict[str, tango.DeviceProxy] = {}
@@ -432,6 +453,15 @@ class SubscriptionManager:
     # py3.8
     # def register_observer(self, attr: Attribute, observer: EventObserver):
     def register_observer(self, attr: Attribute, observer):
+        """
+        Register an EventObserver as an observer of a Tango attribute.
+
+        Once registered, the EventObserver will be notified of each Tango
+        event published by the attribute.
+
+        :param attr: Tango attribute to observe
+        :param observer: the EventObserver to notify
+        """
         # the observer must be registered before the subscription is
         # established to prevent a window where an event could be received but
         # not distributed
@@ -452,6 +482,12 @@ class SubscriptionManager:
     # py3.8
     # def register_observer(self, attr: Attribute, observer: EventObserver):
     def unregister_observer(self, attr: Attribute, observer):
+        """
+        Deregister an EventObserver as an observer of a Tango attribute.
+
+        :param attr: the observed Tango attribute
+        :param observer: the EventObserver to unsubscribe
+        """
         callback = self._get_callback(attr)
         callback.unregister_observer(observer)
 

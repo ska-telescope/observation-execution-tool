@@ -1,3 +1,5 @@
+# pylint: disable=W1510
+# - W1510(subprocess-run-check) - not an issue - this is a test
 """
 Unit tests for the REST client module.
 """

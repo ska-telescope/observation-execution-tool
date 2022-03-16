@@ -30,6 +30,12 @@ K8S_CHART = ska-oso-oet-umbrella
 PYTHON_SWITCHES_FOR_BLACK =
 PYTHON_SWITCHES_FOR_ISORT =
 
+# Disable warning, convention, and refactoring messages
+# Disable errors:
+PYTHON_SWITCHES_FOR_PYLINT = --disable=C,R
+
+
+up: namespace install-chart wait
 
 dev-up: K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION) --set ska-oso-oet.rest.ingress.enabled=true
 dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deployment

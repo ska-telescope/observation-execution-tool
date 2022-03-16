@@ -31,8 +31,10 @@ class Message:
     def __init__(
         self,
         data: Union[str, dict],
-        type: Optional[str] = None,
-        id: Optional[Union[float, int, str]] = None,
+        type: Optional[str] = None,  # pylint: disable=redefined-builtin
+        id: Optional[  # pylint: disable=redefined-builtin
+            Union[float, int, str]
+        ] = None,
         retry: Optional[int] = None,
     ):
         """
@@ -219,7 +221,8 @@ def call_and_respond(request_topic, response_topic, *args, **kwargs):
     q = Queue(1)
     my_request_id = time.time()
 
-    def callback(msg_src, request_id, result):
+    # msg_src MUST be part of method signature for pypubsub to function
+    def callback(msg_src, request_id, result):  # pylint: disable=unused-argument
         if my_request_id == request_id:
             q.put(result)
 
@@ -395,12 +398,10 @@ def server_error_response(cause):
     return response
 
 
-def create_app(config_filename):
+# def create_app(config_filename):
+def create_app():
     """
     Create and return a new Flask app that will serve the REST API.
-
-    :param config_filename:
-    :return:
     """
     app = flask.Flask(__name__)
     # TODO get application config working

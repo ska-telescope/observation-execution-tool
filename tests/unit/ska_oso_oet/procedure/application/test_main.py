@@ -1,3 +1,5 @@
+# pylint: disable=W0613
+# - W0613(unused-argument): fixture usage
 """
 Unit tests for the ska_oso_oet.procedure.application.main module.
 """

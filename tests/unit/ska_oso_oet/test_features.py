@@ -87,7 +87,7 @@ def test_can_read_config_file(tmpdir):
 
     parser["tango"]["discard_first_event"] = "False"
 
-    with open(filename, "w") as configfile:
+    with open(filename, "w") as configfile:  # pylint: disable=unspecified-encoding
         parser.write(configfile)
 
     features = Features.create_from_config_files(filename)
