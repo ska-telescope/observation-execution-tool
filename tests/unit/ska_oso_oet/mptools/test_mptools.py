@@ -32,7 +32,7 @@ from ska_oso_oet.mptools import (
 
 # Seconds to wait for the coverage cleanup function to complete before
 # assessing process liveness
-COVERAGE_PROCESS_END_OVERHEAD_SECS = 0.5
+COVERAGE_PROCESS_END_OVERHEAD_SECS = 0.4
 
 
 @pytest.fixture(autouse=True)
