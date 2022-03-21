@@ -4,6 +4,8 @@
 Unit tests for the ska_oso_oet.procedure.domain module.
 """
 import multiprocessing
+from multiprocessing import Manager
+from queue import Empty
 from unittest.mock import MagicMock
 
 import pytest
@@ -53,9 +55,9 @@ def abort_script(tmpdir):
         """
 import time
 
-def main(queue, procedure):
+def main(l, item):
     time.sleep(2)
-    queue.put(procedure.pid)
+    l.add(item)
 """
     )
     return f"file://{str(script_path)}"
@@ -215,8 +217,9 @@ def test_procedure_run_executes_user_script(script_with_queue_path):
     queue = multiprocessing.Queue()
     procedure.script_args["run"].args = [queue, procedure]
     procedure.run()
-    assert queue.qsize() == 1
-    assert queue.get() is None
+    assert queue.get(timeout=1) is None
+    with pytest.raises(Empty):
+        queue.get(block=False)
 
 
 def test_procedure_run_catches_and_stores_script_exception(fail_script):
@@ -555,13 +558,13 @@ def test_process_manager_stop_terminates_the_process(manager, abort_script):
     """
     Verify that ProcessManager stops a script execution
     """
-    pid = manager.create(abort_script, init_args=ProcedureInput())
-    created = manager.procedures[pid]
-    queue = multiprocessing.Queue()
-    manager.run(pid, run_args=ProcedureInput(queue, created))
-    manager.stop(pid)
-    wait_for_process_to_complete(manager, timeout=3)
-    assert queue.empty()
+    with Manager() as mp_mgr:
+        pid = manager.create(abort_script, init_args=ProcedureInput())
+        lst = mp_mgr.list()
+        manager.run(pid, run_args=ProcedureInput(lst, pid))
+        manager.stop(pid)
+        wait_for_process_to_complete(manager, timeout=3)
+        assert len(lst) == 0
 
 
 def test_process_manager_sets_running_to_none_on_stop(manager, abort_script):
@@ -569,11 +572,13 @@ def test_process_manager_sets_running_to_none_on_stop(manager, abort_script):
     Verify that ProcessManager sets running procedure attribute to None
     when script is stopped
     """
-    pid = manager.create(abort_script, init_args=ProcedureInput())
-    manager.run(pid, run_args=ProcedureInput())
-    manager.stop(pid)
-    wait_for_process_to_complete(manager)
-    assert manager.running is None
+    with Manager() as mp_mgr:
+        pid = manager.create(abort_script, init_args=ProcedureInput())
+        lst = mp_mgr.list()
+        manager.run(pid, run_args=ProcedureInput(lst, pid))
+        manager.stop(pid)
+        wait_for_process_to_complete(manager)
+        assert manager.running is None
 
 
 def test_process_manager_updates_procedure_state_on_stop(manager, abort_script):
@@ -581,11 +586,13 @@ def test_process_manager_updates_procedure_state_on_stop(manager, abort_script):
     Verify that ProcessManager removes an stopped procedure from
     the procedures list
     """
-    pid = manager.create(abort_script, init_args=ProcedureInput())
-    manager.run(pid, run_args=ProcedureInput())
-    manager.stop(pid)
-    wait_for_process_to_complete(manager)
-    assert manager.procedures[pid].state == ProcedureState.STOPPED
+    with Manager() as mp_mgr:
+        pid = manager.create(abort_script, init_args=ProcedureInput())
+        lst = mp_mgr.list()
+        manager.run(pid, run_args=ProcedureInput(lst, pid))
+        manager.stop(pid)
+        wait_for_process_to_complete(manager)
+        assert manager.procedures[pid].state == ProcedureState.STOPPED
 
 
 def test_process_manager_stop_fails_on_invalid_pid(manager):

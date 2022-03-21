@@ -33,9 +33,9 @@ def abort_script(tmpdir):
         """
 import time
 
-def main(queue, procedure):
+def main(l, item):
     time.sleep(2)
-    queue.put(procedure.pid)
+    l.add(item)
 """
     )
     return f"file://{str(script_path)}"
@@ -267,7 +267,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     ProcessManager methods to stop process execution, then prepares and
     starts a new Process running the abort script.
     """
-    # Test script/procedures will target sub-array 2
+    # Test script/procedures will target sub-array 4
     subarray_id = 4
     # PID of running script
     running_pid = 50
