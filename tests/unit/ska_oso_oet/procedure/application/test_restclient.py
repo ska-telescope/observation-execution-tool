@@ -441,7 +441,7 @@ def test_listen_yields_sse_events(mock_iterator, mock_init):
 # Tests for the RestClientUI
 
 
-RESTUI_CREATE_RESPONSE = ProcedureSummary(
+REST_ADAPTER_CREATE_RESPONSE = ProcedureSummary(
     id=1,
     uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
     script_uri="file:///app/scripts/allocate.py",
@@ -454,7 +454,7 @@ RESTUI_CREATE_RESPONSE = ProcedureSummary(
 )
 
 
-RESTUI_LIST_RESPONSE = [
+REST_ADAPTER_LIST_RESPONSE = [
     ProcedureSummary(
         id=1,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
@@ -485,7 +485,7 @@ RESTUI_LIST_RESPONSE = [
     ),
 ]
 
-RESTUI_LIST_RESPONSE_WITH_STACKTRACE = [
+REST_ADAPTER_LIST_RESPONSE_WITH_STACKTRACE = [
     ProcedureSummary(
         id=2,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
@@ -521,7 +521,7 @@ RESTUI_LIST_RESPONSE_WITH_STACKTRACE = [
 ]
 
 
-RESTUI_START_RESPONSE = ProcedureSummary(
+REST_ADAPTER_START_RESPONSE = ProcedureSummary(
     id=1,
     uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
     script_uri="file:///app/scripts/allocate.py",
@@ -540,7 +540,7 @@ RESTUI_START_RESPONSE = ProcedureSummary(
 )
 
 
-RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
+REST_ADAPTER_LIST_RESPONSE_FOR_STOP = [
     ProcedureSummary(
         id=1,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
@@ -560,7 +560,7 @@ RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
     )
 ]
 
-RESTUI_TWO_RUNNING_PROCEDURES = [
+REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
     ProcedureSummary(
         id=1,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
@@ -597,11 +597,11 @@ RESTUI_TWO_RUNNING_PROCEDURES = [
     ),
 ]
 
-RESTUI_STOP_RESPONSE_1 = [
+REST_ADAPTER_STOP_RESPONSE = [
     "Successfully stopped script with ID 1 and aborted subarray activity"
 ]
 
-RESTUI_LIST_RESPONSE_FOR_DESCRIBE = [
+REST_ADAPTER_LIST_RESPONSE_FOR_DESCRIBE = [
     ProcedureSummary(
         id=1,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
@@ -622,7 +622,7 @@ RESTUI_LIST_RESPONSE_FOR_DESCRIBE = [
     )
 ]
 
-RESTUI_EVENT_RESPONSE = [
+REST_ADAPTER_LISTEN_RESPONSE = [
     Event(
         data='{"topic": "user.script.announce", "msg": "announced"}',
         event="some event",
@@ -668,7 +668,7 @@ def test_restclientui_returns_error_when_not_passed_an_invalid_command():
 
 @mock.patch.object(RestAdapter, "create")
 def test_restclientui_creates_a_valid_script(mock_create_fn, capsys):
-    mock_create_fn.return_value = RESTUI_CREATE_RESPONSE
+    mock_create_fn.return_value = REST_ADAPTER_CREATE_RESPONSE
     fire.Fire(RestClientUI, ["create", "file:///app/scripts/allocate.py"])
     captured = capsys.readouterr()
     result = parse_rest_create_list_response(captured.out)
@@ -691,7 +691,7 @@ def test_restclientui_handles_create_error(mock_start_fn, capsys):
 
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_lists_output(mock_list_fn, capsys):
-    mock_list_fn.return_value = RESTUI_LIST_RESPONSE
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE
     fire.Fire(RestClientUI, ["list"])
     captured = capsys.readouterr()
     result = parse_rest_create_list_response(captured.out)
@@ -725,8 +725,8 @@ def test_restclientui_start_output_when_nothing_to_start(mock_list_fn, capsys):
 def test_restclientui_start_output_when_given_no_pid(
     mock_list_fn, mock_start_fn, capsys
 ):
-    mock_list_fn.return_value = RESTUI_LIST_RESPONSE
-    mock_start_fn.return_value = RESTUI_START_RESPONSE
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE
+    mock_start_fn.return_value = REST_ADAPTER_START_RESPONSE
 
     fire.Fire(RestClientUI, ["start", "--nolisten"])
     captured = capsys.readouterr()
@@ -740,7 +740,7 @@ def test_restclientui_start_output_when_given_no_pid(
 def test_restclientui_start_output_when_last_created_script_has_failed(
     mock_list_fn, capsys
 ):
-    mock_list_fn.return_value = RESTUI_LIST_RESPONSE_WITH_STACKTRACE
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE_WITH_STACKTRACE
 
     fire.Fire(RestClientUI, ["start", "--nolisten"])
     captured = capsys.readouterr()
@@ -754,8 +754,8 @@ def test_restclientui_start_output_when_last_created_script_has_failed(
 @mock.patch.object(RestAdapter, "start")
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_start_output_when_given_pid(mock_list_fn, mock_start_fn, capsys):
-    mock_list_fn.return_value = RESTUI_LIST_RESPONSE
-    mock_start_fn.return_value = RESTUI_START_RESPONSE
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE
+    mock_start_fn.return_value = REST_ADAPTER_START_RESPONSE
 
     fire.Fire(RestClientUI, ["start", "--pid=1", "--nolisten"])
     captured = capsys.readouterr()
@@ -771,8 +771,8 @@ def test_restclientui_start_output_when_given_pid(mock_list_fn, mock_start_fn, c
 def test_restclientui_start_and_listen_output_with_event(
     mock_start_fn, mock_listen_fn, capsys
 ):
-    mock_start_fn.return_value = RESTUI_START_RESPONSE
-    mock_listen_fn.return_value = RESTUI_EVENT_RESPONSE
+    mock_start_fn.return_value = REST_ADAPTER_START_RESPONSE
+    mock_listen_fn.return_value = REST_ADAPTER_LISTEN_RESPONSE
 
     fire.Fire(RestClientUI, ["start", "--pid=1", "--listen"])
     captured = capsys.readouterr()
@@ -851,8 +851,8 @@ def test_restclientui_handles_listen_keyboard_interrupt(mock_listen_fn, capsys):
 def test_restclientui_stop_output_when_a_script_is_running(
     mock_list_fn, mock_stop_fn, capsys
 ):
-    mock_list_fn.return_value = RESTUI_LIST_RESPONSE_FOR_STOP_1
-    mock_stop_fn.return_value = RESTUI_STOP_RESPONSE_1
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE_FOR_STOP
+    mock_stop_fn.return_value = REST_ADAPTER_STOP_RESPONSE
 
     fire.Fire(RestClientUI, ["stop"])
     captured = capsys.readouterr()
@@ -866,7 +866,7 @@ def test_restclientui_stop_output_when_a_script_is_running(
 
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_stop_output_when_a_script_is_not_running(mock_list_fn, capsys):
-    mock_list_fn.return_value = RESTUI_LIST_RESPONSE
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE
 
     fire.Fire(RestClientUI, ["stop"])
     captured = capsys.readouterr()
@@ -876,7 +876,7 @@ def test_restclientui_stop_output_when_a_script_is_not_running(mock_list_fn, cap
 
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_stop_output_when_two_scripts_are_running(mock_list_fn, capsys):
-    mock_list_fn.return_value = RESTUI_TWO_RUNNING_PROCEDURES
+    mock_list_fn.return_value = REST_ADAPTER_TWO_RUNNING_PROCEDURES
 
     fire.Fire(RestClientUI, ["stop"])
     captured = capsys.readouterr()
@@ -899,7 +899,7 @@ def test_restclientui_handles_stop_error(mock_stop_fn, capsys):
 
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_describe_when_stacktrace_present(mock_list_fn, capsys):
-    mock_list_fn.return_value = RESTUI_LIST_RESPONSE_WITH_STACKTRACE
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE_WITH_STACKTRACE
 
     fire.Fire(RestClientUI, ["describe", "--pid=2"])
     captured = capsys.readouterr()
@@ -912,7 +912,7 @@ def test_restclientui_describe_when_stacktrace_present(mock_list_fn, capsys):
 
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_describe_when_stacktrace_not_present(mock_list_fn, capsys):
-    mock_list_fn.return_value = RESTUI_LIST_RESPONSE_FOR_DESCRIBE
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE_FOR_DESCRIBE
 
     fire.Fire(RestClientUI, ["describe"])
     captured = capsys.readouterr()
