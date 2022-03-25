@@ -6,7 +6,7 @@ import time
 
 from pubsub import pub
 
-from oet.event import topics
+from ska_oso_oet.event import topics
 
 LOG = logging.getLogger(__name__)
 FORMAT = '%(asctime)-15s %(message)s'

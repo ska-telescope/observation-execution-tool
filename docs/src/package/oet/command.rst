@@ -35,5 +35,5 @@ the legacy ``TangoExecutor.read_event`` method.
 API
 ***
 
-.. automodule:: oet.command
+.. automodule:: ska_oso_oet.command
     :members:

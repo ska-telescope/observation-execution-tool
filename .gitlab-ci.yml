@@ -3,150 +3,44 @@
 # In this case we use the latest python docker image to build and test this project.
 image: $SKA_K8S_TOOLS_DOCKER_BUILDER_IMAGE
 
+default:
+  tags:
+    - k8srunner
+
+# Standardised included jobs
+variables:
+  CHARTS_TO_PUBLISH: ska-oso-oet
+  GIT_SUBMODULE_STRATEGY: recursive
+
 # The YAML file defines a set of jobs with constraints stating when they should be run.
 # You can specify an unlimited number of jobs which are defined as top-level elements with an arbitrary name and always have to contain at least the script clause.
 # In this case we have only the test job which produce an artifacts (it must be placed into a directory called "public")
 # It is also specified that only the master branch will be subject of this job.
 
 stages:
+  - lint
   - build
   - test
-  - lint
-  - pages
   - publish
+  - pages
+  - scan
 
-lint-check-chart:
-  stage: lint
-  tags:
-    - k8srunner
-  image: $SKA_K8S_TOOLS_DEPLOY_IMAGE
-  script:
-    - make chart_lint
-  artifacts:
-    paths:
-      - build
-
-test:
-  stage: test
-  tags:
-    - k8srunner
-  script:
-    - make test
-  artifacts:
-    name: "$CI_PROJECT_NAME-$CI_JOB_ID"
-    paths:
-      - build
-    expire_in: 7 days
-
-
-#diagrams:
-#  stage: diagrams
-#  image: rlespinasse/drawio-export:latest
-#  tags:
-#    - k8srunner
-#  artifacts:
-#    untracked: true
-#  script:
-#    - /opt/drawio-desktop/entrypoint.sh --format=svg --on-changes --remove-page-suffix docs/src/diagrams
-
-
-#docs:
-#  stage: docs
-#  dependencies:
-#    - diagrams
-#  tags:
-#    - k8srunner
-#  image: readthedocs/build:latest
-#  before_script:
-#    - echo "error" > .docs_status
-#    - python3 -m pip install --exists-action=w --no-cache-dir --disable-pip-version-check -r docs/requirements.txt
-#    - python3 -m pip install anybadge
-#    - pyenv rehash
-#  script:
-#    - python3 -m sphinx -T -E -b html -n -W --keep-going docs/src docs/build/html
-#    - echo "pass" > .docs_status
-#  after_script:
-#    - mkdir -p build/badges
-#    - anybadge --label=docs --value=$(cat .docs_status) --file=build/badges/docs.svg pass=green error=red
-#  artifacts:
-#    paths:
-#      - ./build
-#      - ./docs/build/html
-#    expire_in: 7 days
-#  when: always
-
-
-
-#integration_test:
-#  stage: test
-#  dependencies:
-#    - build
-#  tags:
-#    - k8srunner
-#  variables:
-#    MINIKUBE: "false"
-#  environment:
-#    name: oet-test
-#    kubernetes:
-#      namespace: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
-#  image: nexus.engageska-portugal.pt/ska-docker/deploy:0.4.3
-#  script:
-#    - kubectl version
-#    - make install-chart
-##    - make wait
-##    - make smoketest
-#    - make test
-#  after_script:
-#    - make down
-#    - mkdir -p build
-#    - cp -rf charts/build/* build/
-#    - ls -la build
-#  artifacts:
-#    name: "$CI_PROJECT_NAME-$CI_JOB_ID"
-#    paths:
-#      - build
-#    expire_in: 7 days
-
-lint:
-  stage: lint
-  tags:
-    - k8srunner
-  script:
-    - make lint
-  artifacts:
-    paths:
-      - build
-
-pages:
-  when: always
-  tags:
-    - k8srunner
-  stage: pages
-  script:
-    - mkdir public
-    - cp -R build public
-  artifacts:
-    paths:
-      - public
-    expire_in: 7 days
-
-
-# Standardised included jobs
-variables:
-  CHARTS_TO_PUBLISH: ska-oso-oet
 include:
-# Helm Chart Publish
-# https://developer.skatelescope.org/en/latest/development/software_package_release_procedure.html#package-and-publish-helm-charts-to-the-ska-helm-chart-repository
-- project: 'ska-telescope/templates-repository'
-  file: 'gitlab-ci/includes/helm_publish.yml'
-
-# Create Gitlab CI badges from CI metrics
-# https://developer.skatelescope.org/en/latest/tools/continuousintegration.html#automated-collection-of-ci-health-metrics-as-part-of-the-ci-pipeline
-- project: 'ska-telescope/templates-repository'
-  file: 'gitlab-ci/includes/post_step.yml'
-
-- project: 'ska-telescope/templates-repository'
-  file: 'gitlab-ci/includes/build_push.yml'
-
-- project: 'ska-telescope/templates-repository'
-  file: 'gitlab-ci/includes/build_wheel.yml'
+  # Python
+  - project: "ska-telescope/templates-repository"
+    file: "gitlab-ci/includes/python.gitlab-ci.yml"
+  # OCI
+  - project: "ska-telescope/templates-repository"
+    file: "gitlab-ci/includes/oci-image.gitlab-ci.yml"
+  # Helm Chart linting and Publish
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/helm-chart.gitlab-ci.yml'
+  # Docs pages
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/docs-pages.gitlab-ci.yml'
+  # .post step finalisers eg: badges
+  - project: "ska-telescope/templates-repository"
+    file: "gitlab-ci/includes/finaliser.gitlab-ci.yml"
+  # change log and release notes
+  - project: "ska-telescope/templates-repository"
+    file: "gitlab-ci/includes/changelog.gitlab-ci.yml"

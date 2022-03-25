@@ -1,86 +1,49 @@
 #
-# Project makefile for a Tango project. You should normally only need to modify
-# CAR_OCI_REGISTRY_USERNAME and PROJECT below.
-#
-
-#
 # CAR_OCI_REGISTRY_HOST, CAR_OCI_REGISTRY_USERNAME and PROJECT are combined to define
 # the Docker tag for this project. The definition below inherits the standard
-# value for CAR_OCI_REGISTRY_HOST (=rartefact.skao.int) and overwrites
+# value for CAR_OCI_REGISTRY_HOST (=artefact.skao.int) and overwrites
 # CAR_OCI_REGISTRY_USERNAME and PROJECT to give a final Docker tag of
 # artefact.skao.int/ska-tango-examples/powersupply
 #
 CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
-PROJECT = ska-oso-oet
+PROJECT_NAME = ska-oso-oet
 
-# KUBE_NAMESPACE defines the Kubernetes Namespace that will be deployed to
-# using Helm.  If this does not already exist it will be created
-KUBE_NAMESPACE ?= ska-oso-oet
+# include makefile to pick up the standard Make targets from the submodule
+-include .make/base.mk
+-include .make/python.mk
+-include .make/oci.mk
+-include .make/k8s.mk
+-include .make/helm.mk
 
-# RELEASE_NAME is the release that all Kubernetes resources will be labelled
-# with
-RELEASE_NAME ?= test
-
-# UMBRELLA_CHART_PATH Path of the umbrella chart to work with
-UMBRELLA_CHART_PATH ?= charts/ska-oso-oet-umbrella/
-
-# Fixed variables
-# Timeout for gitlab-runner when run locally
-TIMEOUT = 86400
-# Helm version
-HELM_VERSION = v3.3.1
-# kubectl version
-KUBERNETES_VERSION = v1.19.2
-
-# Docker, K8s and Gitlab CI variables
-# gitlab-runner debug mode - turn on with non-empty value
-RDEBUG ?=
-# gitlab-runner executor - shell or docker
-EXECUTOR ?= shell
-# DOCKER_HOST connector to gitlab-runner - local domain socket for shell exec
-DOCKER_HOST ?= unix:///var/run/docker.sock
-# DOCKER_VOLUMES pass in local domain socket for DOCKER_HOST
-DOCKER_VOLUMES ?= /var/run/docker.sock:/var/run/docker.sock
-# registry credentials - user/pass/registry - set these in PrivateRules.mak
-CAR_OCI_REGISTRY_USER_LOGIN ?=  ## registry credentials - user - set in PrivateRules.mak
-CI_REGISTRY_PASS_LOGIN ?=  ## registry credentials - pass - set in PrivateRules.mak
-CI_REGISTRY ?= gitlab.com/ska-telescope/ska-oso-oet
-
-CI_PROJECT_DIR ?= .
-
-KUBE_CONFIG_BASE64 ?=  ## base64 encoded kubectl credentials for KUBECONFIG
-KUBECONFIG ?= /etc/deploy/config ## KUBECONFIG location
-
-CAR_PYPI_REPOSITORY_URL ?= https://artefact.skao.int/repository/pypi-internal
-
-# define private overrides for above variables in here
+# include your own private variables for custom deployment configuration
 -include PrivateRules.mak
 
-# Test runner - run to completion job in K8s
-# name of the pod running the k8s_tests
-TEST_RUNNER = ska-oso-oet-$(CI_JOB_ID)-$(KUBE_NAMESPACE)-$(RELEASE_NAME)
+IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
-#
-# include makefile to pick up the standard Make targets, e.g., 'make build'
-# build, 'make push' docker push procedure, etc. The other Make targets
-# ('make interactive', 'make test', etc.) are defined in this file.
-#
-include .make/docker.mk
-include .make/k8s.mk
-include .make/release.mk
+# Set python-test make target to run unit tests and not the integration tests
+PYTHON_TEST_FILE = tests/unit/
+
+K8S_CHART = ska-oso-oet-umbrella
+
+# unset defaults so settings in pyproject.toml take effect
+PYTHON_SWITCHES_FOR_BLACK =
+PYTHON_SWITCHES_FOR_ISORT =
+
+# Disable warning, convention, and refactoring messages
+# Disable errors:
+PYTHON_SWITCHES_FOR_PYLINT = --disable=C,R
+
 
 up: namespace install-chart wait
 
-down: uninstall-chart delete_namespace
+dev-up: K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION) --set ska-oso-oet.rest.ingress.enabled=true
+dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deployment
+
+dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deployment
 
 rest:  ## start OET REST server
-	docker run --rm -p 5000:5000 -v $(CURDIR):/app -e PYTHONPATH=/app/src -w /app --name=ska-oso-oet-rest $(IMAGE_TO_TEST) python -m oet.procedure.application.main
-
-post-push:
-	@. $(RELEASE_SUPPORT) ; differsFromRelease || docker push $(IMAGE):$(VERSION) ;
-
-test: unit_test
+	docker run --rm -p 5000:5000 -v $(CURDIR):/app -e PYTHONPATH=/app/src -w /app --name=ska-oso-oet-rest $(IMAGE_TO_TEST) python -m ska_oso_oet.procedure.application.main
 
 diagrams:  ## recreate PlantUML diagrams whose source has been modified
 	@for i in $$(git diff --name-only -- '*.puml'); \
@@ -89,7 +52,3 @@ diagrams:  ## recreate PlantUML diagrams whose source has been modified
 		cat $$i | docker run --rm think/plantuml -tsvg $$i > $${i%%.*}.svg; \
 	done
 	docker run -v $(CURDIR):/data rlespinasse/drawio-export --format=svg --on-changes --remove-page-suffix docs/src/diagrams
-
-
-
-.PHONY: all test help k8s show lint deploy delete logs describe namespace delete_namespace kubeconfig kubectl_dependencies helm_dependencies rk8s_test k8s_test rlint install-chart uninstall-chart reinstall-chart upgrade-chart

@@ -28,4 +28,8 @@ setup.py-e
 .DS_Store
 
 **/Chart.yaml-e
-.tox/
+**/*.py-e
+**/values.yaml-e
+**/Dockerfile-e
+PrivateRules.mak
+MANIFEST.skao.int%

@@ -1,44 +1,36 @@
 Observation Execution Tool
 ==========================
 
-## Building steps
-
 This project contains the code for the Observation Execution Tool, the
 application which provides high-level scripting facilities and a high-level
 scripting UI for the SKA.
 
-This project is structured to use Docker containers for development and
-testing so that the build environment, test environment and test results are
-all completely reproducible and are independent of host environment. It uses
-``make`` to provide a consistent UI (full details can be found in the ```docs```).
-
-Build a new Docker image for the OET with:
+To clone this repository, run
 
 ```
-make build
+git clone --recurse-submodules git@gitlab.com:ska-telescope/ska-oso-oet.git
 ```
+
+To refresh the GitLab Submodule, execute below commands:
+
+```
+git submodule update --recursive --remote
+git submodule update --init --recursive
+```
+
+## Build and test
 
 Execute the test suite and lint the project with:
 
 ```
-make test
-make lint
+make python-test
+make python-lint
 ```
 
-Launch an interactive shell inside a container, with your workspace visible
-inside the container:
+To build a new Docker image for the OET, run
 
 ```
-make interactive
-```
-
-An interactive session can be useful for rebuilding the project documentation.
-From an interactive session, run
-
-```
-cd docs
-make html
-# open build/html/index.html in browser to see regenerated docs
+make oci-build
 ```
 
 To rebuild the PlantUML and drawio diagrams after modification, from a
