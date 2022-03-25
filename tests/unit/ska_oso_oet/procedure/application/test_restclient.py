@@ -9,6 +9,8 @@ from http import HTTPStatus
 
 import fire
 import requests_mock
+from pytest import raises
+from sseclient import Event, SSEClient
 
 import ska_oso_oet
 from ska_oso_oet.procedure.application.restclient import (
@@ -70,6 +72,31 @@ LIST_PROCEDURES_POSITIVE_RESPONSE = {
     ]
 }
 
+PROCEDURE_POSITIVE_RESPONSE = {
+    "procedure": {
+        "script_args": {
+            "init": {
+                "args": [],
+                "kwargs": {
+                    "sb_uri": "file:///path/to/scheduling_block_123.json",
+                    "subarray": 1,
+                },
+            },
+            "run": {"args": [], "kwargs": {"scan_duration": 14}},
+        },
+        "script_uri": "file:///path/to/observing_script.py",
+        "history": {
+            "stacktrace": None,
+            "process_states": {
+                "CREATED": 1601303225.8234567,
+                "RUNNING": 1601303225.8702714,
+            },
+        },
+        "state": "RUNNING",
+        "uri": "http://localhost:5000/api/v1.0/procedures/1",
+    }
+}
+
 START_PROCESS_RESPONSE = {
     "procedure": {
         "script_args": {
@@ -102,6 +129,8 @@ STOP_PROCESS_AND_ABORT_SUBARRAY_ACTIVITY_RESPONSE = {
         "Successfully stopped script with ID 1 and aborted subarray activity"
     )
 }
+
+# Tests for the RestAdapter
 
 
 def test_json_payload_for_list_all_procedures_is_empty():
@@ -152,6 +181,41 @@ def test_list_procedures_converts_procedures_present_response():
 
     assert len(procedures) == 1
     assert procedures[0] == expected
+
+
+def test_list_procedures_converts_procedure_present_response():
+    """
+    A list of with a single ProcedureSummary object should be returned when a procedure
+    with the requested pid is present.
+    """
+    expected = ProcedureSummary.from_json(PROCEDURE_POSITIVE_RESPONSE["procedure"])
+
+    with requests_mock.Mocker() as mock_server:
+        mock_server.get(f"{PROCEDURES_URI}/1", json=PROCEDURE_POSITIVE_RESPONSE)
+
+        # use the client to submit a CREATE request
+        adapter = RestAdapter(PROCEDURES_URI)
+        procedures = adapter.list(pid=1)
+
+    assert len(procedures) == 1
+    assert procedures[0] == expected
+
+
+def test_list_process_raises_exception_for_wrong_status():
+    """
+    An Exception should be raised if the HTTP response status is not OK
+    """
+    with requests_mock.Mocker() as mock_server:
+        mock_server.get(
+            f"{PROCEDURES_URI}/1",
+            json={"errorMessage": "some error"},
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+        )
+
+        client = RestAdapter(PROCEDURES_URI)
+        with raises(Exception) as e:
+            client.list(1)
+        assert ("""{"errorMessage": "some error"}""",) == e.value.args
 
 
 def test_create_procedure_sends_expected_script_uri():
@@ -221,6 +285,23 @@ def test_create_process_sends_script_args_when_defined_by_user():
     assert request_payload["script_args"] == expected_script_args_payload
 
 
+def test_create_process_raises_exception_for_wrong_status():
+    """
+    An Exception should be raised if the HTTP response status is not CREATED
+    """
+    with requests_mock.Mocker() as mock_server:
+        mock_server.post(
+            PROCEDURES_URI,
+            json={"errorMessage": "some error"},
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+        )
+
+        client = RestAdapter(PROCEDURES_URI)
+        with raises(Exception) as e:
+            client.create("test_uri")
+        assert ("""{"errorMessage": "some error"}""",) == e.value.args
+
+
 def test_start_execute_sends_empty_run_args_when_undefined_by_user():
     """Check that default script args are sent"""
     expected_script_args_payload = {"run": {"args": [], "kwargs": {}}}
@@ -260,6 +341,24 @@ def test_start_execute_sends_correct_script_args_when_user_provides_arguments():
     request_payload = last_request.json()
     assert "script_args" in request_payload
     assert request_payload["script_args"] == expected_script_args
+
+
+def test_start_process_raises_exception_for_wrong_status():
+    """
+    An Exception should be raised if the HTTP response status is not OK
+    """
+    with requests_mock.Mocker() as mock_server:
+        mock_server.put(
+            f"{PROCEDURES_URI}/1",
+            json={"errorMessage": "some error"},
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+        )
+
+        # use the client to submit a START request
+        client = RestAdapter(PROCEDURES_URI)
+        with raises(Exception) as e:
+            client.start(1)
+        assert ("""{"errorMessage": "some error"}""",) == e.value.args
 
 
 def test_stop_procedure_sends_correct_command():
@@ -309,7 +408,38 @@ def test_stop_procedure_sends_command_with_abort_true():
     assert request_payload["state"] == "STOPPED"
 
 
-# Additions by Liz Bartlett to test restclientUI maybe should be another file.
+def test_stop_process_raises_exception_for_wrong_status():
+    """
+    An Exception should be raised if the HTTP response status is not OK
+    """
+    with requests_mock.Mocker() as mock_server:
+        mock_server.put(
+            f"{PROCEDURES_URI}/1",
+            json={"errorMessage": "some error"},
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+        )
+
+        # use the client to submit a START request
+        client = RestAdapter(PROCEDURES_URI)
+        with raises(Exception) as e:
+            client.stop(1)
+        assert ("""{"errorMessage": "some error"}""",) == e.value.args
+
+@mock.patch.object(SSEClient, "__init__")
+@mock.patch.object(SSEClient, "__iter__")
+def test_listen_yields_sse_events(
+        mock_iterator, mock_init
+):
+    mock_init.return_value = None
+    mock_iterator.return_value = iter([Event(id=1234)])
+
+    client = RestAdapter(PROCEDURES_URI)
+    result = client.listen()
+
+    assert next(result) == 1234
+
+
+# Tests for the RestClientUI
 
 
 def test_restclientui_returns_error_when_not_passed_an_invalid_command():
@@ -448,12 +578,7 @@ RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
     ]
 ]
 
-RESTUI_STOP_RESPONSE_1 = [
-    "Successfully stopped script with ID 1 and aborted subarray activity"
-]
-
-
-RESTUI_LIST_RESPONSE_FOR_DESCRIBE_2 = [
+RESTUI_TWO_RUNNING_PROCEDURES = [
     [
         ProcedureSummary(
             id=1,
@@ -465,13 +590,64 @@ RESTUI_LIST_RESPONSE_FOR_DESCRIBE_2 = [
             },
             history={
                 "process_states": {
-                    "COMPLETED": 1603723682.0246627,
                     "CREATED": 1603723668.9510045,
                     "RUNNING": 1603723677.0478802,
                 },
                 "stacktrace": None,
             },
-            state="COMPLETED",
+            state="RUNNING",
+        ),
+        ProcedureSummary(
+            id=2,
+            uri="http://127.0.0.1:5000/api/v1.0/procedures/2",
+            script_uri="file:///app/scripts/test_working.py",
+            script_args={
+                "init": {"args": [], "kwargs": {"subarray_id": 1}},
+                "run": {"args": [], "kwargs": {}},
+            },
+            history={
+                "process_states": {
+                    "CREATED": 1603723668.9510045,
+                    "RUNNING": 1603723677.0478802,
+                },
+                "stacktrace": None,
+            },
+            state="RUNNING",
+        ),
+    ]
+]
+
+RESTUI_STOP_RESPONSE_1 = [
+    "Successfully stopped script with ID 1 and aborted subarray activity"
+]
+
+RESTUI_LIST_RESPONSE_FOR_DESCRIBE = [
+    ProcedureSummary(
+        id=1,
+        uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
+        script_uri="file:///app/scripts/test_working.py",
+        script_args={
+            "init": {"args": [], "kwargs": {"subarray_id": 1}},
+            "run": {"args": [], "kwargs": {}},
+        },
+        history={
+            "process_states": {
+                "COMPLETED": 1603723682.0246627,
+                "CREATED": 1603723668.9510045,
+                "RUNNING": 1603723677.0478802,
+            },
+            "stacktrace": None,
+        },
+        state="COMPLETED",
+    )
+]
+
+RESTUI_EVENT_RESPONSE = [
+    [
+        Event(
+            data='{"topic": "user.script.announce", "msg": "announced"}',
+            event="some event",
+            id=101,
         )
     ]
 ]
@@ -515,6 +691,16 @@ def test_restclientui_creates_a_valid_script(mock_create_fn, capsys):
     assert result[0]["state"] == "CREATED"
 
 
+@mock.patch.object(RestAdapter, "create")
+def test_restclientui_handles_create_error(mock_start_fn, capsys):
+    mock_start_fn.side_effect = RuntimeError("Test Error")
+
+    fire.Fire(RestClientUI, ["create", "file:///app/scripts/allocate.py"])
+    captured = capsys.readouterr()
+
+    assert "The server encountered a problem: Test Error" in captured.out
+
+
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_lists_output(mock_list_fn, capsys):
     mock_list_fn.side_effect = RESTUI_LIST_RESPONSE
@@ -524,6 +710,16 @@ def test_restclientui_lists_output(mock_list_fn, capsys):
 
     assert result[0]["id"] == str(1)
     assert result[1]["id"] == str(2)
+
+
+@mock.patch.object(RestAdapter, "list")
+def test_restclientui_handles_list_error(mock_list_fn, capsys):
+    mock_list_fn.side_effect = RuntimeError("Test Error")
+
+    fire.Fire(RestClientUI, ["list"])
+    captured = capsys.readouterr()
+
+    assert "The server encountered a problem: Test Error" in captured.out
 
 
 @mock.patch.object(RestAdapter, "list")
@@ -582,6 +778,86 @@ def test_restclientui_start_output_when_given_pid(mock_list_fn, mock_start_fn, c
     mock_start_fn.assert_called_with(1, run_args=mock.ANY)
 
 
+@mock.patch.object(RestAdapter, "listen")
+@mock.patch.object(RestAdapter, "start")
+def test_restclientui_start_and_listen_output_with_event(
+    mock_start_fn, mock_listen_fn, capsys
+):
+    mock_start_fn.side_effect = RESTUI_START_RESPONSE
+    mock_listen_fn.side_effect = RESTUI_EVENT_RESPONSE
+
+    fire.Fire(RestClientUI, ["start", "--pid=1", "--listen"])
+    captured = capsys.readouterr()
+    sections = captured.out.split("\nEvents\n------\n\n")
+    processes = parse_rest_create_list_response(sections[0])
+    event = sections[1]
+
+    assert "Script message: announced" in event
+    assert processes[0]["id"] == str(1)
+    assert processes[0]["state"] == "RUNNING"
+
+
+@mock.patch.object(RestAdapter, "start")
+def test_restclientui_handles_start_error(mock_start_fn, capsys):
+    mock_start_fn.side_effect = RuntimeError("Test Error")
+
+    fire.Fire(RestClientUI, ["start", "--pid=1", "--nolisten"])
+    captured = capsys.readouterr()
+
+    assert "The server encountered a problem: Test Error" in captured.out
+
+
+@mock.patch.object(RestAdapter, "listen")
+def test_restclientui_handles_listen_error(mock_listen_fn, capsys):
+    mock_listen_fn.side_effect = RuntimeError(
+        '{"type":"test", "Message":"this is a test error", "error":"TestError"}'
+    )
+
+    fire.Fire(RestClientUI, ["listen", "--topics=request.procedure.create"])
+    captured = capsys.readouterr()
+
+    assert (
+        "Server encountered error TestError:   test: this is a test error\n"
+        == captured.out
+    )
+
+
+@mock.patch.object(RestAdapter, "listen")
+def test_restclientui_handles_listen_event_parse_error(mock_listen_fn, capsys):
+    mock_listen_fn.return_value = [Event(data="")]
+    fire.Fire(RestClientUI, ["listen", "--topics=request.procedure.create"])
+    captured = capsys.readouterr()
+    assert "" == captured.out
+
+    mock_listen_fn.return_value = [Event(data="{'invalid json'}")]
+    fire.Fire(RestClientUI, ["listen", "--topics=request.procedure.create"])
+    captured = capsys.readouterr()
+    assert "- ERROR Could not parse event: {'invalid json'}\n" == captured.out
+
+    mock_listen_fn.return_value = [
+        Event(data='{"topic": "this is not correct topic "}')
+    ]
+    fire.Fire(RestClientUI, ["listen", "--topics=request.procedure.create"])
+    captured = capsys.readouterr()
+    assert "" == captured.out
+
+    # tests the case where the formatter returns a KeyError
+    mock_listen_fn.return_value = [Event(data='{"topic": "subarray.fault"}')]
+    fire.Fire(RestClientUI, ["listen", "--topics=subarray.fault"])
+    captured = capsys.readouterr()
+    assert "" == captured.out
+
+
+@mock.patch.object(RestAdapter, "listen")
+def test_restclientui_handles_listen_keyboard_interrupt(mock_listen_fn, capsys):
+    mock_listen_fn.side_effect = KeyboardInterrupt()
+
+    fire.Fire(RestClientUI, ["listen", "--topics=request.procedure.create"])
+    captured = capsys.readouterr()
+
+    assert not captured.out
+
+
 @mock.patch.object(RestAdapter, "stop")
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_stop_output_when_a_script_is_running(
@@ -611,6 +887,29 @@ def test_restclientui_stop_output_when_a_script_is_not_running(mock_list_fn, cap
 
 
 @mock.patch.object(RestAdapter, "list")
+def test_restclientui_stop_output_when_two_scripts_are_running(mock_list_fn, capsys):
+    mock_list_fn.side_effect = RESTUI_TWO_RUNNING_PROCEDURES
+
+    fire.Fire(RestClientUI, ["stop"])
+    captured = capsys.readouterr()
+
+    assert (
+        "WARNING: More than one procedure is running. Specify ID of the procedure to stop."
+        in captured.out
+    )
+
+
+@mock.patch.object(RestAdapter, "stop")
+def test_restclientui_handles_stop_error(mock_stop_fn, capsys):
+    mock_stop_fn.side_effect = RuntimeError("Test Error")
+
+    fire.Fire(RestClientUI, ["stop", "--pid=1"])
+    captured = capsys.readouterr()
+
+    assert "The server encountered a problem: Test Error" in captured.out
+
+
+@mock.patch.object(RestAdapter, "list")
 def test_restclientui_describe_when_stacktrace_present(mock_list_fn, capsys):
     mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_WITH_STACKTRACE
 
@@ -625,11 +924,32 @@ def test_restclientui_describe_when_stacktrace_present(mock_list_fn, capsys):
 
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_describe_when_stacktrace_not_present(mock_list_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_DESCRIBE_2
+    mock_list_fn.return_value = RESTUI_LIST_RESPONSE_FOR_DESCRIBE
 
-    fire.Fire(RestClientUI, ["describe", "--pid=1"])
+    fire.Fire(RestClientUI, ["describe"])
     captured = capsys.readouterr()
     lines = captured.out.split("\n")
 
     assert "COMPLETED" in lines[8]
     mock_list_fn.assert_called_with(1)
+    assert mock_list_fn.call_count == 2
+
+
+@mock.patch.object(RestAdapter, "list")
+def test_restclientui_describe_when_no_procedures(mock_list_fn, capsys):
+    mock_list_fn.return_value = []
+
+    fire.Fire(RestClientUI, ["describe"])
+    captured = capsys.readouterr()
+
+    assert "No procedures to describe" in captured.out
+
+
+@mock.patch.object(RestAdapter, "list")
+def test_restclientui_handles_describe_error(mock_list_fn, capsys):
+    mock_list_fn.side_effect = RuntimeError("Test Error")
+
+    fire.Fire(RestClientUI, ["describe", "--pid=1"])
+    captured = capsys.readouterr()
+
+    assert "The server encountered a problem: Test Error" in captured.out
