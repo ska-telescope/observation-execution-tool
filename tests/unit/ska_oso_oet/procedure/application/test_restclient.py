@@ -435,7 +435,7 @@ def test_listen_yields_sse_events(mock_iterator, mock_init):
     client = RestAdapter(PROCEDURES_URI)
     result = client.listen()
 
-    assert next(result) == 1234
+    assert next(result).id == 1234
 
 
 # Tests for the RestClientUI

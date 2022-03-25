@@ -640,7 +640,7 @@ class RestAdapter:
 
         for msg in sseclient.SSEClient(url):
             LOGGER.debug("Event: %s", msg)
-            yield msg.id
+            yield msg
 
 
 def main():
