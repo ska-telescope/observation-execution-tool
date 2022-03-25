@@ -425,11 +425,10 @@ def test_stop_process_raises_exception_for_wrong_status():
             client.stop(1)
         assert ("""{"errorMessage": "some error"}""",) == e.value.args
 
+
 @mock.patch.object(SSEClient, "__init__")
 @mock.patch.object(SSEClient, "__iter__")
-def test_listen_yields_sse_events(
-        mock_iterator, mock_init
-):
+def test_listen_yields_sse_events(mock_iterator, mock_init):
     mock_init.return_value = None
     mock_iterator.return_value = iter([Event(id=1234)])
 
@@ -442,17 +441,20 @@ def test_listen_yields_sse_events(
 # Tests for the RestClientUI
 
 
-def test_restclientui_returns_error_when_not_passed_an_invalid_command():
-    restclient = ska_oso_oet.procedure.application.restclient.__file__
-    result = subprocess.run(
-        ["python3", restclient, "blah"], capture_output=True, text=True
-    )
+RESTUI_CREATE_RESPONSE = ProcedureSummary(
+    id=1,
+    uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
+    script_uri="file:///app/scripts/allocate.py",
+    script_args={
+        "init": {"args": [], "kwargs": {"subarray_id": 1}},
+        "run": {"args": [], "kwargs": {}},
+    },
+    history={"process_states": {"CREATED": 1603381492.3060987}, "stacktrace": None},
+    state="CREATED",
+)
 
-    assert bool(result.stdout) is False
-    assert result.stderr.count("ERROR") == 1
 
-
-RESTUI_CREATE_RESPONSE = [
+RESTUI_LIST_RESPONSE = [
     ProcedureSummary(
         id=1,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
@@ -461,61 +463,44 @@ RESTUI_CREATE_RESPONSE = [
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
-        history={"process_states": {"CREATED": 1603381492.3060987}, "stacktrace": None},
+        history={
+            "process_states": {"CREATED": 1603378829.5842578},
+            "stacktrace": None,
+        },
         state="CREATED",
-    )
-]
-
-RESTUI_LIST_RESPONSE = [
-    [
-        ProcedureSummary(
-            id=1,
-            uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-            script_uri="file:///app/scripts/allocate.py",
-            script_args={
-                "init": {"args": [], "kwargs": {"subarray_id": 1}},
-                "run": {"args": [], "kwargs": {}},
-            },
-            history={
-                "process_states": {"CREATED": 1603378829.5842578},
-                "stacktrace": None,
-            },
-            state="CREATED",
-        ),
-        ProcedureSummary(
-            id=2,
-            uri="http://127.0.0.1:5000/api/v1.0/procedures/2",
-            script_uri="file:///app/scripts/allocate.py",
-            script_args={
-                "init": {"args": [], "kwargs": {"subarray_id": 1}},
-                "run": {"args": [], "kwargs": {}},
-            },
-            history={
-                "process_states": {"CREATED": 1603379539.5662398},
-                "stacktrace": None,
-            },
-            state="CREATED",
-        ),
-    ]
+    ),
+    ProcedureSummary(
+        id=2,
+        uri="http://127.0.0.1:5000/api/v1.0/procedures/2",
+        script_uri="file:///app/scripts/allocate.py",
+        script_args={
+            "init": {"args": [], "kwargs": {"subarray_id": 1}},
+            "run": {"args": [], "kwargs": {}},
+        },
+        history={
+            "process_states": {"CREATED": 1603379539.5662398},
+            "stacktrace": None,
+        },
+        state="CREATED",
+    ),
 ]
 
 RESTUI_LIST_RESPONSE_WITH_STACKTRACE = [
-    [
-        ProcedureSummary(
-            id=2,
-            uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-            script_uri="file:///app/scripts/allocate.py",
-            script_args={
-                "init": {"args": [], "kwargs": {"subarray_id": 1}},
-                "run": {"args": [], "kwargs": {}},
+    ProcedureSummary(
+        id=2,
+        uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
+        script_uri="file:///app/scripts/allocate.py",
+        script_args={
+            "init": {"args": [], "kwargs": {"subarray_id": 1}},
+            "run": {"args": [], "kwargs": {}},
+        },
+        history={
+            "process_states": {
+                "CREATED": 1603801915.4125392,
+                "FAILED": 1603801921.3564265,
+                "RUNNING": 1603801921.3464086,
             },
-            history={
-                "process_states": {
-                    "CREATED": 1603801915.4125392,
-                    "FAILED": 1603801921.3564265,
-                    "RUNNING": 1603801921.3464086,
-                },
-                "stacktrace": """Traceback (most recent call last):
+            "stacktrace": """Traceback (most recent call last):
   File "/app/ska_oso_oet/procedure/domain.py", line 132, in run
     self.user_module.main(*args, **kwargs)
   File "/app/scripts/allocate.py", line 47, in _main
@@ -530,25 +515,44 @@ RESTUI_LIST_RESPONSE_WITH_STACKTRACE = [
     template_sdp_config = template_request.sdp_config
     AttributeError: 'NoneType' object has no attribute 'sdp_config'
 """,
-            },
-            state="FAILED",
-        )
-    ]
+        },
+        state="FAILED",
+    )
 ]
 
-RESTUI_START_RESPONSE = [
+
+RESTUI_START_RESPONSE = ProcedureSummary(
+    id=1,
+    uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
+    script_uri="file:///app/scripts/allocate.py",
+    script_args={
+        "init": {"args": [], "kwargs": {"subarray_id": 1}},
+        "run": {"args": [], "kwargs": {}},
+    },
+    history={
+        "process_states": {
+            "CREATED": 1603378829.5842578,
+            "RUNNING": 1603378900.5969338,
+        },
+        "stacktrace": None,
+    },
+    state="RUNNING",
+)
+
+
+RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
     ProcedureSummary(
         id=1,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-        script_uri="file:///app/scripts/allocate.py",
+        script_uri="file:///app/scripts/test_working.py",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
         history={
             "process_states": {
-                "CREATED": 1603378829.5842578,
-                "RUNNING": 1603378900.5969338,
+                "CREATED": 1603723668.9510045,
+                "RUNNING": 1603723677.0478802,
             },
             "stacktrace": None,
         },
@@ -556,65 +560,41 @@ RESTUI_START_RESPONSE = [
     )
 ]
 
-RESTUI_LIST_RESPONSE_FOR_STOP_1 = [
-    [
-        ProcedureSummary(
-            id=1,
-            uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-            script_uri="file:///app/scripts/test_working.py",
-            script_args={
-                "init": {"args": [], "kwargs": {"subarray_id": 1}},
-                "run": {"args": [], "kwargs": {}},
-            },
-            history={
-                "process_states": {
-                    "CREATED": 1603723668.9510045,
-                    "RUNNING": 1603723677.0478802,
-                },
-                "stacktrace": None,
-            },
-            state="RUNNING",
-        )
-    ]
-]
-
 RESTUI_TWO_RUNNING_PROCEDURES = [
-    [
-        ProcedureSummary(
-            id=1,
-            uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-            script_uri="file:///app/scripts/test_working.py",
-            script_args={
-                "init": {"args": [], "kwargs": {"subarray_id": 1}},
-                "run": {"args": [], "kwargs": {}},
+    ProcedureSummary(
+        id=1,
+        uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
+        script_uri="file:///app/scripts/test_working.py",
+        script_args={
+            "init": {"args": [], "kwargs": {"subarray_id": 1}},
+            "run": {"args": [], "kwargs": {}},
+        },
+        history={
+            "process_states": {
+                "CREATED": 1603723668.9510045,
+                "RUNNING": 1603723677.0478802,
             },
-            history={
-                "process_states": {
-                    "CREATED": 1603723668.9510045,
-                    "RUNNING": 1603723677.0478802,
-                },
-                "stacktrace": None,
+            "stacktrace": None,
+        },
+        state="RUNNING",
+    ),
+    ProcedureSummary(
+        id=2,
+        uri="http://127.0.0.1:5000/api/v1.0/procedures/2",
+        script_uri="file:///app/scripts/test_working.py",
+        script_args={
+            "init": {"args": [], "kwargs": {"subarray_id": 1}},
+            "run": {"args": [], "kwargs": {}},
+        },
+        history={
+            "process_states": {
+                "CREATED": 1603723668.9510045,
+                "RUNNING": 1603723677.0478802,
             },
-            state="RUNNING",
-        ),
-        ProcedureSummary(
-            id=2,
-            uri="http://127.0.0.1:5000/api/v1.0/procedures/2",
-            script_uri="file:///app/scripts/test_working.py",
-            script_args={
-                "init": {"args": [], "kwargs": {"subarray_id": 1}},
-                "run": {"args": [], "kwargs": {}},
-            },
-            history={
-                "process_states": {
-                    "CREATED": 1603723668.9510045,
-                    "RUNNING": 1603723677.0478802,
-                },
-                "stacktrace": None,
-            },
-            state="RUNNING",
-        ),
-    ]
+            "stacktrace": None,
+        },
+        state="RUNNING",
+    ),
 ]
 
 RESTUI_STOP_RESPONSE_1 = [
@@ -643,13 +623,11 @@ RESTUI_LIST_RESPONSE_FOR_DESCRIBE = [
 ]
 
 RESTUI_EVENT_RESPONSE = [
-    [
-        Event(
-            data='{"topic": "user.script.announce", "msg": "announced"}',
-            event="some event",
-            id=101,
-        )
-    ]
+    Event(
+        data='{"topic": "user.script.announce", "msg": "announced"}',
+        event="some event",
+        id=101,
+    )
 ]
 
 
@@ -678,9 +656,19 @@ def parse_rest_create_list_response(resp):
     return rest_responses
 
 
+def test_restclientui_returns_error_when_not_passed_an_invalid_command():
+    restclient = ska_oso_oet.procedure.application.restclient.__file__
+    result = subprocess.run(
+        ["python3", restclient, "blah"], capture_output=True, text=True
+    )
+
+    assert bool(result.stdout) is False
+    assert result.stderr.count("ERROR") == 1
+
+
 @mock.patch.object(RestAdapter, "create")
 def test_restclientui_creates_a_valid_script(mock_create_fn, capsys):
-    mock_create_fn.side_effect = RESTUI_CREATE_RESPONSE
+    mock_create_fn.return_value = RESTUI_CREATE_RESPONSE
     fire.Fire(RestClientUI, ["create", "file:///app/scripts/allocate.py"])
     captured = capsys.readouterr()
     result = parse_rest_create_list_response(captured.out)
@@ -703,7 +691,7 @@ def test_restclientui_handles_create_error(mock_start_fn, capsys):
 
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_lists_output(mock_list_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE
+    mock_list_fn.return_value = RESTUI_LIST_RESPONSE
     fire.Fire(RestClientUI, ["list"])
     captured = capsys.readouterr()
     result = parse_rest_create_list_response(captured.out)
@@ -724,7 +712,7 @@ def test_restclientui_handles_list_error(mock_list_fn, capsys):
 
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_start_output_when_nothing_to_start(mock_list_fn, capsys):
-    mock_list_fn.side_effect = [[]]
+    mock_list_fn.return_value = []
 
     fire.Fire(RestClientUI, ["start", "--nolisten"])
     captured = capsys.readouterr()
@@ -737,8 +725,8 @@ def test_restclientui_start_output_when_nothing_to_start(mock_list_fn, capsys):
 def test_restclientui_start_output_when_given_no_pid(
     mock_list_fn, mock_start_fn, capsys
 ):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE
-    mock_start_fn.side_effect = RESTUI_START_RESPONSE
+    mock_list_fn.return_value = RESTUI_LIST_RESPONSE
+    mock_start_fn.return_value = RESTUI_START_RESPONSE
 
     fire.Fire(RestClientUI, ["start", "--nolisten"])
     captured = capsys.readouterr()
@@ -752,7 +740,7 @@ def test_restclientui_start_output_when_given_no_pid(
 def test_restclientui_start_output_when_last_created_script_has_failed(
     mock_list_fn, capsys
 ):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_WITH_STACKTRACE
+    mock_list_fn.return_value = RESTUI_LIST_RESPONSE_WITH_STACKTRACE
 
     fire.Fire(RestClientUI, ["start", "--nolisten"])
     captured = capsys.readouterr()
@@ -766,8 +754,8 @@ def test_restclientui_start_output_when_last_created_script_has_failed(
 @mock.patch.object(RestAdapter, "start")
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_start_output_when_given_pid(mock_list_fn, mock_start_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE
-    mock_start_fn.side_effect = RESTUI_START_RESPONSE
+    mock_list_fn.return_value = RESTUI_LIST_RESPONSE
+    mock_start_fn.return_value = RESTUI_START_RESPONSE
 
     fire.Fire(RestClientUI, ["start", "--pid=1", "--nolisten"])
     captured = capsys.readouterr()
@@ -783,8 +771,8 @@ def test_restclientui_start_output_when_given_pid(mock_list_fn, mock_start_fn, c
 def test_restclientui_start_and_listen_output_with_event(
     mock_start_fn, mock_listen_fn, capsys
 ):
-    mock_start_fn.side_effect = RESTUI_START_RESPONSE
-    mock_listen_fn.side_effect = RESTUI_EVENT_RESPONSE
+    mock_start_fn.return_value = RESTUI_START_RESPONSE
+    mock_listen_fn.return_value = RESTUI_EVENT_RESPONSE
 
     fire.Fire(RestClientUI, ["start", "--pid=1", "--listen"])
     captured = capsys.readouterr()
@@ -863,8 +851,8 @@ def test_restclientui_handles_listen_keyboard_interrupt(mock_listen_fn, capsys):
 def test_restclientui_stop_output_when_a_script_is_running(
     mock_list_fn, mock_stop_fn, capsys
 ):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_FOR_STOP_1
-    mock_stop_fn.side_effect = RESTUI_STOP_RESPONSE_1
+    mock_list_fn.return_value = RESTUI_LIST_RESPONSE_FOR_STOP_1
+    mock_stop_fn.return_value = RESTUI_STOP_RESPONSE_1
 
     fire.Fire(RestClientUI, ["stop"])
     captured = capsys.readouterr()
@@ -878,7 +866,7 @@ def test_restclientui_stop_output_when_a_script_is_running(
 
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_stop_output_when_a_script_is_not_running(mock_list_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE
+    mock_list_fn.return_value = RESTUI_LIST_RESPONSE
 
     fire.Fire(RestClientUI, ["stop"])
     captured = capsys.readouterr()
@@ -888,7 +876,7 @@ def test_restclientui_stop_output_when_a_script_is_not_running(mock_list_fn, cap
 
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_stop_output_when_two_scripts_are_running(mock_list_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_TWO_RUNNING_PROCEDURES
+    mock_list_fn.return_value = RESTUI_TWO_RUNNING_PROCEDURES
 
     fire.Fire(RestClientUI, ["stop"])
     captured = capsys.readouterr()
@@ -911,7 +899,7 @@ def test_restclientui_handles_stop_error(mock_stop_fn, capsys):
 
 @mock.patch.object(RestAdapter, "list")
 def test_restclientui_describe_when_stacktrace_present(mock_list_fn, capsys):
-    mock_list_fn.side_effect = RESTUI_LIST_RESPONSE_WITH_STACKTRACE
+    mock_list_fn.return_value = RESTUI_LIST_RESPONSE_WITH_STACKTRACE
 
     fire.Fire(RestClientUI, ["describe", "--pid=2"])
     captured = capsys.readouterr()
