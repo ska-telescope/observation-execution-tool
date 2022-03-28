@@ -462,7 +462,7 @@ class RestClientUI:
         self,
         topics: Optional[str] = "all",
         exclude: Optional[str] = "request,procedure.pool",
-    ):
+    ) -> Generator[str, None, None]:
         """
         Display real time oet events published by scripts.
 
@@ -489,7 +489,7 @@ class RestClientUI:
             LOGGER.debug("received exception %s", err)
         except Exception as err:
             LOGGER.debug("received exception %s", err)
-            return self._format_error(str(err))
+            yield self._format_error(str(err))
 
     @staticmethod
     def _filter_event_messages(evt: sseclient.Event, topics: List[str]) -> str:
