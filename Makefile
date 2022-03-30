@@ -52,3 +52,9 @@ diagrams:  ## recreate PlantUML diagrams whose source has been modified
 		cat $$i | docker run --rm think/plantuml -tsvg $$i > $${i%%.*}.svg; \
 	done
 	docker run -v $(CURDIR):/data rlespinasse/drawio-export --format=svg --on-changes --remove-page-suffix docs/src/diagrams
+
+k8s-pre-test:
+	kubectl cp tests/acceptance/ska_oso_oet/scripts/ $(KUBE_NAMESPACE)/ska-oso-oet-rest-$(HELM_RELEASE)-0:/tmp/scripts
+
+k8s-post-test:
+	kubectl -n $(KUBE_NAMESPACE) exec ska-oso-oet-rest-$(HELM_RELEASE)-0 -- rm -r /tmp/scripts
