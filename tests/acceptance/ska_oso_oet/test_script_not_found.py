@@ -1,15 +1,13 @@
 from pytest_bdd import given, parsers, scenario, then, when
 
 
-@scenario(
-    "features/script_not_found.feature", "Invalid script filename on creation"
-)
+@scenario("features/script_not_found.feature", "Invalid script filename on creation")
 def test_script_not_found():
     pass
 
 
 @given(parsers.parse("filename {file} is invalid"))
-def file_does_not_exist(file):
+def file_does_not_exist(file):  # pylint: disable=unused-argument
     pass
 
 

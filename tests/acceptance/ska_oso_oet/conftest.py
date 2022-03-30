@@ -16,13 +16,9 @@ def setup():
     try:
         resp = requests.get(oet_rest_uri)
     except requests.exceptions.ConnectionError:
-        raise Exception(
-            "OET REST service not available at %s", oet_rest_uri
-        ) from None
+        raise Exception(f"OET REST service not available at {oet_rest_uri}") from None
     if resp.status_code != 200:
-        raise Exception(
-            "Invalid response from OET REST service at %s", oet_rest_uri
-        )
+        raise Exception(f"Invalid response from OET REST service at {oet_rest_uri}")
 
 
 @pytest.fixture()

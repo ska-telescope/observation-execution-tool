@@ -28,7 +28,7 @@ class ScriptExecutionEnvironment:
         self.script_uri = None
 
     def create(self, script):
-        LOGGER.debug(f"Setting script ID for script: {script}")
+        LOGGER.debug("Setting script ID for script: %s", script)
         if self.script_id:
             raise ScriptExecutionError(
                 f"Script already defined for test run: {self.script_uri}"
@@ -36,7 +36,7 @@ class ScriptExecutionEnvironment:
         task = REST_ADAPTER.create(
             script_uri=script, init_args={"kwargs": {"subarray_id": 1}}
         )
-        LOGGER.debug(f"New script ID: {task.id}")
+        LOGGER.debug("New script ID: %s", task.id)
         self.script_id = task.id
         self.script_uri = task.script_uri
 
@@ -48,18 +48,19 @@ class ScriptExecutionEnvironment:
             args.append("--listen=False")
             # Add process ID to start command to make sure correct script is started
             args.append(f"--pid={self.script_id}")
-        LOGGER.debug(f"Executing OET command '{cmd}' with args {args}")
+        LOGGER.debug("Executing OET command '%s' with args %s", cmd, args)
         result = subprocess.run(
             ["oet", cmd, *args],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            check=False,
         )
         output = result.stdout.decode("utf-8")
         return output
 
     def wait_for_script_to_complete(self, timeout: int = 360):
         t = timeout
-        LOGGER.debug(f"Waiting for script to complete: {self.script_id}")
+        LOGGER.debug("Waiting for script to complete: %s", self.script_id)
         while t > 0:
             state = self.get_script_state()
             if state != "RUNNING":
