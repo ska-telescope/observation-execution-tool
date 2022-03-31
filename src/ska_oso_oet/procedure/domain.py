@@ -225,6 +225,19 @@ class ProcedureSummary:
         )
 
 
+@dataclasses.dataclass
+class GitArgs:
+    """
+    GitArgs is a input argument data class for PrepareProcessCommand. It
+    captures essential information required to identify scripts
+    located in git repositories.
+    """
+
+    git_repo: typing.Optional[str] = "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
+    git_commit: typing.Optional[str] = "HEAD"
+    git_branch: typing.Optional[str] = "master"
+
+
 class ProcessManager:
     """
     Rules:
