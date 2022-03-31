@@ -23,6 +23,7 @@ class PrepareProcessCommand:
     """
 
     script_uri: str
+    git_args: typing.Optional[domain.GitArgs]
     init_args: domain.ProcedureInput
 
 

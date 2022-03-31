@@ -15,6 +15,7 @@ from ska_oso_oet.procedure.application.application import (
     StopProcessCommand,
 )
 from ska_oso_oet.procedure.domain import (
+    GitArgs,
     Procedure,
     ProcedureHistory,
     ProcedureInput,
@@ -107,7 +108,9 @@ def test_ses_prepare_call_sequence_and_returns_summary_for_created_process():
     object methods for process creation and returns the expected summary object
     """
     script_uri = "test://test.py"
-    cmd = PrepareProcessCommand(script_uri=script_uri, init_args=ProcedureInput())
+    cmd = PrepareProcessCommand(
+        script_uri=script_uri, git_args=GitArgs(), init_args=ProcedureInput()
+    )
     procedure = Procedure(script_uri, procedure_id=123)
     procedures = {123: procedure}
     expected = ProcedureSummary(
