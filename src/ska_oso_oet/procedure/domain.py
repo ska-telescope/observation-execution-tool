@@ -43,6 +43,21 @@ class ProcedureState(enum.Enum):
 
 
 @dataclasses.dataclass
+class GitArgs:
+    """
+    GitArgs is a input argument data class for PrepareProcessCommand. It
+    captures essential information required to identify scripts
+    located in git repositories.
+    """
+
+    git_repo: typing.Optional[
+        str
+    ] = "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
+    git_commit: typing.Optional[str] = "HEAD"
+    git_branch: typing.Optional[str] = "master"
+
+
+@dataclasses.dataclass
 class ProcedureInput:
     """
     ProcedureInput is a non-functional dataclass holding the arguments passed
@@ -116,6 +131,7 @@ class Procedure(multiprocessing.Process):
         *args,
         scan_counter: typing.Optional[multiprocessing.Value] = None,
         procedure_id: typing.Optional[int] = None,
+        git_args: typing.Optional[GitArgs] = None,
         **kwargs,
     ):
         multiprocessing.Process.__init__(self)
@@ -124,6 +140,7 @@ class Procedure(multiprocessing.Process):
         init_args = ProcedureInput(*args, **kwargs)
 
         self.id = procedure_id  # pylint:disable=invalid-name
+        self.git_args = git_args
         self.state = None
         self.change_state(ProcedureState.CREATING)
 
@@ -227,21 +244,6 @@ class ProcedureSummary:
         )
 
 
-@dataclasses.dataclass
-class GitArgs:
-    """
-    GitArgs is a input argument data class for PrepareProcessCommand. It
-    captures essential information required to identify scripts
-    located in git repositories.
-    """
-
-    git_repo: typing.Optional[
-        str
-    ] = "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
-    git_commit: typing.Optional[str] = "HEAD"
-    git_branch: typing.Optional[str] = "master"
-
-
 class ProcessManager:
     """
     Rules:
@@ -258,13 +260,20 @@ class ProcessManager:
         self._pool = Pool()
         self._scan_id = multiprocessing.Value("i", 1)
 
-    def create(self, script_uri: str, *, init_args: ProcedureInput) -> int:
+    def create(
+        self,
+        script_uri: str,
+        *,
+        init_args: ProcedureInput,
+        git_args: typing.Optional[GitArgs] = None,
+    ) -> int:
         """
         Create a new Procedure that will, when executed, run the target Python
         script.
 
         :param script_uri: script URI, e.g. 'file://myscript.py'
         :param init_args: script initialisation arguments
+        :param git_args: arguments specifying git project for script environment
         :return:
         """
         if not self.procedures:
@@ -277,7 +286,11 @@ class ProcessManager:
         )
 
         procedure = self._procedure_factory.create(
-            script_uri, *init_args.args, scan_counter=self._scan_id, **init_args.kwargs
+            script_uri,
+            *init_args.args,
+            scan_counter=self._scan_id,
+            git_args=git_args,
+            **init_args.kwargs,
         )
         procedure.id = pid
 

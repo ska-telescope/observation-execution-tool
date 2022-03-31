@@ -417,6 +417,16 @@ def test_process_manager_create_captures_initialisation_arguments(manager, scrip
     assert created.script_args["init"] == expected
 
 
+def test_process_manager_create_captures_git_arguments(manager, script_path):
+    """
+    Verify that ProcessManager passes through git arguments to the procedures it creates
+    """
+    expected = GitArgs(git_repo="http://foo.git", git_commit="HEAD", git_branch="main")
+    pid = manager.create(script_path, init_args=ProcedureInput(), git_args=expected)
+    created = manager.procedures[pid]
+    assert created.git_args == expected
+
+
 def test_calling_process_manager_run_sets_run_args_on_procedure(
     manager, script_path, process_cleanup
 ):

@@ -96,7 +96,9 @@ class ScriptExecutionService:
             arguments
         :return:
         """
-        pid = self._process_host.create(cmd.script_uri, init_args=cmd.init_args)
+        pid = self._process_host.create(
+            cmd.script_uri, init_args=cmd.init_args, git_args=cmd.git_args
+        )
         summary = self._create_summary(pid)
         return summary
 
