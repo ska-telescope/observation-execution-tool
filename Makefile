@@ -19,6 +19,8 @@ PROJECT_NAME = ska-oso-oet
 # include your own private variables for custom deployment configuration
 -include PrivateRules.mak
 
+OCI_IMAGE_BUILD_CONTEXT = $(PWD)
+
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
 # Set python-test make target to run unit tests and not the integration tests
