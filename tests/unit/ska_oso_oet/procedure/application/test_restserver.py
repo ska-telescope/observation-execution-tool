@@ -690,8 +690,9 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
 
     t = threading.Thread(target=publish)
 
-    with mock.patch("flask.current_app") as mock_app:
-        mock_app.config = dict(msg_src="mock")
+    app = flask.Flask('test')
+    with app.app_context():
+        app.config = dict(msg_src="mock")
 
         # this sets the request ID to match to 'bar'
         with mock.patch("time.time") as mock_time:
