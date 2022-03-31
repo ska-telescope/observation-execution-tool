@@ -34,6 +34,7 @@ class ProcedureState(enum.Enum):
     Represents the script execution state.
     """
 
+    CREATING = enum.auto()
     CREATED = enum.auto()
     RUNNING = enum.auto()
     COMPLETED = enum.auto()
@@ -124,6 +125,7 @@ class Procedure(multiprocessing.Process):
 
         self.id = procedure_id  # pylint:disable=invalid-name
         self.state = None
+        self.change_state(ProcedureState.CREATING)
 
         self.user_module = ModuleFactory.get_module(script_uri)
         if hasattr(self.user_module, "init"):
