@@ -21,6 +21,18 @@ PROJECT_NAME = ska-oso-oet
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
+# If running in the CI pipeline, set the variables to point to the freshly
+# built image in the GitLab registry
+ifneq ($(CI_REGISTRY),)
+K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
+	--set ska-oso-oet.rest.image.registry=$(CI_REGISTRY)/ska-telescope/ska-oso-oet
+K8S_TEST_IMAGE_TO_TEST=$(CI_REGISTRY)/ska-telescope/ska-oso-oet/ska-oso-oet:$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA)
+endif
+
+# Set the k8s test command run inside the testing pod to only run the acceptance
+# tests (no k8s pod deployment required for unit tests)
+K8S_TEST_TEST_COMMAND = cd .. && pytest ./tests/acceptance | tee pytest.stdout
+
 # Set python-test make target to run unit tests and not the integration tests
 PYTHON_TEST_FILE = tests/unit/
 
