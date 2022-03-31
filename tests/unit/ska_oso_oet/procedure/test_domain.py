@@ -17,8 +17,8 @@ from ska_oso_oet.procedure.domain import (
     ProcedureInput,
     ProcedureState,
     ProcessManager,
+    GitArgs
 )
-
 
 @pytest.fixture
 def script_path(tmpdir):
@@ -134,6 +134,36 @@ def wait_for_process_to_complete(manager, timeout=1):
     with manager.procedure_complete:
         manager.procedure_complete.wait(timeout)
 
+def test_git_args_input_accepts_expected_values():
+    """
+    Verify that GitArgs arguments.
+    """
+    git_args = GitArgs("git://test.com","HEAD","master")
+    assert git_args.git_repo == "git://test.com"
+    assert git_args.git_commit == "HEAD"
+
+
+def test_git_args_input_eq_works_as_expected():
+    """
+    Verify GitArgs equality
+    """
+    ga1 = GitArgs("git://test.com","HEAD","master")
+    ga2 = GitArgs("git://test.com","HEAD","master")
+    ga3 = GitArgs("test")
+    assert ga1 == ga2
+    assert ga1 != ga3
+    assert ga1 != object()
+
+
+def test_git_args_default_values_are_as_expected():
+    """
+    Verify that GitArgs default values are set as
+    expected if not provided.
+    """
+    git_args = GitArgs()
+    assert git_args.git_repo == "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
+    assert git_args.git_commit == "HEAD"
+    assert git_args.git_branch == "master"
 
 def test_procedure_input_accepts_expected_constructor_values():
     """
