@@ -690,7 +690,7 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
 
     t = threading.Thread(target=publish)
 
-    app = flask.Flask('test')
+    app = flask.Flask("test")
     with app.app_context():
         app.config = dict(msg_src="mock")
 
