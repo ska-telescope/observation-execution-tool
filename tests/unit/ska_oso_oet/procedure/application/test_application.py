@@ -58,6 +58,7 @@ def create_empty_procedure_summary(
         id=procedure_id,
         script_uri=script_uri,
         script_args={"init": ProcedureInput(), "run": ProcedureInput()},
+        git_args=None,
         history=history,
         state=ProcedureState.CREATED,
     )
@@ -89,6 +90,7 @@ def test_ses_create_summary_returns_expected_object():
         id=123,
         script_uri=procedure.script_uri,
         script_args=procedure.script_args,
+        git_args=procedure.git_args,
         history=procedure.history,
         state=procedure.state,
     )
@@ -117,6 +119,7 @@ def test_ses_prepare_call_sequence_and_returns_summary_for_created_process():
         id=123,
         script_uri=procedure.script_uri,
         script_args=procedure.script_args,
+        git_args=procedure.git_args,
         history=procedure.history,
         state=procedure.state,
     )
@@ -136,7 +139,9 @@ def test_ses_prepare_call_sequence_and_returns_summary_for_created_process():
         service = ScriptExecutionService()
         returned = service.prepare(cmd)
 
-        instance.create.assert_called_once_with(script_uri, init_args=ProcedureInput())
+        instance.create.assert_called_once_with(
+            script_uri, init_args=ProcedureInput(), git_args=GitArgs()
+        )
         assert returned == expected
 
 
@@ -154,6 +159,7 @@ def test_ses_start_calls_process_manager_function_and_returns_summary():
         id=123,
         script_uri=procedure.script_uri,
         script_args=procedure.script_args,
+        git_args=procedure.git_args,
         history=procedure.history,
         state=procedure.state,
     )
@@ -298,7 +304,9 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     # running..
     cmd_stop = StopProcessCommand(process_uid=running_pid, run_abort=True)
     cmd_create = PrepareProcessCommand(
-        script_uri=abort_script, init_args=abort_procedure.script_args["init"]
+        script_uri=abort_script,
+        init_args=abort_procedure.script_args["init"],
+        git_args=None,
     )
     cmd_run = StartProcessCommand(
         process_uid=abort_pid, run_args=abort_procedure.script_args["run"]
@@ -310,6 +318,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
             id=abort_pid,
             script_uri=abort_procedure.script_uri,
             script_args=abort_procedure.script_args,
+            git_args=abort_procedure.git_args,
             history=abort_procedure.history,
             state=abort_procedure.state,
         )
@@ -337,7 +346,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
         # summary
         instance.stop.assert_called_once_with(cmd_stop.process_uid)
         instance.create.assert_called_once_with(
-            cmd_create.script_uri, init_args=cmd_create.init_args
+            cmd_create.script_uri, init_args=cmd_create.init_args, git_args=None
         )
         instance.run.assert_called_once_with(
             cmd_run.process_uid, run_args=cmd_run.run_args
@@ -400,6 +409,7 @@ def test_ses_get_subarray_id_for_requested_pid():
         id=process_pid,
         script_uri=procedure.script_uri,
         script_args=procedure.script_args,
+        git_args=procedure.git_args,
         history=procedure.history,
         state=procedure.state,
     )

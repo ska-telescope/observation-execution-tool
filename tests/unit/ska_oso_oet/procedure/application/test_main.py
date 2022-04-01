@@ -168,7 +168,7 @@ def test_script_execution_service_worker_verify_prepare_method_called(caplog):
     SES.prepare should be called when 'request.procedure.create' message is received
     """
     cmd = application.PrepareProcessCommand(
-        script_uri="test:///hi", init_args=domain.ProcedureInput()
+        script_uri="test:///hi", init_args=domain.ProcedureInput(), git_args=None
     )
     with mock.patch(
         "ska_oso_oet.procedure.application.main.ScriptExecutionService.prepare"

@@ -74,6 +74,7 @@ class ProcedureSummary:
     uri: str
     script_uri: str
     script_args: dict
+    git_args: dict
     history: dict
     state: str
 
@@ -91,6 +92,7 @@ class ProcedureSummary:
             uri=json["uri"],
             script_uri=json["script_uri"],
             script_args=json["script_args"],
+            git_args=json.get("git_args", None),
             history=json["history"],
             state=json["state"],
         )
@@ -295,6 +297,19 @@ class RestClientUI:
             tabulate.tabulate(table_rows_states, headers_states),
             tabulate.tabulate(table_rows_args, headers_args),
         ]
+
+        if procedure[0].git_args:
+            table_row_git = [
+                (
+                    procedure[0].git_args["git_repo"],
+                    procedure[0].git_args["git_branch"],
+                    procedure[0].git_args["git_commit"],
+                )
+            ]
+
+            table_row_git.sort(key=operator.itemgetter(0))
+            headers_git = ["Repository", "Branch", "Commit"]
+            table_sections.append(tabulate.tabulate(table_row_git, headers_git))
 
         # .. and add stacktrace if present
         stacktrace = procedure[0].history["stacktrace"]

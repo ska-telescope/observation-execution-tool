@@ -230,6 +230,7 @@ class ProcedureSummary:
     id: int  # pylint: disable=invalid-name
     script_uri: str
     script_args: typing.Dict[str, ProcedureInput]
+    git_args: GitArgs
     history: ProcedureHistory
     state: ProcedureState
 
@@ -238,6 +239,7 @@ class ProcedureSummary:
         return ProcedureSummary(
             id=procedure.id,
             script_uri=procedure.script_uri,
+            git_args=procedure.git_args,
             script_args=procedure.script_args,
             history=procedure.history,
             state=procedure.state,

@@ -36,7 +36,10 @@ CREATE_PROCESS_RESPONSE = {
         "script_uri": "file:///path/to/observing_script.py",
         "history": {
             "stacktrace": None,
-            "process_states": {"CREATED": 1601303225.8702714},
+            "process_states": {
+                "CREATING": 1601303225.8700714,
+                "CREATED": 1601303225.8702714,
+            },
         },
         "state": "CREATED",
         "uri": "http://localhost:5000/api/v1.0/procedures/2",
@@ -62,6 +65,7 @@ LIST_PROCEDURES_POSITIVE_RESPONSE = {
             "history": {
                 "stacktrace": None,
                 "process_states": {
+                    "CREATING": 1601303225.8232567,
                     "CREATED": 1601303225.8234567,
                     "RUNNING": 1601303225.8702714,
                 },
@@ -88,6 +92,7 @@ PROCEDURE_POSITIVE_RESPONSE = {
         "history": {
             "stacktrace": None,
             "process_states": {
+                "CREATING": 1601303225.8232567,
                 "CREATED": 1601303225.8234567,
                 "RUNNING": 1601303225.8702714,
             },
@@ -113,6 +118,7 @@ START_PROCESS_RESPONSE = {
         "history": {
             "stacktrace": None,
             "process_states": {
+                "CREATING": 1601303225.8232567,
                 "CREATED": 1601303225.8234567,
                 "RUNNING": 1601303225.8702714,
             },
@@ -449,6 +455,7 @@ REST_ADAPTER_CREATE_RESPONSE = ProcedureSummary(
         "init": {"args": [], "kwargs": {"subarray_id": 1}},
         "run": {"args": [], "kwargs": {}},
     },
+    git_args={},
     history={"process_states": {"CREATED": 1603381492.3060987}, "stacktrace": None},
     state="CREATED",
 )
@@ -463,6 +470,7 @@ REST_ADAPTER_LIST_RESPONSE = [
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
+        git_args={},
         history={
             "process_states": {"CREATED": 1603378829.5842578},
             "stacktrace": None,
@@ -477,6 +485,7 @@ REST_ADAPTER_LIST_RESPONSE = [
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
+        git_args={},
         history={
             "process_states": {"CREATED": 1603379539.5662398},
             "stacktrace": None,
@@ -494,6 +503,7 @@ REST_ADAPTER_LIST_RESPONSE_WITH_STACKTRACE = [
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
+        git_args={},
         history={
             "process_states": {
                 "CREATED": 1603801915.4125392,
@@ -520,6 +530,28 @@ REST_ADAPTER_LIST_RESPONSE_WITH_STACKTRACE = [
     )
 ]
 
+REST_ADAPTER_LIST_RESPONSE_WITH_GIT_ARGS = [
+    ProcedureSummary(
+        id=1,
+        uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
+        script_uri="file:///app/scripts/allocate.py",
+        script_args={
+            "init": {"args": [], "kwargs": {"subarray_id": 1}},
+            "run": {"args": [], "kwargs": {}},
+        },
+        git_args={
+            "git_repo": "http://foo.git",
+            "git_branch": "main",
+            "git_commit": "HEAD",
+        },
+        history={
+            "process_states": {"CREATED": 1603378829.5842578},
+            "stacktrace": None,
+        },
+        state="CREATED",
+    ),
+]
+
 
 REST_ADAPTER_START_RESPONSE = ProcedureSummary(
     id=1,
@@ -529,6 +561,7 @@ REST_ADAPTER_START_RESPONSE = ProcedureSummary(
         "init": {"args": [], "kwargs": {"subarray_id": 1}},
         "run": {"args": [], "kwargs": {}},
     },
+    git_args={},
     history={
         "process_states": {
             "CREATED": 1603378829.5842578,
@@ -549,6 +582,7 @@ REST_ADAPTER_LIST_RESPONSE_FOR_STOP = [
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
+        git_args={},
         history={
             "process_states": {
                 "CREATED": 1603723668.9510045,
@@ -569,6 +603,7 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
+        git_args={},
         history={
             "process_states": {
                 "CREATED": 1603723668.9510045,
@@ -586,6 +621,7 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
+        git_args={},
         history={
             "process_states": {
                 "CREATED": 1603723668.9510045,
@@ -610,6 +646,7 @@ REST_ADAPTER_LIST_RESPONSE_FOR_DESCRIBE = [
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
+        git_args={},
         history={
             "process_states": {
                 "COMPLETED": 1603723682.0246627,
@@ -921,6 +958,21 @@ def test_restclientui_describe_when_stacktrace_not_present(mock_list_fn, capsys)
     assert "COMPLETED" in lines[8]
     mock_list_fn.assert_called_with(1)
     assert mock_list_fn.call_count == 2
+
+
+@mock.patch.object(RestAdapter, "list")
+def test_restclientui_describe_when_git_args_present(mock_list_fn, capsys):
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE_WITH_GIT_ARGS
+
+    fire.Fire(RestClientUI, ["describe"])
+    captured = capsys.readouterr()
+    lines = captured.out.split("\n")
+
+    assert "Repository" in captured.out
+    assert "http://foo.git" in lines[15]
+    assert "main" in lines[15]
+    assert "HEAD" in lines[15]
+    mock_list_fn.assert_called_with(1)
 
 
 @mock.patch.object(RestAdapter, "list")

@@ -205,7 +205,7 @@ def create_procedure():
 
     procedure_input = domain.ProcedureInput(*init_args, **init_kwargs)
     prepare_cmd = application.PrepareProcessCommand(
-        script_uri=script_uri, init_args=procedure_input
+        script_uri=script_uri, init_args=procedure_input, git_args=None
     )
 
     summary = call_and_respond(

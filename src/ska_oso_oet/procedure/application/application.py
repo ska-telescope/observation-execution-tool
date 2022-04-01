@@ -157,6 +157,7 @@ class ScriptExecutionService:
         prepare_cmd = PrepareProcessCommand(
             script_uri=self._abort_script_uri,
             init_args=domain.ProcedureInput(subarray_id=subarray_id),
+            git_args=None,
         )
         procedure_summary = self.prepare(prepare_cmd)
 

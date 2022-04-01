@@ -40,6 +40,7 @@ CREATE_SUMMARY = ProcedureSummary(
     id=1,
     script_uri="test:///test.py",
     script_args={"init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b")},
+    git_args=None,
     history=domain.ProcedureHistory(
         process_states=OrderedDict(
             [(domain.ProcedureState.CREATED, 1601295086.129294)]
@@ -66,6 +67,7 @@ RUN_SUMMARY = ProcedureSummary(
         "init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"),
         "run": domain.ProcedureInput(4, 5, 6, kw3="c", kw4="d"),
     },
+    git_args=None,
     history=domain.ProcedureHistory(
         process_states=OrderedDict(
             [
@@ -351,6 +353,7 @@ def test_post_to_endpoint_sends_init_arguments(client):
     expected_cmd = PrepareProcessCommand(
         script_uri=CREATE_SUMMARY.script_uri,
         init_args=CREATE_SUMMARY.script_args["init"],
+        git_args=None,
     )
     assert helper.messages[0][1]["cmd"] == expected_cmd
 
