@@ -22,8 +22,7 @@ class PrepareProcessCommand:
     required to load and prepare a Python script ready for execution.
     """
 
-    script_uri: str
-    git_args: typing.Optional[domain.GitArgs]
+    script: domain.FileSystemScript
     init_args: domain.ProcedureInput
 
 
@@ -97,9 +96,7 @@ class ScriptExecutionService:
             arguments
         :return:
         """
-        pid = self._process_host.create(
-            cmd.script_uri, init_args=cmd.init_args, git_args=cmd.git_args
-        )
+        pid = self._process_host.create(cmd.script, init_args=cmd.init_args)
         summary = self._create_summary(pid)
         return summary
 
@@ -155,9 +152,8 @@ class ScriptExecutionService:
 
         # prepare second script
         prepare_cmd = PrepareProcessCommand(
-            script_uri=self._abort_script_uri,
+            script=domain.FileSystemScript(script_uri=self._abort_script_uri),
             init_args=domain.ProcedureInput(subarray_id=subarray_id),
-            git_args=None,
         )
         procedure_summary = self.prepare(prepare_cmd)
 

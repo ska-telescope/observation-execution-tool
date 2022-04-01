@@ -15,7 +15,7 @@ from ska_oso_oet.procedure.application.application import (
     StopProcessCommand,
 )
 from ska_oso_oet.procedure.domain import (
-    GitArgs,
+    FileSystemScript,
     Procedure,
     ProcedureHistory,
     ProcedureInput,
@@ -56,9 +56,8 @@ def create_empty_procedure_summary(
     """
     return ProcedureSummary(
         id=procedure_id,
-        script_uri=script_uri,
+        script=FileSystemScript(script_uri),
         script_args={"init": ProcedureInput(), "run": ProcedureInput()},
-        git_args=None,
         history=history,
         state=ProcedureState.CREATED,
     )
@@ -84,13 +83,14 @@ def test_ses_create_summary_returns_expected_object():
     Verify that the private method _create_summary converts from Procedures to
     ProcedureSummary correctly
     """
-    procedure = Procedure("test://test.py", 1, 2, 3, procedure_id=123, kw1=4, kw2=5)
+    procedure = Procedure(
+        FileSystemScript("test://test.py"), 1, 2, 3, procedure_id=123, kw1=4, kw2=5
+    )
     procedures = {123: procedure}
     expected = ProcedureSummary(
         id=123,
-        script_uri=procedure.script_uri,
+        script=procedure.script,
         script_args=procedure.script_args,
-        git_args=procedure.git_args,
         history=procedure.history,
         state=procedure.state,
     )
@@ -109,17 +109,14 @@ def test_ses_prepare_call_sequence_and_returns_summary_for_created_process():
     Verify that ScriptExecutionService.prepare() calls the appropriate domain
     object methods for process creation and returns the expected summary object
     """
-    script_uri = "test://test.py"
-    cmd = PrepareProcessCommand(
-        script_uri=script_uri, git_args=GitArgs(), init_args=ProcedureInput()
-    )
-    procedure = Procedure(script_uri, procedure_id=123)
+    script = FileSystemScript("test://test.py")
+    cmd = PrepareProcessCommand(script=script, init_args=ProcedureInput())
+    procedure = Procedure(script, procedure_id=123)
     procedures = {123: procedure}
     expected = ProcedureSummary(
         id=123,
-        script_uri=procedure.script_uri,
+        script=procedure.script,
         script_args=procedure.script_args,
-        git_args=procedure.git_args,
         history=procedure.history,
         state=procedure.state,
     )
@@ -139,9 +136,7 @@ def test_ses_prepare_call_sequence_and_returns_summary_for_created_process():
         service = ScriptExecutionService()
         returned = service.prepare(cmd)
 
-        instance.create.assert_called_once_with(
-            script_uri, init_args=ProcedureInput(), git_args=GitArgs()
-        )
+        instance.create.assert_called_once_with(script, init_args=ProcedureInput())
         assert returned == expected
 
 
@@ -153,13 +148,12 @@ def test_ses_start_calls_process_manager_function_and_returns_summary():
     """
     script_uri = "test://test.py"
     cmd = StartProcessCommand(process_uid=123, run_args=ProcedureInput())
-    procedure = Procedure(script_uri, procedure_id=123)
+    procedure = Procedure(FileSystemScript(script_uri), procedure_id=123)
     procedures = {123: procedure}
     expected = ProcedureSummary(
         id=123,
-        script_uri=procedure.script_uri,
+        script=procedure.script,
         script_args=procedure.script_args,
-        git_args=procedure.git_args,
         history=procedure.history,
         state=procedure.state,
     )
@@ -190,9 +184,9 @@ def test_ses_summarise_returns_summaries_for_requested_pids():
     ScriptExecutionService.summarise() should only return status for requested
     procedures.
     """
-    procedure_a = Procedure("test://a", procedure_id=1)
-    procedure_b = Procedure("test://b", procedure_id=2)
-    procedure_c = Procedure("test://c", procedure_id=3)
+    procedure_a = Procedure(FileSystemScript("test://a"), procedure_id=1)
+    procedure_b = Procedure(FileSystemScript("test://b"), procedure_id=2)
+    procedure_c = Procedure(FileSystemScript("test://c"), procedure_id=3)
     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
 
     expected = [
@@ -220,9 +214,9 @@ def test_ses_summarise_fails_when_invalid_pid_requested():
     Verify that ScriptExecutionService.summarise() fails when an invalid
     procedure ID is requested.
     """
-    procedure_a = Procedure("test://a")
-    procedure_b = Procedure("test://b")
-    procedure_c = Procedure("test://c")
+    procedure_a = Procedure(FileSystemScript("test://a"))
+    procedure_b = Procedure(FileSystemScript("test://b"))
+    procedure_c = Procedure(FileSystemScript("test://c"))
     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
 
     with mock.patch(
@@ -244,9 +238,9 @@ def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
     Verify that summaries for all procedures are returned when no specific PID
     is requested.
     """
-    procedure_a = Procedure("test://a", procedure_id=1)
-    procedure_b = Procedure("test://b", procedure_id=2)
-    procedure_c = Procedure("test://c", procedure_id=3)
+    procedure_a = Procedure(FileSystemScript("test://a"), procedure_id=1)
+    procedure_b = Procedure(FileSystemScript("test://b"), procedure_id=2)
+    procedure_c = Procedure(FileSystemScript("test://c"), procedure_id=3)
     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
 
     expected = [
@@ -285,13 +279,13 @@ def test_ses_stop_calls_process_manager_function(abort_script):
 
     # Create Procedure representing the script to be stopped
     procedure_to_stop = Procedure(
-        "test://a", procedure_id=running_pid, subarray_id=subarray_id
+        FileSystemScript("test://a"), procedure_id=running_pid, subarray_id=subarray_id
     )
 
     # Create second Procedure to represent the Process running the
     # post-termination abort script
     abort_procedure = Procedure(
-        abort_script, procedure_id=abort_pid, subarray_id=subarray_id
+        FileSystemScript(abort_script), procedure_id=abort_pid, subarray_id=subarray_id
     )
 
     # Prepare a dict of PIDs to Procedures that we can use to mock the internal
@@ -304,9 +298,8 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     # running..
     cmd_stop = StopProcessCommand(process_uid=running_pid, run_abort=True)
     cmd_create = PrepareProcessCommand(
-        script_uri=abort_script,
+        script=FileSystemScript(abort_script),
         init_args=abort_procedure.script_args["init"],
-        git_args=None,
     )
     cmd_run = StartProcessCommand(
         process_uid=abort_pid, run_args=abort_procedure.script_args["run"]
@@ -316,9 +309,8 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     expected = [
         ProcedureSummary(
             id=abort_pid,
-            script_uri=abort_procedure.script_uri,
+            script=abort_procedure.script,
             script_args=abort_procedure.script_args,
-            git_args=abort_procedure.git_args,
             history=abort_procedure.history,
             state=abort_procedure.state,
         )
@@ -346,7 +338,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
         # summary
         instance.stop.assert_called_once_with(cmd_stop.process_uid)
         instance.create.assert_called_once_with(
-            cmd_create.script_uri, init_args=cmd_create.init_args, git_args=None
+            cmd_create.script, init_args=cmd_create.init_args
         )
         instance.run.assert_called_once_with(
             cmd_run.process_uid, run_args=cmd_run.run_args
@@ -367,7 +359,7 @@ def test_ses_stop_calls_process_manager_function_with_no_script_execution(abort_
     init_args = ProcedureInput(subarray_id=2)
 
     # Create Procedure representing the script to be stopped
-    procedure_to_stop = Procedure("test://a")
+    procedure_to_stop = Procedure(FileSystemScript("test://a"))
     procedure_to_stop.script_args["init"] = init_args
 
     # Prepare a dict of PIDs to Procedures that we can use to mock the internal
@@ -401,15 +393,14 @@ def test_ses_get_subarray_id_for_requested_pid():
     subarray_id = 123
     process_pid = 456
 
-    procedure = Procedure("test://a")
+    procedure = Procedure(FileSystemScript("test://a"))
     init_args = ProcedureInput(subarray_id=subarray_id)
     procedure.script_args["init"] = init_args
     procedures = {process_pid: procedure}
     process_summary = ProcedureSummary(
         id=process_pid,
-        script_uri=procedure.script_uri,
+        script=procedure.script,
         script_args=procedure.script_args,
-        git_args=procedure.git_args,
         history=procedure.history,
         state=procedure.state,
     )
@@ -435,7 +426,7 @@ def test_ses_get_subarray_id_fails_on_missing_subarray_id():
     Verify that an exception is raised when subarray id is missing for requested
     PID
     """
-    procedure = Procedure("test://a")
+    procedure = Procedure(FileSystemScript("test://a"))
     procedures = {1: procedure}
 
     with mock.patch(
