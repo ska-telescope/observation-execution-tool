@@ -148,7 +148,6 @@ class Procedure(multiprocessing.Process):
         *args,
         scan_counter: typing.Optional[multiprocessing.Value] = None,
         procedure_id: typing.Optional[int] = None,
-        git_args: typing.Optional[GitArgs] = None,
         **kwargs,
     ):
         multiprocessing.Process.__init__(self)
@@ -157,7 +156,6 @@ class Procedure(multiprocessing.Process):
         init_args = ProcedureInput(*args, **kwargs)
 
         self.id = procedure_id  # pylint:disable=invalid-name
-        self.git_args = git_args
         self.state = None
         self.change_state(ProcedureState.CREATING)
 
