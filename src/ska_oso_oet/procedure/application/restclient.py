@@ -351,10 +351,22 @@ class RestClientUI:
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.
         """
-        kwargs["subarray_id"] = subarray_id
-        init_args = dict(args=args, kwargs=kwargs)
+
+        # Iterating over the Python kwargs dictionary
+        git_args = dict()
+        init_kwargs = dict()
+        init_kwargs["subarray_id"] = subarray_id
+        for arg in kwargs.keys():
+            if "git" in arg:
+                git_args[arg] = kwargs[arg]
+            else:
+                init_kwargs[arg] = kwargs[arg]
+
+        init_args = dict(args=args, kwargs=init_kwargs)
         try:
-            procedure = self._client.create(script_uri, init_args=init_args)
+            procedure = self._client.create(
+                script_uri, init_args=init_args, git_args=git_args
+            )
             return self._tabulate([procedure])
         except Exception as err:
             LOGGER.debug("received exception %s", err)
@@ -564,7 +576,9 @@ class RestAdapter:
         procedures_json = response.json()["procedures"]
         return [ProcedureSummary.from_json(d) for d in procedures_json]
 
-    def create(self, script_uri: str, init_args: Dict = None) -> ProcedureSummary:
+    def create(
+        self, script_uri: str, init_args: Dict = None, git_args: Dict = None
+    ) -> ProcedureSummary:
         """
         Create a new Procedure.
 
@@ -575,18 +589,26 @@ class RestAdapter:
 
             init_args={args=[1,2,3], kwargs=dict(kw1=2, kw3='abc')}
 
+        Argument given in git_args should be a dict e.g.,
+             git_args={"git_repo": "http://foo.git","git_branch": "main","git_commit": "HEAD"}
+
         :param script_uri: script URI, e.g., file://test.py
         :param init_args: script initialisation arguments
+        :param git_args: git script arguments
         :return: Summary of created procedure.
         """
         if init_args is None:
             init_args = dict(args=[], kwargs={})
+
+        if git_args is None:
+            git_args = dict()
 
         request_json = {
             "script_uri": script_uri,
             "script_args": {
                 "init": init_args,
             },
+            "git_args": git_args,
         }
         LOGGER.debug("Create payload: %s", request_json)
 

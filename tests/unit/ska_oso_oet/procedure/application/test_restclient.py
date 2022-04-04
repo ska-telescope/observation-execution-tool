@@ -136,6 +136,7 @@ STOP_PROCESS_AND_ABORT_SUBARRAY_ACTIVITY_RESPONSE = {
     )
 }
 
+
 # Tests for the RestAdapter
 
 
@@ -459,7 +460,22 @@ REST_ADAPTER_CREATE_RESPONSE = ProcedureSummary(
     history={"process_states": {"CREATED": 1603381492.3060987}, "stacktrace": None},
     state="CREATED",
 )
-
+REST_ADAPTER_CREATE_RESPONSE_WITH_GIT_ARGS = ProcedureSummary(
+    id=1,
+    uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
+    script_uri="file:///app/scripts/allocate.py",
+    script_args={
+        "init": {"args": [], "kwargs": {"subarray_id": 1}},
+        "run": {"args": [], "kwargs": {}},
+    },
+    git_args={
+        "git_repo": "http://foo.git",
+        "git_branch": "main",
+        "git_commit": "HEAD",
+    },
+    history={"process_states": {"CREATED": 1603381492.3060987}, "stacktrace": None},
+    state="CREATED",
+)
 
 REST_ADAPTER_LIST_RESPONSE = [
     ProcedureSummary(
@@ -552,7 +568,6 @@ REST_ADAPTER_LIST_RESPONSE_WITH_GIT_ARGS = [
     ),
 ]
 
-
 REST_ADAPTER_START_RESPONSE = ProcedureSummary(
     id=1,
     uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
@@ -571,7 +586,6 @@ REST_ADAPTER_START_RESPONSE = ProcedureSummary(
     },
     state="RUNNING",
 )
-
 
 REST_ADAPTER_LIST_RESPONSE_FOR_STOP = [
     ProcedureSummary(
@@ -706,6 +720,19 @@ def test_restclientui_returns_error_when_not_passed_an_invalid_command():
 @mock.patch.object(RestAdapter, "create")
 def test_restclientui_creates_a_valid_script(mock_create_fn, capsys):
     mock_create_fn.return_value = REST_ADAPTER_CREATE_RESPONSE
+    fire.Fire(RestClientUI, ["create", "file:///app/scripts/allocate.py"])
+    captured = capsys.readouterr()
+    result = parse_rest_create_list_response(captured.out)
+
+    assert result[0]["id"] == str(1)
+    assert result[0]["uri"] == "file:///app/scripts/allocate.py"
+    assert result[0]["creation time"] == "2020-10-22 15:44:52"
+    assert result[0]["state"] == "CREATED"
+
+
+@mock.patch.object(RestAdapter, "create")
+def test_restclientui_creates_a_valid_script_with_git_args(mock_create_fn, capsys):
+    mock_create_fn.return_value = REST_ADAPTER_CREATE_RESPONSE_WITH_GIT_ARGS
     fire.Fire(RestClientUI, ["create", "file:///app/scripts/allocate.py"])
     captured = capsys.readouterr()
     result = parse_rest_create_list_response(captured.out)
