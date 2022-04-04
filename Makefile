@@ -21,6 +21,18 @@ PROJECT_NAME = ska-oso-oet
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
+# If running in the CI pipeline, set the variables to point to the freshly
+# built image in the GitLab registry
+ifneq ($(CI_REGISTRY),)
+K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
+	--set ska-oso-oet.rest.image.registry=$(CI_REGISTRY)/ska-telescope/ska-oso-oet
+K8S_TEST_IMAGE_TO_TEST=$(CI_REGISTRY)/ska-telescope/ska-oso-oet/ska-oso-oet:$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA)
+endif
+
+# Set the k8s test command run inside the testing pod to only run the acceptance
+# tests (no k8s pod deployment required for unit tests)
+K8S_TEST_TEST_COMMAND = cd .. && pytest ./tests/acceptance | tee pytest.stdout
+
 # Set python-test make target to run unit tests and not the integration tests
 PYTHON_TEST_FILE = tests/unit/
 
@@ -52,3 +64,9 @@ diagrams:  ## recreate PlantUML diagrams whose source has been modified
 		cat $$i | docker run --rm think/plantuml -tsvg $$i > $${i%%.*}.svg; \
 	done
 	docker run -v $(CURDIR):/data rlespinasse/drawio-export --format=svg --on-changes --remove-page-suffix docs/src/diagrams
+
+k8s-pre-test:
+	kubectl cp tests/acceptance/ska_oso_oet/scripts/ $(KUBE_NAMESPACE)/ska-oso-oet-rest-$(HELM_RELEASE)-0:/tmp/scripts
+
+k8s-post-test:
+	kubectl -n $(KUBE_NAMESPACE) exec ska-oso-oet-rest-$(HELM_RELEASE)-0 -- rm -r /tmp/scripts

@@ -33,6 +33,14 @@ To build a new Docker image for the OET, run
 make oci-build
 ```
 
+Execute the BDD acceptance tests in k8s environment with:
+
+```
+make k8s-install-chart && make k8s-wait
+make k8s-test
+make k8s-uninstall-chart
+```
+
 To rebuild the PlantUML and drawio diagrams after modification, from a
 non-interactive session run
 
