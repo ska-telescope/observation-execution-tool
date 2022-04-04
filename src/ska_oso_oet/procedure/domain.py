@@ -45,8 +45,7 @@ class ProcedureState(enum.Enum):
 @dataclasses.dataclass
 class GitArgs:
     """
-    GitArgs is a input argument data class for PrepareProcessCommand. It
-    captures essential information required to identify scripts
+    GitArgs captures information required to identify scripts
     located in git repositories.
     """
 
@@ -55,6 +54,24 @@ class GitArgs:
     ] = "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
     git_commit: typing.Optional[str] = "HEAD"
     git_branch: typing.Optional[str] = "master"
+
+
+@dataclasses.dataclass
+class FileSystemScript:
+    """
+    Represents a script in the file system.
+    """
+
+    script_uri: str
+
+
+@dataclasses.dataclass
+class GitScript(FileSystemScript):
+    """
+    Represents a script in a git repository.
+    """
+
+    git_args: GitArgs
 
 
 @dataclasses.dataclass
@@ -127,7 +144,7 @@ class Procedure(multiprocessing.Process):
 
     def __init__(
         self,
-        script_uri: str,
+        script: FileSystemScript,
         *args,
         scan_counter: typing.Optional[multiprocessing.Value] = None,
         procedure_id: typing.Optional[int] = None,
@@ -144,11 +161,11 @@ class Procedure(multiprocessing.Process):
         self.state = None
         self.change_state(ProcedureState.CREATING)
 
-        self.user_module = ModuleFactory.get_module(script_uri)
+        self.user_module = ModuleFactory.get_module(script.script_uri)
         if hasattr(self.user_module, "init"):
             self.user_module.init(*args, **kwargs)
 
-        self.script_uri = script_uri
+        self.script = script
         self.script_args: typing.Dict[str, ProcedureInput] = dict(
             init=init_args, run=ProcedureInput()
         )
@@ -228,9 +245,8 @@ class ProcedureSummary:
     """
 
     id: int  # pylint: disable=invalid-name
-    script_uri: str
+    script: FileSystemScript
     script_args: typing.Dict[str, ProcedureInput]
-    git_args: GitArgs
     history: ProcedureHistory
     state: ProcedureState
 
@@ -238,8 +254,7 @@ class ProcedureSummary:
     def from_procedure(procedure: Procedure):
         return ProcedureSummary(
             id=procedure.id,
-            script_uri=procedure.script_uri,
-            git_args=procedure.git_args,
+            script=procedure.script,
             script_args=procedure.script_args,
             history=procedure.history,
             state=procedure.state,
@@ -264,18 +279,17 @@ class ProcessManager:
 
     def create(
         self,
-        script_uri: str,
+        script: FileSystemScript,
         *,
         init_args: ProcedureInput,
-        git_args: typing.Optional[GitArgs] = None,
     ) -> int:
         """
         Create a new Procedure that will, when executed, run the target Python
         script.
 
-        :param script_uri: script URI, e.g. 'file://myscript.py'
+        :param script: FileSystemScript object containing script_uri (e.g. 'file://myscript.py')
+        and information on script execution environment (e.g. git_args in GitScript)
         :param init_args: script initialisation arguments
-        :param git_args: arguments specifying git project for script environment
         :return:
         """
         if not self.procedures:
@@ -284,14 +298,13 @@ class ProcessManager:
             pid = max(self.procedures.keys()) + 1
 
         LOGGER.debug(
-            "Creating Procedure with pid %d and script_uri %s", pid, script_uri
+            "Creating Procedure with pid %d and script_uri %s", pid, script.script_uri
         )
 
         procedure = self._procedure_factory.create(
-            script_uri,
+            script,
             *init_args.args,
             scan_counter=self._scan_id,
-            git_args=git_args,
             **init_args.kwargs,
         )
         procedure.id = pid
@@ -394,19 +407,19 @@ class ProcedureFactory:
     A factory class for creating no-op Procedure objects.
     """
 
-    def create(self, script_uri: str, *args, **kwargs) -> Procedure:
+    def create(self, script: FileSystemScript, *args, **kwargs) -> Procedure:
         """
         Create a new Procedure. Right now this just creates the Procedure
         object. In a functional implementation this would create an OS
         (sub)process.
 
-        :param script_uri: URI of Python script to load
+        :param script: FileSystemScript object of Python script to load
         :param args: positional arguments to give to the script process constructor
         :param kwargs: keyword/value arguments to pass to the script process constructor
 
         :return: Script process object.
         """
-        return Procedure(script_uri, *args, **kwargs)
+        return Procedure(script, *args, **kwargs)
 
 
 class ModuleFactory:

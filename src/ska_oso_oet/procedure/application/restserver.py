@@ -205,7 +205,7 @@ def create_procedure():
 
     procedure_input = domain.ProcedureInput(*init_args, **init_kwargs)
     prepare_cmd = application.PrepareProcessCommand(
-        script_uri=script_uri, init_args=procedure_input, git_args=None
+        script=domain.FileSystemScript(script_uri), init_args=procedure_input
     )
 
     summary = call_and_respond(
@@ -360,7 +360,7 @@ def make_public_summary(procedure: domain.ProcedureSummary):
         "uri": flask.url_for(
             "api.get_procedure", procedure_id=procedure.id, _external=True
         ),
-        "script_uri": procedure.script_uri,
+        "script_uri": procedure.script.script_uri,
         "script_args": script_args,
         "history": procedure_history,
         "state": procedure.state.name,

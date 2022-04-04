@@ -38,9 +38,8 @@ CREATE_JSON = dict(
 # object expected to be returned when creating the Procedure defined above
 CREATE_SUMMARY = ProcedureSummary(
     id=1,
-    script_uri="test:///test.py",
+    script=domain.FileSystemScript("test:///test.py"),
     script_args={"init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b")},
-    git_args=None,
     history=domain.ProcedureHistory(
         process_states=OrderedDict(
             [(domain.ProcedureState.CREATED, 1601295086.129294)]
@@ -62,12 +61,11 @@ RUN_JSON = dict(
 # object expected to be returned when the procedure is executed
 RUN_SUMMARY = ProcedureSummary(
     id=1,
-    script_uri="test:///test.py",
+    script=domain.FileSystemScript("test:///test.py"),
     script_args={
         "init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"),
         "run": domain.ProcedureInput(4, 5, 6, kw3="c", kw4="d"),
     },
-    git_args=None,
     history=domain.ProcedureHistory(
         process_states=OrderedDict(
             [
@@ -138,7 +136,7 @@ def assert_json_equal_to_procedure_summary(
     :param summary_json: JSON for the ProcedureSummmary
     """
     assert summary_json["uri"] == f"http://localhost/{ENDPOINT}/{summary.id}"
-    assert summary_json["script_uri"] == summary.script_uri
+    assert summary_json["script_uri"] == summary.script.script_uri
     for method_name, arg_dict in summary_json["script_args"].items():
         i: ProcedureInput = summary.script_args[method_name]
         assert i.args == tuple(arg_dict["args"])
@@ -351,9 +349,8 @@ def test_post_to_endpoint_sends_init_arguments(client):
 
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
-        script_uri=CREATE_SUMMARY.script_uri,
+        script=domain.FileSystemScript(CREATE_SUMMARY.script.script_uri),
         init_args=CREATE_SUMMARY.script_args["init"],
-        git_args=None,
     )
     assert helper.messages[0][1]["cmd"] == expected_cmd
 
