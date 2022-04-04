@@ -52,8 +52,8 @@ class GitArgs:
     git_repo: typing.Optional[
         str
     ] = "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
-    git_commit: typing.Optional[str] = "HEAD"
     git_branch: typing.Optional[str] = "master"
+    git_commit: typing.Optional[str] = None
 
 
 @dataclasses.dataclass
@@ -64,6 +64,9 @@ class FileSystemScript:
 
     script_uri: str
 
+    def get_type(self):
+        return "filesystem"
+
 
 @dataclasses.dataclass
 class GitScript(FileSystemScript):
@@ -72,6 +75,9 @@ class GitScript(FileSystemScript):
     """
 
     git_args: GitArgs
+
+    def get_type(self):
+        return "git"
 
 
 @dataclasses.dataclass

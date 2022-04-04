@@ -31,7 +31,7 @@ ENDPOINT = "api/v1.0/procedures"
 
 # Valid JSON struct for creating a new procedure
 CREATE_JSON = dict(
-    script_uri="test:///test.py",
+    script={"script_type": "filesystem", "script_uri": "test:///test.py"},
     script_args={"init": dict(args=(1, 2, 3), kwargs=dict(kw1="a", kw2="b"))},
 )
 
@@ -42,7 +42,40 @@ CREATE_SUMMARY = ProcedureSummary(
     script_args={"init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b")},
     history=domain.ProcedureHistory(
         process_states=OrderedDict(
-            [(domain.ProcedureState.CREATED, 1601295086.129294)]
+            [
+                (domain.ProcedureState.CREATING, 1601294086.129294),
+                (domain.ProcedureState.CREATED, 1601295086.129294),
+            ]
+        ),
+        stacktrace=None,
+    ),
+    state=domain.ProcedureState.CREATED,
+)
+
+# Valid JSON struct for creating a new procedure
+CREATE_GIT_JSON = dict(
+    script={
+        "script_type": "git",
+        "script_uri": "test:///test.py",
+        "git_args": {"git_repo": "http://foo.git", "git_branch": "main"},
+    },
+    script_args={"init": dict(args=(1, 2, 3), kwargs=dict(kw1="a", kw2="b"))},
+)
+
+# object expected to be returned when creating the Procedure defined above
+CREATE_GIT_SUMMARY = ProcedureSummary(
+    id=1,
+    script=domain.GitScript(
+        "test:///test.py",
+        git_args=domain.GitArgs(git_repo="http://foo.git", git_branch="main"),
+    ),
+    script_args={"init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b")},
+    history=domain.ProcedureHistory(
+        process_states=OrderedDict(
+            [
+                (domain.ProcedureState.CREATING, 1601294086.129294),
+                (domain.ProcedureState.CREATED, 1601295086.129294),
+            ]
         ),
         stacktrace=None,
     ),
@@ -133,10 +166,25 @@ def assert_json_equal_to_procedure_summary(
     instance. An assertion error will be raised if the JSON does not match.
 
     :param summary: reference ProcedureSummary instance
-    :param summary_json: JSON for the ProcedureSummmary
+    :param summary_json: JSON for the ProcedureSummary
     """
     assert summary_json["uri"] == f"http://localhost/{ENDPOINT}/{summary.id}"
-    assert summary_json["script_uri"] == summary.script.script_uri
+    assert summary_json["script"]["script_type"] == summary.script.get_type()
+    assert summary_json["script"]["script_uri"] == summary.script.script_uri
+    if summary_json["script"].get("git_args"):
+        assert isinstance(summary.script, domain.GitScript)
+        assert (
+            summary_json["script"]["git_args"]["git_repo"]
+            == summary.script.git_args.git_repo
+        )
+        assert (
+            summary_json["script"]["git_args"]["git_branch"]
+            == summary.script.git_args.git_branch
+        )
+        assert (
+            summary_json["script"]["git_args"]["git_commit"]
+            == summary.script.git_args.git_commit
+        )
     for method_name, arg_dict in summary_json["script_args"].items():
         i: ProcedureInput = summary.script_args[method_name]
         assert i.args == tuple(arg_dict["args"])
@@ -292,13 +340,33 @@ def test_successful_post_to_endpoint_returns_summary_in_response(client):
     assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedure_json)
 
 
+def test_successful_post_to_endpoint_returns_git_summary_in_response(client):
+    """
+    Verify that creating a new Procedure returns the expected JSON payload:
+    a summary of the created Procedure with git arguments.
+    """
+    spec = {
+        topics.request.procedure.create: [
+            ([topics.procedure.lifecycle.created], dict(result=CREATE_GIT_SUMMARY))
+        ],
+    }
+    _ = PubSubHelper(spec)
+
+    response = client.post(ENDPOINT, json=CREATE_GIT_JSON)
+    response_json = response.get_json()
+
+    assert "procedure" in response_json
+    procedure_json = response_json["procedure"]
+    assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, procedure_json)
+
+
 def test_post_to_endpoint_requires_script_uri_json_parameter(client):
     """
     Verify that the script_uri must be present in the 'create procedure' JSON
     request.
     """
     malformed = copy.deepcopy(CREATE_JSON)
-    del malformed["script_uri"]
+    del malformed["script"]["script_uri"]
     response = client.post(ENDPOINT, json=malformed)
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
@@ -306,7 +374,25 @@ def test_post_to_endpoint_requires_script_uri_json_parameter(client):
     assert response_json == {
         "error": "400 Bad Request",
         "type": "Malformed Request",
-        "Message": "script_uri missing",
+        "Message": "Malformed script in request",
+    }
+
+
+def test_post_to_endpoint_unknown_script_type(client):
+    """
+    Verify that the script_uri must be present in the 'create procedure' JSON
+    request.
+    """
+    malformed = copy.deepcopy(CREATE_JSON)
+    malformed["script"]["script_type"] = "foo"
+    response = client.post(ENDPOINT, json=malformed)
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    response_json = response.get_json()
+    assert response_json == {
+        "error": "400 Bad Request",
+        "type": "Malformed Request",
+        "Message": "Script type foo not supported",
     }
 
 
@@ -323,7 +409,7 @@ def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
     assert response_json == {
         "error": "400 Bad Request",
         "type": "Malformed Request",
-        "Message": "Malformed script_uri in request",
+        "Message": "Malformed script_args in request",
     }
 
 

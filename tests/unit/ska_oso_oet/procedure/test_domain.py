@@ -142,7 +142,9 @@ def test_git_args_input_accepts_expected_values():
     """
     Verify that GitArgs arguments.
     """
-    git_args = GitArgs("git://test.com", "HEAD", "master")
+    git_args = GitArgs(
+        git_repo="git://test.com", git_branch="master", git_commit="HEAD"
+    )
     assert git_args.git_repo == "git://test.com"
     assert git_args.git_commit == "HEAD"
 
@@ -166,8 +168,8 @@ def test_git_args_default_values_are_as_expected():
     """
     git_args = GitArgs()
     assert git_args.git_repo == "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
-    assert git_args.git_commit == "HEAD"
     assert git_args.git_branch == "master"
+    assert git_args.git_commit is None
 
 
 def test_procedure_input_accepts_expected_constructor_values():
