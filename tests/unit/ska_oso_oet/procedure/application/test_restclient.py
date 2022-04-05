@@ -33,7 +33,10 @@ CREATE_PROCESS_RESPONSE = {
             },
             "run": {"args": [], "kwargs": {}},
         },
-        "script_uri": "file:///path/to/observing_script.py",
+        "script": {
+            "script_type": "filesystem",
+            "script_uri": "file:///path/to/observing_script.py",
+        },
         "history": {
             "stacktrace": None,
             "process_states": {
@@ -241,8 +244,8 @@ def test_create_procedure_sends_expected_script_uri():
         last_request = mock_server.last_request
 
     request_payload = last_request.json()
-    assert "script_uri" in request_payload
-    assert request_payload["script_uri"] == script_uri
+    assert "script" in request_payload
+    assert request_payload["script"]["script_uri"] == script_uri
 
 
 def test_create_process_sends_empty_init_args_when_left_undefined_by_user():
@@ -451,29 +454,46 @@ def test_listen_yields_sse_events(mock_iterator, mock_init):
 REST_ADAPTER_CREATE_RESPONSE = ProcedureSummary(
     id=1,
     uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-    script_uri="file:///app/scripts/allocate.py",
     script_args={
         "init": {"args": [], "kwargs": {"subarray_id": 1}},
         "run": {"args": [], "kwargs": {}},
     },
-    git_args={},
-    history={"process_states": {"CREATED": 1603381492.3060987}, "stacktrace": None},
+    script={
+        "script_type": "filesystem",
+        "script_uri": "file:///app/scripts/allocate.py",
+    },
+    history={
+        "process_states": {
+            "CREATING": 1603381492.3060987,
+            "CREATED": 1603381492.3060987,
+        },
+        "stacktrace": None,
+    },
     state="CREATED",
 )
 REST_ADAPTER_CREATE_RESPONSE_WITH_GIT_ARGS = ProcedureSummary(
     id=1,
     uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-    script_uri="file:///app/scripts/allocate.py",
     script_args={
         "init": {"args": [], "kwargs": {"subarray_id": 1}},
         "run": {"args": [], "kwargs": {}},
     },
-    git_args={
-        "git_repo": "http://foo.git",
-        "git_branch": "main",
-        "git_commit": "HEAD",
+    script={
+        "script_uri": "git:///app/scripts/allocate.py",
+        "script_type": "git",
+        "git_args": {
+            "git_repo": "http://foo.git",
+            "git_branch": "main",
+            "git_commit": "HEAD",
+        },
     },
-    history={"process_states": {"CREATED": 1603381492.3060987}, "stacktrace": None},
+    history={
+        "process_states": {
+            "CREATING": 1603381492.3060987,
+            "CREATED": 1603381492.3060987,
+        },
+        "stacktrace": None,
+    },
     state="CREATED",
 )
 
@@ -481,14 +501,24 @@ REST_ADAPTER_LIST_RESPONSE = [
     ProcedureSummary(
         id=1,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-        script_uri="file:///app/scripts/allocate.py",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
-        git_args={},
+        script={
+            "script_uri": "git:///app/scripts/allocate.py",
+            "script_type": "git",
+            "git_args": {
+                "git_repo": "http://foo.git",
+                "git_branch": "main",
+                "git_commit": "HEAD",
+            },
+        },
         history={
-            "process_states": {"CREATED": 1603378829.5842578},
+            "process_states": {
+                "CREATING": 1603378829.5842578,
+                "CREATED": 1603378829.5842578,
+            },
             "stacktrace": None,
         },
         state="CREATED",
@@ -496,14 +526,24 @@ REST_ADAPTER_LIST_RESPONSE = [
     ProcedureSummary(
         id=2,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/2",
-        script_uri="file:///app/scripts/allocate.py",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
-        git_args={},
+        script={
+            "script_uri": "git:///app/scripts/allocate.py",
+            "script_type": "git",
+            "git_args": {
+                "git_repo": "http://foo.git",
+                "git_branch": "main",
+                "git_commit": "HEAD",
+            },
+        },
         history={
-            "process_states": {"CREATED": 1603379539.5662398},
+            "process_states": {
+                "CREATING": 1603379539.5662398,
+                "CREATED": 1603379539.5662398,
+            },
             "stacktrace": None,
         },
         state="CREATED",
@@ -514,12 +554,14 @@ REST_ADAPTER_LIST_RESPONSE_WITH_STACKTRACE = [
     ProcedureSummary(
         id=2,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-        script_uri="file:///app/scripts/allocate.py",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
-        git_args={},
+        script={
+            "script_uri": "file:///app/scripts/allocate.py",
+            "script_type": "filesystem",
+        },
         history={
             "process_states": {
                 "CREATED": 1603801915.4125392,
@@ -550,18 +592,24 @@ REST_ADAPTER_LIST_RESPONSE_WITH_GIT_ARGS = [
     ProcedureSummary(
         id=1,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-        script_uri="file:///app/scripts/allocate.py",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
-        git_args={
-            "git_repo": "http://foo.git",
-            "git_branch": "main",
-            "git_commit": "HEAD",
+        script={
+            "script_uri": "git:///app/scripts/allocate.py",
+            "script_type": "git",
+            "git_args": {
+                "git_repo": "http://foo.git",
+                "git_branch": "main",
+                "git_commit": "HEAD",
+            },
         },
         history={
-            "process_states": {"CREATED": 1603378829.5842578},
+            "process_states": {
+                "CREATING": 1603378829.5842578,
+                "CREATED": 1603378829.5842578,
+            },
             "stacktrace": None,
         },
         state="CREATED",
@@ -571,12 +619,14 @@ REST_ADAPTER_LIST_RESPONSE_WITH_GIT_ARGS = [
 REST_ADAPTER_START_RESPONSE = ProcedureSummary(
     id=1,
     uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-    script_uri="file:///app/scripts/allocate.py",
     script_args={
         "init": {"args": [], "kwargs": {"subarray_id": 1}},
         "run": {"args": [], "kwargs": {}},
     },
-    git_args={},
+    script={
+        "script_uri": "file:///app/scripts/allocate.py",
+        "script_type": "filesystem",
+    },
     history={
         "process_states": {
             "CREATED": 1603378829.5842578,
@@ -591,12 +641,14 @@ REST_ADAPTER_LIST_RESPONSE_FOR_STOP = [
     ProcedureSummary(
         id=1,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-        script_uri="file:///app/scripts/test_working.py",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
-        git_args={},
+        script={
+            "script_uri": "file:///app/scripts/test_working.py",
+            "script_type": "filesystem",
+        },
         history={
             "process_states": {
                 "CREATED": 1603723668.9510045,
@@ -612,12 +664,14 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
     ProcedureSummary(
         id=1,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-        script_uri="file:///app/scripts/test_working.py",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
-        git_args={},
+        script={
+            "script_uri": "file:///app/scripts/test_working.py",
+            "script_type": "filesystem",
+        },
         history={
             "process_states": {
                 "CREATED": 1603723668.9510045,
@@ -630,12 +684,14 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
     ProcedureSummary(
         id=2,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/2",
-        script_uri="file:///app/scripts/test_working.py",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
-        git_args={},
+        script={
+            "script_uri": "file:///app/scripts/test_working.py",
+            "script_type": "filesystem",
+        },
         history={
             "process_states": {
                 "CREATED": 1603723668.9510045,
@@ -655,12 +711,14 @@ REST_ADAPTER_LIST_RESPONSE_FOR_DESCRIBE = [
     ProcedureSummary(
         id=1,
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
-        script_uri="file:///app/scripts/test_working.py",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
             "run": {"args": [], "kwargs": {}},
         },
-        git_args={},
+        script={
+            "script_uri": "file:///app/scripts/test_working.py",
+            "script_type": "filesystem",
+        },
         history={
             "process_states": {
                 "COMPLETED": 1603723682.0246627,
@@ -733,12 +791,12 @@ def test_restclientui_creates_a_valid_script(mock_create_fn, capsys):
 @mock.patch.object(RestAdapter, "create")
 def test_restclientui_creates_a_valid_script_with_git_args(mock_create_fn, capsys):
     mock_create_fn.return_value = REST_ADAPTER_CREATE_RESPONSE_WITH_GIT_ARGS
-    fire.Fire(RestClientUI, ["create", "file:///app/scripts/allocate.py"])
+    fire.Fire(RestClientUI, ["create", "git:///app/scripts/allocate.py"])
     captured = capsys.readouterr()
     result = parse_rest_create_list_response(captured.out)
 
     assert result[0]["id"] == str(1)
-    assert result[0]["uri"] == "file:///app/scripts/allocate.py"
+    assert result[0]["uri"] == "git:///app/scripts/allocate.py"
     assert result[0]["creation time"] == "2020-10-22 15:44:52"
     assert result[0]["state"] == "CREATED"
 

@@ -72,9 +72,8 @@ class ProcedureSummary:
 
     id: int
     uri: str
-    script_uri: str
     script_args: dict
-    git_args: dict
+    script: dict
     history: dict
     state: str
 
@@ -90,9 +89,8 @@ class ProcedureSummary:
         return ProcedureSummary(
             id=uid,
             uri=json["uri"],
-            script_uri=json["script_uri"],
             script_args=json["script_args"],
-            git_args=json.get("git_args", None),
+            script=json.get("script", None),
             history=json["history"],
             state=json["state"],
         )
@@ -249,7 +247,7 @@ class RestClientUI:
         table_rows = [
             (
                 p.id,
-                p.script_uri,
+                p.script["script_uri"],
                 datetime.datetime.fromtimestamp(
                     p.history["process_states"]["CREATED"], tz=datetime.timezone.utc
                 ).strftime("%Y-%m-%d %H:%M:%S"),
@@ -264,7 +262,9 @@ class RestClientUI:
     @staticmethod
     def _tabulate_for_describe(procedure: List[ProcedureSummary]) -> str:
 
-        table_row_title = [(procedure[0].id, procedure[0].script_uri, procedure[0].uri)]
+        table_row_title = [
+            (procedure[0].id, procedure[0].script["script_uri"], procedure[0].uri)
+        ]
         headers_title = ["ID", "Script", "URI"]
 
         table_rows_args = [
@@ -298,12 +298,12 @@ class RestClientUI:
             tabulate.tabulate(table_rows_args, headers_args),
         ]
 
-        if procedure[0].git_args:
+        if procedure[0].script["git_args"]:
             table_row_git = [
                 (
-                    procedure[0].git_args["git_repo"],
-                    procedure[0].git_args["git_branch"],
-                    procedure[0].git_args["git_commit"],
+                    procedure[0].script["git_args"]["git_repo"],
+                    procedure[0].script["git_args"]["git_branch"],
+                    procedure[0].script["git_args"]["git_commit"],
                 )
             ]
 
@@ -590,25 +590,25 @@ class RestAdapter:
             init_args={args=[1,2,3], kwargs=dict(kw1=2, kw3='abc')}
 
         Argument given in git_args should be a dict e.g.,
-             git_args={"git_repo": "http://foo.git","git_branch": "main","git_commit": "HEAD"}
+             git_args={"git_repo": "git://foo.git","git_branch": "main","git_commit": "HEAD"}
 
-        :param script_uri: script URI, e.g., file://test.py
+        :param script_uri: script URI, e.g., file://test.py or git://test.git
         :param init_args: script initialisation arguments
         :param git_args: git script arguments
         :return: Summary of created procedure.
         """
+        script = dict(script_type="filesystem", script_uri=script_uri)
         if init_args is None:
             init_args = dict(args=[], kwargs={})
 
-        if git_args is None:
-            git_args = dict()
+        if "git://" in script_uri:
+            script = dict(script_type="git", script_uri=script_uri, git_args=git_args)
 
         request_json = {
-            "script_uri": script_uri,
             "script_args": {
                 "init": init_args,
             },
-            "git_args": git_args,
+            "script": script,
         }
         LOGGER.debug("Create payload: %s", request_json)
 
