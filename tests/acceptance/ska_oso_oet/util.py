@@ -38,7 +38,7 @@ class ScriptExecutionEnvironment:
         )
         LOGGER.debug("New script ID: %s", task.id)
         self.script_id = task.id
-        self.script_uri = task.script_uri
+        self.script_uri = task.script["script_uri"]
 
     def run_oet_command(self, cmd, *args):
         args = list(args)
