@@ -444,6 +444,8 @@ class ModuleFactory:
             loader = ModuleFactory._null_module_loader
         elif script_uri.startswith("file://"):
             loader = ModuleFactory._load_module_from_file
+        elif script_uri.startswith("git://"):
+            loader = ModuleFactory._load_module_from_file
         else:
             raise ValueError("Script URI type not handled: {}".format(script_uri))
 
@@ -459,7 +461,10 @@ class ModuleFactory:
         :return: Python module
         """
         # remove 'file://' prefix
-        path = script_uri[7:]
+        if "git" in script_uri:
+            path = script_uri[6:]
+        else:
+            path = script_uri[7:]
         loader = importlib.machinery.SourceFileLoader("user_module", path)
         user_module = types.ModuleType(loader.name)
         loader.exec_module(user_module)
