@@ -298,7 +298,7 @@ class RestClientUI:
             tabulate.tabulate(table_rows_args, headers_args),
         ]
 
-        if procedure[0].script["git_args"]:
+        if "git_args" in procedure[0].script:
             table_row_git = [
                 (
                     procedure[0].script["git_args"]["git_repo"],

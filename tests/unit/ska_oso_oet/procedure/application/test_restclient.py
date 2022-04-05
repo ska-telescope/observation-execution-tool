@@ -1052,11 +1052,10 @@ def test_restclientui_describe_when_git_args_present(mock_list_fn, capsys):
     fire.Fire(RestClientUI, ["describe"])
     captured = capsys.readouterr()
     lines = captured.out.split("\n")
-
     assert "Repository" in captured.out
-    assert "http://foo.git" in lines[15]
-    assert "main" in lines[15]
-    assert "HEAD" in lines[15]
+    assert "http://foo.git" in lines[16]
+    assert "main" in lines[16]
+    assert "HEAD" in lines[16]
     mock_list_fn.assert_called_with(1)
 
 
