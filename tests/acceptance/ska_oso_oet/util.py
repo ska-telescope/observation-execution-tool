@@ -2,12 +2,17 @@ import logging
 import os
 import subprocess
 import time
+import typing
 
-from ska_oso_oet.procedure.application.restclient import ProcedureSummary, RestAdapter
+from ska_oso_oet.procedure.application.restclient import RestAdapter
 
 LOGGER = logging.getLogger(__name__)
 
 REST_ADAPTER = RestAdapter(os.getenv("OET_REST_URI"))
+
+
+if typing.TYPE_CHECKING:
+    from ska_oso_oet.procedure.application.restclient import ProcedureSummary
 
 
 class ScriptExecutionError(Exception):
@@ -19,7 +24,7 @@ class ScriptExecutionEnvironment:
         self.script_id = None
         self.script_uri = None
 
-    def create(self, script_uri):
+    def create(self, script_uri: str):
         LOGGER.debug("Setting script ID for script: %s", script_uri)
         if self.script_id:
             raise ScriptExecutionError(
@@ -32,7 +37,7 @@ class ScriptExecutionEnvironment:
         self.script_id = summary.id
         self.script_uri = summary.script["script_uri"]
 
-    def run_oet_command(self, cmd, *args):
+    def run_oet_command(self, cmd: str, *args):
         args = list(args)
         if cmd == "start":
             # Set --listen flag to False on start command, otherwise we would need
