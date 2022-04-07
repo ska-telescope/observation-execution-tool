@@ -71,7 +71,10 @@ class Command:
     def __repr__(self):
         arg_str = ", ".join([repr(o) for o in self.args])
         kwarg_str = ", ".join([f"{k}={repr(v)}" for k, v in self.kwargs.items()])
-        return f"<Command({repr(self.device)}, {repr(self.command_name)}, {arg_str}, {kwarg_str})>"
+        return (
+            f"<Command({repr(self.device)}, {repr(self.command_name)}, {arg_str},"
+            f" {kwarg_str})>"
+        )
 
     def __eq__(self, other):
         if not isinstance(other, Command):

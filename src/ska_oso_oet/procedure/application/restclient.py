@@ -603,7 +603,8 @@ class RestAdapter:
 
         if git_args and "file://" in script_uri:
             raise Exception(
-                f"Invalid request, Git arguments: {git_args} are not required for Filesystem script."
+                f"Invalid request, Git arguments: {git_args} are not required for"
+                " Filesystem script."
             )
         if "git://" in script_uri:
             script = dict(script_type="git", script_uri=script_uri, git_args=git_args)
