@@ -357,7 +357,7 @@ class RestClientUI:
         init_kwargs = dict()
         init_kwargs["subarray_id"] = subarray_id
         for arg in kwargs.keys():
-            if "git" in arg:
+            if "git_repo" in arg or "git_branch" in arg or "git_commit" in arg:
                 git_args[arg] = kwargs[arg]
             else:
                 init_kwargs[arg] = kwargs[arg]
@@ -601,6 +601,14 @@ class RestAdapter:
         if init_args is None:
             init_args = dict(args=[], kwargs={})
 
+        if "file://" in script_uri and (
+            "git_repo" in git_args
+            or "git_branch" in git_args
+            or "git_commit" in git_args
+        ):
+            raise Exception(
+                f"Invalid request, Git arguments: {git_args} are not required for Filesystem script."
+            )
         if "git://" in script_uri:
             script = dict(script_type="git", script_uri=script_uri, git_args=git_args)
 
