@@ -300,7 +300,7 @@ def update_procedure(procedure_id: int):
     """
     summary = _get_summary_or_404(procedure_id)
 
-    if not flask.request.json:
+    if not flask.request.is_json:
         description = {
             "type": "Empty Response",
             "Message": "No JSON available in response",
