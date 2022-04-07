@@ -45,9 +45,9 @@ The methods available through the REST Client map closely to the
 |                    | args          | None                                         |                                     |
 |                    +---------------+----------------------------------------------+ Arguments provided here are passed  |
 |                    | kwargs        | --subarray_id=1                              | to the script init function, if     |
-|                    |               |                                              | defined                             |
-|                    |               |                                              |                                     |
-|                    |               |                                              | OET maintains record of 10 newest   |
+|                    |               | --git_repo="http://foo.git"                  | defined                             |
+|                    |               | --git_branch="master"                        |                                     |
+|                    |               | --git_commit="HEAD"                          | OET maintains record of 10 newest   |
 |                    |               |                                              | scripts which means creating 11th   |
 |                    |               |                                              | script will remove the oldest       |
 |                    |               |                                              | script from the record.             |
@@ -138,6 +138,18 @@ giving: ::
   ----  ---------------  -------------------  -------
     2  file://test2.py  2020-09-30 10:35:12  CREATED
 
+
+Now create a third procedure: ::
+
+  $ oet create git://test3.py --git_repo="http://foo.git" --git_branch="master"
+
+giving: ::
+
+   ID   Script           Creation time        State
+  ----  ---------------  -------------------  -------
+    3  git://test3.py    2020-09-30 10:40:12  CREATED
+
+
 We can check the state of the procedures currently loaded by: ::
 
   $ oet list
@@ -148,6 +160,7 @@ giving: ::
   ----  ---------------  -------------------  -------
      1  file://test.py   2020-09-30 10:30:12  CREATED
      2  file://test2.py  2020-09-30 10:35:12  CREATED
+     3  git://test3.py   2020-09-30 10:40:12  CREATED
 
 Alternatively, we could check the state of procedure 2 by typing: ::
 
@@ -181,6 +194,7 @@ giving: ::
   ----  ---------------  -------------------  -------
      1  file://test.py   2020-09-30 10:30:12  CREATED
      2  file://test2.py  2020-09-30 10:35:12  RUNNING
+     3  git://test3.py   2020-09-30 10:40:12  CREATED
 
 A 'describe' command will give further detail on a procedure, no
 matter its state.::
@@ -202,6 +216,30 @@ giving: ::
   --------  -----------  -------------------
   init      []           {'subarray_id': 1}
   run       []           {}
+
+
+$oet describe --pid=3
+
+giving: ::
+
+    ID  Script           URI
+  ----  ---------------  -----------------------------------------
+     3  git://test3.py    http://0.0.0.0:5000/api/v1.0/procedures/3
+
+  Time                        State
+  --------------------------  -------
+  2020-09-30 10:40:38.646475  CREATED
+  2020-09-30 10:35:12.605270  RUNNING
+
+  Method    Arguments    Keyword Arguments
+  --------  -----------  -------------------
+  init      []           {'subarray_id': 1}
+  run       []           {}
+
+  Repository           Branch    Commit
+  ---------------      -------   -------------------
+  http://foo.git      master     HEAD
+
 
 If the procedure failed, then the stack trace will also be displayed.
 
