@@ -30,7 +30,7 @@ class ScriptExecutionEnvironment:
             raise ScriptExecutionError(
                 f"Script already defined for test run: {self.script_uri}"
             )
-        summary: ProcedureSummary = REST_ADAPTER.create(
+        summary: "ProcedureSummary" = REST_ADAPTER.create(
             script_uri=script_uri, init_args={"kwargs": {"subarray_id": 1}}
         )
         LOGGER.debug("New script ID: %s", summary.id)
