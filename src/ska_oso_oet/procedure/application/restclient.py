@@ -90,7 +90,7 @@ class ProcedureSummary:
             id=uid,
             uri=json["uri"],
             script_args=json["script_args"],
-            script=json.get("script", None),
+            script=json["script"],
             history=json["history"],
             state=json["state"],
         )
@@ -601,11 +601,7 @@ class RestAdapter:
         if init_args is None:
             init_args = dict(args=[], kwargs={})
 
-        if "file://" in script_uri and (
-            "git_repo" in git_args
-            or "git_branch" in git_args
-            or "git_commit" in git_args
-        ):
+        if "file://" in script_uri and git_args is not None:
             raise Exception(
                 f"Invalid request, Git arguments: {git_args} are not required for Filesystem script."
             )
