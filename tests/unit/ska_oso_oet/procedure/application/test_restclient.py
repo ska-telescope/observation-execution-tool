@@ -1013,7 +1013,8 @@ def test_restclientui_stop_output_when_two_scripts_are_running(mock_list_fn, cap
     captured = capsys.readouterr()
 
     assert (
-        "WARNING: More than one procedure is running. Specify ID of the procedure to stop."
+        "WARNING: More than one procedure is running. Specify ID of the procedure to"
+        " stop."
         in captured.out
     )
 
