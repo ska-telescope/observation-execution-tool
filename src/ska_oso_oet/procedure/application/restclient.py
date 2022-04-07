@@ -601,7 +601,7 @@ class RestAdapter:
         if init_args is None:
             init_args = dict(args=[], kwargs={})
 
-        if "file://" in script_uri and git_args is not None:
+        if git_args and "file://" in script_uri:
             raise Exception(
                 f"Invalid request, Git arguments: {git_args} are not required for Filesystem script."
             )

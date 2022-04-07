@@ -64,7 +64,10 @@ LIST_PROCEDURES_POSITIVE_RESPONSE = {
                 },
                 "run": {"args": [], "kwargs": {"scan_duration": 14}},
             },
-            "script_uri": "file:///path/to/observing_script.py",
+            "script": {
+                "script_type": "filesystem",
+                "script_uri": "file:///path/to/observing_script.py",
+            },
             "history": {
                 "stacktrace": None,
                 "process_states": {
@@ -91,7 +94,10 @@ PROCEDURE_POSITIVE_RESPONSE = {
             },
             "run": {"args": [], "kwargs": {"scan_duration": 14}},
         },
-        "script_uri": "file:///path/to/observing_script.py",
+        "script": {
+            "script_type": "filesystem",
+            "script_uri": "file:///path/to/observing_script.py",
+        },
         "history": {
             "stacktrace": None,
             "process_states": {
@@ -117,7 +123,10 @@ START_PROCESS_RESPONSE = {
             },
             "run": {"args": [], "kwargs": {"scan_duration": 14}},
         },
-        "script_uri": "file:///path/to/observing_script.py",
+        "script": {
+            "script_type": "filesystem",
+            "script_uri": "file:///path/to/observing_script.py",
+        },
         "history": {
             "stacktrace": None,
             "process_states": {
