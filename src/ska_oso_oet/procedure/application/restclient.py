@@ -110,7 +110,7 @@ class RestClientUI:
 
     TOPIC_DICT = {
         "request.procedure.create": (
-            lambda evt: f'User request: prepare {evt["cmd"]["script_uri"]} for execution on subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]}'
+            lambda evt: f'User request: prepare {evt["cmd"]["script"]["script_uri"]} for execution on subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]}'
         ),
         "request.procedure.list": (
             lambda evt: "User request to list all the procedures is received"
@@ -125,17 +125,17 @@ class RestClientUI:
             lambda evt: "Enumerating current procedures and status"
         ),
         "procedure.lifecycle.created": (
-            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) ready for execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script"]["script_uri"]}) ready for execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
         ),
         "procedure.lifecycle.started": (
-            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) started execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script"]["script_uri"]}) started execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
         ),
         "procedure.lifecycle.stopped": (
             # pylint: disable=unnecessary-lambda
             lambda evt: RestClientUI._extract_result_from_abort_result(evt)
         ),
         "procedure.lifecycle.failed": (
-            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) execution failed on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script"]["script_uri"]}) execution failed on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
         ),
         "user.script.announce": lambda evt: f'Script message: {evt["msg"]}',
         "sb.lifecycle.allocated": (
@@ -209,8 +209,8 @@ class RestClientUI:
         except (TypeError, KeyError):
             result = evt["result"]
         return (
-            f'Procedure {result["id"]} ({result["script_uri"]}) execution complete '
-            f'{result["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            f'Procedure {result["id"]} ({result["script"]["script_uri"]}) execution'
+            f' complete {result["script_args"]["init"]["kwargs"]["subarray_id"]}'
         )
 
     def __init__(self, server_url=None):
