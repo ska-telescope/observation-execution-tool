@@ -56,7 +56,7 @@ Documentation can be found in the ``docs`` folder. To build docs, install the
 documentation specific requirements:
 
 ```
-poetry install --extras "docs"
+pip3 install sphinx sphinx-rtd-theme recommonmark
 ```
 
 and build the documentation (will be built in docs/build folder) with 
