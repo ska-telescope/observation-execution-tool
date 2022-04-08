@@ -33,3 +33,5 @@ setup.py-e
 **/Dockerfile-e
 PrivateRules.mak
 MANIFEST.skao.int%
+
+**/pytest-logs.txt

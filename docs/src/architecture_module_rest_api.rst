@@ -72,7 +72,7 @@ Type: ``Procedure``
 ``Procedure`` is used to represent a Python script running in a Python process on the OET backend. Attributes are:
 
   * ``string uri``: read-only URI of this procedure. Defined by the server on procedure creation.
-  * ``string script_uri``: URI of the script to execute, e.g., ``file:///path/to/obsscript.py``.
+  * ``FileSystemScript/GitScript script``: Script details containing script_uri, e.g., ``file:///path/to/obsscript.py``, and additional information like git arguments.
   * ``CallArgs script_args``: arguments provided to the script at initialisation time and main execution time.
   * ``ProcedureState state``: current state of this ``Procedure``.
   * ``ProcedureHistory history``: timestamped execution history for this ``Procedure``.
@@ -102,9 +102,13 @@ being ``CREATED``::
             "kwargs": {}
           }
         },
-        "script_uri": "file:///path/to/observing_script.py",
+        "script": {
+            "script_type": "filesystem",
+            "script_uri": "file:///path/to/observing_script.py",
+        },
         "history": {
             "process_states": {
+                 "CREATING": 1601463545.7789872,
                  "CREATED": 1601463545.7789776
                 },
             "stacktrace": null
@@ -113,6 +117,31 @@ being ``CREATED``::
         "uri": "http://localhost:5000/api/v1.0/procedures/1"
     }
 
+
+If user wanted to run script located in a git repository ``http://gitrepo.git`` in branch ``test``, the script JSON would look as below::
+
+    { ...
+        "script": {
+            "script_type": "git",
+            "script_uri": "git:///path/to/observing_script.py",
+            "git_args": {"git_repo": "http://gitrepo.git", "git_branch": "test"}
+        } ...
+    }
+
+Type: ``FileSystemScript``
+--------------------------
+``FileSystemScript`` represents the script to be run from the file system. It has ``script_uri`` argument which
+points to an observing script present on the file system and ``script_type`` which has the value of ``filesystem``.
+
+Type: ``GitScript``
+-------------------
+``GitScript`` inherits from ``FileSystemScript``, which means it also has a ``script_uri`` argument and
+``script_type`` of ``git``. Additionally it has an argument, ``GitArgs`` which points to the git repository
+the given script is located in. The arguments for ``GitArgs`` are:
+
+    * ``git_repo`` which points to the full URL of the repository
+    * ``git_branch`` if specifying other than the default ``master`` branch
+    * ``git_commit`` if wanting to point to a specific commit within the repository.
 
 Type: ``CallArgs``
 ------------------
@@ -219,9 +248,13 @@ execution::
             "kwargs": {}
           }
         },
-        "script_uri": "file:///path/to/observing_script.py",
+        "script": {
+            "script_type": "filesystem",
+            "script_uri": "file:///path/to/observing_script.py"
+        },
         "history": {
             "process_states": {
+                "CREATING": 1601463545.7589678
                 "CREATED": 1601463545.7789776
                 },
             "stacktrace": null
@@ -263,9 +296,13 @@ resource_allocation.py, and procedure #2 that will run observing_script.py::
               "kwargs": {}
             }
           },
-          "script_uri": "file:///path/to/resource_allocation.py",
+          "script": {
+            "script_type": "filesystem",
+            "script_uri": "file:///path/to/resource_allocation.py"
+          },
           "history": {
               "process_states": {
+                   "CREATING": 1601463545.7589678
                    "CREATED": 1601463545.7789776
                 },
               "stacktrace": null
@@ -287,9 +324,13 @@ resource_allocation.py, and procedure #2 that will run observing_script.py::
               "kwargs": {}
             }
           },
-          "script_uri": "file:///path/to/observing_script.py",
+          "script": {
+            "script_type": "filesystem",
+            "script_uri": "file:///path/to/observing_script.py"
+          },
           "history": {
                "process_states": {
+                   "CREATING": 1601463545.7589678
                    "CREATED": 1601463545.7789885
                   },
                "stacktrace": null
@@ -330,9 +371,13 @@ session below lists procedure #1::
             "kwargs": {}
           }
         },
-        "script_uri": "file:///path/to/resource_allocation.py",
+        "script": {
+          "script_type": "filesystem",
+          "script_uri": "file:///path/to/resource_allocation.py"
+        },
         "history": {
             "process_states": {
+                "CREATING": 1601463545.7589678
                 "CREATED": 1601463545.7789776
                 },
             "stacktrace": null
@@ -376,9 +421,13 @@ argument scan_duration=14::
             }
           }
         },
-        "script_uri": "file:///path/to/observing_script.py",
+        "script": {
+          "script_type": "filesystem",
+          "script_uri": "file:///path/to/observing_script.py"
+        },
         "history": {
             "process_states": {
+                "CREATING": 1601463545.7589678
                 "CREATED": 1601463545.7789885,
                 "RUNNING": 1601463545.7789997
              },

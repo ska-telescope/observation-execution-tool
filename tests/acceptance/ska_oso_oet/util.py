@@ -2,6 +2,7 @@ import logging
 import os
 import subprocess
 import time
+import typing
 
 from ska_oso_oet.procedure.application.restclient import RestAdapter
 
@@ -10,12 +11,8 @@ LOGGER = logging.getLogger(__name__)
 REST_ADAPTER = RestAdapter(os.getenv("OET_REST_URI"))
 
 
-class Task:
-    def __init__(self, task_id, script, creation_time, state):
-        self.task_id = task_id
-        self.script = script
-        self.creation_time = creation_time
-        self.state = state
+if typing.TYPE_CHECKING:
+    from ska_oso_oet.procedure.application.restclient import ProcedureSummary
 
 
 class ScriptExecutionError(Exception):
@@ -27,20 +24,20 @@ class ScriptExecutionEnvironment:
         self.script_id = None
         self.script_uri = None
 
-    def create(self, script):
-        LOGGER.debug("Setting script ID for script: %s", script)
+    def create(self, script_uri: str):
+        LOGGER.debug("Setting script ID for script: %s", script_uri)
         if self.script_id:
             raise ScriptExecutionError(
                 f"Script already defined for test run: {self.script_uri}"
             )
-        task = REST_ADAPTER.create(
-            script_uri=script, init_args={"kwargs": {"subarray_id": 1}}
+        summary: "ProcedureSummary" = REST_ADAPTER.create(
+            script_uri=script_uri, init_args={"kwargs": {"subarray_id": 1}}
         )
-        LOGGER.debug("New script ID: %s", task.id)
-        self.script_id = task.id
-        self.script_uri = task.script_uri
+        LOGGER.debug("New script ID: %s", summary.id)
+        self.script_id = summary.id
+        self.script_uri = summary.script["script_uri"]
 
-    def run_oet_command(self, cmd, *args):
+    def run_oet_command(self, cmd: str, *args):
         args = list(args)
         if cmd == "start":
             # Set --listen flag to False on start command, otherwise we would need

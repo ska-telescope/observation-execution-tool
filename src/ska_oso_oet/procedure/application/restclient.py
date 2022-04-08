@@ -72,8 +72,8 @@ class ProcedureSummary:
 
     id: int
     uri: str
-    script_uri: str
     script_args: dict
+    script: dict
     history: dict
     state: str
 
@@ -89,8 +89,8 @@ class ProcedureSummary:
         return ProcedureSummary(
             id=uid,
             uri=json["uri"],
-            script_uri=json["script_uri"],
             script_args=json["script_args"],
+            script=json["script"],
             history=json["history"],
             state=json["state"],
         )
@@ -110,7 +110,7 @@ class RestClientUI:
 
     TOPIC_DICT = {
         "request.procedure.create": (
-            lambda evt: f'User request: prepare {evt["cmd"]["script_uri"]} for execution on subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]}'
+            lambda evt: f'User request: prepare {evt["cmd"]["script"]["script_uri"]} for execution on subarray {evt["cmd"]["init_args"]["kwargs"]["subarray_id"]}'
         ),
         "request.procedure.list": (
             lambda evt: "User request to list all the procedures is received"
@@ -125,17 +125,17 @@ class RestClientUI:
             lambda evt: "Enumerating current procedures and status"
         ),
         "procedure.lifecycle.created": (
-            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) ready for execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script"]["script_uri"]}) ready for execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
         ),
         "procedure.lifecycle.started": (
-            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) started execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script"]["script_uri"]}) started execution on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
         ),
         "procedure.lifecycle.stopped": (
             # pylint: disable=unnecessary-lambda
             lambda evt: RestClientUI._extract_result_from_abort_result(evt)
         ),
         "procedure.lifecycle.failed": (
-            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script_uri"]}) execution failed on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            lambda evt: f'Procedure {evt["result"]["id"]} ({evt["result"]["script"]["script_uri"]}) execution failed on subarray {evt["result"]["script_args"]["init"]["kwargs"]["subarray_id"]}'
         ),
         "user.script.announce": lambda evt: f'Script message: {evt["msg"]}',
         "sb.lifecycle.allocated": (
@@ -209,8 +209,8 @@ class RestClientUI:
         except (TypeError, KeyError):
             result = evt["result"]
         return (
-            f'Procedure {result["id"]} ({result["script_uri"]}) execution complete '
-            f'{result["script_args"]["init"]["kwargs"]["subarray_id"]}'
+            f'Procedure {result["id"]} ({result["script"]["script_uri"]}) execution'
+            f' complete {result["script_args"]["init"]["kwargs"]["subarray_id"]}'
         )
 
     def __init__(self, server_url=None):
@@ -247,7 +247,7 @@ class RestClientUI:
         table_rows = [
             (
                 p.id,
-                p.script_uri,
+                p.script["script_uri"],
                 datetime.datetime.fromtimestamp(
                     p.history["process_states"]["CREATED"], tz=datetime.timezone.utc
                 ).strftime("%Y-%m-%d %H:%M:%S"),
@@ -262,7 +262,9 @@ class RestClientUI:
     @staticmethod
     def _tabulate_for_describe(procedure: List[ProcedureSummary]) -> str:
 
-        table_row_title = [(procedure[0].id, procedure[0].script_uri, procedure[0].uri)]
+        table_row_title = [
+            (procedure[0].id, procedure[0].script["script_uri"], procedure[0].uri)
+        ]
         headers_title = ["ID", "Script", "URI"]
 
         table_rows_args = [
@@ -295,6 +297,19 @@ class RestClientUI:
             tabulate.tabulate(table_rows_states, headers_states),
             tabulate.tabulate(table_rows_args, headers_args),
         ]
+
+        if "git_args" in procedure[0].script:
+            table_row_git = [
+                (
+                    procedure[0].script["git_args"]["git_repo"],
+                    procedure[0].script["git_args"]["git_branch"],
+                    procedure[0].script["git_args"]["git_commit"],
+                )
+            ]
+
+            table_row_git.sort(key=operator.itemgetter(0))
+            headers_git = ["Repository", "Branch", "Commit"]
+            table_sections.append(tabulate.tabulate(table_row_git, headers_git))
 
         # .. and add stacktrace if present
         stacktrace = procedure[0].history["stacktrace"]
@@ -336,10 +351,22 @@ class RestClientUI:
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.
         """
-        kwargs["subarray_id"] = subarray_id
-        init_args = dict(args=args, kwargs=kwargs)
+
+        # Iterating over the Python kwargs dictionary
+        git_args = dict()
+        init_kwargs = dict()
+        init_kwargs["subarray_id"] = subarray_id
+        for arg in kwargs.keys():
+            if "git_repo" in arg or "git_branch" in arg or "git_commit" in arg:
+                git_args[arg] = kwargs[arg]
+            else:
+                init_kwargs[arg] = kwargs[arg]
+
+        init_args = dict(args=args, kwargs=init_kwargs)
         try:
-            procedure = self._client.create(script_uri, init_args=init_args)
+            procedure = self._client.create(
+                script_uri, init_args=init_args, git_args=git_args
+            )
             return self._tabulate([procedure])
         except Exception as err:
             LOGGER.debug("received exception %s", err)
@@ -549,7 +576,9 @@ class RestAdapter:
         procedures_json = response.json()["procedures"]
         return [ProcedureSummary.from_json(d) for d in procedures_json]
 
-    def create(self, script_uri: str, init_args: Dict = None) -> ProcedureSummary:
+    def create(
+        self, script_uri: str, init_args: Dict = None, git_args: Dict = None
+    ) -> ProcedureSummary:
         """
         Create a new Procedure.
 
@@ -560,18 +589,31 @@ class RestAdapter:
 
             init_args={args=[1,2,3], kwargs=dict(kw1=2, kw3='abc')}
 
-        :param script_uri: script URI, e.g., file://test.py
+        Argument given in git_args should be a dict e.g.,
+             git_args={"git_repo": "git://foo.git","git_branch": "main","git_commit": "HEAD"}
+
+        :param script_uri: script URI, e.g., file://test.py or git://test.git
         :param init_args: script initialisation arguments
+        :param git_args: git script arguments
         :return: Summary of created procedure.
         """
+        script = dict(script_type="filesystem", script_uri=script_uri)
         if init_args is None:
             init_args = dict(args=[], kwargs={})
 
+        if git_args and "file://" in script_uri:
+            raise Exception(
+                f"Invalid request, Git arguments: {git_args} are not required for"
+                " Filesystem script."
+            )
+        if "git://" in script_uri:
+            script = dict(script_type="git", script_uri=script_uri, git_args=git_args)
+
         request_json = {
-            "script_uri": script_uri,
             "script_args": {
                 "init": init_args,
             },
+            "script": script,
         }
         LOGGER.debug("Create payload: %s", request_json)
 
