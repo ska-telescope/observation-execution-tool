@@ -5,7 +5,7 @@ import unittest.mock as mock
 import pytest
 from git import Git, Repo
 
-from ska_oso_oet.procedure.application.gitmanager import (
+from ska_oso_oet.procedure.gitmanager import (
     checkout_commit,
     clone_repo,
     get_commit_hash,

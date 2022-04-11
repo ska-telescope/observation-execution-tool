@@ -4,8 +4,8 @@ import multiprocessing
 import subprocess
 import venv
 
-from ska_oso_oet.procedure.application.gitmanager import get_commit_hash
 from ska_oso_oet.procedure.domain import GitArgs
+from ska_oso_oet.procedure.gitmanager import get_commit_hash
 
 
 @dataclasses.dataclass
