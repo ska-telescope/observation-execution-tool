@@ -4,15 +4,14 @@ import multiprocessing
 import subprocess
 import venv
 
-from gitmanager import get_commit_hash
-
+from ska_oso_oet.procedure.application.gitmanager import get_commit_hash
 from ska_oso_oet.procedure.domain import GitArgs
 
 
 @dataclasses.dataclass
 class Environment:
     creating_condition: multiprocessing.Condition  # Set when environment is being created
-    created_confition: multiprocessing.Condition  # Set when environment is ready to be used
+    created_condition: multiprocessing.Condition  # Set when environment is ready to be used
     env_id: str
     created: datetime
     site_packages: []
@@ -49,12 +48,13 @@ class EnvironmentManager:
                 "import site; print(site.getsitepackages()[0])",
             ],
             capture_output=True,
+            check=True,
         )
         venv_site_pkgs = site_pkgs_call.stdout.decode("utf-8").strip()
 
         environment = Environment(
             creating_condition=multiprocessing.Condition(),  # TODO
-            created_confition=multiprocessing.Condition(),
+            created_condition=multiprocessing.Condition(),
             env_id=git_commit,
             created=datetime.datetime.now(),
             site_packages=venv_site_pkgs,
