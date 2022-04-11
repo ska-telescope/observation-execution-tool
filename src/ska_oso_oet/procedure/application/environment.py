@@ -2,25 +2,11 @@ import dataclasses
 import datetime
 import multiprocessing
 import subprocess
-import typing
 import venv
 
 from gitmanager import get_commit_hash
 
-
-# TODO this is here until other MR is merged
-@dataclasses.dataclass
-class GitArgs:
-    """
-    GitArgs captures information required to identify scripts
-    located in git repositories.
-    """
-
-    git_repo: typing.Optional[
-        str
-    ] = "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
-    git_branch: typing.Optional[str] = "master"
-    git_commit: typing.Optional[str] = None
+from ska_oso_oet.procedure.domain import GitArgs
 
 
 @dataclasses.dataclass
