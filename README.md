@@ -48,6 +48,19 @@ non-interactive session run
 make diagrams
 ```
 
+## Documentation
+
 [![Documentation Status](https://readthedocs.org/projects/ska-telescope-ska-oso-oet/badge/?version=latest)](https://developer.skao.int/projects/ska-oso-oet/en/latest/?badge=latest)
 
-Documentation can be found in the ``docs`` folder.
+Documentation can be found in the ``docs`` folder. To build docs, install the 
+documentation specific requirements:
+
+```
+pip3 install sphinx sphinx-rtd-theme recommonmark
+```
+
+and build the documentation (will be built in docs/build folder) with 
+
+```
+make docs-build html
+```

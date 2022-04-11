@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ska-oso-oet"
-version = "2.13.2"
+version = "3.0.0"
 description = "SKA Observation Execution Tool"
 authors = ["Team Buttons"]
 license = "BSD-3-Clause"
@@ -45,7 +45,7 @@ tblib = "^1.7.0"
 GitPython = "^3.1.27"
 
 [tool.poetry.dev-dependencies]
-black = "^21.12b0"
+black = "^22.3.0"
 coverage = "^6.2"
 flake8 = "^4.0.1"
 isort = "^5.10.1"
@@ -59,6 +59,9 @@ pytest-env = "^0.6.2"
 pytest-json-report = "^1.4.1"
 pytest-mock = "^3.6.1"
 requests-mock = "^1.9.3"
+
+[tool.poetry.extras]
+docs = ["Sphinx", "docutils", "recommonmark", "sphinx-rtd-theme"]
 
 [tool.poetry.scripts]
 oet = "ska_oso_oet.procedure.application.restclient:main"

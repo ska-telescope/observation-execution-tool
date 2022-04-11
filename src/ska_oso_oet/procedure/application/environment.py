@@ -71,7 +71,7 @@ class EnvironmentManager:
             created_confition=multiprocessing.Condition(),
             env_id=git_commit,
             created=datetime.datetime.now(),
-            site_packages=venv_site_pkgs
+            site_packages=venv_site_pkgs,
         )
 
         self._envs[git_commit] = environment
@@ -81,4 +81,3 @@ class EnvironmentManager:
         # TODO need to remove the venv, not sure how to do it with the current
         #  Environment as it doesnt contain the location
         del self._envs[env_id]
-

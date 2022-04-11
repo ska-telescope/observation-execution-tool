@@ -184,17 +184,43 @@ def create_procedure():
 
     :return: JSON summary of created Procedure
     """
-    if not flask.request.json or "script_uri" not in flask.request.json:
-        description = {"type": "Malformed Request", "Message": "script_uri missing"}
+    if not flask.request.json or "script" not in flask.request.json:
+        description = {"type": "Malformed Request", "Message": "Script missing"}
         flask.abort(400, description=description)
-    script_uri = flask.request.json["script_uri"]
+    script_dict = flask.request.json["script"]
+
+    if (
+        not isinstance(script_dict, dict)
+        or "script_uri" not in script_dict.keys()
+        or "script_type" not in script_dict.keys()
+    ):
+        description = {
+            "type": "Malformed Request",
+            "Message": "Malformed script in request",
+        }
+        flask.abort(400, description=description)
+    script_type = script_dict.get("script_type")
+    script_uri = script_dict.get("script_uri")
+    script = None
+
+    if script_type == "filesystem":
+        script = domain.FileSystemScript(script_uri)
+    elif script_type == "git":
+        git_args = script_dict.get("git_args", domain.GitArgs())
+        script = domain.GitScript(script_uri, git_args=git_args)
+    else:
+        description = {
+            "type": "Malformed Request",
+            "Message": f"Script type {script_type} not supported",
+        }
+        flask.abort(400, description=description)
 
     if "script_args" in flask.request.json and not isinstance(
         flask.request.json["script_args"], dict
     ):
         description = {
             "type": "Malformed Request",
-            "Message": "Malformed script_uri in request",
+            "Message": "Malformed script_args in request",
         }
         flask.abort(400, description=description)
     script_args = flask.request.json.get("script_args", {})
@@ -205,7 +231,7 @@ def create_procedure():
 
     procedure_input = domain.ProcedureInput(*init_args, **init_kwargs)
     prepare_cmd = application.PrepareProcessCommand(
-        script_uri=script_uri, init_args=procedure_input
+        script=script, init_args=procedure_input
     )
 
     summary = call_and_respond(
@@ -274,7 +300,7 @@ def update_procedure(procedure_id: int):
     """
     summary = _get_summary_or_404(procedure_id)
 
-    if not flask.request.json:
+    if not flask.request.is_json:
         description = {
             "type": "Empty Response",
             "Message": "No JSON available in response",
@@ -349,6 +375,14 @@ def make_public_summary(procedure: domain.ProcedureSummary):
         for method_name, method_args in procedure.script_args.items()
     }
 
+    script = {
+        "script_type": procedure.script.get_type(),
+        "script_uri": procedure.script.script_uri,
+    }
+
+    if isinstance(procedure.script, domain.GitScript):
+        script["git_args"] = procedure.script.git_args
+
     procedure_history = {
         "process_states": {
             state.name: time for state, time in procedure.history.process_states.items()
@@ -360,7 +394,7 @@ def make_public_summary(procedure: domain.ProcedureSummary):
         "uri": flask.url_for(
             "api.get_procedure", procedure_id=procedure.id, _external=True
         ),
-        "script_uri": procedure.script_uri,
+        "script": script,
         "script_args": script_args,
         "history": procedure_history,
         "state": procedure.state.name,
