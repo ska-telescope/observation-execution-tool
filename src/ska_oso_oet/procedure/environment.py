@@ -1,6 +1,7 @@
 import dataclasses
 import datetime
 import multiprocessing
+import shutil
 import subprocess
 import venv
 
@@ -20,8 +21,9 @@ class Environment:
 class EnvironmentManager:
     def __init__(self):
         self._envs = {}
+        self.base_dir = "/tmp/environments/"
 
-    def create_env(self, git_args: GitArgs, src_dir: str) -> Environment:
+    def create_env(self, git_args: GitArgs) -> Environment:
         if git_args.git_commit:
             git_commit = git_args.git_commit
         else:
@@ -33,7 +35,7 @@ class EnvironmentManager:
             return self._envs.get(git_commit)
 
         # Create a new Python virtual environment and find its site packages directory
-        venv_dir = f"{src_dir}/venv"
+        venv_dir = f"{self.base_dir+git_commit}/venv"
         venv.create(
             env_dir=venv_dir,
             clear=True,
@@ -64,6 +66,6 @@ class EnvironmentManager:
         return environment
 
     def delete_env(self, env_id):
-        # TODO need to remove the venv, not sure how to do it with the current
-        #  Environment as it doesnt contain the location
+        dir_to_remove = self.base_dir + self._envs[env_id] + "/"
+        shutil.rmtree(dir_to_remove, ignore_errors=True)
         del self._envs[env_id]
