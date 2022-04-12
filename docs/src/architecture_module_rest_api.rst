@@ -109,10 +109,11 @@ being ``CREATED``::
         "history": {
             "process_states": {
                  "CREATING": 1601463545.7789872,
-                 "CREATED": 1601463545.7789776
-                },
-            "stacktrace": null
+               "CREATING": 1601463545.57689632
+               "CREATED": 1601463545.7789776
             },
+            "stacktrace": null
+        },
         "state": "CREATED",
         "uri": "http://localhost:5000/api/v1.0/procedures/1"
     }
@@ -164,6 +165,7 @@ Type: ``ProcedureState``
 ``ProcedureState`` is an enumeration representing the current lifecycle state of the Python process running the user
 script. It can be one of:
 
+  * ``CREATING``: script was successfully loaded by a Python subprocess and ``init`` function was successfully called.
   * ``CREATED``: script was successfully loaded by a Python subprocess and ``init`` function was successfully called.
   * ``RUNNING``: script is running, i.e., the script's ``main`` function is currently executing.
   * ``STOPPED``: script was terminated by the OET before the script could complete.

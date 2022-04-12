@@ -38,6 +38,7 @@ import signal
 import sys
 import threading
 import time
+import traceback
 from queue import Empty, Full
 from types import FrameType
 from typing import Any, List, Tuple, Type, Union
@@ -274,6 +275,7 @@ class ProcWorker:
         event_q: MPQueue,
         *args,
         logging_config: dict = None,
+        **kwargs,
     ):
         """
         Create a new ProcWorker.
@@ -295,7 +297,7 @@ class ProcWorker:
         self.shutdown_event = shutdown_event
         self.event_q = event_q
         self.terminate_called = 0
-        self.init_args(args)
+        self.init_args(args, kwargs)
         self.logging_config = logging_config
 
     def init_logging(self):
@@ -303,9 +305,13 @@ class ProcWorker:
         if self.logging_config:
             logging.config.dictConfig(self.logging_config)
 
-    def init_args(self, args) -> None:
+    def init_args(self, args, kwargs) -> None:
         if args:
             raise ValueError(f"Unexpected arguments to ProcWorker.init_args: {args}")
+        if kwargs:
+            raise ValueError(
+                f"Unexpected keyword arguments to ProcWorker.init_args: {kwargs}"
+            )
 
     def init_signals(self) -> SignalObject:
         """
@@ -369,7 +375,10 @@ class ProcWorker:
             # We get here if an exception was raised in the main_loop, even
             # TerminateInterrupt and KeyboardInterrupt
             self.log(logging.ERROR, f"Exception Shutdown: {exc}", exc_info=True)
-            self.event_q.safe_put(EventMessage(self.name, "FATAL", f"{exc}"))
+
+            # self.event_q.safe_put(EventMessage(self.name, "FATAL", f"{exc}"))
+            stacktrace = traceback.format_exc()
+            self.event_q.safe_put(EventMessage(self.name, "FATAL", f"{stacktrace}"))
             # -- TODO: call raise if in some sort of interactive mode
             if type(exc) in (TerminateInterrupt, KeyboardInterrupt):
                 sys.exit(1)
@@ -566,6 +575,7 @@ class Proc:
         event_q: MPQueue,
         *args,
         logging_config: dict = None,
+        **kwargs,
     ):
         # Prefix log messages originating from this process with the process name
         if logging_config:
@@ -601,7 +611,7 @@ class Proc:
                 event_q,
                 *args,
             ),
-            kwargs=dict(logging_config=logging_config),
+            kwargs=dict(logging_config=logging_config, **kwargs),
         )
 
         # At this point the mp.Process has been instantiated, but it's not yet
@@ -735,7 +745,7 @@ class MainContext:
         # -- Don't eat exceptions that reach here.
         return not exc_type
 
-    def Proc(self, name: str, worker_class: Type[ProcWorker], *args) -> Proc:
+    def Proc(self, name: str, worker_class: Type[ProcWorker], *args, **kwargs) -> Proc:
         """
         Create a new process managed by this context.
 
@@ -751,6 +761,7 @@ class MainContext:
             self.event_queue,
             *args,
             logging_config=self.logging_config,
+            **kwargs,
         )
         self.procs.append(proc)
         return proc

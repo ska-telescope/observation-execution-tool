@@ -8,6 +8,7 @@ import enum
 import importlib.machinery
 import logging
 import multiprocessing
+import os
 import signal
 import threading
 import time
@@ -19,8 +20,10 @@ from multiprocessing.dummy import Pool
 
 from pubsub import pub
 
+from ska_oso_oet import mptools
 from ska_oso_oet.command import SCAN_ID_GENERATOR
 from ska_oso_oet.event import topics
+from ska_oso_oet.mptools import EventMessage
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,6 +43,7 @@ class ProcedureState(enum.Enum):
     COMPLETED = enum.auto()
     STOPPED = enum.auto()
     FAILED = enum.auto()
+    UNKNOWN = enum.auto()
 
 
 @dataclasses.dataclass
@@ -140,6 +144,114 @@ class ProcedureHistory:
         return "<ProcessHistory(process_states=[{}], stacktrace={})>".format(
             p_history, self.stacktrace
         )
+
+
+class ScriptWorker(mptools.ProcWorker):
+    # Use default SIGTERM signal handler which terminates process on first SIGTERM
+    # If this is not done we inherit the MainContext signal handler, which requests
+    # a co-operative shutdown for the first few attempts before force quitting
+    term_handler = lambda: staticmethod(DEFAULT_SIGTERM_HANDLER)  # noqa: E731
+
+    def __init__(
+        self,
+        name: str,
+        startup_event: multiprocessing.Event,
+        shutdown_event: multiprocessing.Event,
+        event_q: mptools.MPQueue,
+        work_q: mptools.MPQueue,
+        script_uri: str,
+        *args,
+        scan_counter: typing.Optional[multiprocessing.Value] = None,
+        **kwargs,
+    ):
+        self.script_uri = script_uri
+        self._scan_counter = scan_counter
+        self.work_q = work_q
+
+        self.user_module = ModuleFactory.get_module(script_uri)
+
+        super().__init__(name, startup_event, shutdown_event, event_q, *args, **kwargs)
+
+    def init_args(self, args, kwargs):
+        if hasattr(self.user_module, "init"):
+            self.user_module.init(*args, **kwargs)
+
+    def startup(self) -> None:
+        super().startup()
+        msg = EventMessage(
+            msg_src=str(os.getpid()), msg_type="LIFECYCLE", msg=ProcedureState.CREATED
+        )
+        self.event_q.safe_put(msg)
+
+    def shutdown(self):
+        super().shutdown()
+        msg = EventMessage(
+            msg_src=str(os.getpid()), msg_type="LIFECYCLE", msg=ProcedureState.COMPLETED
+        )
+        self.event_q.safe_put(msg)
+
+    def main_loop(self) -> None:
+        """
+        main_loop delivers each event received on the work queue to the
+        main_func template method, while checking for shutdown notifications.
+
+        Event delivery will cease when the shutdown event is set or a special
+        sentinel message is sent.
+        """
+        self.log(logging.DEBUG, "Entering ScriptWorker.main_loop")
+
+        # stop processing as soon as the shutdown_event is set. Once set, this
+        # while loop terminates, thus ending main_loop and starting shutdown
+        # of this ProcWorker.
+        while not self.shutdown_event.is_set():
+
+            # Get next work item. This call returns after the default safe_get
+            # timeout unless an item is in the queue.
+            item = self.work_q.safe_get()
+
+            # Go back to the top of the while loop if no message was received,
+            # thus checking the shutdown event again.
+            if not item:
+                continue
+
+            # ok - an item was received from queue
+            self.log(logging.DEBUG, f"ScriptWorker.main_loop received '{item}' message")
+            # if item is the sentinel message, break to exit out of main_loop
+            # and start shutdown
+            if item == "END":
+                break
+
+            # otherwise call main function with the queue item
+            else:
+                self.main_func(item)
+
+            # TODO this is a PoC - break after first run
+            break
+
+    # Relax pylint as we are deliberately redefining the superclass main_func
+    # signature in this specialised subclass. This is intended to be a
+    # template, hence the implementation doesn't use item.
+    def main_func(
+        self, evt: EventMessage
+    ):  # pylint: disable=unused-argument,arguments-differ
+        if evt.msg_type != "RUN":
+            # todo complain about unexpected event type
+            return
+
+        run_args: ProcedureInput = evt.msg
+
+        if self._scan_counter:
+            SCAN_ID_GENERATOR.backing = self._scan_counter
+
+        msg = EventMessage(
+            msg_src=str(os.getpid()), msg_type="LIFECYCLE", msg=ProcedureState.RUNNING
+        )
+        self.event_q.safe_put(msg)
+
+        # todo publish event messages again
+        args = run_args.args
+        kwargs = run_args.kwargs
+        self.user_module.main(*args, **kwargs)
 
 
 class Procedure(multiprocessing.Process):
@@ -266,6 +378,171 @@ class ProcedureSummary:
 
 
 class ProcessManager:
+    def __init__(self):
+        self.ctx = mptools.MainContext()
+
+        # mappings of Procs to various identifying metadata
+        self.procedures: typing.OrderedDict[int, mptools.Proc] = OrderedDict()
+        self.states: typing.Dict[int, ProcedureState] = {}
+
+        # message boxes for manager to each script worker
+        self.script_queues: typing.Dict[int, mptools.MPQueue] = {}
+        self.history: typing.Dict[int, ProcedureHistory] = {}
+
+        # self.running: typing.Optional[mptools.Proc] = None
+        # self.procedure_complete = multiprocessing.Condition()
+
+        # self._pool = Pool()
+        self._scan_id = multiprocessing.Value("i", 1)
+
+        status_update_thread = threading.Thread(target=self.status_updater)
+        status_update_thread.start()
+
+    @property
+    def running(self) -> typing.Optional[mptools.Proc]:
+        running_pids = [
+            pid for pid, state in self.states.items() if state == ProcedureState.RUNNING
+        ]
+        if not running_pids:
+            return None
+        assert len(running_pids) == 1, f"Multiple Procs running: {running_pids}"
+        return self.procedures[running_pids[0]]
+
+    def create(self, script_uri: str, *, init_args: ProcedureInput) -> int:
+        """
+        Create a new Procedure that will, when executed, run the target Python
+        script.
+
+        :param script_uri: script URI, e.g. 'file://myscript.py'
+        :param init_args: script initialisation arguments
+        :return:
+        """
+        LOGGER.debug("Creating Procedure for script_uri %s", script_uri)
+
+        # msg box for messages from mgr to child, like 'start main()'
+        work_q = self.ctx.MPQueue()
+        procedure = self.ctx.Proc(
+            f"ScriptWorker for {script_uri}",  # name
+            ScriptWorker,
+            work_q,
+            script_uri,
+            *init_args.args,
+            scan_counter=self._scan_id,
+            **init_args.kwargs,
+        )
+        pid = procedure.proc.pid
+        procedure.name = pid
+        # todo - rationalise names and PIDs, along with what ID mptools exception handlers should send for failure
+
+        # Delete oldest procedure if procedure limit reached
+        if len(self.procedures) == PROCEDURE_QUEUE_MAX_LENGTH:
+            deleted_pid, _ = self.procedures.popitem(last=False)
+            LOGGER.info("Deleted old PID %d", deleted_pid)
+            del self.states[deleted_pid]
+            del self.history[deleted_pid]
+
+        self.script_queues[pid] = work_q
+        self.procedures[pid] = procedure
+
+        return pid
+
+    def status_updater(self):
+        # intended to run in a background thread, updating Proc lifecycle state as events are received
+        while not self.ctx.shutdown_event.is_set():
+            event: EventMessage = self.ctx.event_queue.safe_get()
+            if not event:
+                continue
+
+            print(f"Event: {event}")
+            if event.msg_type == "LIFECYCLE":
+                msg_time: time.time = event.id
+                pid = int(event.msg_src)
+                new_state: ProcedureState = event.msg
+                self.states[pid] = event.msg
+                if pid not in self.history:
+                    self.history[pid] = ProcedureHistory()
+                self.history[pid].process_states[new_state] = msg_time
+
+            elif event.msg_type == "FATAL":
+                self.ctx.log(logging.INFO, f"Fatal Event received: {event.msg}")
+
+                msg_time: time.time = event.id
+                pid = int(event.msg_src)
+                new_state: ProcedureState = ProcedureState.FAILED
+
+                self.states[pid] = new_state
+                if pid not in self.history:
+                    self.history[pid] = ProcedureHistory()
+                self.history[pid].process_states[new_state] = msg_time
+
+            elif event.msg_type == "END":
+                self.ctx.log(logging.INFO, f"Shutdown Event received: {event.msg}")
+                break
+
+            else:
+                self.ctx.log(logging.ERROR, f"Unknown Event: {event}")
+
+    def run(self, process_id: int, *, run_args: ProcedureInput):
+        """
+        Run a prepared Procedure.
+
+        This starts execution of the script prepared by a previous create()
+        call.
+
+        :param process_id: ID of Procedure to execute
+        :param run_args: late-binding arguments to provide to the script
+        :return:
+        """
+        running_pid = [
+            pid for pid, state in self.states.items() if state == ProcedureState.RUNNING
+        ]
+        if running_pid:
+            raise ValueError(
+                f"Cannot start PID {process_id}: procedure {running_pid[0]} is running"
+            )
+
+        msg = EventMessage(
+            msg_src=self.__class__.__name__, msg_type="RUN", msg=run_args
+        )
+        LOGGER.debug("Sending start message to PID %d", process_id)
+        msg_was_sent = self.script_queues[process_id].safe_put(msg)
+        if not msg_was_sent:
+            raise ValueError(f"Could not send start message to process {process_id}")
+
+    def stop(self, process_id: int):
+        """
+        Stop a running Procedure.
+
+        This stops execution of a currently running script.
+
+        :param process_id: ID of Procedure to stop
+        :return:
+        """
+        try:
+            procedure = self.procedures[process_id]
+            status = self.states[process_id]
+        except KeyError as exc:
+            raise ValueError(f"Process {process_id} not found") from exc
+
+        if status != ProcedureState.RUNNING:
+            raise ValueError(f"Cannot stop PID {process_id}: procedure is not running")
+
+        if procedure.proc.is_alive():
+            LOGGER.debug("Stopping Procedure %d", process_id)
+            terminated = procedure.terminate(max_retries=3, timeout=0.1)
+            final_state = (
+                ProcedureState.STOPPED if terminated else ProcedureState.UNKNOWN
+            )
+            msg = EventMessage(
+                msg_src=str(process_id), msg_type="LIFECYCLE", msg=final_state
+            )
+            self.ctx.event_queue.safe_put(msg)
+
+            # join any potentially zombie process, allowing it to clean up
+            multiprocessing.active_children()
+
+
+class OldProcessManager:
     """
     Rules:
      - 0..* prepared processes per manager

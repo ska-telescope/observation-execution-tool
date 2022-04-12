@@ -115,7 +115,8 @@ def manager():
     """
     Pytest fixture to return a prepared ProcessManager
     """
-    return ProcessManager()
+    mgr = ProcessManager()
+    yield mgr
 
 
 @pytest.fixture
@@ -127,7 +128,8 @@ def process_cleanup(manager):
     """
     yield
     if multiprocessing.active_children():
-        wait_for_process_to_complete(manager)
+        manager.ctx.stop_procs()
+        manager.ctx.stop_queues()
 
 
 def wait_for_process_to_complete(manager, timeout=1):
@@ -375,7 +377,7 @@ def test_process_manager_create_sets_pid_of_new_procedure(manager, script):
     """
     pid = manager.create(script, init_args=ProcedureInput())
     created = manager.procedures[pid]
-    assert created.id == pid
+    assert created.proc.pid == pid
 
 
 def test_process_manager_create_adds_new_procedure(manager, script):
@@ -400,14 +402,14 @@ def test_process_manager_create_removes_oldest_procedure_on_max_procedures(
         manager.create(script, init_args=ProcedureInput())
 
     assert len(manager.procedures) == max_procedures
-    assert 1 in manager.procedures
+    oldest_pid = list(manager.procedures.keys())[0]
 
     # adding procedure should not increase the number of procedures
     # and should remove the oldest procedure (with ID 1)
     manager.create(script, init_args=ProcedureInput())
 
     assert len(manager.procedures) == max_procedures
-    assert 1 not in manager.procedures
+    assert oldest_pid not in manager.procedures
 
 
 def test_process_manager_create_captures_initialisation_arguments(manager, script):
@@ -480,16 +482,28 @@ def test_process_manager_run_sets_running_procedure(manager, tmpdir, process_cle
     script_path = tmpdir.join("sleep.py")
     script_path.write(
         """
-def main(shutdown_event, *args, **kwargs):
-    while not shutdown_event.is_set():
+IN_MAIN = None
+SHUTDOWN = None
+
+def init(in_main, shutdown_event):
+    global IN_MAIN, SHUTDOWN
+    IN_MAIN, SHUTDOWN = in_main, shutdown_event
+
+def main():
+    IN_MAIN.set()
+    while not SHUTDOWN.is_set():
         continue
 """
     )
     script = FileSystemScript(f"file://{str(script_path)}")
 
+    in_main_event = multiprocessing.Event()
     shutdown_event = multiprocessing.Event()
-    pid = manager.create(script, init_args=ProcedureInput())
-    manager.run(pid, run_args=ProcedureInput(shutdown_event))
+    pid = manager.create(
+        script, init_args=ProcedureInput(in_main_event, shutdown_event)
+    )
+    manager.run(pid, run_args=ProcedureInput())
+    in_main_event.wait(1.0)
     assert manager.running == manager.procedures[pid]
     shutdown_event.set()
 
@@ -501,7 +515,7 @@ def test_process_manager_sets_running_to_none_when_process_completes(manager, sc
     """
     pid = manager.create(script, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
-    wait_for_process_to_complete(manager)
+    manager.procedures[pid].proc.join(1.0)
     assert manager.running is None
 
 
@@ -512,8 +526,8 @@ def test_process_manager_updates_state_of_completed_procedures(manager, script):
     """
     pid = manager.create(script, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
-    wait_for_process_to_complete(manager)
-    assert manager.procedures[pid].state == ProcedureState.COMPLETED
+    manager.procedures[pid].proc.join(1.0)
+    assert manager.states[pid] == ProcedureState.COMPLETED
 
 
 def test_process_manager_updates_history_of_completed_procedures(manager, script):
@@ -542,7 +556,7 @@ def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_sc
     """
     pid = manager.create(fail_script, init_args=ProcedureInput())
     manager.run(pid, run_args=ProcedureInput())
-    wait_for_process_to_complete(manager)
+    manager.procedures[pid].proc.join(1.0)
     assert manager.running is None
 
 
@@ -630,16 +644,16 @@ def test_process_manager_sets_running_to_none_on_stop(manager, abort_script):
 
 def test_process_manager_updates_procedure_state_on_stop(manager, abort_script):
     """
-    Verify that ProcessManager removes an stopped procedure from
+    Verify that ProcessManager removes a stopped procedure from
     the procedures list
     """
     with Manager() as mp_mgr:
-        pid = manager.create(abort_script, init_args=ProcedureInput())
         lst = mp_mgr.list()
-        manager.run(pid, run_args=ProcedureInput(lst, pid))
+        pid = manager.create(abort_script, init_args=ProcedureInput(lst))
+        manager.run(pid, run_args=ProcedureInput(pid))
         manager.stop(pid)
-        wait_for_process_to_complete(manager)
-        assert manager.procedures[pid].state == ProcedureState.STOPPED
+        manager.procedures[pid].proc.join(1.0)
+        assert manager.states[pid] == ProcedureState.STOPPED
 
 
 def test_process_manager_stop_fails_on_invalid_pid(manager):
