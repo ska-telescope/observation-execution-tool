@@ -49,6 +49,34 @@ MPQUEUE_TIMEOUT = 0.02
 # -- Queue handling support
 
 
+class SharedCounter(object):
+    """A synchronized shared counter.
+
+    The locking done by multiprocessing.Value ensures that only a single
+    process or thread may read or write the in-memory ctypes object. However,
+    in order to do n += 1, Python performs a read followed by a write, so a
+    second process may read the old value before the new one is written by the
+    first process. The solution is to use a multiprocessing.Lock to guarantee
+    the atomicity of the modifications to Value.
+
+    This class comes almost entirely from Eli Bendersky's blog:
+    http://eli.thegreenplace.net/2012/01/04/shared-counter-with-pythons-multiprocessing/
+    """
+
+    def __init__(self, n=0):
+        self.count = mp.Value("i", n)
+
+    def increment(self, n=1):
+        """Increment the counter by n (default = 1)"""
+        with self.count.get_lock():
+            self.count.value += n
+
+    @property
+    def value(self):
+        """Return the value of the counter"""
+        return self.count.value
+
+
 class MPQueue(mpq.Queue):
     """
     MPQueue is a multiprocessing Queue extended with convenience methods that
@@ -70,6 +98,26 @@ class MPQueue(mpq.Queue):
     def __init__(self, maxsize=0):
         ctx = mp.get_context()
         super().__init__(maxsize, ctx=ctx)
+        self.size = SharedCounter(0)
+
+    def put(self, *args, **kwargs):
+        super().put(*args, **kwargs)
+        # size will not be incremented if Full is raised
+        self.size.increment(1)
+
+    def get(self, *args, **kwargs):
+        item = super().get(*args, **kwargs)
+        # size will not be decremented if Empty is raised
+        self.size.increment(-1)
+        return item
+
+    def qsize(self):
+        """Reliable implementation of multiprocessing.Queue.qsize()"""
+        return self.size.value
+
+    def empty(self):
+        """Reliable implementation of multiprocessing.Queue.empty()"""
+        return not self.qsize()
 
     def safe_get(self, timeout: Union[float, None] = MPQUEUE_TIMEOUT):
         """
