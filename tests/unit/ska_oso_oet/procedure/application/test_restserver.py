@@ -41,15 +41,17 @@ CREATE_SUMMARY = ProcedureSummary(
     script=domain.FileSystemScript("test:///test.py"),
     script_args={"init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b")},
     history=domain.ProcedureHistory(
-        process_states=OrderedDict(
-            [
-                (domain.ProcedureState.CREATING, 1601294086.129294),
-                (domain.ProcedureState.CREATED, 1601295086.129294),
-            ]
-        ),
+        process_states=[
+            (domain.ProcedureState.CREATING, 1.0),  # process starting
+            (domain.ProcedureState.IDLE, 2.0),      # process created
+            (domain.ProcedureState.LOADING, 3.0),   # user script loading
+            (domain.ProcedureState.IDLE, 4.0),      # user script loaded
+            (domain.ProcedureState.RUNNING, 5.0),   # init called
+            (domain.ProcedureState.IDLE, 6.0)       # init complete
+        ],
         stacktrace=None,
     ),
-    state=domain.ProcedureState.CREATED,
+    state=domain.ProcedureState.IDLE,
 )
 
 # Valid JSON struct for creating a new procedure
@@ -71,15 +73,17 @@ CREATE_GIT_SUMMARY = ProcedureSummary(
     ),
     script_args={"init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b")},
     history=domain.ProcedureHistory(
-        process_states=OrderedDict(
-            [
-                (domain.ProcedureState.CREATING, 1601294086.129294),
-                (domain.ProcedureState.CREATED, 1601295086.129294),
-            ]
-        ),
+        process_states=[
+            (domain.ProcedureState.CREATING, 1.0),  # process starting
+            (domain.ProcedureState.IDLE, 2.0),      # process created
+            (domain.ProcedureState.LOADING, 3.0),   # user script loading
+            (domain.ProcedureState.IDLE, 4.0),      # user script loaded
+            (domain.ProcedureState.RUNNING, 5.0),   # init called
+            (domain.ProcedureState.IDLE, 6.0)       # init complete
+        ],
         stacktrace=None,
     ),
-    state=domain.ProcedureState.CREATED,
+    state=domain.ProcedureState.IDLE,
 )
 
 ABORT_JSON = dict(state="STOPPED", abort=True)
@@ -102,8 +106,13 @@ RUN_SUMMARY = ProcedureSummary(
     history=domain.ProcedureHistory(
         process_states=OrderedDict(
             [
-                (domain.ProcedureState.CREATED, 1601295086.129294),
-                (domain.ProcedureState.RUNNING, 1601295086.129294),
+                (domain.ProcedureState.CREATING, 1.0),  # process starting
+                (domain.ProcedureState.IDLE, 2.0),      # process created
+                (domain.ProcedureState.LOADING, 3.0),   # user script loading
+                (domain.ProcedureState.IDLE, 4.0),      # user script loaded
+                (domain.ProcedureState.RUNNING, 5.0),   # init called
+                (domain.ProcedureState.IDLE, 6.0),      # init complete
+                (domain.ProcedureState.RUNNING, 7.0),   # main called
             ]
         ),
         stacktrace=None,

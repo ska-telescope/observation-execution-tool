@@ -22,7 +22,7 @@ class PrepareProcessCommand:
     required to load and prepare a Python script ready for execution.
     """
 
-    script: domain.FileSystemScript
+    script: domain.ExecutableScript
     init_args: domain.ProcedureInput
 
 
@@ -36,6 +36,7 @@ class StartProcessCommand:
     """
 
     process_uid: int
+    fn_name: str
     run_args: domain.ProcedureInput
 
 
@@ -84,8 +85,8 @@ class ScriptExecutionService:
         :param pid: Procedure ID to summarise
         :return: ProcedureSummary
         """
-        procedure = self._process_host.procedures[pid]
-        return domain.ProcedureSummary.from_procedure(procedure)
+        summaries = self._process_host.summarise([pid])
+        return summaries[0]
 
     def prepare(self, cmd: PrepareProcessCommand) -> domain.ProcedureSummary:
         """
@@ -97,8 +98,7 @@ class ScriptExecutionService:
         :return:
         """
         pid = self._process_host.create(cmd.script, init_args=cmd.init_args)
-        summary = self._create_summary(pid)
-        return summary
+        return self._create_summary(pid)
 
     def start(self, cmd: StartProcessCommand) -> domain.ProcedureSummary:
         """
@@ -107,7 +107,7 @@ class ScriptExecutionService:
         :param cmd: dataclass argument capturing the execution arguments
         :return:
         """
-        self._process_host.run(cmd.process_uid, run_args=cmd.run_args)
+        self._process_host.run(cmd.process_uid, call=cmd.fn_name, run_args=cmd.run_args)
         return self._create_summary(cmd.process_uid)
 
     def summarise(
@@ -123,15 +123,7 @@ class ScriptExecutionService:
         :param pids: optional list of Procedure IDs to summarise.
         :return: list of ProcedureSummary objects
         """
-        all_pids = self._process_host.procedures.keys()
-        if not pids:
-            pids = all_pids
-
-        missing_pids = {p for p in pids if p not in all_pids}
-        if missing_pids:
-            raise ValueError(f"Process IDs not found: {missing_pids}")
-
-        return [self._create_summary(pid) for pid in pids]
+        return self._process_host.summarise(pids)
 
     def stop(self, cmd: StopProcessCommand) -> typing.List[domain.ProcedureSummary]:
         """
@@ -164,16 +156,21 @@ class ScriptExecutionService:
         summary = self.start(run_cmd)
         return [summary]
 
-    def _get_subarray_id(self, pid: int):
+    def _get_subarray_id(self, pid: int) -> int:
         """
         Return a Subarray id for given procedure ID.
 
         :param pid: Procedure ID to summarise
         :return: subarray id
         """
-        procedure_summary = self.summarise(pids=[pid])[0]
-        init_dict = procedure_summary.script_args["init"]
-        init_kwargs = init_dict.kwargs
-        if "subarray_id" not in init_kwargs:
-            raise ValueError("Subarray Id not found")
-        return init_kwargs["subarray_id"]
+        procedure_summary = self._process_host._summarise(pid)
+        subarray_ids = {
+            arg_capture.fn_args.kwargs["subarray_id"]
+            for arg_capture in procedure_summary.script_args
+            if "subarray_id" in arg_capture.fn_args.kwargs
+        }
+        if not subarray_ids:
+            raise ValueError("Subarray ID not specified")
+        if len(subarray_ids) > 1:
+            raise ValueError("Multiple subarray IDs found")
+        return subarray_ids.pop()
