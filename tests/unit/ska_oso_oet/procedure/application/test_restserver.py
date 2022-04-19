@@ -57,7 +57,7 @@ CREATE_GIT_JSON = dict(
     script={
         "script_type": "git",
         "script_uri": "test:///test.py",
-        "git_args": {"git_repo": "http://foo.git", "git_branch": "main"},
+        "git_args": dict(git_repo="http://foo.git", git_branch="main"),
     },
     script_args={"init": dict(args=(1, 2, 3), kwargs=dict(kw1="a", kw2="b"))},
 )
@@ -360,6 +360,30 @@ def test_successful_post_to_endpoint_returns_git_summary_in_response(client):
     assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, procedure_json)
 
 
+def test_successful_post_to_endpoint_returns_git_summary_in_response_with_default_git_args(
+    client,
+):
+    """
+    Verify that creating a new Procedure returns the expected JSON payload:
+    a summary of the created Procedure with default git arguments.
+    """
+    request_json = copy.deepcopy(CREATE_GIT_JSON)
+    del request_json["script"]["git_args"]
+    spec = {
+        topics.request.procedure.create: [
+            ([topics.procedure.lifecycle.created], dict(result=CREATE_GIT_SUMMARY))
+        ],
+    }
+    _ = PubSubHelper(spec)
+
+    response = client.post(ENDPOINT, json=request_json)
+    response_json = response.get_json()
+
+    assert "procedure" in response_json
+    procedure_json = response_json["procedure"]
+    assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, procedure_json)
+
+
 def test_post_to_endpoint_requires_script_uri_json_parameter(client):
     """
     Verify that the script_uri must be present in the 'create procedure' JSON
@@ -436,6 +460,72 @@ def test_post_to_endpoint_sends_init_arguments(client):
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
         script=domain.FileSystemScript(CREATE_SUMMARY.script.script_uri),
+        init_args=CREATE_SUMMARY.script_args["init"],
+    )
+    assert helper.messages[0][1]["cmd"] == expected_cmd
+
+
+def test_post_to_endpoint_sends_git_arguments(client):
+    """
+    Verify that git arguments are relayed correctly when creating a
+    new Procedure.
+    """
+    spec = {
+        topics.request.procedure.create: [
+            ([topics.procedure.lifecycle.created], dict(result=CREATE_GIT_SUMMARY))
+        ],
+    }
+    helper = PubSubHelper(spec)
+
+    client.post(ENDPOINT, json=CREATE_GIT_JSON)
+
+    # verify message sequence and topics
+    assert helper.topic_list == [
+        topics.request.procedure.create,  # procedure creation requested
+        topics.procedure.lifecycle.created,  # CREATED ProcedureSummary returned
+    ]
+
+    # now verify arguments were extracted from JSON and passed into command
+    expected_cmd = PrepareProcessCommand(
+        script=domain.GitScript(
+            CREATE_GIT_SUMMARY.script.script_uri,
+            git_args=CREATE_GIT_SUMMARY.script.git_args,
+        ),
+        init_args=CREATE_SUMMARY.script_args["init"],
+    )
+    assert helper.messages[0][1]["cmd"] == expected_cmd
+
+
+def test_post_to_endpoint_sends_default_git_arguments(client):
+    """
+    Verify that git arguments are relayed correctly when creating a
+    new Procedure.
+    """
+    summary = copy.deepcopy(CREATE_GIT_SUMMARY)
+    summary.script.git_args = domain.GitArgs()
+    spec = {
+        topics.request.procedure.create: [
+            ([topics.procedure.lifecycle.created], dict(result=summary))
+        ],
+    }
+    helper = PubSubHelper(spec)
+
+    summary_json = copy.deepcopy(CREATE_GIT_JSON)
+    del summary_json["script"]["git_args"]
+
+    client.post(ENDPOINT, json=summary_json)
+
+    # verify message sequence and topics
+    assert helper.topic_list == [
+        topics.request.procedure.create,  # procedure creation requested
+        topics.procedure.lifecycle.created,  # CREATED ProcedureSummary returned
+    ]
+
+    # now verify arguments were extracted from JSON and passed into command
+    expected_cmd = PrepareProcessCommand(
+        script=domain.GitScript(
+            CREATE_GIT_SUMMARY.script.script_uri, git_args=domain.GitArgs()
+        ),
         init_args=CREATE_SUMMARY.script_args["init"],
     )
     assert helper.messages[0][1]["cmd"] == expected_cmd
@@ -917,3 +1007,21 @@ def test_message_with_simple_data():
     assert message.id is None
     assert message.retry is None
     assert str(message) == "data:foo\n\n"
+
+
+def test_make_public_summary():
+    with mock.patch("flask.url_for") as mock_url_fn:
+        mock_url_fn.return_value = (
+            f"http://localhost/api/v1.0/procedures/{CREATE_SUMMARY.id}"
+        )
+        summary_json = restserver.make_public_summary(CREATE_SUMMARY)
+        assert_json_equal_to_procedure_summary(CREATE_SUMMARY, summary_json)
+
+
+def test_make_public_summary_git_args():
+    with mock.patch("flask.url_for") as mock_url_fn:
+        mock_url_fn.return_value = (
+            f"http://localhost/api/v1.0/procedures/{CREATE_GIT_SUMMARY.id}"
+        )
+        summary_json = restserver.make_public_summary(CREATE_GIT_SUMMARY)
+        assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, summary_json)

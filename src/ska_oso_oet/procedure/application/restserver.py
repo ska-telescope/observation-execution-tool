@@ -206,7 +206,10 @@ def create_procedure():
     if script_type == "filesystem":
         script = domain.FileSystemScript(script_uri)
     elif script_type == "git":
-        git_args = script_dict.get("git_args", domain.GitArgs())
+        if script_dict.get("git_args"):
+            git_args = domain.GitArgs(**script_dict.get("git_args"))
+        else:
+            git_args = domain.GitArgs()
         script = domain.GitScript(script_uri, git_args=git_args)
     else:
         description = {
@@ -381,7 +384,12 @@ def make_public_summary(procedure: domain.ProcedureSummary):
     }
 
     if isinstance(procedure.script, domain.GitScript):
-        script["git_args"] = procedure.script.git_args
+        git_args = {
+            "git_repo": procedure.script.git_args.git_repo,
+            "git_branch": procedure.script.git_args.git_branch,
+            "git_commit": procedure.script.git_args.git_commit,
+        }
+        script["git_args"] = git_args
 
     procedure_history = {
         "process_states": {
