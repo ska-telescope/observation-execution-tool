@@ -301,9 +301,15 @@ class RestClientUI:
         if "git_args" in procedure[0].script:
             table_row_git = [
                 (
-                    procedure[0].script["git_args"]["git_repo"],
-                    procedure[0].script["git_args"]["git_branch"],
-                    procedure[0].script["git_args"]["git_commit"],
+                    procedure[0].script["git_args"]["git_repo"]
+                    if "git_repo" in procedure[0].script["git_args"]
+                    else "master",
+                    procedure[0].script["git_args"]["git_branch"]
+                    if "git_branch" in procedure[0].script["git_args"]
+                    else "git://gitlab.com/ska-telescope/ska-oso-scripting.git",
+                    procedure[0].script["git_args"]["git_commit"]
+                    if "git_commit" in procedure[0].script["git_args"]
+                    else "",
                 )
             ]
 
