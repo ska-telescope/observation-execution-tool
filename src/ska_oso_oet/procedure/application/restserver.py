@@ -347,11 +347,11 @@ def update_procedure(procedure_id: int):
         old_state is domain.ProcedureState.IDLE
         and new_state is domain.ProcedureState.RUNNING
     ):
-        run_dict = script_args.get("run", {})
+        run_dict = script_args.get("main", {})
         run_args = run_dict.get("args", [])
         run_kwargs = run_dict.get("kwargs", {})
         procedure_input = domain.ProcedureInput(*run_args, **run_kwargs)
-        cmd = application.StartProcessCommand(procedure_id, run_args=procedure_input)
+        cmd = application.StartProcessCommand(procedure_id, fn_name="main", run_args=procedure_input)
 
         summary = call_and_respond(
             topics.request.procedure.start, topics.procedure.lifecycle.started, cmd=cmd
@@ -371,8 +371,8 @@ def make_public_summary(procedure: domain.ProcedureSummary):
     :return: safe JSON representation
     """
     script_args = {
-        method_name: {"args": method_args.args, "kwargs": method_args.kwargs}
-        for method_name, method_args in procedure.script_args.items()
+        args.fn: {"args": args.fn_args.args, "kwargs": args.fn_args.kwargs}
+        for args in procedure.script_args
     }
 
     script = {
@@ -384,9 +384,7 @@ def make_public_summary(procedure: domain.ProcedureSummary):
         script["git_args"] = procedure.script.git_args
 
     procedure_history = {
-        "process_states": {
-            state.name: time for state, time in procedure.history.process_states.items()
-        },
+        "process_states": [(state[0].name, state[1]) for state in procedure.history.process_states],
         "stacktrace": procedure.history.stacktrace,
     }
 

@@ -131,7 +131,6 @@ class ScriptExecutionService:
         second script once the first process has terminated.
 
         :param cmd: dataclass argument capturing the execution arguments
-        :param run_abort: runs post-termination abort script when True
         :return:
         """
         subarray_id = self._get_subarray_id(cmd.process_uid)
@@ -151,7 +150,7 @@ class ScriptExecutionService:
 
         # start the second script
         run_cmd = StartProcessCommand(
-            process_uid=procedure_summary.id, run_args=domain.ProcedureInput()
+            process_uid=procedure_summary.id, fn_name="main", run_args=domain.ProcedureInput()
         )
         summary = self.start(run_cmd)
         return [summary]
@@ -163,7 +162,7 @@ class ScriptExecutionService:
         :param pid: Procedure ID to summarise
         :return: subarray id
         """
-        procedure_summary = self._process_host._summarise(pid)
+        procedure_summary = self._process_host.summarise([pid])[0]
         subarray_ids = {
             arg_capture.fn_args.kwargs["subarray_id"]
             for arg_capture in procedure_summary.script_args

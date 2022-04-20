@@ -250,41 +250,51 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     abort_pid = 123
 
     # Create Procedure representing the script to be stopped
-    procedure_to_stop = Procedure(
-        FileSystemScript("test://a"), procedure_id=running_pid, subarray_id=subarray_id
-    )
+    script_to_stop = FileSystemScript("test://a")
+    stop_args = [ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1), ArgCapture(fn="main", fn_args=ProcedureInput(), time=2)]
+    running_summary = [
+        ProcedureSummary(
+            id=running_pid,
+            script=script_to_stop,
+            script_args=stop_args,
+            history=ProcedureHistory(),
+            state=ProcedureState.RUNNING,
+        )
+    ]
 
-    # Create second Procedure to represent the Process running the
-    # post-termination abort script
-    abort_procedure = Procedure(
-        FileSystemScript(abort_script), procedure_id=abort_pid, subarray_id=subarray_id
-    )
-
-    # Prepare a dict of PIDs to Procedures that we can use to mock the internal
-    # data structure held by ProcessManager. This dict is read by the SES when
-    # when summarising the prepared and running processes.
-    process_manager_procedures = {running_pid: procedure_to_stop}
+    abort_script_o = FileSystemScript(abort_script)
+    abort_script_args = [ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1), ArgCapture(fn="main", fn_args=ProcedureInput(), time=2)]
 
     # When SES.stop() is called, the SES should stop the current process,
     # prepare a process for the abort script, then set the abort process
     # running..
     cmd_stop = StopProcessCommand(process_uid=running_pid, run_abort=True)
     cmd_create = PrepareProcessCommand(
-        script=FileSystemScript(abort_script),
-        init_args=abort_procedure.script_args["init"],
+        script=abort_script_o,
+        init_args=ProcedureInput(subarray_id=subarray_id),
     )
+    abort_created = [
+        ProcedureSummary(
+            id=abort_pid,
+            script=FileSystemScript(abort_script),
+            script_args=abort_script_args,
+            history=ProcedureHistory(),
+            state=ProcedureState.IDLE,
+        )
+    ]
+
     cmd_run = StartProcessCommand(
-        process_uid=abort_pid, run_args=abort_procedure.script_args["run"]
+        process_uid=abort_pid, fn_name="main", run_args=ProcedureInput()
     )
 
     # .. before returning a summary of the running abort Process
     expected = [
         ProcedureSummary(
             id=abort_pid,
-            script=abort_procedure.script,
-            script_args=abort_procedure.script_args,
-            history=abort_procedure.history,
-            state=abort_procedure.state,
+            script=FileSystemScript(abort_script),
+            script_args=abort_script_args,
+            history=ProcedureHistory(),
+            state=ProcedureState.RUNNING,
         )
     ]
 
@@ -293,15 +303,11 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     ) as mock_pm:
         # get the mock ProcessManager instance, preparing it for SES access
         instance = mock_pm.return_value
-        instance.procedures = process_manager_procedures
 
-        def create_abort(*_, **__):
-            # The real .create() function would add the abort procedure to its
-            # internal data structure when called
-            process_manager_procedures[abort_pid] = abort_procedure
-            return abort_pid
-
-        instance.create.side_effect = create_abort
+        # Expect first call to summarise to be to get details on the currently running
+        # script, second call is when abort script has been created and third one is
+        # when the abort script has been started
+        instance.summarise.side_effect = [running_summary, abort_created, expected]
 
         service = ScriptExecutionService(abort_script_uri=abort_script)
         returned = service.stop(cmd_stop)
@@ -313,7 +319,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
             cmd_create.script, init_args=cmd_create.init_args
         )
         instance.run.assert_called_once_with(
-            cmd_run.process_uid, run_args=cmd_run.run_args
+            cmd_run.process_uid, call="main", run_args=cmd_run.run_args
         )
         assert returned == expected
 
@@ -326,6 +332,16 @@ def test_ses_stop_calls_process_manager_function_with_no_script_execution(abort_
     """
     # PID of running process
     running_pid = 123
+    running_args = [ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=1), time=1), ArgCapture(fn="main", fn_args=ProcedureInput(), time=2)]
+    running_summary = [
+        ProcedureSummary(
+            id=123,
+            script=mock.MagicMock(),
+            script_args=running_args,
+            history=mock.MagicMock(),
+            state=ProcedureState.RUNNING,
+        )
+    ]
 
     cmd = StopProcessCommand(process_uid=running_pid, run_abort=False)
 
@@ -333,8 +349,10 @@ def test_ses_stop_calls_process_manager_function_with_no_script_execution(abort_
     expected = []
 
     with patch("ska_oso_oet.procedure.domain.ProcessManager") as mock_pm:
-        # get the mock ProcessManager instance
         mgr = mock_pm.return_value
+
+        # Summarise to be called once when getting details for the running script
+        mgr.summarise.side_effect = [running_summary]
         mgr.create = MagicMock(return_value=12345)
         mgr.stop = MagicMock(return_value='foo')
 
@@ -355,16 +373,13 @@ def test_ses_get_subarray_id_for_requested_pid():
     subarray_id = 123
     process_pid = 456
 
-    procedure = Procedure(FileSystemScript("test://a"))
-    init_args = ProcedureInput(subarray_id=subarray_id)
-    procedure.script_args["init"] = init_args
-    procedures = {process_pid: procedure}
+    init_args = ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1)
     process_summary = ProcedureSummary(
         id=process_pid,
-        script=procedure.script,
-        script_args=procedure.script_args,
-        history=procedure.history,
-        state=procedure.state,
+        script=FileSystemScript("test://a"),
+        script_args=[init_args],
+        history=mock.MagicMock(),
+        state=ProcedureState.IDLE,
     )
     expected = [process_summary]
 
@@ -373,14 +388,14 @@ def test_ses_get_subarray_id_for_requested_pid():
     ) as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
-        # the manager's procedures attribute holds created procedures and is
-        # used for retrieval
-        instance.procedures = procedures
+        # Summarise is called to get details on the script
+        instance.summarise.side_effect = [[process_summary]]
 
         service = ScriptExecutionService()
         returned = service._get_subarray_id(process_pid)
 
-        assert returned == expected[0].script_args["init"].kwargs["subarray_id"]
+        assert instance.summarise.called_with(process_pid)
+        assert returned == expected[0].script_args[0].fn_args.kwargs["subarray_id"]
 
 
 def test_ses_get_subarray_id_fails_on_missing_subarray_id():
@@ -388,17 +403,22 @@ def test_ses_get_subarray_id_fails_on_missing_subarray_id():
     Verify that an exception is raised when subarray id is missing for requested
     PID
     """
-    procedure = Procedure(FileSystemScript("test://a"))
-    procedures = {1: procedure}
+    init_args = ArgCapture(fn="init", fn_args=ProcedureInput(), time=1)
+    process_summary = ProcedureSummary(
+        id=1,
+        script=FileSystemScript("test://a"),
+        script_args=[init_args],
+        history=mock.MagicMock(),
+        state=ProcedureState.IDLE,
+    )
 
     with mock.patch(
         "ska_oso_oet.procedure.application.application.domain.ProcessManager"
     ) as mock_pm:
         # get the mock ProcessManager instance
         instance = mock_pm.return_value
-        # the manager's procedures attribute holds created procedures and is
-        # used for retrieval
-        instance.procedures = procedures
+        # Summarise is called to get details on the script
+        instance.summarise.side_effect = [[process_summary]]
 
         service = ScriptExecutionService()
         with pytest.raises(ValueError):

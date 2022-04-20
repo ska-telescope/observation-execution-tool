@@ -39,7 +39,7 @@ CREATE_JSON = dict(
 CREATE_SUMMARY = ProcedureSummary(
     id=1,
     script=domain.FileSystemScript("test:///test.py"),
-    script_args={"init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b")},
+    script_args=[domain.ArgCapture(fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1)],
     history=domain.ProcedureHistory(
         process_states=[
             (domain.ProcedureState.CREATING, 1.0),  # process starting
@@ -71,7 +71,7 @@ CREATE_GIT_SUMMARY = ProcedureSummary(
         "test:///test.py",
         git_args=domain.GitArgs(git_repo="http://foo.git", git_branch="main"),
     ),
-    script_args={"init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b")},
+    script_args=[domain.ArgCapture(fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1)],
     history=domain.ProcedureHistory(
         process_states=[
             (domain.ProcedureState.CREATING, 1.0),  # process starting
@@ -91,7 +91,7 @@ ABORT_JSON = dict(state="STOPPED", abort=True)
 # Valid JSON struct for starting a prepared procedure
 RUN_JSON = dict(
     script_uri="test:///test.py",
-    script_args={"run": dict(args=(4, 5, 6), kwargs=dict(kw3="c", kw4="d"))},
+    script_args={"main": dict(args=(4, 5, 6), kwargs=dict(kw3="c", kw4="d"))},
     state="RUNNING",
 )
 
@@ -99,22 +99,18 @@ RUN_JSON = dict(
 RUN_SUMMARY = ProcedureSummary(
     id=1,
     script=domain.FileSystemScript("test:///test.py"),
-    script_args={
-        "init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"),
-        "run": domain.ProcedureInput(4, 5, 6, kw3="c", kw4="d"),
-    },
+    script_args=[domain.ArgCapture(fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1),
+                 domain.ArgCapture(fn="main", fn_args=domain.ProcedureInput(4, 5, 6, kw3="c", kw4="d"), time=1)],
     history=domain.ProcedureHistory(
-        process_states=OrderedDict(
-            [
-                (domain.ProcedureState.CREATING, 1.0),  # process starting
-                (domain.ProcedureState.IDLE, 2.0),      # process created
-                (domain.ProcedureState.LOADING, 3.0),   # user script loading
-                (domain.ProcedureState.IDLE, 4.0),      # user script loaded
-                (domain.ProcedureState.RUNNING, 5.0),   # init called
-                (domain.ProcedureState.IDLE, 6.0),      # init complete
-                (domain.ProcedureState.RUNNING, 7.0),   # main called
-            ]
-        ),
+        process_states=[
+            (domain.ProcedureState.CREATING, 1.0),  # process starting
+            (domain.ProcedureState.IDLE, 2.0),      # process created
+            (domain.ProcedureState.LOADING, 3.0),   # user script loading
+            (domain.ProcedureState.IDLE, 4.0),      # user script loaded
+            (domain.ProcedureState.RUNNING, 5.0),   # init called
+            (domain.ProcedureState.IDLE, 6.0),      # init complete
+            (domain.ProcedureState.RUNNING, 7.0),   # main called
+        ],
         stacktrace=None,
     ),
     state=domain.ProcedureState.RUNNING,
@@ -194,16 +190,17 @@ def assert_json_equal_to_procedure_summary(
             summary_json["script"]["git_args"]["git_commit"]
             == summary.script.git_args.git_commit
         )
-    for method_name, arg_dict in summary_json["script_args"].items():
-        i: ProcedureInput = summary.script_args[method_name]
+    for args in summary.script_args:
+        i: ProcedureInput = args.fn_args
+        arg_dict = summary_json["script_args"][args.fn]
         assert i.args == tuple(arg_dict["args"])
         assert i.kwargs == arg_dict["kwargs"]
     assert summary_json["state"] == summary.state.name
     assert summary_json["history"]["stacktrace"] == summary.history.stacktrace
-    for key, val in summary.history.process_states.items():
-        assert key.name in summary_json["history"]["process_states"]
-        assert val == summary_json["history"]["process_states"][key.name]
-        assert isinstance(summary_json["history"]["process_states"][key.name], float)
+    for i, state in enumerate(summary.history.process_states):
+        assert state[0].name == summary_json["history"]["process_states"][i][0]
+        assert state[1] == summary_json["history"]["process_states"][i][1]
+        assert isinstance(summary_json["history"]["process_states"][i][1], float)
 
 
 @pytest.fixture
@@ -445,7 +442,7 @@ def test_post_to_endpoint_sends_init_arguments(client):
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
         script=domain.FileSystemScript(CREATE_SUMMARY.script.script_uri),
-        init_args=CREATE_SUMMARY.script_args["init"],
+        init_args=CREATE_SUMMARY.script_args[0].fn_args,
     )
     assert helper.messages[0][1]["cmd"] == expected_cmd
 
@@ -549,7 +546,7 @@ def test_put_procedure_calls_run_on_execution_service(client):
 
     # verify correct procedure was started
     expected_cmd = StartProcessCommand(
-        process_uid=RUN_SUMMARY.id, run_args=RUN_SUMMARY.script_args["run"]
+        process_uid=RUN_SUMMARY.id, fn_name="main", run_args=RUN_SUMMARY.script_args[1].fn_args
     )
     assert helper.messages[2][1]["cmd"] == expected_cmd
 
