@@ -400,7 +400,7 @@ class ProcessManager:
             if missing_pids:
                 raise ValueError(f"Process IDs not found: {missing_pids}")
 
-            return [self._summarise(pid) for pid in all_pids]
+            return [self._summarise(pid) for pid in pids]
 
     @property
     def running(self) -> Optional[mptools.Proc]:

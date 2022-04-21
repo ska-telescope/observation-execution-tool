@@ -580,6 +580,18 @@ class TestProcessManager:
     def test_summarise_with_no_procedures(self, manager):
         assert manager.summarise() == []
 
+    def test_summarise_returns_specific_summary(self, manager):
+        fake_states = {
+            10: ProcedureState.COMPLETED,
+            20: ProcedureState.RUNNING,
+            30: ProcedureState.IDLE,
+        }
+        manager.states = fake_states
+
+        with patch.object(ProcessManager, "_summarise") as method:
+            _ = manager.summarise([20])
+            method.assert_called_once_with(20)
+
     def test_summarise_returns_all_summaries_when_no_pid_requested(self, manager):
         fake_states = {
             10: ProcedureState.COMPLETED,
