@@ -9,7 +9,7 @@ from ska_oso_oet.procedure.domain import GitArgs
 from ska_oso_oet.procedure.environment import Environment, EnvironmentManager
 
 TEST_ENVIRONMENT = Environment(
-    creating_condition=multiprocessing.Condition(),  # TODO
+    creating_condition=multiprocessing.Condition(),
     created_condition=multiprocessing.Condition(),
     env_id="69e93d57916f837ee93ca125f2785f0f6e21974d",
     created=datetime.datetime(2000, 1, 1),

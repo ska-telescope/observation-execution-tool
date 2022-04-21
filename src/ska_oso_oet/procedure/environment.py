@@ -55,7 +55,7 @@ class EnvironmentManager:
         venv_site_pkgs = site_pkgs_call.stdout.decode("utf-8").strip()
 
         environment = Environment(
-            creating_condition=multiprocessing.Condition(),  # TODO
+            creating_condition=multiprocessing.Condition(),
             created_condition=multiprocessing.Condition(),
             env_id=git_commit,
             created=datetime.datetime.now(),

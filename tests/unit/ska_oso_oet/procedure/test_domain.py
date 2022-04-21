@@ -167,7 +167,7 @@ def test_git_args_default_values_are_as_expected():
     expected if not provided.
     """
     git_args = GitArgs()
-    assert git_args.git_repo == "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
+    assert git_args.git_repo == "https://gitlab.com/ska-telescope/ska-oso-scripting.git"
     assert git_args.git_branch == "master"
     assert git_args.git_commit is None
 
