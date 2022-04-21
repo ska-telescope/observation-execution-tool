@@ -259,7 +259,9 @@ class TestProcedureHistory:
         assert ph1 != object()
 
 
-def wait_for_empty_message_queue(manager, timeout=1.0, tick=0.01):
+def wait_for_empty_message_queue(
+    manager, timeout=1.0, tick=0.01
+):  # pylint: disable=protected-access
     # primitive way to wait for all ScriptWorker messages to be
     # handled. Adds a message to the queue then waits a maximum
     # of timeout seconds for the queue size to become zero again
@@ -274,7 +276,7 @@ def wait_for_empty_message_queue(manager, timeout=1.0, tick=0.01):
 
 def wait_for_state(
     manager: ProcessManager, pid: int, state: ProcedureState, timeout=1.0, tick=0.01
-):
+):  # pylint: disable=protected-access
     deadline = time.time() + timeout
     sleep_secs = tick
     while manager.states.get(pid, None) != state and sleep_secs > 0:
@@ -605,7 +607,9 @@ class TestProcessManager:
             with pytest.raises(ValueError):
                 manager.summarise([10, 11, 30])
 
-    def test_private_summarise(self, manager, script):
+    def test_private_summarise(
+        self, manager, script
+    ):  # pylint: disable=protected-access
         t = 12345
         init_args = ProcedureInput(1, 2, a="b", c="d")
         run_args = ProcedureInput(3, 4, e="f", g="h")

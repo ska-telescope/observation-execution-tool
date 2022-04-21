@@ -101,8 +101,6 @@ class ExecutableScript:
     - etc.
     """
 
-    pass
-
 
 @dataclasses.dataclass
 class FileSystemScript(ExecutableScript):
