@@ -1,5 +1,5 @@
 """
-Static helper methods for cloning and working with a Git repository
+Static helper functions for cloning and working with a Git repository
 """
 import os
 

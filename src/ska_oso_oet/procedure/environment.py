@@ -15,7 +15,7 @@ class Environment:
     created_condition: multiprocessing.Condition  # Set when environment is ready to be used
     env_id: str
     created: datetime
-    site_packages: []
+    site_packages: str
 
 
 class EnvironmentManager:
@@ -66,6 +66,6 @@ class EnvironmentManager:
         return environment
 
     def delete_env(self, env_id):
-        dir_to_remove = self.base_dir + self._envs[env_id] + "/"
+        dir_to_remove = self.base_dir + env_id + "/"
         shutil.rmtree(dir_to_remove, ignore_errors=True)
         del self._envs[env_id]
