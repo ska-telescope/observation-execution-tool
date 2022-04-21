@@ -324,8 +324,8 @@ class TestProcessManagerScriptWorkerIntegration:
         # let init complete, then check for completion
         resume.wait(0.1)
         resume.reset()  # reset to pause main method call
-        wait_for_state(manager, pid, ProcedureState.IDLE)
-        expected.append(ProcedureState.IDLE)  # init complete
+        wait_for_state(manager, pid, ProcedureState.READY)
+        expected.append(ProcedureState.READY)  # init complete
         self.assert_states(history, expected)
 
         # now set main running
@@ -341,7 +341,7 @@ class TestProcessManagerScriptWorkerIntegration:
         wait_for_state(manager, pid, ProcedureState.COMPLETED)
         expected.extend(
             [
-                ProcedureState.IDLE,  # main complete
+                ProcedureState.READY,  # main complete
                 ProcedureState.COMPLETED,  # script complete
             ]
         )
@@ -351,7 +351,7 @@ class TestProcessManagerScriptWorkerIntegration:
         self, manager: ProcessManager, fail_script
     ):
         pid = manager.create(fail_script, init_args=ProcedureInput())
-        wait_for_state(manager, pid, ProcedureState.IDLE)
+        wait_for_state(manager, pid, ProcedureState.READY)
         history = manager.history[pid]
 
         assert history.stacktrace is None
@@ -364,7 +364,8 @@ class TestProcessManagerScriptWorkerIntegration:
             ProcedureState.IDLE,  # ScriptWorker ready
             ProcedureState.LOADING,  # load user module
             ProcedureState.IDLE,  # user module loaded
-            # fail script has no init so no RUNNING->IDLE expected
+            # fail script has no init so no IDLE->READY expected
+            ProcedureState.READY,  # init complete
             ProcedureState.RUNNING,  # main running
             ProcedureState.FAILED,  # exception raised
         ]
@@ -413,7 +414,7 @@ class TestProcessManagerScriptWorkerIntegration:
         init_args = ProcedureInput(main_running)
 
         pid = manager.create(main_hang_script, init_args=init_args)
-        wait_for_state(manager, pid, ProcedureState.IDLE)
+        wait_for_state(manager, pid, ProcedureState.READY)
         manager.run(pid, call="main", run_args=ProcedureInput())
         main_running.wait(0.5)
 
@@ -427,7 +428,7 @@ class TestProcessManagerScriptWorkerIntegration:
             ProcedureState.LOADING,  # load user module
             ProcedureState.IDLE,  # user module loaded
             ProcedureState.RUNNING,  # init running
-            ProcedureState.IDLE,  # init complete
+            ProcedureState.READY,  # init complete
             ProcedureState.RUNNING,  # main running
             ProcedureState.STOPPED,  # main stopped
         ]
@@ -465,7 +466,7 @@ class TestProcessManagerScriptWorkerIntegration:
         init_running.wait(0.1)
         resume.wait(0.1)
         resume.reset()  # reset to pause main method call
-        wait_for_state(manager, pid, ProcedureState.IDLE)
+        wait_for_state(manager, pid, ProcedureState.READY)
 
         # now set main running
         manager.run(pid, call="main", run_args=ProcedureInput())
@@ -619,8 +620,9 @@ class TestProcessManager:
                 (ProcedureState.IDLE, t),
                 (ProcedureState.LOADING, t),
                 (ProcedureState.IDLE, t),
+                (ProcedureState.READY, t),
                 (ProcedureState.RUNNING, t),
-                (ProcedureState.IDLE, t),
+                (ProcedureState.READY, t),
                 (ProcedureState.COMPLETED, t),
             ],
             stacktrace=None,
@@ -628,7 +630,7 @@ class TestProcessManager:
 
         with patch("time.time", MagicMock(return_value=t)):
             pid = manager.create(script, init_args=init_args)
-        wait_for_state(manager, pid, ProcedureState.IDLE)
+        wait_for_state(manager, pid, ProcedureState.READY)
         with patch("time.time", MagicMock(return_value=t)):
             manager.run(pid, call="main", run_args=run_args)
         wait_for_state(manager, pid, ProcedureState.COMPLETED)
@@ -682,7 +684,7 @@ class TestProcessManager:
         with patch("ska_oso_oet.procedure.domain.HISTORY_MAX_LENGTH", new=limit):
             for _ in range(limit):
                 pid = manager.create(script, init_args=ProcedureInput())
-                wait_for_state(manager, pid, ProcedureState.IDLE)
+                wait_for_state(manager, pid, ProcedureState.READY)
                 manager.run(pid, call="main", run_args=ProcedureInput())
 
             wait_for_state(manager, pid, ProcedureState.COMPLETED)
@@ -709,7 +711,7 @@ class TestProcessManager:
 
     def test_cleanup_on_completed(self, manager, script):
         pid = manager.create(script, init_args=ProcedureInput())
-        wait_for_state(manager, pid, ProcedureState.IDLE)
+        wait_for_state(manager, pid, ProcedureState.READY)
         manager.run(pid, call="main", run_args=ProcedureInput())
         wait_for_state(manager, pid, ProcedureState.COMPLETED)
 
@@ -737,7 +739,7 @@ class TestProcessManager:
 
     def test_cleanup_on_failed(self, manager, fail_script):
         pid = manager.create(fail_script, init_args=ProcedureInput())
-        wait_for_state(manager, pid, ProcedureState.IDLE)
+        wait_for_state(manager, pid, ProcedureState.READY)
         manager.run(pid, call="main", run_args=ProcedureInput("foo"))
         wait_for_state(manager, pid, ProcedureState.FAILED)
 
@@ -754,7 +756,7 @@ class TestProcessManager:
         """
         q = manager.ctx.MPQueue()
         manager.procedures[1] = MagicMock()
-        manager.states[1] = ProcedureState.IDLE
+        manager.states[1] = ProcedureState.READY
         manager.script_queues[1] = q
         manager.script_args[1] = []
         method = "foo"
@@ -794,7 +796,7 @@ class TestProcessManager:
         resume.wait()
         resume.reset()
 
-        wait_for_state(manager, pid, ProcedureState.IDLE)
+        wait_for_state(manager, pid, ProcedureState.READY)
         manager.run(pid, call="main", run_args=ProcedureInput())
         main_running.wait(0.1)
         wait_for_state(manager, pid, ProcedureState.RUNNING)
@@ -824,7 +826,7 @@ class TestProcessManager:
         that is not running
         """
         pid = manager.create(script, init_args=ProcedureInput())
-        wait_for_state(manager, pid, ProcedureState.IDLE)
+        wait_for_state(manager, pid, ProcedureState.READY)
         manager.run(pid, call="main", run_args=ProcedureInput())
         wait_for_state(manager, pid, ProcedureState.COMPLETED)
         with pytest.raises(ValueError):
@@ -838,7 +840,7 @@ class TestProcessManager:
             q = mgr.Queue()
             is_running = multiprocessing.Barrier(2)
             pid = manager.create(abort_script, init_args=ProcedureInput(q, is_running))
-            wait_for_state(manager, pid, ProcedureState.IDLE)
+            wait_for_state(manager, pid, ProcedureState.READY)
             manager.run(pid, call="main", run_args=ProcedureInput())
 
             is_running.wait(0.1)
@@ -873,7 +875,7 @@ class TestProcessManager:
 
         with patch("time.time", MagicMock(return_value=12345)):
             pid = manager.create(script, init_args=ProcedureInput())
-            wait_for_state(manager, pid, ProcedureState.IDLE)
+            wait_for_state(manager, pid, ProcedureState.READY)
             manager.run(pid, call="main", run_args=run_args)
 
         assert len(manager.script_args[pid]) == 2
@@ -1050,7 +1052,7 @@ def test_scan_id_persists_between_executions(
             script=script_that_increments_and_returns_scan_id,
             init_args=init_args,
         )
-        wait_for_state(manager, pid, ProcedureState.IDLE)
+        wait_for_state(manager, pid, ProcedureState.READY)
         manager.run(pid, call="main", run_args=ProcedureInput())
         wait_for_state(manager, pid, ProcedureState.COMPLETED)
 

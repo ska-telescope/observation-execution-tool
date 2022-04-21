@@ -60,6 +60,7 @@ class ProcedureState(enum.Enum):
     IDLE = enum.auto()
     CREATING = enum.auto()
     LOADING = enum.auto()
+    READY = enum.auto()
     RUNNING = enum.auto()
     COMPLETED = enum.auto()
     STOPPED = enum.auto()
@@ -301,6 +302,7 @@ class ScriptWorker(mptools.ProcWorker):
             # we may want to revisit whether init remains a special case
             if fn_name == "init":
                 if not hasattr(self.user_module, "init"):
+                    self.publish_lifecycle(ProcedureState.READY)
                     return
                 fn_args = self.init_input
 
@@ -312,7 +314,7 @@ class ScriptWorker(mptools.ProcWorker):
             self.publish_lifecycle(ProcedureState.RUNNING)
             fn = getattr(self.user_module, fn_name)
             fn(*fn_args.args, **fn_args.kwargs)
-            self.publish_lifecycle(ProcedureState.IDLE)
+            self.publish_lifecycle(ProcedureState.READY)
 
             # to be refined. indicates that script can not be rerun, thus allowing
             # the ScriptWorker to complete. other script might be rerun and go back
@@ -579,7 +581,7 @@ class ProcessManager:
         if process_id not in self.states:
             raise ValueError(f"PID #{process_id} not found")
 
-        if self.states[process_id] != ProcedureState.IDLE:
+        if self.states[process_id] != ProcedureState.READY:
             raise ValueError(
                 f"PID #{process_id} unrunnable in state {self.states[process_id]}"
             )

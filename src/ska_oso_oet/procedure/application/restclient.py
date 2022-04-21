@@ -401,7 +401,7 @@ class RestClientUI:
                 return
 
             procedure = procedures[-1]
-            if procedure.state != "CREATED":
+            if procedure.state != "READY":
                 yield (
                     f"The last procedure created is in {procedures[-1].state} state "
                     "and cannot be started, please specify a valid procedure ID."
