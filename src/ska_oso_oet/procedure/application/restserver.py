@@ -344,7 +344,7 @@ def update_procedure(procedure_id: int):
             return flask.jsonify({"abort_message": msg})
 
     elif (
-        old_state is domain.ProcedureState.IDLE
+        old_state is domain.ProcedureState.READY
         and new_state is domain.ProcedureState.RUNNING
     ):
         run_dict = script_args.get("main", {})

@@ -50,11 +50,11 @@ CREATE_SUMMARY = ProcedureSummary(
             (domain.ProcedureState.LOADING, 3.0),  # user script loading
             (domain.ProcedureState.IDLE, 4.0),  # user script loaded
             (domain.ProcedureState.RUNNING, 5.0),  # init called
-            (domain.ProcedureState.IDLE, 6.0),  # init complete
+            (domain.ProcedureState.READY, 6.0),  # init complete
         ],
         stacktrace=None,
     ),
-    state=domain.ProcedureState.IDLE,
+    state=domain.ProcedureState.READY,
 )
 
 # Valid JSON struct for creating a new procedure
@@ -86,11 +86,11 @@ CREATE_GIT_SUMMARY = ProcedureSummary(
             (domain.ProcedureState.LOADING, 3.0),  # user script loading
             (domain.ProcedureState.IDLE, 4.0),  # user script loaded
             (domain.ProcedureState.RUNNING, 5.0),  # init called
-            (domain.ProcedureState.IDLE, 6.0),  # init complete
+            (domain.ProcedureState.READY, 6.0),  # init complete
         ],
         stacktrace=None,
     ),
-    state=domain.ProcedureState.IDLE,
+    state=domain.ProcedureState.READY,
 )
 
 ABORT_JSON = dict(state="STOPPED", abort=True)
@@ -121,7 +121,7 @@ RUN_SUMMARY = ProcedureSummary(
             (domain.ProcedureState.LOADING, 3.0),  # user script loading
             (domain.ProcedureState.IDLE, 4.0),  # user script loaded
             (domain.ProcedureState.RUNNING, 5.0),  # init called
-            (domain.ProcedureState.IDLE, 6.0),  # init complete
+            (domain.ProcedureState.READY, 6.0),  # init complete
             (domain.ProcedureState.RUNNING, 7.0),  # main called
         ],
         stacktrace=None,
