@@ -330,10 +330,10 @@ class RestClientUI:
         """
         try:
             procedures = self._client.list(pid)
-            return self._tabulate(procedures)
         except Exception as err:
-            LOGGER.debug("received exception %s", err)
+            LOGGER.warning("received exception %s", err)
             return self._format_error(str(err))
+        return self._tabulate(procedures)
 
     def create(self, script_uri: str, *args, subarray_id=1, **kwargs) -> str:
         """
@@ -367,10 +367,10 @@ class RestClientUI:
             procedure = self._client.create(
                 script_uri, init_args=init_args, git_args=git_args
             )
-            return self._tabulate([procedure])
         except Exception as err:
             LOGGER.debug("received exception %s", err)
             return self._format_error(str(err))
+        return self._tabulate([procedure])
 
     def start(
         self, *args, pid=None, listen=True, **kwargs
@@ -480,10 +480,10 @@ class RestClientUI:
             pid = procedures[-1].id
         try:
             procedure = self._client.list(pid)
-            return self._tabulate_for_describe(procedure)
         except Exception as err:
             LOGGER.debug("received exception %s", err)
             return self._format_error(str(err))
+        return self._tabulate_for_describe(procedure)
 
     def listen(
         self,
