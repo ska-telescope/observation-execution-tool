@@ -473,7 +473,7 @@ class ProcessManager:
 
         TODO: maintenance could also be done in the status update thread?
         """
-        # Delete oldest deleteable procedure if procedure limit reached
+        # Delete oldest deletable procedure if procedure limit reached
         deletable_states = [
             ProcedureState.COMPLETED,
             ProcedureState.FAILED,
@@ -641,6 +641,10 @@ class ProcessManager:
 
             # join any potentially zombie process, allowing it to clean up
             multiprocessing.active_children()
+
+    def shutdown(self):
+        # TODO: Find a better way to exit the PM MainContext
+        self.ctx.__exit__(None, None, None)
 
 
 class ModuleFactory:

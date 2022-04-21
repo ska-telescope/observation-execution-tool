@@ -157,6 +157,9 @@ class ScriptExecutionService:
         summary = self.start(run_cmd)
         return [summary]
 
+    def shutdown(self):
+        self._process_host.shutdown()
+
     def _get_subarray_id(self, pid: int) -> int:
         """
         Return a Subarray id for given procedure ID.

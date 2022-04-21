@@ -290,6 +290,8 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         pub.unsubscribe(self.start, pub.ALL_TOPICS)
         pub.unsubscribe(self.list, pub.ALL_TOPICS)
         pub.unsubscribe(self.stop, pub.ALL_TOPICS)
+
+        self.ses.shutdown()
         super().shutdown()
 
 
