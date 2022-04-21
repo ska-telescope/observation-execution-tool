@@ -41,7 +41,7 @@ CREATE_PROCESS_RESPONSE = {
             "stacktrace": None,
             "process_states": [
                 ["CREATING", 1601303225.8700710],
-                ["CREATED", 1601303225.8702714]
+                ["CREATED", 1601303225.8702714],
             ],
         },
         "state": "CREATED",
@@ -73,7 +73,7 @@ LIST_PROCEDURES_POSITIVE_RESPONSE = {
                 "process_states": [
                     ["CREATING", 1601303225.8232567],
                     ["CREATED", 1601303225.8234567],
-                    ["RUNNING", 1601303225.8702714]
+                    ["RUNNING", 1601303225.8702714],
                 ],
             },
             "state": "RUNNING",
@@ -103,7 +103,7 @@ PROCEDURE_POSITIVE_RESPONSE = {
             "process_states": [
                 ["CREATING", 1601303225.8232567],
                 ["CREATED", 1601303225.8234567],
-                ["RUNNING", 1601303225.8702714]
+                ["RUNNING", 1601303225.8702714],
             ],
         },
         "state": "RUNNING",
@@ -132,7 +132,7 @@ START_PROCESS_RESPONSE = {
             "process_states": [
                 ["CREATING", 1601303225.8232567],
                 ["CREATED", 1601303225.8234567],
-                ["RUNNING", 1601303225.8702714]
+                ["RUNNING", 1601303225.8702714],
             ],
         },
         "state": "RUNNING",
@@ -474,7 +474,7 @@ REST_ADAPTER_CREATE_RESPONSE = ProcedureSummary(
     history={
         "process_states": [
             ["CREATING", 1603381492.3060987],
-            ["CREATED", 1603381492.3060987]
+            ["CREATED", 1603381492.3060987],
         ],
         "stacktrace": None,
     },
@@ -499,7 +499,7 @@ REST_ADAPTER_CREATE_RESPONSE_WITH_GIT_ARGS = ProcedureSummary(
     history={
         "process_states": [
             ["CREATING", 1603381492.3060987],
-            ["CREATED", 1603381492.3060987]
+            ["CREATED", 1603381492.3060987],
         ],
         "stacktrace": None,
     },
@@ -526,7 +526,7 @@ REST_ADAPTER_LIST_RESPONSE = [
         history={
             "process_states": [
                 ["CREATING", 1603378829.5842578],
-                ["CREATED", 1603378829.5842578]
+                ["CREATED", 1603378829.5842578],
             ],
             "stacktrace": None,
         },
@@ -551,7 +551,7 @@ REST_ADAPTER_LIST_RESPONSE = [
         history={
             "process_states": [
                 ["CREATING", 1603379539.5662398],
-                ["CREATED", 1603379539.5662398]
+                ["CREATED", 1603379539.5662398],
             ],
             "stacktrace": None,
         },
@@ -575,7 +575,7 @@ REST_ADAPTER_LIST_RESPONSE_WITH_STACKTRACE = [
             "process_states": [
                 ["CREATED", 1603801915.4125392],
                 ["FAILED", 1603801921.3564265],
-                ["RUNNING", 1603801921.3464086]
+                ["RUNNING", 1603801921.3464086],
             ],
             "stacktrace": """Traceback (most recent call last):
   File "/app/ska_oso_oet/procedure/domain.py", line 132, in run
@@ -617,7 +617,7 @@ REST_ADAPTER_LIST_RESPONSE_WITH_GIT_ARGS = [
         history={
             "process_states": [
                 ["CREATING", 1603378829.5842578],
-                ["CREATED", 1603378829.5842578]
+                ["CREATED", 1603378829.5842578],
             ],
             "stacktrace": None,
         },
@@ -639,7 +639,7 @@ REST_ADAPTER_START_RESPONSE = ProcedureSummary(
     history={
         "process_states": [
             ["CREATED", 1603378829.5842578],
-            ["RUNNING", 1603378900.5969338]
+            ["RUNNING", 1603378900.5969338],
         ],
         "stacktrace": None,
     },
@@ -661,7 +661,7 @@ REST_ADAPTER_LIST_RESPONSE_FOR_STOP = [
         history={
             "process_states": [
                 ["CREATED", 1603723668.9510045],
-                ["RUNNING", 1603723677.0478802]
+                ["RUNNING", 1603723677.0478802],
             ],
             "stacktrace": None,
         },
@@ -684,7 +684,7 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
         history={
             "process_states": [
                 ["CREATED", 1603723668.9510045],
-                ["RUNNING", 1603723677.0478802]
+                ["RUNNING", 1603723677.0478802],
             ],
             "stacktrace": None,
         },
@@ -704,7 +704,7 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
         history={
             "process_states": [
                 ["CREATED", 1603723668.9510045],
-                ["RUNNING", 1603723677.0478802]
+                ["RUNNING", 1603723677.0478802],
             ],
             "stacktrace": None,
         },
@@ -732,7 +732,7 @@ REST_ADAPTER_LIST_RESPONSE_FOR_DESCRIBE = [
             "process_states": [
                 ["CREATED", 1603723668.9510045],
                 ["RUNNING", 1603723678.0546224],
-                ["COMPLETED", 1603723682.0246627]
+                ["COMPLETED", 1603723682.0246627],
             ],
             "stacktrace": None,
         },
