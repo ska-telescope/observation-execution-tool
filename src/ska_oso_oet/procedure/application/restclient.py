@@ -249,7 +249,7 @@ class RestClientUI:
                 p.id,
                 p.script["script_uri"],
                 datetime.datetime.fromtimestamp(
-                    p.history["process_states"]["CREATED"], tz=datetime.timezone.utc
+                    p.history["process_states"][0][1], tz=datetime.timezone.utc
                 ).strftime("%Y-%m-%d %H:%M:%S"),
                 p.state,
             )
@@ -281,9 +281,9 @@ class RestClientUI:
         table_rows_states = [
             (
                 datetime.datetime.fromtimestamp(
-                    procedure[0].history["process_states"][s], tz=datetime.timezone.utc
+                    s[1], tz=datetime.timezone.utc
                 ).strftime("%Y-%m-%d %H:%M:%S.%f"),
-                s,
+                s[0],
             )
             for s in procedure[0].history["process_states"]
         ]

@@ -39,10 +39,10 @@ CREATE_PROCESS_RESPONSE = {
         },
         "history": {
             "stacktrace": None,
-            "process_states": {
-                "CREATING": 1601303225.8700714,
-                "CREATED": 1601303225.8702714,
-            },
+            "process_states": [
+                ["CREATING", 1601303225.8700710],
+                ["CREATED", 1601303225.8702714]
+            ],
         },
         "state": "CREATED",
         "uri": "http://localhost:5000/api/v1.0/procedures/2",
@@ -70,11 +70,11 @@ LIST_PROCEDURES_POSITIVE_RESPONSE = {
             },
             "history": {
                 "stacktrace": None,
-                "process_states": {
-                    "CREATING": 1601303225.8232567,
-                    "CREATED": 1601303225.8234567,
-                    "RUNNING": 1601303225.8702714,
-                },
+                "process_states": [
+                    ["CREATING", 1601303225.8232567],
+                    ["CREATED", 1601303225.8234567],
+                    ["RUNNING", 1601303225.8702714]
+                ],
             },
             "state": "RUNNING",
             "uri": "http://localhost:5000/api/v1.0/procedures/1",
@@ -100,11 +100,11 @@ PROCEDURE_POSITIVE_RESPONSE = {
         },
         "history": {
             "stacktrace": None,
-            "process_states": {
-                "CREATING": 1601303225.8232567,
-                "CREATED": 1601303225.8234567,
-                "RUNNING": 1601303225.8702714,
-            },
+            "process_states": [
+                ["CREATING", 1601303225.8232567],
+                ["CREATED", 1601303225.8234567],
+                ["RUNNING", 1601303225.8702714]
+            ],
         },
         "state": "RUNNING",
         "uri": "http://localhost:5000/api/v1.0/procedures/1",
@@ -129,11 +129,11 @@ START_PROCESS_RESPONSE = {
         },
         "history": {
             "stacktrace": None,
-            "process_states": {
-                "CREATING": 1601303225.8232567,
-                "CREATED": 1601303225.8234567,
-                "RUNNING": 1601303225.8702714,
-            },
+            "process_states": [
+                ["CREATING", 1601303225.8232567],
+                ["CREATED", 1601303225.8234567],
+                ["RUNNING", 1601303225.8702714]
+            ],
         },
         "state": "RUNNING",
         "uri": "http://localhost:5000/api/v1.0/procedures/1",
@@ -472,10 +472,10 @@ REST_ADAPTER_CREATE_RESPONSE = ProcedureSummary(
         "script_uri": "file:///app/scripts/allocate.py",
     },
     history={
-        "process_states": {
-            "CREATING": 1603381492.3060987,
-            "CREATED": 1603381492.3060987,
-        },
+        "process_states": [
+            ["CREATING", 1603381492.3060987],
+            ["CREATED", 1603381492.3060987]
+        ],
         "stacktrace": None,
     },
     state="CREATED",
@@ -497,10 +497,10 @@ REST_ADAPTER_CREATE_RESPONSE_WITH_GIT_ARGS = ProcedureSummary(
         },
     },
     history={
-        "process_states": {
-            "CREATING": 1603381492.3060987,
-            "CREATED": 1603381492.3060987,
-        },
+        "process_states": [
+            ["CREATING", 1603381492.3060987],
+            ["CREATED", 1603381492.3060987]
+        ],
         "stacktrace": None,
     },
     state="CREATED",
@@ -524,10 +524,10 @@ REST_ADAPTER_LIST_RESPONSE = [
             },
         },
         history={
-            "process_states": {
-                "CREATING": 1603378829.5842578,
-                "CREATED": 1603378829.5842578,
-            },
+            "process_states": [
+                ["CREATING", 1603378829.5842578],
+                ["CREATED", 1603378829.5842578]
+            ],
             "stacktrace": None,
         },
         state="CREATED",
@@ -549,10 +549,10 @@ REST_ADAPTER_LIST_RESPONSE = [
             },
         },
         history={
-            "process_states": {
-                "CREATING": 1603379539.5662398,
-                "CREATED": 1603379539.5662398,
-            },
+            "process_states": [
+                ["CREATING", 1603379539.5662398],
+                ["CREATED", 1603379539.5662398]
+            ],
             "stacktrace": None,
         },
         state="CREATED",
@@ -572,11 +572,11 @@ REST_ADAPTER_LIST_RESPONSE_WITH_STACKTRACE = [
             "script_type": "filesystem",
         },
         history={
-            "process_states": {
-                "CREATED": 1603801915.4125392,
-                "FAILED": 1603801921.3564265,
-                "RUNNING": 1603801921.3464086,
-            },
+            "process_states": [
+                ["CREATED", 1603801915.4125392],
+                ["FAILED", 1603801921.3564265],
+                ["RUNNING", 1603801921.3464086]
+            ],
             "stacktrace": """Traceback (most recent call last):
   File "/app/ska_oso_oet/procedure/domain.py", line 132, in run
     self.user_module.main(*args, **kwargs)
@@ -615,10 +615,10 @@ REST_ADAPTER_LIST_RESPONSE_WITH_GIT_ARGS = [
             },
         },
         history={
-            "process_states": {
-                "CREATING": 1603378829.5842578,
-                "CREATED": 1603378829.5842578,
-            },
+            "process_states": [
+                ["CREATING", 1603378829.5842578],
+                ["CREATED", 1603378829.5842578]
+            ],
             "stacktrace": None,
         },
         state="CREATED",
@@ -637,10 +637,10 @@ REST_ADAPTER_START_RESPONSE = ProcedureSummary(
         "script_type": "filesystem",
     },
     history={
-        "process_states": {
-            "CREATED": 1603378829.5842578,
-            "RUNNING": 1603378900.5969338,
-        },
+        "process_states": [
+            ["CREATED", 1603378829.5842578],
+            ["RUNNING", 1603378900.5969338]
+        ],
         "stacktrace": None,
     },
     state="RUNNING",
@@ -659,10 +659,10 @@ REST_ADAPTER_LIST_RESPONSE_FOR_STOP = [
             "script_type": "filesystem",
         },
         history={
-            "process_states": {
-                "CREATED": 1603723668.9510045,
-                "RUNNING": 1603723677.0478802,
-            },
+            "process_states": [
+                ["CREATED", 1603723668.9510045],
+                ["RUNNING", 1603723677.0478802]
+            ],
             "stacktrace": None,
         },
         state="RUNNING",
@@ -682,10 +682,10 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
             "script_type": "filesystem",
         },
         history={
-            "process_states": {
-                "CREATED": 1603723668.9510045,
-                "RUNNING": 1603723677.0478802,
-            },
+            "process_states": [
+                ["CREATED", 1603723668.9510045],
+                ["RUNNING", 1603723677.0478802]
+            ],
             "stacktrace": None,
         },
         state="RUNNING",
@@ -702,10 +702,10 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
             "script_type": "filesystem",
         },
         history={
-            "process_states": {
-                "CREATED": 1603723668.9510045,
-                "RUNNING": 1603723677.0478802,
-            },
+            "process_states": [
+                ["CREATED", 1603723668.9510045],
+                ["RUNNING", 1603723677.0478802]
+            ],
             "stacktrace": None,
         },
         state="RUNNING",
@@ -729,11 +729,11 @@ REST_ADAPTER_LIST_RESPONSE_FOR_DESCRIBE = [
             "script_type": "filesystem",
         },
         history={
-            "process_states": {
-                "COMPLETED": 1603723682.0246627,
-                "CREATED": 1603723668.9510045,
-                "RUNNING": 1603723677.0478802,
-            },
+            "process_states": [
+                ["CREATED", 1603723668.9510045],
+                ["RUNNING", 1603723678.0546224],
+                ["COMPLETED", 1603723682.0246627]
+            ],
             "stacktrace": None,
         },
         state="COMPLETED",
