@@ -8,7 +8,6 @@ import copy
 import threading
 import time
 import types
-from collections import OrderedDict
 from http import HTTPStatus
 from unittest import mock
 
@@ -39,15 +38,19 @@ CREATE_JSON = dict(
 CREATE_SUMMARY = ProcedureSummary(
     id=1,
     script=domain.FileSystemScript("test:///test.py"),
-    script_args=[domain.ArgCapture(fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1)],
+    script_args=[
+        domain.ArgCapture(
+            fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
+        )
+    ],
     history=domain.ProcedureHistory(
         process_states=[
             (domain.ProcedureState.CREATING, 1.0),  # process starting
-            (domain.ProcedureState.IDLE, 2.0),      # process created
-            (domain.ProcedureState.LOADING, 3.0),   # user script loading
-            (domain.ProcedureState.IDLE, 4.0),      # user script loaded
-            (domain.ProcedureState.RUNNING, 5.0),   # init called
-            (domain.ProcedureState.IDLE, 6.0)       # init complete
+            (domain.ProcedureState.IDLE, 2.0),  # process created
+            (domain.ProcedureState.LOADING, 3.0),  # user script loading
+            (domain.ProcedureState.IDLE, 4.0),  # user script loaded
+            (domain.ProcedureState.RUNNING, 5.0),  # init called
+            (domain.ProcedureState.IDLE, 6.0),  # init complete
         ],
         stacktrace=None,
     ),
@@ -71,15 +74,19 @@ CREATE_GIT_SUMMARY = ProcedureSummary(
         "test:///test.py",
         git_args=domain.GitArgs(git_repo="http://foo.git", git_branch="main"),
     ),
-    script_args=[domain.ArgCapture(fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1)],
+    script_args=[
+        domain.ArgCapture(
+            fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
+        )
+    ],
     history=domain.ProcedureHistory(
         process_states=[
             (domain.ProcedureState.CREATING, 1.0),  # process starting
-            (domain.ProcedureState.IDLE, 2.0),      # process created
-            (domain.ProcedureState.LOADING, 3.0),   # user script loading
-            (domain.ProcedureState.IDLE, 4.0),      # user script loaded
-            (domain.ProcedureState.RUNNING, 5.0),   # init called
-            (domain.ProcedureState.IDLE, 6.0)       # init complete
+            (domain.ProcedureState.IDLE, 2.0),  # process created
+            (domain.ProcedureState.LOADING, 3.0),  # user script loading
+            (domain.ProcedureState.IDLE, 4.0),  # user script loaded
+            (domain.ProcedureState.RUNNING, 5.0),  # init called
+            (domain.ProcedureState.IDLE, 6.0),  # init complete
         ],
         stacktrace=None,
     ),
@@ -99,17 +106,23 @@ RUN_JSON = dict(
 RUN_SUMMARY = ProcedureSummary(
     id=1,
     script=domain.FileSystemScript("test:///test.py"),
-    script_args=[domain.ArgCapture(fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1),
-                 domain.ArgCapture(fn="main", fn_args=domain.ProcedureInput(4, 5, 6, kw3="c", kw4="d"), time=1)],
+    script_args=[
+        domain.ArgCapture(
+            fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
+        ),
+        domain.ArgCapture(
+            fn="main", fn_args=domain.ProcedureInput(4, 5, 6, kw3="c", kw4="d"), time=1
+        ),
+    ],
     history=domain.ProcedureHistory(
         process_states=[
             (domain.ProcedureState.CREATING, 1.0),  # process starting
-            (domain.ProcedureState.IDLE, 2.0),      # process created
-            (domain.ProcedureState.LOADING, 3.0),   # user script loading
-            (domain.ProcedureState.IDLE, 4.0),      # user script loaded
-            (domain.ProcedureState.RUNNING, 5.0),   # init called
-            (domain.ProcedureState.IDLE, 6.0),      # init complete
-            (domain.ProcedureState.RUNNING, 7.0),   # main called
+            (domain.ProcedureState.IDLE, 2.0),  # process created
+            (domain.ProcedureState.LOADING, 3.0),  # user script loading
+            (domain.ProcedureState.IDLE, 4.0),  # user script loaded
+            (domain.ProcedureState.RUNNING, 5.0),  # init called
+            (domain.ProcedureState.IDLE, 6.0),  # init complete
+            (domain.ProcedureState.RUNNING, 7.0),  # main called
         ],
         stacktrace=None,
     ),
@@ -441,7 +454,7 @@ def test_post_to_endpoint_sends_init_arguments(client):
 
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
-        script=domain.FileSystemScript(CREATE_SUMMARY.script.script_uri),
+        script=CREATE_SUMMARY.script,
         init_args=CREATE_SUMMARY.script_args[0].fn_args,
     )
     assert helper.messages[0][1]["cmd"] == expected_cmd
@@ -546,7 +559,9 @@ def test_put_procedure_calls_run_on_execution_service(client):
 
     # verify correct procedure was started
     expected_cmd = StartProcessCommand(
-        process_uid=RUN_SUMMARY.id, fn_name="main", run_args=RUN_SUMMARY.script_args[1].fn_args
+        process_uid=RUN_SUMMARY.id,
+        fn_name="main",
+        run_args=RUN_SUMMARY.script_args[1].fn_args,
     )
     assert helper.messages[2][1]["cmd"] == expected_cmd
 

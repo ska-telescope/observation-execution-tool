@@ -5,13 +5,13 @@ Unit tests for the ska_oso_oet.procedure.domain module.
 """
 import multiprocessing
 import operator
+import time
 import uuid
 from multiprocessing import Manager
-from unittest.mock import MagicMock, patch, call
 from typing import List
+from unittest.mock import MagicMock, call, patch
 
 import pytest
-import time
 
 import ska_oso_oet.mptools as mptools
 from ska_oso_oet.procedure.domain import (
@@ -19,12 +19,11 @@ from ska_oso_oet.procedure.domain import (
     ArgCapture,
     FileSystemScript,
     GitArgs,
-    GitScript,
     ProcedureHistory,
     ProcedureInput,
-    ProcedureSummary,
     ProcedureState,
-    ProcessManager
+    ProcedureSummary,
+    ProcessManager,
 )
 
 
@@ -44,7 +43,8 @@ def barrier_script(tmpdir):
     Pytest fixture to return a path to a script that sets an event
     """
     script_path = tmpdir.join("script.py")
-    script_path.write("""
+    script_path.write(
+        """
 INIT_RUNNING = None
 MAIN_RUNNING = None
 RESUME = None
@@ -59,7 +59,8 @@ def init(evt1, evt2, evt3):
 def main():
     MAIN_RUNNING.wait()
     RESUME.wait()
-""")
+"""
+    )
     return FileSystemScript(f"file://{str(script_path)}")
 
 
@@ -69,12 +70,14 @@ def init_hang_script(tmpdir):
     Pytest fixture to return a path to a script that sets an event
     """
     script_path = tmpdir.join("script.py")
-    script_path.write("""
+    script_path.write(
+        """
 def init(init_running):
     init_running.wait()
     while True:
         pass
-""")
+"""
+    )
     return FileSystemScript(f"file://{str(script_path)}")
 
 
@@ -84,7 +87,8 @@ def main_hang_script(tmpdir):
     Pytest fixture to return a path to a script that sets an event
     """
     script_path = tmpdir.join("script.py")
-    script_path.write("""
+    script_path.write(
+        """
 MAIN_RUNNING = None
 
 def init(main_running):
@@ -95,7 +99,8 @@ def main():
     MAIN_RUNNING.wait()
     while True:
         pass
-""")
+"""
+    )
     return FileSystemScript(f"file://{str(script_path)}")
 
 
@@ -203,7 +208,9 @@ class TestGitArgs:
         expected if not provided.
         """
         git_args = GitArgs()
-        assert git_args.git_repo == "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
+        assert (
+            git_args.git_repo == "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
+        )
         assert git_args.git_branch == "master"
         assert git_args.git_commit is None
 
@@ -265,10 +272,12 @@ def wait_for_empty_message_queue(manager, timeout=1.0, tick=0.01):
         sleep_secs = mptools._sleep_secs(tick, deadline)
 
 
-def wait_for_state(manager: ProcessManager, pid: int, state: ProcedureState, timeout=1.0, tick=0.01):
+def wait_for_state(
+    manager: ProcessManager, pid: int, state: ProcedureState, timeout=1.0, tick=0.01
+):
     deadline = time.time() + timeout
     sleep_secs = tick
-    while manager.states.get(pid, None)!= state and sleep_secs > 0:
+    while manager.states.get(pid, None) != state and sleep_secs > 0:
         time.sleep(sleep_secs)
         sleep_secs = mptools._sleep_secs(tick, deadline)
 
@@ -276,10 +285,15 @@ def wait_for_state(manager: ProcessManager, pid: int, state: ProcedureState, tim
 class TestProcessManagerScriptWorkerIntegration:
     @staticmethod
     def assert_states(history: ProcedureHistory, expected: List[ProcedureState]):
-        states = [state for state, _ in sorted(history.process_states, key=operator.itemgetter(1))]
+        states = [
+            state
+            for state, _ in sorted(history.process_states, key=operator.itemgetter(1))
+        ]
         assert states == expected
 
-    def test_happy_path_script_execution_lifecycle_states(self, manager: ProcessManager, barrier_script):
+    def test_happy_path_script_execution_lifecycle_states(
+        self, manager: ProcessManager, barrier_script
+    ):
         """
         Verify that a new ScriptWorker sends the appropriate lifecycle states.
 
@@ -297,10 +311,10 @@ class TestProcessManagerScriptWorkerIntegration:
         wait_for_state(manager, pid, ProcedureState.RUNNING)
         expected = [
             ProcedureState.CREATING,  # ScriptWorker initialising
-            ProcedureState.IDLE,      # ScriptWorker ready
-            ProcedureState.LOADING,   # load user module
-            ProcedureState.IDLE,      # user module loaded
-            ProcedureState.RUNNING,   # init present and called
+            ProcedureState.IDLE,  # ScriptWorker ready
+            ProcedureState.LOADING,  # load user module
+            ProcedureState.IDLE,  # user module loaded
+            ProcedureState.RUNNING,  # init present and called
         ]
         history = manager.history[pid]
         self.assert_states(history, expected)
@@ -323,30 +337,34 @@ class TestProcessManagerScriptWorkerIntegration:
         resume.wait(0.1)
         resume.reset()  # reset to pause main method call
         wait_for_state(manager, pid, ProcedureState.COMPLETED)
-        expected.extend([
-            ProcedureState.IDLE,      # main complete
-            ProcedureState.COMPLETED  # script complete
-        ])
+        expected.extend(
+            [
+                ProcedureState.IDLE,  # main complete
+                ProcedureState.COMPLETED,  # script complete
+            ]
+        )
         self.assert_states(history, expected)
 
-    def test_error_in_main_lifecycles_states(self, manager: ProcessManager, fail_script):
+    def test_error_in_main_lifecycles_states(
+        self, manager: ProcessManager, fail_script
+    ):
         pid = manager.create(fail_script, init_args=ProcedureInput())
         wait_for_state(manager, pid, ProcedureState.IDLE)
         history = manager.history[pid]
 
-        assert(history.stacktrace is None)
+        assert history.stacktrace is None
         random_exc_string = str(uuid.uuid4())
-        manager.run(pid, call='main', run_args=ProcedureInput(random_exc_string))
+        manager.run(pid, call="main", run_args=ProcedureInput(random_exc_string))
 
         wait_for_state(manager, pid, ProcedureState.FAILED)
         expected = [
             ProcedureState.CREATING,  # ScriptWorker initialising
-            ProcedureState.IDLE,      # ScriptWorker ready
-            ProcedureState.LOADING,   # load user module
-            ProcedureState.IDLE,      # user module loaded
+            ProcedureState.IDLE,  # ScriptWorker ready
+            ProcedureState.LOADING,  # load user module
+            ProcedureState.IDLE,  # user module loaded
             # fail script has no init so no RUNNING->IDLE expected
-            ProcedureState.RUNNING,   # main running
-            ProcedureState.FAILED     # exception raised
+            ProcedureState.RUNNING,  # main running
+            ProcedureState.FAILED,  # exception raised
         ]
         self.assert_states(history, expected)
 
@@ -354,7 +372,9 @@ class TestProcessManagerScriptWorkerIntegration:
         assert random_exc_string in history.stacktrace
 
     # @patch('ska_oso_oet.mptools.Proc.STARTUP_WAIT_SECS', new=300)
-    def test_stop_during_init_sets_lifecycle_state_to_stopped(self, manager, init_hang_script):
+    def test_stop_during_init_sets_lifecycle_state_to_stopped(
+        self, manager, init_hang_script
+    ):
         """
         Verify that procedure terminate changes to STOPPED
         when terminate() is called
@@ -371,16 +391,18 @@ class TestProcessManagerScriptWorkerIntegration:
 
         expected = [
             ProcedureState.CREATING,  # ScriptWorker initialising
-            ProcedureState.IDLE,      # ScriptWorker ready
-            ProcedureState.LOADING,   # load user module
-            ProcedureState.IDLE,      # user module loaded
-            ProcedureState.RUNNING,   # init running
-            ProcedureState.STOPPED    # init stopped
+            ProcedureState.IDLE,  # ScriptWorker ready
+            ProcedureState.LOADING,  # load user module
+            ProcedureState.IDLE,  # user module loaded
+            ProcedureState.RUNNING,  # init running
+            ProcedureState.STOPPED,  # init stopped
         ]
         wait_for_empty_message_queue(manager)
         self.assert_states(history, expected)
 
-    def test_stop_during_main_sets_lifecycle_state_to_stopped(self, manager, main_hang_script):
+    def test_stop_during_main_sets_lifecycle_state_to_stopped(
+        self, manager, main_hang_script
+    ):
         """
         Verify that procedure terminate changes to STOPPED
         when terminate() is called
@@ -390,7 +412,7 @@ class TestProcessManagerScriptWorkerIntegration:
 
         pid = manager.create(main_hang_script, init_args=init_args)
         wait_for_state(manager, pid, ProcedureState.IDLE)
-        manager.run(pid, call='main', run_args=ProcedureInput())
+        manager.run(pid, call="main", run_args=ProcedureInput())
         main_running.wait(0.5)
 
         history = manager.history[pid]
@@ -399,13 +421,13 @@ class TestProcessManagerScriptWorkerIntegration:
 
         expected = [
             ProcedureState.CREATING,  # ScriptWorker initialising
-            ProcedureState.IDLE,      # ScriptWorker ready
-            ProcedureState.LOADING,   # load user module
-            ProcedureState.IDLE,      # user module loaded
-            ProcedureState.RUNNING,   # init running
-            ProcedureState.IDLE,      # init complete
-            ProcedureState.RUNNING,   # main running
-            ProcedureState.STOPPED    # main stopped
+            ProcedureState.IDLE,  # ScriptWorker ready
+            ProcedureState.LOADING,  # load user module
+            ProcedureState.IDLE,  # user module loaded
+            ProcedureState.RUNNING,  # init running
+            ProcedureState.IDLE,  # init complete
+            ProcedureState.RUNNING,  # main running
+            ProcedureState.STOPPED,  # main stopped
         ]
         wait_for_empty_message_queue(manager)
         self.assert_states(history, expected)
@@ -452,7 +474,6 @@ class TestProcessManagerScriptWorkerIntegration:
         resume.wait(0.1)
         wait_for_state(manager, pid, ProcedureState.COMPLETED)
         assert manager.running is None
-
 
 
 # REDUNDANT
@@ -560,7 +581,7 @@ class TestProcessManager:
         fake_states = {
             10: ProcedureState.COMPLETED,
             20: ProcedureState.RUNNING,
-            30: ProcedureState.IDLE
+            30: ProcedureState.IDLE,
         }
         manager.states = fake_states
 
@@ -570,13 +591,15 @@ class TestProcessManager:
 
             actual = manager.summarise()
             assert actual == expected
-            method.assert_has_calls([call(pid) for pid in fake_states.keys()], any_order=True)
+            method.assert_has_calls(
+                [call(pid) for pid in fake_states.keys()], any_order=True
+            )
 
     def test_summarise_fails_when_invalid_pid_requested(self, manager):
         fake_states = {
             10: ProcedureState.COMPLETED,
             20: ProcedureState.RUNNING,
-            30: ProcedureState.IDLE
+            30: ProcedureState.IDLE,
         }
         with patch.object(manager, "states", new=fake_states):
             with pytest.raises(ValueError):
@@ -594,9 +617,9 @@ class TestProcessManager:
                 (ProcedureState.IDLE, t),
                 (ProcedureState.RUNNING, t),
                 (ProcedureState.IDLE, t),
-                (ProcedureState.COMPLETED, t)
+                (ProcedureState.COMPLETED, t),
             ],
-            stacktrace=None
+            stacktrace=None,
         )
 
         with patch("time.time", MagicMock(return_value=t)):
@@ -609,10 +632,12 @@ class TestProcessManager:
         expected = ProcedureSummary(
             id=pid,
             script=script,
-            script_args=[ArgCapture(fn="init", fn_args=init_args, time=t),
-                         ArgCapture(fn="main", fn_args=run_args, time=t)],
+            script_args=[
+                ArgCapture(fn="init", fn_args=init_args, time=t),
+                ArgCapture(fn="main", fn_args=run_args, time=t),
+            ],
             history=history,
-            state=ProcedureState.COMPLETED
+            state=ProcedureState.COMPLETED,
         )
 
         summary = manager._summarise(pid)
@@ -637,15 +662,15 @@ class TestProcessManager:
         """
         Verify that ProcessManager.procedures references the processes it creates
         """
-        for i in range(HISTORY_MAX_LENGTH):
+        for _ in range(HISTORY_MAX_LENGTH):
             len_before = len(manager.procedures)
             pid = manager.create(script, init_args=ProcedureInput())
             assert len(manager.procedures) == len_before + 1
             assert pid in manager.procedures
 
-    def test_create_removes_oldest_deleteable_state(self, manager, script):
+    def test_create_removes_oldest_deletable_state(self, manager, script):
         """
-        Verify that ProcessManager removes the oldest deleteable state when
+        Verify that ProcessManager removes the oldest deletable state when
         the maximum number of saved procedures is reached.
         """
         limit = 3
@@ -709,7 +734,7 @@ class TestProcessManager:
     def test_cleanup_on_failed(self, manager, fail_script):
         pid = manager.create(fail_script, init_args=ProcedureInput())
         wait_for_state(manager, pid, ProcedureState.IDLE)
-        manager.run(pid, call="main", run_args=ProcedureInput('foo'))
+        manager.run(pid, call="main", run_args=ProcedureInput("foo"))
         wait_for_state(manager, pid, ProcedureState.FAILED)
 
         # TODO how can we synchronise with the cleanup function running in another thread?
@@ -728,12 +753,12 @@ class TestProcessManager:
         manager.states[1] = ProcedureState.IDLE
         manager.script_queues[1] = q
         manager.script_args[1] = []
-        method = 'foo'
-        run_args = ProcedureInput('a', 'b', kw1='c', kw2='d')
+        method = "foo"
+        run_args = ProcedureInput("a", "b", kw1="c", kw2="d")
 
         manager.run(1, call=method, run_args=run_args)
         msg = q.safe_get(timeout=0.1)
-        assert msg.msg_type == 'RUN'
+        assert msg.msg_type == "RUN"
         assert msg.msg == (method, run_args)
 
     def test_run_fails_for_loading_process(self, manager, script):
@@ -741,7 +766,7 @@ class TestProcessManager:
         Verify that an exception is raised if requesting run() for a procedure
         that has not been loaded or is still loading
         """
-        with patch('ska_oso_oet.procedure.domain.ModuleFactory.get_module') as fn:
+        with patch("ska_oso_oet.procedure.domain.ModuleFactory.get_module") as fn:
             fn.side_effect = lambda _: time.sleep(3)
             pid = manager.create(script, init_args=ProcedureInput())
             wait_for_state(manager, pid, ProcedureState.LOADING)
@@ -850,7 +875,6 @@ class TestProcessManager:
         assert len(manager.script_args[pid]) == 2
         assert manager.script_args[pid][1] == expected
 
-
     # redundant - already have tests that exercise init arg capture, plus this won't work
     # until GitScripts are handled are user module is loaded on worker creation
     # def test_process_manager_create_captures_git_arguments(self, manager, script):
@@ -863,6 +887,7 @@ class TestProcessManager:
     #     created = manager.procedures[pid]
     #     assert isinstance(created.script, GitScript)
     #     assert created.script.git_args == expected
+
 
 # REDUNDANT
 # def test_process_manager_run_changes_state_of_procedure_to_running(
@@ -1007,7 +1032,8 @@ class TestProcessManager:
 
 
 def test_scan_id_persists_between_executions(
-    manager, script_that_increments_and_returns_scan_id,
+    manager,
+    script_that_increments_and_returns_scan_id,
 ):
     """
     The scan ID should be shared and persisted between process executions.

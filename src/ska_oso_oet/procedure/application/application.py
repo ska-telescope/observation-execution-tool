@@ -150,7 +150,9 @@ class ScriptExecutionService:
 
         # start the second script
         run_cmd = StartProcessCommand(
-            process_uid=procedure_summary.id, fn_name="main", run_args=domain.ProcedureInput()
+            process_uid=procedure_summary.id,
+            fn_name="main",
+            run_args=domain.ProcedureInput(),
         )
         summary = self.start(run_cmd)
         return [summary]

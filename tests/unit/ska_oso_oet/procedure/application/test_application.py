@@ -4,10 +4,11 @@
 Unit tests for the ska_oso_oet.procedure.application module.
 """
 
-import unittest.mock as mock
-from unittest.mock import patch, MagicMock
-import pytest
 import time
+import unittest.mock as mock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from ska_oso_oet.procedure.application.application import (
     PrepareProcessCommand,
@@ -51,20 +52,23 @@ def summary():
     summary = ProcedureSummary(
         id=123,
         script=FileSystemScript("test://test.py"),
-        script_args=[ArgCapture(fn="init", fn_args=init_args, time=5),
-                     ArgCapture(fn="main", fn_args=run_args, time=8)],
-        history=ProcedureHistory([
-            (ProcedureState.CREATING, 1),
-            (ProcedureState.IDLE, 2),
-            (ProcedureState.LOADING, 3),
-            (ProcedureState.IDLE, 4),
-            (ProcedureState.RUNNING, 5),
-            (ProcedureState.IDLE, 6),
-            (ProcedureState.COMPLETED, 7)
+        script_args=[
+            ArgCapture(fn="init", fn_args=init_args, time=5),
+            ArgCapture(fn="main", fn_args=run_args, time=8),
         ],
-            stacktrace=None
+        history=ProcedureHistory(
+            [
+                (ProcedureState.CREATING, 1),
+                (ProcedureState.IDLE, 2),
+                (ProcedureState.LOADING, 3),
+                (ProcedureState.IDLE, 4),
+                (ProcedureState.RUNNING, 5),
+                (ProcedureState.IDLE, 6),
+                (ProcedureState.COMPLETED, 7),
+            ],
+            stacktrace=None,
         ),
-        state=ProcedureState.COMPLETED
+        state=ProcedureState.COMPLETED,
     )
     return summary
 
@@ -84,14 +88,16 @@ def create_empty_procedure_summary(
     return ProcedureSummary(
         id=procedure_id,
         script=FileSystemScript(script_uri),
-        script_args=[ArgCapture(fn="init", fn_args=ProcedureInput(), time=time.time()),
-                     ArgCapture(fn="main", fn_args=ProcedureInput(), time=time.time())],
+        script_args=[
+            ArgCapture(fn="init", fn_args=ProcedureInput(), time=time.time()),
+            ArgCapture(fn="main", fn_args=ProcedureInput(), time=time.time()),
+        ],
         history=history,
         state=ProcedureState.IDLE,
     )
 
 
-def test_ses_create_summary_calls_service_correctly(summary):
+def test_ses_create_summary_calls_service_correctly():
     """
     Verify that the private method _create_summary calls the
     ProcessManager.summarise function correctly
@@ -135,7 +141,9 @@ def test_ses_start_calls_process_manager_function_and_returns_summary(summary):
     object methods for starting process execution and returns the expected
     summary object
     """
-    cmd = StartProcessCommand(process_uid=123, fn_name="main", run_args=ProcedureInput(1,2,3))
+    cmd = StartProcessCommand(
+        process_uid=123, fn_name="main", run_args=ProcedureInput(1, 2, 3)
+    )
 
     with patch("ska_oso_oet.procedure.domain.ProcessManager") as mock_pm:
         # get the mock ProcessManager instance
@@ -147,8 +155,11 @@ def test_ses_start_calls_process_manager_function_and_returns_summary(summary):
 
         # service should call run() and return the summary for the executed
         # procedure
-        mgr.run.assert_called_once_with(123, call="main", run_args=ProcedureInput(1, 2, 3))
+        mgr.run.assert_called_once_with(
+            123, call="main", run_args=ProcedureInput(1, 2, 3)
+        )
         assert returned == summary
+
 
 # REDUNDANT - covered in ProcessManager tests
 # def test_ses_summarise_returns_summaries_for_requested_pids():
@@ -251,7 +262,10 @@ def test_ses_stop_calls_process_manager_function(abort_script):
 
     # Create Procedure representing the script to be stopped
     script_to_stop = FileSystemScript("test://a")
-    stop_args = [ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1), ArgCapture(fn="main", fn_args=ProcedureInput(), time=2)]
+    stop_args = [
+        ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1),
+        ArgCapture(fn="main", fn_args=ProcedureInput(), time=2),
+    ]
     running_summary = [
         ProcedureSummary(
             id=running_pid,
@@ -263,7 +277,10 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     ]
 
     abort_script_o = FileSystemScript(abort_script)
-    abort_script_args = [ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1), ArgCapture(fn="main", fn_args=ProcedureInput(), time=2)]
+    abort_script_args = [
+        ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1),
+        ArgCapture(fn="main", fn_args=ProcedureInput(), time=2),
+    ]
 
     # When SES.stop() is called, the SES should stop the current process,
     # prepare a process for the abort script, then set the abort process
@@ -332,7 +349,10 @@ def test_ses_stop_calls_process_manager_function_with_no_script_execution(abort_
     """
     # PID of running process
     running_pid = 123
-    running_args = [ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=1), time=1), ArgCapture(fn="main", fn_args=ProcedureInput(), time=2)]
+    running_args = [
+        ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=1), time=1),
+        ArgCapture(fn="main", fn_args=ProcedureInput(), time=2),
+    ]
     running_summary = [
         ProcedureSummary(
             id=123,
@@ -354,7 +374,7 @@ def test_ses_stop_calls_process_manager_function_with_no_script_execution(abort_
         # Summarise to be called once when getting details for the running script
         mgr.summarise.side_effect = [running_summary]
         mgr.create = MagicMock(return_value=12345)
-        mgr.stop = MagicMock(return_value='foo')
+        mgr.stop = MagicMock(return_value="foo")
 
         service = ScriptExecutionService(abort_script_uri=abort_script)
         returned = service.stop(cmd)
@@ -373,7 +393,9 @@ def test_ses_get_subarray_id_for_requested_pid():
     subarray_id = 123
     process_pid = 456
 
-    init_args = ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1)
+    init_args = ArgCapture(
+        fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1
+    )
     process_summary = ProcedureSummary(
         id=process_pid,
         script=FileSystemScript("test://a"),

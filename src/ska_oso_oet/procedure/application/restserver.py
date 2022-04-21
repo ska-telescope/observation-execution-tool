@@ -351,7 +351,9 @@ def update_procedure(procedure_id: int):
         run_args = run_dict.get("args", [])
         run_kwargs = run_dict.get("kwargs", {})
         procedure_input = domain.ProcedureInput(*run_args, **run_kwargs)
-        cmd = application.StartProcessCommand(procedure_id, fn_name="main", run_args=procedure_input)
+        cmd = application.StartProcessCommand(
+            procedure_id, fn_name="main", run_args=procedure_input
+        )
 
         summary = call_and_respond(
             topics.request.procedure.start, topics.procedure.lifecycle.started, cmd=cmd
@@ -384,7 +386,9 @@ def make_public_summary(procedure: domain.ProcedureSummary):
         script["git_args"] = procedure.script.git_args
 
     procedure_history = {
-        "process_states": [(state[0].name, state[1]) for state in procedure.history.process_states],
+        "process_states": [
+            (state[0].name, state[1]) for state in procedure.history.process_states
+        ],
         "stacktrace": procedure.history.stacktrace,
     }
 
