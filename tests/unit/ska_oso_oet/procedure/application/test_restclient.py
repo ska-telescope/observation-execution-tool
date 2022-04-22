@@ -40,11 +40,15 @@ CREATE_PROCESS_RESPONSE = {
         "history": {
             "stacktrace": None,
             "process_states": [
-                ["CREATING", 1601303225.8700710],
-                ["CREATED", 1601303225.8702714],
+                ["CREATING", 1601303225.8232567],
+                ["IDLE", 1601303225.8234567],
+                ["LOADING", 1601303225.8234767],
+                ["IDLE", 1601303225.8234796],
+                ["RUNNING", 1601303225.8234824],
+                ["READY", 1601303225.8234867],
             ],
         },
-        "state": "CREATED",
+        "state": "READY",
         "uri": "http://localhost:5000/api/v1.0/procedures/2",
     }
 }
@@ -72,7 +76,11 @@ LIST_PROCEDURES_POSITIVE_RESPONSE = {
                 "stacktrace": None,
                 "process_states": [
                     ["CREATING", 1601303225.8232567],
-                    ["CREATED", 1601303225.8234567],
+                    ["IDLE", 1601303225.8234567],
+                    ["LOADING", 1601303225.8234767],
+                    ["IDLE", 1601303225.8234796],
+                    ["RUNNING", 1601303225.8234824],
+                    ["READY", 1601303225.8234867],
                     ["RUNNING", 1601303225.8702714],
                 ],
             },
@@ -131,7 +139,11 @@ START_PROCESS_RESPONSE = {
             "stacktrace": None,
             "process_states": [
                 ["CREATING", 1601303225.8232567],
-                ["CREATED", 1601303225.8234567],
+                ["IDLE", 1601303225.8234567],
+                ["LOADING", 1601303225.8234767],
+                ["IDLE", 1601303225.8234796],
+                ["RUNNING", 1601303225.8234824],
+                ["READY", 1601303225.8234867],
                 ["RUNNING", 1601303225.8702714],
             ],
         },
@@ -474,11 +486,10 @@ REST_ADAPTER_CREATE_RESPONSE = ProcedureSummary(
     history={
         "process_states": [
             ["CREATING", 1603381492.3060987],
-            ["CREATED", 1603381492.3060987],
         ],
         "stacktrace": None,
     },
-    state="CREATED",
+    state="CREATING",
 )
 REST_ADAPTER_CREATE_RESPONSE_WITH_GIT_ARGS = ProcedureSummary(
     id=1,
@@ -499,11 +510,10 @@ REST_ADAPTER_CREATE_RESPONSE_WITH_GIT_ARGS = ProcedureSummary(
     history={
         "process_states": [
             ["CREATING", 1603381492.3060987],
-            ["CREATED", 1603381492.3060987],
         ],
         "stacktrace": None,
     },
-    state="CREATED",
+    state="CREATING",
 )
 
 REST_ADAPTER_LIST_RESPONSE = [
@@ -525,12 +535,16 @@ REST_ADAPTER_LIST_RESPONSE = [
         },
         history={
             "process_states": [
-                ["CREATING", 1603378829.5842578],
-                ["CREATED", 1603378829.5842578],
+                ["CREATING", 1601303225.8232567],
+                ["IDLE", 1601303225.8234567],
+                ["LOADING", 1601303225.8234767],
+                ["IDLE", 1601303225.8234796],
+                ["RUNNING", 1601303225.8234824],
+                ["READY", 1601303225.8234867],
             ],
             "stacktrace": None,
         },
-        state="CREATED",
+        state="READY",
     ),
     ProcedureSummary(
         id=2,
@@ -550,12 +564,16 @@ REST_ADAPTER_LIST_RESPONSE = [
         },
         history={
             "process_states": [
-                ["CREATING", 1603379539.5662398],
-                ["CREATED", 1603379539.5662398],
+                ["CREATING", 1601303225.8232567],
+                ["IDLE", 1601303225.8234567],
+                ["LOADING", 1601303225.8234767],
+                ["IDLE", 1601303225.8234796],
+                ["RUNNING", 1601303225.8234824],
+                ["READY", 1601303225.8234867],
             ],
             "stacktrace": None,
         },
-        state="CREATED",
+        state="READY",
     ),
 ]
 
@@ -573,9 +591,14 @@ REST_ADAPTER_LIST_RESPONSE_WITH_STACKTRACE = [
         },
         history={
             "process_states": [
-                ["CREATED", 1603801915.4125392],
-                ["FAILED", 1603801921.3564265],
-                ["RUNNING", 1603801921.3464086],
+                ["CREATING", 1601303225.8232567],
+                ["IDLE", 1601303225.8234567],
+                ["LOADING", 1601303225.8234767],
+                ["IDLE", 1601303225.8234796],
+                ["RUNNING", 1601303225.8234824],
+                ["READY", 1601303225.8234867],
+                ["RUNNING", 1601303225.8702714],
+                ["FAILED", 1601303225.8702714],
             ],
             "stacktrace": """Traceback (most recent call last):
   File "/app/ska_oso_oet/procedure/domain.py", line 132, in run
@@ -616,12 +639,16 @@ REST_ADAPTER_LIST_RESPONSE_WITH_GIT_ARGS = [
         },
         history={
             "process_states": [
-                ["CREATING", 1603378829.5842578],
-                ["CREATED", 1603378829.5842578],
+                ["CREATING", 1601303225.8232567],
+                ["IDLE", 1601303225.8234567],
+                ["LOADING", 1601303225.8234767],
+                ["IDLE", 1601303225.8234796],
+                ["RUNNING", 1601303225.8234824],
+                ["READY", 1601303225.8234867],
             ],
             "stacktrace": None,
         },
-        state="CREATED",
+        state="READY",
     ),
 ]
 
@@ -638,12 +665,16 @@ REST_ADAPTER_START_RESPONSE = ProcedureSummary(
     },
     history={
         "process_states": [
-            ["CREATED", 1603378829.5842578],
-            ["RUNNING", 1603378900.5969338],
+            ["CREATING", 1601303225.8232567],
+            ["IDLE", 1601303225.8234567],
+            ["LOADING", 1601303225.8234767],
+            ["IDLE", 1601303225.8234796],
+            ["RUNNING", 1601303225.8234824],
+            ["READY", 1601303225.8234867],
         ],
         "stacktrace": None,
     },
-    state="RUNNING",
+    state="READY",
 )
 
 REST_ADAPTER_LIST_RESPONSE_FOR_STOP = [
@@ -660,8 +691,13 @@ REST_ADAPTER_LIST_RESPONSE_FOR_STOP = [
         },
         history={
             "process_states": [
-                ["CREATED", 1603723668.9510045],
-                ["RUNNING", 1603723677.0478802],
+                ["CREATING", 1601303225.8232567],
+                ["IDLE", 1601303225.8234567],
+                ["LOADING", 1601303225.8234767],
+                ["IDLE", 1601303225.8234796],
+                ["RUNNING", 1601303225.8234824],
+                ["READY", 1601303225.8234867],
+                ["RUNNING", 1601303225.8702714],
             ],
             "stacktrace": None,
         },
@@ -683,8 +719,13 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
         },
         history={
             "process_states": [
-                ["CREATED", 1603723668.9510045],
-                ["RUNNING", 1603723677.0478802],
+                ["CREATING", 1601303225.8232567],
+                ["IDLE", 1601303225.8234567],
+                ["LOADING", 1601303225.8234767],
+                ["IDLE", 1601303225.8234796],
+                ["RUNNING", 1601303225.8234824],
+                ["READY", 1601303225.8234867],
+                ["RUNNING", 1601303225.8702714],
             ],
             "stacktrace": None,
         },
@@ -703,8 +744,13 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
         },
         history={
             "process_states": [
-                ["CREATED", 1603723668.9510045],
-                ["RUNNING", 1603723677.0478802],
+                ["CREATING", 1601303225.8232567],
+                ["IDLE", 1601303225.8234567],
+                ["LOADING", 1601303225.8234767],
+                ["IDLE", 1601303225.8234796],
+                ["RUNNING", 1601303225.8234824],
+                ["READY", 1601303225.8234867],
+                ["RUNNING", 1601303225.8702714],
             ],
             "stacktrace": None,
         },
@@ -730,9 +776,14 @@ REST_ADAPTER_LIST_RESPONSE_FOR_DESCRIBE = [
         },
         history={
             "process_states": [
-                ["CREATED", 1603723668.9510045],
-                ["RUNNING", 1603723678.0546224],
-                ["COMPLETED", 1603723682.0246627],
+                ["CREATING", 1601303225.8232567],
+                ["IDLE", 1601303225.8234567],
+                ["LOADING", 1601303225.8234767],
+                ["IDLE", 1601303225.8234796],
+                ["RUNNING", 1601303225.8234824],
+                ["READY", 1601303225.8234867],
+                ["RUNNING", 1601303225.8702714],
+                ["COMPLETED", 1601303225.8702714],
             ],
             "stacktrace": None,
         },
@@ -794,7 +845,7 @@ def test_restclientui_creates_a_valid_script(mock_create_fn, capsys):
     assert result[0]["id"] == str(1)
     assert result[0]["uri"] == "file:///app/scripts/allocate.py"
     assert result[0]["creation time"] == "2020-10-22 15:44:52"
-    assert result[0]["state"] == "CREATED"
+    assert result[0]["state"] == "CREATING"
 
 
 @mock.patch.object(RestAdapter, "create")
@@ -807,7 +858,7 @@ def test_restclientui_creates_a_valid_script_with_git_args(mock_create_fn, capsy
     assert result[0]["id"] == str(1)
     assert result[0]["uri"] == "git:///app/scripts/allocate.py"
     assert result[0]["creation time"] == "2020-10-22 15:44:52"
-    assert result[0]["state"] == "CREATED"
+    assert result[0]["state"] == "CREATING"
 
 
 @mock.patch.object(RestAdapter, "create")
@@ -863,8 +914,8 @@ def test_restclientui_start_output_when_given_no_pid(
     captured = capsys.readouterr()
     result = parse_rest_create_list_response(captured.out)
 
-    assert result[0]["state"] == "RUNNING"
-    mock_start_fn.assert_called_with(2, run_args=mock.ANY)
+    assert result[0]["state"] == "READY"
+    mock_start_fn.assert_called_with(2, run_args={"args": (), "kwargs": {}})
 
 
 @mock.patch.object(RestAdapter, "list")
@@ -883,9 +934,7 @@ def test_restclientui_start_output_when_last_created_script_has_failed(
 
 
 @mock.patch.object(RestAdapter, "start")
-@mock.patch.object(RestAdapter, "list")
-def test_restclientui_start_output_when_given_pid(mock_list_fn, mock_start_fn, capsys):
-    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE
+def test_restclientui_start_output_when_given_pid(mock_start_fn, capsys):
     mock_start_fn.return_value = REST_ADAPTER_START_RESPONSE
 
     fire.Fire(RestClientUI, ["start", "--pid=1", "--nolisten"])
@@ -893,8 +942,8 @@ def test_restclientui_start_output_when_given_pid(mock_list_fn, mock_start_fn, c
     result = parse_rest_create_list_response(captured.out)
 
     assert result[0]["id"] == str(1)
-    assert result[0]["state"] == "RUNNING"
-    mock_start_fn.assert_called_with(1, run_args=mock.ANY)
+    assert result[0]["state"] == "READY"
+    mock_start_fn.assert_called_with(1, run_args={"args": (), "kwargs": {}})
 
 
 @mock.patch.object(RestAdapter, "listen")
@@ -913,7 +962,9 @@ def test_restclientui_start_and_listen_output_with_event(
 
     assert "Script message: announced" in event
     assert processes[0]["id"] == str(1)
-    assert processes[0]["state"] == "RUNNING"
+    assert processes[0]["state"] == "READY"
+    mock_start_fn.assert_called_once_with(1, run_args={"args": (), "kwargs": {}})
+    mock_listen_fn.assert_called_once()
 
 
 @mock.patch.object(RestAdapter, "start")
@@ -1038,7 +1089,7 @@ def test_restclientui_describe_when_stacktrace_present(mock_list_fn, capsys):
     lines = captured.out.split("\n")
 
     assert "AttributeError" in captured.out
-    assert "FAILED" in lines[8]
+    assert "FAILED" in lines[13]
     mock_list_fn.assert_called_with(2)
 
 
@@ -1050,7 +1101,7 @@ def test_restclientui_describe_when_stacktrace_not_present(mock_list_fn, capsys)
     captured = capsys.readouterr()
     lines = captured.out.split("\n")
 
-    assert "COMPLETED" in lines[8]
+    assert "COMPLETED" in lines[13]
     mock_list_fn.assert_called_with(1)
     assert mock_list_fn.call_count == 2
 
@@ -1063,9 +1114,9 @@ def test_restclientui_describe_when_git_args_present(mock_list_fn, capsys):
     captured = capsys.readouterr()
     lines = captured.out.split("\n")
     assert "Repository" in captured.out
-    assert "http://foo.git" in lines[16]
-    assert "main" in lines[16]
-    assert "HEAD" in lines[16]
+    assert "http://foo.git" in lines[20]
+    assert "main" in lines[20]
+    assert "HEAD" in lines[20]
     mock_list_fn.assert_called_with(1)
 
 

@@ -624,6 +624,7 @@ class ProcessManager:
 
         stoppable_states = [
             ProcedureState.IDLE,
+            ProcedureState.READY,
             ProcedureState.RUNNING,
             ProcedureState.LOADING,
         ]
