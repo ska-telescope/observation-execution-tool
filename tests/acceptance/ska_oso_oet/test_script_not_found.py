@@ -13,13 +13,22 @@ def file_does_not_exist(file):  # pylint: disable=unused-argument
 
 @when(
     parsers.parse("the user runs oet create {file} command"),
-    target_fixture="response",
 )
 def run_create_command(file, exec_env):
-    response = exec_env.run_oet_command("create", file)
-    return response
+    exec_env.create(file)
 
 
-@then(parsers.parse("the OET returns an {error}"))
-def error_returned(response, error):
+@then(
+    parsers.parse(
+        "the script should be in state {state} after initialisation is finished"
+    )
+)
+def execution_ends_in_expected_state(state, exec_env):
+    final_state = exec_env.wait_for_state(state)
+    assert final_state == state
+
+
+@then(parsers.parse("oet describe should show stacktrace with the {error}"))
+def error_returned(error, exec_env):
+    response = exec_env.run_oet_command("describe")
     assert error in response

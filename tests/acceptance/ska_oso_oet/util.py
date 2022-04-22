@@ -55,20 +55,20 @@ class ScriptExecutionEnvironment:
         output = result.stdout.decode("utf-8")
         return output
 
-    def wait_for_script_to_complete(self, timeout: int = 360):
+    def wait_for_state(self, exp_state, timeout: int = 60):
         t = timeout
-        LOGGER.debug("Waiting for script to complete: %s", self.script_id)
+        LOGGER.debug("Waiting for state %s", exp_state)
         while t > 0:
             state = self.get_script_state()
-            if state != "RUNNING":
+            if state == exp_state:
                 return state
             time.sleep(1)
             t -= 1
 
         state = self.get_script_state()
         msg = (
-            f"Script execution timeout (> {timeout} seconds), script final"
-            f" state {state}"
+            f"Timeout (> {timeout} seconds) waiting for state {exp_state}, "
+            f"final state {state}"
         )
         raise ScriptExecutionError(msg)
 

@@ -113,7 +113,9 @@ class FileSystemScript(ExecutableScript):
 
     def __post_init__(self):
         if not self.script_uri.startswith(self.get_prefix()):
-            raise ValueError(f"Incorrect prefix for {self.__class__.__name__}: {self.script_uri}")
+            raise ValueError(
+                f"Incorrect prefix for {self.__class__.__name__}: {self.script_uri}"
+            )
 
     def get_type(self):
         return "filesystem"
@@ -302,7 +304,13 @@ class ScriptWorker(mptools.ProcWorker):
             self.publish_lifecycle(ProcedureState.LOADING)
             script: ExecutableScript = evt.msg
             self.log(logging.DEBUG, "Loading user script %s", script)
-            self.user_module = ModuleFactory.get_module(script)
+            try:
+                self.user_module = ModuleFactory.get_module(script)
+            except FileNotFoundError:
+                raise FileNotFoundError(
+                    "No such file or directory:"
+                    f" {script.script_uri[len(script.get_prefix()):]}"
+                ) from None
             self.publish_lifecycle(ProcedureState.IDLE)
 
         if evt.msg_type == "RUN":
