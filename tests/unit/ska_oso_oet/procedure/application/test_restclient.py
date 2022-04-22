@@ -249,9 +249,19 @@ def test_list_process_raises_exception_for_wrong_status():
         assert ("""{"errorMessage": "some error"}""",) == e.value.args
 
 
+def test_create_procedure_raises_error_for_incorrect_script_prefix():
+    """Check that incorrect script prefix raises an error"""
+    script_uri = "incorrectprefix://test_uri"
+
+    adapter = RestAdapter(PROCEDURES_URI)
+    with raises(Exception) as e:
+        adapter.create(script_uri)
+    assert "Script URI type not handled: incorrectprefix" in str(e)
+
+
 def test_create_procedure_sends_expected_script_uri():
     """Check that the script uri is sent in the payload"""
-    script_uri = "test_uri"
+    script_uri = "file://test_uri"
 
     # create a mock requests object
     with requests_mock.Mocker() as mock_server:
@@ -281,7 +291,7 @@ def test_create_process_sends_empty_init_args_when_left_undefined_by_user():
 
         # use the client to submit a CREATE request
         client = RestAdapter(PROCEDURES_URI)
-        client.create("test_uri")
+        client.create("file://test_uri")
 
         last_request = mock_server.last_request
 
@@ -305,7 +315,7 @@ def test_create_process_sends_script_args_when_defined_by_user():
 
         # use the client to submit a CREATE request
         client = RestAdapter(PROCEDURES_URI)
-        client.create("script_uri", init_args=user_init_args)
+        client.create("file://script_uri", init_args=user_init_args)
 
         last_request = mock_server.last_request
 
@@ -329,7 +339,7 @@ def test_create_process_raises_exception_for_wrong_status():
 
         client = RestAdapter(PROCEDURES_URI)
         with raises(Exception) as e:
-            client.create("test_uri")
+            client.create("file://test_uri")
         assert ("""{"errorMessage": "some error"}""",) == e.value.args
 
 

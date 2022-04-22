@@ -597,6 +597,9 @@ class RestAdapter:
         :param git_args: git script arguments
         :return: Summary of created procedure.
         """
+        if not (script_uri.startswith("file://") or script_uri.startswith("git://")):
+            raise Exception(f"Script URI type not handled: {script_uri.split('//')[0]}")
+
         script = dict(script_type="filesystem", script_uri=script_uri)
         if init_args is None:
             init_args = dict(args=[], kwargs={})

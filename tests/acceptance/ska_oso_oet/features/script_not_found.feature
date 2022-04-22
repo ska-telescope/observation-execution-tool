@@ -1,9 +1,8 @@
-Scenario: Invalid script filename on creation
-    Given filename <file> is invalid
+Scenario: File does not exist
+    Given file <file> does not exist
     When the user runs oet create <file> command
     Then the OET returns an <error>
 
     Examples:
   | file                               | error                                       |
-  | file:///FileNotFound.py    | No such file or directory: /FileNotFound.py |
-  | sdljfsdjkfhsd                      | Script URI type not handled: sdljfsdjkfhsd  |
+  | file:///FileNotFound.py            | No such file or directory: /FileNotFound.py |

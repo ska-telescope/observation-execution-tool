@@ -51,7 +51,7 @@ def summary():
 
     summary = ProcedureSummary(
         id=123,
-        script=FileSystemScript("test://test.py"),
+        script=FileSystemScript("file://test.py"),
         script_args=[
             ArgCapture(fn="init", fn_args=init_args, time=5),
             ArgCapture(fn="main", fn_args=run_args, time=8),
@@ -118,7 +118,7 @@ def test_ses_prepare_call_sequence_and_returns_summary_for_created_process(summa
     Verify that ScriptExecutionService.prepare() calls the appropriate domain
     object methods for process creation and returns the expected summary object
     """
-    script = FileSystemScript("test://test.py")
+    script = FileSystemScript("file://test.py")
     cmd = PrepareProcessCommand(script=script, init_args=ProcedureInput())
 
     with patch("ska_oso_oet.procedure.domain.ProcessManager") as mock_pm:
@@ -262,7 +262,7 @@ def test_ses_stop_calls_process_manager_function(abort_script):
     abort_pid = 123
 
     # Create Procedure representing the script to be stopped
-    script_to_stop = FileSystemScript("test://a")
+    script_to_stop = FileSystemScript("file://a")
     stop_args = [
         ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1),
         ArgCapture(fn="main", fn_args=ProcedureInput(), time=2),
@@ -399,7 +399,7 @@ def test_ses_get_subarray_id_for_requested_pid():
     )
     process_summary = ProcedureSummary(
         id=process_pid,
-        script=FileSystemScript("test://a"),
+        script=FileSystemScript("file://a"),
         script_args=[init_args],
         history=mock.MagicMock(),
         state=ProcedureState.IDLE,
@@ -429,7 +429,7 @@ def test_ses_get_subarray_id_fails_on_missing_subarray_id():
     init_args = ArgCapture(fn="init", fn_args=ProcedureInput(), time=1)
     process_summary = ProcedureSummary(
         id=1,
-        script=FileSystemScript("test://a"),
+        script=FileSystemScript("file://a"),
         script_args=[init_args],
         history=mock.MagicMock(),
         state=ProcedureState.IDLE,

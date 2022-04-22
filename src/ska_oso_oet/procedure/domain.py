@@ -111,8 +111,15 @@ class FileSystemScript(ExecutableScript):
 
     script_uri: str
 
+    def __post_init__(self):
+        if not self.script_uri.startswith(self.get_prefix()):
+            raise ValueError(f"Incorrect prefix for {self.__class__.__name__}: {self.script_uri}")
+
     def get_type(self):
         return "filesystem"
+
+    def get_prefix(self):
+        return "file://"
 
 
 @dataclasses.dataclass
@@ -125,6 +132,9 @@ class GitScript(FileSystemScript):
 
     def get_type(self):
         return "git"
+
+    def get_prefix(self):
+        return "git://"
 
 
 @dataclasses.dataclass
@@ -657,11 +667,11 @@ class ModuleFactory:
     """
 
     @staticmethod
-    def get_module(script):
+    def get_module(script: ExecutableScript):
         """
         Load Python code from storage, returning an executable Python module.
 
-        :param script_uri: URI of script to load
+        :param script: Script object describing the script to load
         :return: Python module
         """
         if isinstance(script, FileSystemScript):
@@ -675,27 +685,17 @@ class ModuleFactory:
             # return loader(script.script_uri)
 
         raise ValueError(f"Script type not handled: {script.__class__.__name__}")
-        # if script_uri.startswith("test://"):
-        #     loader = ModuleFactory._null_module_loader
-        # elif script_uri.startswith("file://"):
-        #     loader = ModuleFactory._load_module_from_file
-        # elif script_uri.startswith("git://"):
-        #     loader = ModuleFactory._load_module_from_file
-        # else:
-        #     raise ValueError("Script URI type not handled: {}".format(script_uri))
-        #
-        # return loader(script_uri)
 
     @staticmethod
     def _load_module_from_file(script_uri: str) -> types.ModuleType:
         """
-        Load Python module from file storage. This module handles file:///
-        URIs.
+        Load Python module from file storage. This module handles file://
+        and git:// URIs.
 
         :param script_uri: URI of script to load.
         :return: Python module
         """
-        # remove 'file://' prefix
+        # remove prefix
         if "git" in script_uri:
             path = script_uri[6:]
         else:
@@ -703,25 +703,4 @@ class ModuleFactory:
         loader = importlib.machinery.SourceFileLoader("user_module", path)
         user_module = types.ModuleType(loader.name)
         loader.exec_module(user_module)
-        return user_module
-
-    @staticmethod
-    def _null_module_loader(_: str) -> types.ModuleType:
-        """
-        Create and return an empty Python module. Handles test:/// URIs.
-
-        :param _: URI. Will be ignored.
-        :return:
-        """
-
-        def init(*_, **__):
-            pass
-
-        def main(*_, **__):
-            pass
-
-        user_module = types.ModuleType("user_module")
-        user_module.main = main
-        user_module.init = init
-
         return user_module

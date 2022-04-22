@@ -18,6 +18,7 @@ from ska_oso_oet.procedure.domain import (
     HISTORY_MAX_LENGTH,
     ArgCapture,
     FileSystemScript,
+    GitScript,
     GitArgs,
     ProcedureHistory,
     ProcedureInput,
@@ -178,6 +179,29 @@ def manager():
     mgr = ProcessManager()
     with mgr.ctx:
         yield mgr
+
+
+class TestExecutableScript:
+    def test_filesystem_script_object_creation(self):
+        script = FileSystemScript("file://script.py")
+        assert isinstance(script, FileSystemScript)
+        assert script.script_uri == "file://script.py"
+
+    def test_git_script_object_creation(self):
+        script = GitScript("git://script.py", git_args=GitArgs())
+        assert isinstance(script, GitScript)
+        assert script.script_uri == "git://script.py"
+        assert script.git_args == GitArgs()
+
+    def test_filesystem_script_raises_error_on_incorrect_prefix(self):
+        with pytest.raises(ValueError) as e:
+            _ = FileSystemScript("incorrectprefix://script.py")
+        assert "Incorrect prefix for FileSystemScript: incorrectprefix://script.py" in str(e)
+
+    def test_git_script_raises_error_on_incorrect_prefix(self):
+        with pytest.raises(ValueError) as e:
+            _ = GitScript("incorrectprefix://script.py", git_args=GitArgs())
+        assert "Incorrect prefix for GitScript: incorrectprefix://script.py" in str(e)
 
 
 class TestGitArgs:

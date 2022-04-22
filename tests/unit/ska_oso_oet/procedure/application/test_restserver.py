@@ -30,14 +30,14 @@ ENDPOINT = "api/v1.0/procedures"
 
 # Valid JSON struct for creating a new procedure
 CREATE_JSON = dict(
-    script={"script_type": "filesystem", "script_uri": "test:///test.py"},
+    script={"script_type": "filesystem", "script_uri": "file:///test.py"},
     script_args={"init": dict(args=(1, 2, 3), kwargs=dict(kw1="a", kw2="b"))},
 )
 
 # object expected to be returned when creating the Procedure defined above
 CREATE_SUMMARY = ProcedureSummary(
     id=1,
-    script=domain.FileSystemScript("test:///test.py"),
+    script=domain.FileSystemScript("file:///test.py"),
     script_args=[
         domain.ArgCapture(
             fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
@@ -61,7 +61,7 @@ CREATE_SUMMARY = ProcedureSummary(
 CREATE_GIT_JSON = dict(
     script={
         "script_type": "git",
-        "script_uri": "test:///test.py",
+        "script_uri": "git:///test.py",
         "git_args": {"git_repo": "http://foo.git", "git_branch": "main"},
     },
     script_args={"init": dict(args=(1, 2, 3), kwargs=dict(kw1="a", kw2="b"))},
@@ -71,7 +71,7 @@ CREATE_GIT_JSON = dict(
 CREATE_GIT_SUMMARY = ProcedureSummary(
     id=1,
     script=domain.GitScript(
-        "test:///test.py",
+        "git:///test.py",
         git_args=domain.GitArgs(git_repo="http://foo.git", git_branch="main"),
     ),
     script_args=[
@@ -97,7 +97,7 @@ ABORT_JSON = dict(state="STOPPED", abort=True)
 
 # Valid JSON struct for starting a prepared procedure
 RUN_JSON = dict(
-    script_uri="test:///test.py",
+    script_uri="file:///test.py",
     script_args={"main": dict(args=(4, 5, 6), kwargs=dict(kw3="c", kw4="d"))},
     state="RUNNING",
 )
@@ -105,7 +105,7 @@ RUN_JSON = dict(
 # object expected to be returned when the procedure is executed
 RUN_SUMMARY = ProcedureSummary(
     id=1,
-    script=domain.FileSystemScript("test:///test.py"),
+    script=domain.FileSystemScript("file:///test.py"),
     script_args=[
         domain.ArgCapture(
             fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
