@@ -944,7 +944,9 @@ def test_restclientui_start_output_when_last_created_script_has_failed(
 
 
 @mock.patch.object(RestAdapter, "start")
-def test_restclientui_start_output_when_given_pid(mock_start_fn, capsys):
+@mock.patch.object(RestAdapter, "list")
+def test_restclientui_start_output_when_given_pid(mock_list_fn, mock_start_fn, capsys):
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE
     mock_start_fn.return_value = REST_ADAPTER_START_RESPONSE
 
     fire.Fire(RestClientUI, ["start", "--pid=1", "--nolisten"])
@@ -958,9 +960,11 @@ def test_restclientui_start_output_when_given_pid(mock_start_fn, capsys):
 
 @mock.patch.object(RestAdapter, "listen")
 @mock.patch.object(RestAdapter, "start")
+@mock.patch.object(RestAdapter, "list")
 def test_restclientui_start_and_listen_output_with_event(
-    mock_start_fn, mock_listen_fn, capsys
+    mock_list_fn, mock_start_fn, mock_listen_fn, capsys
 ):
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE
     mock_start_fn.return_value = REST_ADAPTER_START_RESPONSE
     mock_listen_fn.return_value = REST_ADAPTER_LISTEN_RESPONSE
 
@@ -978,7 +982,9 @@ def test_restclientui_start_and_listen_output_with_event(
 
 
 @mock.patch.object(RestAdapter, "start")
-def test_restclientui_handles_start_error(mock_start_fn, capsys):
+@mock.patch.object(RestAdapter, "list")
+def test_restclientui_handles_start_error(mock_list_fn, mock_start_fn, capsys):
+    mock_list_fn.return_value = REST_ADAPTER_LIST_RESPONSE
     mock_start_fn.side_effect = RuntimeError("Test Error")
 
     fire.Fire(RestClientUI, ["start", "--pid=1", "--nolisten"])
