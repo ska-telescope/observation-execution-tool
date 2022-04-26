@@ -506,10 +506,7 @@ def test_post_to_endpoint_sends_git_arguments(client):
 
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
-        script=domain.GitScript(
-            CREATE_GIT_SUMMARY.script.script_uri,
-            git_args=CREATE_GIT_SUMMARY.script.git_args,
-        ),
+        script=CREATE_GIT_SUMMARY.script,
         init_args=CREATE_SUMMARY.script_args[0].fn_args,
     )
     assert helper.messages[0][1]["cmd"] == expected_cmd
@@ -542,9 +539,7 @@ def test_post_to_endpoint_sends_default_git_arguments(client):
 
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
-        script=domain.GitScript(
-            CREATE_GIT_SUMMARY.script.script_uri, git_args=domain.GitArgs()
-        ),
+        script=CREATE_GIT_SUMMARY.script,
         init_args=CREATE_GIT_SUMMARY.script_args[0].fn_args,
     )
     assert helper.messages[0][1]["cmd"] == expected_cmd
