@@ -107,14 +107,14 @@ being ``READY``::
             "script_uri": "file:///path/to/observing_script.py",
         },
         "history": {
-            "process_states": {
-               "CREATING": 1601463545.57689632
-               "IDLE": 1601463545.57843814
-               "LOADING": 1601463545.58043561
-               "IDLE": 1601463545.58865546
-               "RUNNING": 1601463545.62904726
-               "READY": 1601463545.7789776
-            },
+            "process_states": [
+               ("CREATING", 1601463545.57689632),
+               ("IDLE", 1601463545.57843814),
+               ("LOADING", 1601463545.58043561),
+               ("IDLE", 1601463545.58865546),
+               ("RUNNING", 1601463545.62904726),
+               ("READY", 1601463545.7789776)
+            ],
             "stacktrace": null
         },
         "state": "READY",
@@ -260,14 +260,14 @@ execution::
             "script_uri": "file:///path/to/observing_script.py"
         },
         "history": {
-            "process_states": {
-               "CREATING": 1601463545.7589678
-               "IDLE": 1601463545.7598525
-               "LOADING": 1601463545.7649524
-               "IDLE": 1601463545.7668241
-               "RUNNING": 1601463545.7694371
-               "READY": 1601463545.7748005
-            },
+            "process_states": [
+               ("CREATING", 1601463545.7589678),
+               ("IDLE", 1601463545.7598525),
+               ("LOADING", 1601463545.7649524),
+               ("IDLE", 1601463545.7668241),
+               ("RUNNING", 1601463545.7694371),
+               ("READY", 1601463545.7748005)
+            ],
             "stacktrace": null
         },
         "state": "READY",
@@ -312,14 +312,14 @@ resource_allocation.py, and procedure #2 that will run observing_script.py::
             "script_uri": "file:///path/to/resource_allocation.py"
           },
           "history": {
-              "process_states": {
-                   "CREATING": 1601463545.7589678
-                   "IDLE": 1601463545.7598525
-                   "LOADING": 1601463545.7649524
-                   "IDLE": 1601463545.7668241
-                   "RUNNING": 1601463545.7694371
-                   "READY": 1601463545.7748005
-                },
+              "process_states": [
+                   ("CREATING", 1601463545.7589678),
+                   ("IDLE", 1601463545.7598525),
+                   ("LOADING", 1601463545.7649524),
+                   ("IDLE", 1601463545.7668241),
+                   ("RUNNING", 1601463545.7694371),
+                   ("READY", 1601463545.7748005)
+                ],
               "stacktrace": null
 		  },
           "state": "READY",
@@ -344,14 +344,14 @@ resource_allocation.py, and procedure #2 that will run observing_script.py::
             "script_uri": "file:///path/to/observing_script.py"
           },
           "history": {
-               "process_states": {
-                   "CREATING": 1601463545.7589678
-                   "IDLE": 1601463545.7598525
-                   "LOADING": 1601463545.7649524
-                   "IDLE": 1601463545.7668241
-                   "RUNNING": 1601463545.7694371
-                   "READY": 1601463545.7748005
-                  },
+               "process_states": [
+                   ("CREATING", 1601463545.7589678),
+                   ("IDLE", 1601463545.7598525),
+                   ("LOADING", 1601463545.7649524),
+                   ("IDLE", 1601463545.7668241),
+                   ("RUNNING", 1601463545.7694371),
+                   ("READY", 1601463545.7748005)
+               ],
                "stacktrace": null
           },
           "state": "READY",
@@ -395,14 +395,14 @@ session below lists procedure #1::
           "script_uri": "file:///path/to/resource_allocation.py"
         },
         "history": {
-            "process_states": {
-               "CREATING": 1601463545.7589678
-               "IDLE": 1601463545.7598525
-               "LOADING": 1601463545.7649524
-               "IDLE": 1601463545.7668241
-               "RUNNING": 1601463545.7694371
-               "READY": 1601463545.7748005
-            },
+            "process_states": [
+               ("CREATING", 1601463545.7589678),
+               ("IDLE", 1601463545.7598525),
+               ("LOADING", 1601463545.7649524),
+               ("IDLE", 1601463545.7668241),
+               ("RUNNING", 1601463545.7694371),
+               ("READY", 1601463545.7748005)
+            ],
             "stacktrace": null
         },
         "state": "READY",
@@ -449,14 +449,14 @@ argument scan_duration=14::
           "script_uri": "file:///path/to/observing_script.py"
         },
         "history": {
-            "process_states": {
-               "CREATING": 1601463545.7589678
-               "IDLE": 1601463545.7598525
-               "LOADING": 1601463545.7649524
-               "IDLE": 1601463545.7668241
-               "RUNNING": 1601463545.7694371
-               "READY": 1601463545.7748005
-             },
+            "process_states": [
+               ("CREATING", 1601463545.7589678),
+               ("IDLE", 1601463545.7598525),
+               ("LOADING", 1601463545.7649524),
+               ("IDLE", 1601463545.7668241),
+               ("RUNNING", 1601463545.7694371),
+               ("READY", 1601463545.7748005)
+             ],
             "stacktrace": null
         }
         "state": "READY",
