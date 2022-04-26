@@ -335,7 +335,9 @@ class RestClientUI:
             LOGGER.debug("received exception %s", err)
             return self._format_error(str(err))
 
-    def create(self, script_uri: str, *args, subarray_id=1, **kwargs) -> str:
+    def create(
+        self, script_uri: str, *args, subarray_id=1, default_git_env=True, **kwargs
+    ) -> str:
         """
         Create a new Procedure.
 
@@ -356,6 +358,8 @@ class RestClientUI:
         git_args = dict()
         init_kwargs = dict()
         init_kwargs["subarray_id"] = subarray_id
+        if "git://" in script_uri:
+            init_kwargs["default_git_env"] = default_git_env
         for arg in kwargs.keys():
             if "git_repo" in arg or "git_branch" in arg or "git_commit" in arg:
                 git_args[arg] = kwargs[arg]

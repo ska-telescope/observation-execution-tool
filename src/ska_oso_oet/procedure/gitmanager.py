@@ -34,7 +34,9 @@ def clone_repo(git_args: GitArgs, location: str) -> None:
         _checkout_commit(clone_dir, git_args.git_commit)
 
 
-def get_commit_hash(git_url: str, git_tag: str = None, git_branch: str = None, short_hash = False) -> str:
+def get_commit_hash(
+    git_url: str, git_tag: str = None, git_branch: str = None, short_hash=False
+) -> str:
     """
     Get a commit hash from a remote repository
 
