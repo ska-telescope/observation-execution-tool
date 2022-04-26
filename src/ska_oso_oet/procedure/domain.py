@@ -51,7 +51,7 @@ class GitArgs:
 
     git_repo: typing.Optional[
         str
-    ] = "git://gitlab.com/ska-telescope/ska-oso-scripting.git"
+    ] = "https://gitlab.com/ska-telescope/ska-oso-scripting.git"
     git_branch: typing.Optional[str] = "master"
     git_commit: typing.Optional[str] = None
 
