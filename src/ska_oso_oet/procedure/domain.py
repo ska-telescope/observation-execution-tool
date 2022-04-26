@@ -8,6 +8,7 @@ import enum
 import importlib.machinery
 import logging
 import multiprocessing
+import os
 import signal
 import threading
 import time
@@ -141,7 +142,6 @@ class ProcedureHistory:
             p_history, self.stacktrace
         )
 
-
 class Procedure(multiprocessing.Process):
     """
     A Procedure is the OET representation of a Python script, its arguments,
@@ -150,7 +150,7 @@ class Procedure(multiprocessing.Process):
 
     def __init__(
         self,
-        script: FileSystemScript,
+        script,
         *args,
         scan_counter: typing.Optional[multiprocessing.Value] = None,
         procedure_id: typing.Optional[int] = None,
@@ -164,7 +164,10 @@ class Procedure(multiprocessing.Process):
         self.id = procedure_id  # pylint:disable=invalid-name
         self.state = None
         self.change_state(ProcedureState.CREATING)
-
+        # git integration code start here #
+        if script.get_type() == 'git':
+            script = self.__git_integration(script)
+        # git integration code end here #
         self.user_module = ModuleFactory.get_module(script.script_uri)
         if hasattr(self.user_module, "init"):
             self.user_module.init(*args, **kwargs)
@@ -239,6 +242,20 @@ class Procedure(multiprocessing.Process):
         self.state = new_state
         self.history.process_states[new_state] = time.time()
 
+    def __git_integration(self, script: GitScript):
+        from ska_oso_oet.procedure.gitmanager import clone_repo, get_commit_hash
+
+        git_commit = get_commit_hash(
+            script.git_args.git_repo, git_branch=script.git_args.git_branch,
+            short_hash=True
+        )
+        # script.git_args.git_commit = git_commit
+
+        clone_dir = os.path.expanduser("~/ska/tmp/clones/" + git_commit)
+        if not os.path.isdir(clone_dir):
+            clone_repo(script.git_args, clone_dir)
+        script.script_uri = 'git://' + clone_dir + "/" + script.script_uri.split("//")[-1]
+        return script
 
 @dataclasses.dataclass
 class ProcedureSummary:
