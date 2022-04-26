@@ -40,7 +40,7 @@ USER tango
 #RUN --mount=type=cache,target=/home/tango/.cache/pip,uid=1000,gid=1000 \
 RUN \
    python3 -m pip install \
-   --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==4.0.0
+   --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==4.1.0
 
 
 CMD ["python3", "-m", "ska_oso_oet.procedure.application.main"]
