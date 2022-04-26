@@ -411,9 +411,7 @@ class RestClientUI:
         else:
             procedure = self._client.list(pid)[0]
             if procedure.state != "READY":
-                yield (
-                    f"Cannot start a procedure in state {procedure.state}."
-                )
+                yield (f"Cannot start a procedure in state {procedure.state}.")
                 return
 
         run_args = dict(args=args, kwargs=kwargs)

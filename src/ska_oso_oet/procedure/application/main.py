@@ -187,7 +187,8 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         try:
             summary = self.ses.prepare(cmd)
 
-        except Exception as e:
+        # Catch all exceptions so that they can be properly displayed by the rest server
+        except Exception as e:  # pylint: disable=broad-except
             self.log(logging.INFO, "Prepare procedure %s failed: %s", request_id, e)
 
             # TODO create failure topic for failures in procedure domain
@@ -215,7 +216,7 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         try:
             self.log(logging.DEBUG, "Start procedure request %s: %s", request_id, cmd)
             summary = self.ses.start(cmd)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             self.log(logging.INFO, "Start procedure %s failed: %s", request_id, e)
 
             # TODO create failure topic for failures in procedure domain
@@ -223,9 +224,13 @@ class ScriptExecutionServiceWorker(EventBusWorker):
                 topics.procedure.lifecycle.started, request_id=request_id, result=e
             )
         else:
-            self.log(logging.DEBUG, "Start procedure %s result: %s", request_id, summary)
+            self.log(
+                logging.DEBUG, "Start procedure %s result: %s", request_id, summary
+            )
             self.send_message(
-                topics.procedure.lifecycle.started, request_id=request_id, result=summary
+                topics.procedure.lifecycle.started,
+                request_id=request_id,
+                result=summary,
             )
 
     def list(
