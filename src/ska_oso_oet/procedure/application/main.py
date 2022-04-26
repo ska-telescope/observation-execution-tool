@@ -172,7 +172,7 @@ class ScriptExecutionServiceWorker(EventBusWorker):
 
     Currently, the result of the action that occurred in the script execution
     domain (=the return object from the ScriptExecutionService) is broadcast
-    to the world by the ScriptExectutionServiceWorker. This could change so
+    to the world by the ScriptExecutionServiceWorker. This could change so
     that the ScriptExecutionService itself sends the message.
     """
 
@@ -187,9 +187,7 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         try:
             summary = self.ses.prepare(cmd)
 
-        except (FileNotFoundError, ValueError) as e:
-            # ValueError raised on invalid URI prefix
-            # FileNotFoundError raised when file not found.
+        except Exception as e:
             self.log(logging.INFO, "Prepare procedure %s failed: %s", request_id, e)
 
             # TODO create failure topic for failures in procedure domain
@@ -214,13 +212,21 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         request_id: str,
         cmd: StartProcessCommand,
     ):
-        self.log(logging.DEBUG, "Start procedure request %s: %s", request_id, cmd)
-        summary = self.ses.start(cmd)
-        self.log(logging.DEBUG, "Start procedure %s result: %s", request_id, summary)
+        try:
+            self.log(logging.DEBUG, "Start procedure request %s: %s", request_id, cmd)
+            summary = self.ses.start(cmd)
+        except Exception as e:
+            self.log(logging.INFO, "Start procedure %s failed: %s", request_id, e)
 
-        self.send_message(
-            topics.procedure.lifecycle.started, request_id=request_id, result=summary
-        )
+            # TODO create failure topic for failures in procedure domain
+            self.send_message(
+                topics.procedure.lifecycle.started, request_id=request_id, result=e
+            )
+        else:
+            self.log(logging.DEBUG, "Start procedure %s result: %s", request_id, summary)
+            self.send_message(
+                topics.procedure.lifecycle.started, request_id=request_id, result=summary
+            )
 
     def list(
         self,
