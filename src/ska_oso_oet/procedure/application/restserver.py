@@ -213,7 +213,7 @@ def create_procedure():
         script = domain.GitScript(
             script_uri,
             git_args=git_args,
-            default_git_env=script_dict.get("default_git_env",True),
+            default_git_env=script_dict.get("default_git_env", True),
         )
     else:
         description = {
