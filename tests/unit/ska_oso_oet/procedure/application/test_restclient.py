@@ -823,6 +823,7 @@ def parse_rest_create_list_response(resp):
     rest_responses = []
     lines = resp.splitlines()
     del lines[0:2]
+    del lines[-1]
     for line in lines:
         elements = line.split()
         rest_response_object = {

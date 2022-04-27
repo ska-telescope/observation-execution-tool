@@ -257,16 +257,13 @@ class RestClientUI:
         ]
 
         headers = ["ID", "Script", "Creation Time", "State"]
-
-        # define default table sections...
-        table_sections = [
-            tabulate.tabulate(table_rows, headers)
-        ]
+        table_sections = tabulate.tabulate(table_rows, headers)
         if procedures:
-            # .. and add instruction
-            table_sections.append(f"For more details, use oet command:- oet describe --pid=<id>")
-        return "\n\n".join(table_sections)
-
+            table_sections = (
+                table_sections
+                + "\n For more details, use oet command:- oet describe --pid=<id>"
+            )
+        return table_sections
 
     @staticmethod
     def _tabulate_for_describe(procedure: List[ProcedureSummary]) -> str:
