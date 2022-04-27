@@ -256,7 +256,7 @@ class Procedure(multiprocessing.Process):
         )
         # script.git_args.git_commit = git_commit
 
-        clone_dir = os.path.expanduser("~/ska/tmp/clones/" + git_commit)
+        clone_dir = os.path.expanduser("~/tmp/clones/" + git_commit)
         if not os.path.isdir(clone_dir):
             clone_repo(script.git_args, clone_dir)
         script.script_uri = (
