@@ -510,103 +510,6 @@ class TestProcessManagerScriptWorkerIntegration:
         assert manager.running is None
 
 
-# REDUNDANT
-# def test_creation_of_a_new_procedure_is_added_to_history(procedure):
-#     """
-#     Verify that the CREATED state and time are recorded in procedure's history
-#     """
-#     assert ProcedureState.IDLE in procedure.history.process_states
-#     assert isinstance(procedure.history.process_states[ProcedureState.IDLE], float)
-
-
-# REDUNDANT
-# def test_procedure_start_sets_state_to_running(procedure):
-#     """
-#     Verify that procedure state changes to RUNNING when run() is called
-#     """
-#     procedure.start()
-#     assert procedure.state == ProcedureState.RUNNING
-
-# redundant - covered in happy path tests
-# def test_procedure_run_executes_user_script(script_with_queue_path):
-#     """
-#     Verify that user script executes when run() is called
-#     """
-#     procedure = Procedure(script=script_with_queue_path)
-#     queue = multiprocessing.Queue()
-#     procedure.script_args["run"].args = [queue, procedure]
-#     procedure.run()
-#     assert queue.get(timeout=1) is None
-#     with pytest.raises(Empty):
-#         queue.get(block=False)
-
-
-#
-# def test_runtime_arguments_are_passed_to_user_script(procedure):
-#     """
-#     Verify that arguments passed from procedure are accessible in the user script
-#     """
-#     run_args = ProcedureInput(5, 6, 7, kw3="c", kw4="d")
-#     procedure.script_args["run"] = run_args
-#     procedure.user_module = MagicMock()
-#     procedure.run()
-#     procedure.user_module.main.assert_called_with(5, 6, 7, kw3="c", kw4="d")
-
-
-# Redundant?
-# def test_procedure_start_raises_exception_on_a_running_procedure(procedure):
-#     """
-#     Verify that a RUNNING procedure can not be run again
-#     """
-#     procedure.start()
-#     with pytest.raises(Exception):
-#         procedure.start()
-
-
-# REDUNDANT - fold LOAD error into general exception handling?
-# def test_procedure_init_raises_exception_on_script_file_not_found():
-#     """
-#     Verify that FileNotFoundError is raised if script file does not exist
-#     """
-#     script = FileSystemScript("file://abcbs")
-#
-#     with pytest.raises(FileNotFoundError):
-#         _ = Procedure(script=script)
-
-
-# REDUNDANT
-# def test_procedure_terminate_sets_state_to_stopped(procedure):
-#     """
-#     Verify that procedure terminate changes to STOPPED
-#     when terminate() is called
-#     """
-#     procedure.start()
-#     procedure.terminate()
-#     assert procedure.state == ProcedureState.STOPPED
-
-
-# REDUNDANT
-# def test_procedure_terminate_records_state_in_history(procedure):
-#     """
-#     Verify that procedure terminate records STOPPED state in the history
-#     """
-#     procedure.start()
-#     procedure.terminate()
-#     assert ProcedureState.IDLE in procedure.history.process_states
-#     assert isinstance(procedure.history.process_states[ProcedureState.IDLE], float)
-#     assert ProcedureState.STOPPED in procedure.history.process_states
-#     assert isinstance(procedure.history.process_states[ProcedureState.STOPPED], float)
-
-# not applicable. Any child process can now be terminated, although utility of stopping an IDLE process is questionable
-# def test_procedure_terminate_not_allowed_if_process_is_not_running(procedure):
-#     """
-#     Verify that procedure raises an exception if process to terminate
-#     is not in RUNNING state
-#     """
-#     with pytest.raises(Exception):
-#         procedure.terminate()
-
-
 class TestProcessManager:
     def test_summarise_with_no_procedures(self, manager):
         assert manager.summarise() == []
@@ -924,160 +827,23 @@ class TestProcessManager:
         assert len(manager.script_args[pid]) == 2
         assert manager.script_args[pid][1] == expected
 
-    # redundant - already have tests that exercise init arg capture, plus this won't work
-    # until GitScripts are handled are user module is loaded on worker creation
-    # def test_process_manager_create_captures_git_arguments(self, manager, script):
-    #     """
-    #     Verify that ProcessManager passes through git arguments to the procedures it creates
-    #     """
-    #     expected = GitArgs(git_repo="http://foo.git", git_commit="HEAD", git_branch="main")
-    #     git_script = GitScript(script_uri=script.script_uri, git_args=expected)
-    #     pid = manager.create(git_script, init_args=ProcedureInput())
-    #     created = manager.procedures[pid]
-    #     assert isinstance(created.script, GitScript)
-    #     assert created.script.git_args == expected
 
+class TestModuleFactory:
+    @patch.object(ModuleFactory, "_load_module_from_git")
+    def test_get_module_calls_git_load_function(self, mock_git_load):
+        mock_git_load.side_effect = [MagicMock(importlib.machinery.SourceFileLoader)]
 
-# REDUNDANT
-# def test_process_manager_run_changes_state_of_procedure_to_running(
-#     manager, script, process_cleanup
-# ):
-#     """
-#     Verify that procedure state changes when ProcessManager starts
-#     procedure execution
-#     """
-#     pid = manager.create(script, init_args=ProcedureInput())
-#     assert manager.procedures[pid].state == ProcedureState.IDLE
-#     manager.run(pid, run_args=ProcedureInput())
-#     assert manager.procedures[pid].state == ProcedureState.RUNNING
+        git_script = GitScript("git://test/script.py", GitArgs())
+        _ = ModuleFactory.get_module(git_script)
+        mock_git_load.assert_called_once_with(git_script)
 
+    @patch.object(ModuleFactory, "_load_module_from_file")
+    def test_get_module_calls_file_load_function(self, mock_file_load):
+        mock_file_load.side_effect = [MagicMock(importlib.machinery.SourceFileLoader)]
 
-# def test_process_manager_run_sets_running_procedure(manager, tmpdir):
-#     """
-#     Verify that ProcessManager sets the running procedure attribute
-#     appropriately when run() is called
-#     """
-#     script_path = tmpdir.join("sleep.py")
-#     script_path.write(
-#         """
-# IN_MAIN = None
-# SHUTDOWN = None
-#
-# def init(in_main, shutdown_event):
-#     global IN_MAIN, SHUTDOWN
-#     IN_MAIN, SHUTDOWN = in_main, shutdown_event
-#
-# def main():
-#     IN_MAIN.set()
-#     while not SHUTDOWN.is_set():
-#         continue
-# """
-#     )
-#     script = FileSystemScript(f"file://{str(script_path)}")
-#
-#     in_main_event = multiprocessing.Event()
-#     shutdown_event = multiprocessing.Event()
-#     pid = manager.create(
-#         script, init_args=ProcedureInput(in_main_event, shutdown_event)
-#     )
-#     manager.run(pid, run_args=ProcedureInput())
-#     in_main_event.wait(1.0)
-#     assert manager.running == manager.procedures[pid]
-#     shutdown_event.set()
-
-
-# REDUNDANT - covered in TestProcessManagerScriptWorkerIntegration tests
-# def test_process_manager_updates_state_of_completed_procedures(manager, script):
-#     """
-#     Verify that ProcessManager updates procedure state to COMPLETED when finished
-#     successfully
-#     """
-#     pid = manager.create(script, init_args=ProcedureInput())
-#     manager.run(pid, run_args=ProcedureInput())
-#     manager.procedures[pid].proc.join(1.0)
-#     assert manager.states[pid] == ProcedureState.COMPLETED
-
-
-# REDUNDANT - covered in TestProcessManagerScriptWorkerIntegration tests
-# def test_process_manager_updates_history_of_completed_procedures(manager, script):
-#     """
-#     Verify that ProcessManager updates procedure state to COMPLETED when finished
-#     successfully
-#     """
-#     pid = manager.create(script, init_args=ProcedureInput())
-#     manager.run(pid, run_args=ProcedureInput())
-#     wait_for_process_to_complete(manager)
-#     procedure = manager.procedures[pid]
-#
-#     assert ProcedureState.IDLE in procedure.history.process_states
-#     assert isinstance(procedure.history.process_states[ProcedureState.IDLE], float)
-#     assert ProcedureState.RUNNING in procedure.history.process_states
-#     assert isinstance(procedure.history.process_states[ProcedureState.RUNNING], float)
-#     assert ProcedureState.COMPLETED in procedure.history.process_states
-#     assert isinstance(procedure.history.process_states[ProcedureState.COMPLETED], float)
-#     assert procedure.history.stacktrace is None
-
-
-# REDUNDANT - covered in TestProcessManagerScriptWorkerIntegration tests
-# def test_process_manager_sets_running_to_none_on_script_failure(manager, fail_script):
-#     """
-#     Verify that ProcessManager sets running procedure attribute to None
-#     when script execution fails
-#     """
-#     pid = manager.create(fail_script, init_args=ProcedureInput())
-#     manager.run(pid, run_args=ProcedureInput())
-#     manager.procedures[pid].proc.join(1.0)
-#     assert manager.running is None
-
-
-# REDUNDANT - covered in TestProcessManagerScriptWorkerIntegration tests
-# def test_process_manager_updates_procedure_state_on_script_failure(
-#     manager, fail_script
-# ):
-#     """
-#     Verify that ProcessManager removes a failed procedure from
-#     the procedures list
-#     """
-#     pid = manager.create(fail_script, init_args=ProcedureInput())
-#     manager.run(pid, run_args=ProcedureInput())
-#     wait_for_process_to_complete(manager)
-#     assert manager.procedures[pid].state == ProcedureState.FAILED
-
-
-# REDUNDANT - covered in TestProcessManagerScriptWorkerIntegration tests
-# def test_process_manager_updates_procedure_history_on_script_failure(
-#     manager, fail_script
-# ):
-#     """
-#     Verify that ProcessManager updates FAILED to procedure history when script fails
-#     """
-#     pid = manager.create(fail_script, init_args=ProcedureInput())
-#     manager.run(pid, run_args=ProcedureInput())
-#     wait_for_process_to_complete(manager)
-#     procedure = manager.procedures[pid]
-#
-#     assert ProcedureState.IDLE in procedure.history.process_states
-#     assert isinstance(procedure.history.process_states[ProcedureState.IDLE], float)
-#     assert ProcedureState.RUNNING in procedure.history.process_states
-#     assert isinstance(procedure.history.process_states[ProcedureState.RUNNING], float)
-#     assert ProcedureState.FAILED in procedure.history.process_states
-#     assert isinstance(procedure.history.process_states[ProcedureState.FAILED], float)
-#     assert procedure.history.stacktrace is not None
-
-
-# REDUNDANT - covered in TestProcessManagerScriptWorkerIntegration tests
-# def test_process_manager_updates_procedure_state_on_stop(manager, abort_script):
-#     """
-#     Verify that ProcessManager removes a stopped procedure from
-#     the procedures list
-#     """
-#     with Manager() as mp_mgr:
-#         lst = mp_mgr.list()
-#         pid = manager.create(abort_script, init_args=ProcedureInput(lst))
-#         manager.run(pid, run_args=ProcedureInput(pid))
-#         manager.stop(pid)
-#         manager.procedures[pid].proc.join(1.0)
-#         assert manager.states[pid] == ProcedureState.STOPPED
+        file_script = FileSystemScript("file://test/script.py")
+        _ = ModuleFactory.get_module(file_script)
+        mock_file_load.assert_called_once_with(file_script.script_uri)
 
 
 def test_scan_id_persists_between_executions(
@@ -1106,21 +872,3 @@ def test_scan_id_persists_between_executions(
     next_scan_id = queue.get(timeout=1)
 
     assert next_scan_id == scan_id + 1
-
-
-class TestModuleFactory:
-    @patch.object(ModuleFactory, "_load_module_from_git")
-    def test_get_module_calls_git_load_function(self, mock_git_load):
-        mock_git_load.side_effect = [MagicMock(importlib.machinery.SourceFileLoader)]
-
-        git_script = GitScript("git://test/script.py", GitArgs())
-        _ = ModuleFactory.get_module(git_script)
-        mock_git_load.assert_called_once_with(git_script)
-
-    @patch.object(ModuleFactory, "_load_module_from_file")
-    def test_get_module_calls_file_load_function(self, mock_file_load):
-        mock_file_load.side_effect = [MagicMock(importlib.machinery.SourceFileLoader)]
-
-        file_script = FileSystemScript("file://test/script.py")
-        _ = ModuleFactory.get_module(file_script)
-        mock_file_load.assert_called_once_with(file_script.script_uri)
