@@ -76,6 +76,7 @@ class GitScript(FileSystemScript):
     """
 
     git_args: GitArgs
+    default_git_env: typing.Optional[bool] = True
 
     def get_type(self):
         return "git"
@@ -151,7 +152,7 @@ class Procedure(multiprocessing.Process):
 
     def __init__(
         self,
-        script,
+        script: FileSystemScript,
         *args,
         scan_counter: typing.Optional[multiprocessing.Value] = None,
         procedure_id: typing.Optional[int] = None,
@@ -168,9 +169,8 @@ class Procedure(multiprocessing.Process):
         # git integration code start here #
         if script.get_type() == "git":
             # use default environment to clone the git repo if it is set to true
-            if "default_git_env" in kwargs and kwargs["default_git_env"]:
-                script = self.__git_integration(script)
-                del kwargs["default_git_env"]
+            script = self.__git_integration(script)
+
         # git integration code end here #
         self.user_module = ModuleFactory.get_module(script.script_uri)
         if hasattr(self.user_module, "init"):
@@ -247,21 +247,22 @@ class Procedure(multiprocessing.Process):
         self.history.process_states[new_state] = time.time()
 
     def __git_integration(self, script: GitScript):
-        from ska_oso_oet.procedure.gitmanager import clone_repo, get_commit_hash
+        if script.default_git_env:
+            from ska_oso_oet.procedure.gitmanager import clone_repo, get_commit_hash
 
-        git_commit = get_commit_hash(
-            script.git_args.git_repo,
-            git_branch=script.git_args.git_branch,
-            short_hash=True,
-        )
-        # script.git_args.git_commit = git_commit
+            git_commit = get_commit_hash(
+                script.git_args.git_repo,
+                git_branch=script.git_args.git_branch,
+                short_hash=True,
+            )
+            # script.git_args.git_commit = git_commit
 
-        clone_dir = os.path.expanduser("~/tmp/clones/" + git_commit)
-        if not os.path.isdir(clone_dir):
-            clone_repo(script.git_args, clone_dir)
-        script.script_uri = (
-            "git://" + clone_dir + "/" + script.script_uri.split("//")[-1]
-        )
+            clone_dir = os.path.expanduser("~/tmp/clones/" + git_commit)
+            if not os.path.isdir(clone_dir):
+                clone_repo(script.git_args, clone_dir)
+            script.script_uri = (
+                "git://" + clone_dir + "/" + script.script_uri.split("//")[-1]
+            )
         return script
 
 
