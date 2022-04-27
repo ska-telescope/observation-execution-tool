@@ -1,11 +1,23 @@
 """
 Static helper functions for cloning and working with a Git repository
 """
+import dataclasses
 import os
+from typing import Optional
 
 from git import Git, Repo
 
-from ska_oso_oet.procedure.domain import GitArgs
+
+@dataclasses.dataclass
+class GitArgs:
+    """
+    GitArgs captures information required to identify scripts
+    located in git repositories.
+    """
+
+    git_repo: Optional[str] = "https://gitlab.com/ska-telescope/ska-oso-scripting.git"
+    git_branch: Optional[str] = "master"
+    git_commit: Optional[str] = None
 
 
 def clone_repo(git_args: GitArgs, location: str) -> None:
@@ -34,7 +46,9 @@ def clone_repo(git_args: GitArgs, location: str) -> None:
         _checkout_commit(clone_dir, git_args.git_commit)
 
 
-def get_commit_hash(git_url: str, git_tag: str = None, git_branch: str = None) -> str:
+def get_commit_hash(
+    git_url: str, git_tag: str = None, git_branch: str = None, short_hash=False
+) -> str:
     """
     Get a commit hash from a remote repository
 
@@ -52,7 +66,8 @@ def get_commit_hash(git_url: str, git_tag: str = None, git_branch: str = None) -
         response = Git().ls_remote("-h", git_url, git_branch)
     else:
         response = Git().ls_remote(git_url, "HEAD")
-
+    if short_hash:
+        return response[:7]
     return response.split("\\")[0]
 
 

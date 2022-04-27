@@ -10,6 +10,7 @@ import importlib.machinery
 import itertools
 import logging
 import multiprocessing
+import os
 import signal
 import threading
 import time
@@ -19,6 +20,7 @@ from typing import Dict, List, Optional, Tuple
 from ska_oso_oet import mptools
 from ska_oso_oet.command import SCAN_ID_GENERATOR
 from ska_oso_oet.mptools import EventMessage
+from ska_oso_oet.procedure.gitmanager import GitArgs, clone_repo, get_commit_hash
 
 LOGGER = logging.getLogger(__name__)
 
@@ -77,18 +79,6 @@ class LifecycleMessage(EventMessage):
 
 
 @dataclasses.dataclass
-class GitArgs:
-    """
-    GitArgs captures information required to identify scripts
-    located in git repositories.
-    """
-
-    git_repo: Optional[str] = "https://gitlab.com/ska-telescope/ska-oso-scripting.git"
-    git_branch: Optional[str] = "master"
-    git_commit: Optional[str] = None
-
-
-@dataclasses.dataclass
 class ExecutableScript:
     """
     Base class for all executable scripts.
@@ -131,6 +121,7 @@ class GitScript(FileSystemScript):
     """
 
     git_args: GitArgs
+    default_git_env: Optional[bool] = True
 
     def get_type(self):
         return "git"
@@ -306,11 +297,8 @@ class ScriptWorker(mptools.ProcWorker):
             self.log(logging.DEBUG, "Loading user script %s", script)
             try:
                 self.user_module = ModuleFactory.get_module(script)
-            except FileNotFoundError:
-                raise FileNotFoundError(
-                    "No such file or directory:"
-                    f" {script.script_uri[len(script.get_prefix()):]}"
-                ) from None
+            except FileNotFoundError as e:
+                raise e from None
             self.publish_lifecycle(ProcedureState.IDLE)
 
         if evt.msg_type == "RUN":
@@ -682,15 +670,12 @@ class ModuleFactory:
         :param script: Script object describing the script to load
         :return: Python module
         """
+        if isinstance(script, GitScript):
+            loader = ModuleFactory._load_module_from_git
+            return loader(script)
         if isinstance(script, FileSystemScript):
             loader = ModuleFactory._load_module_from_file
             return loader(script.script_uri)
-        if isinstance(script, GitScript):
-            # assumes git project has been cloned at this point
-            # TODO will script_uri need to be modified to point to cloned directory?
-            raise NotImplementedError
-            # loader = ModuleFactory._load_module_from_file
-            # return loader(script.script_uri)
 
         raise ValueError(f"Script type not handled: {script.__class__.__name__}")
 
@@ -704,10 +689,33 @@ class ModuleFactory:
         :return: Python module
         """
         # remove prefix
-        if "git" in script_uri:
-            path = script_uri[6:]
-        else:
-            path = script_uri[7:]
+        path = script_uri[7:]
+        loader = importlib.machinery.SourceFileLoader("user_module", path)
+        user_module = types.ModuleType(loader.name)
+        loader.exec_module(user_module)
+        return user_module
+
+    @staticmethod
+    def _load_module_from_git(script: GitScript) -> types.ModuleType:
+        """
+        Load Python module from a git repository. Clone the repository if repo has not yet been cloned.
+        The repository will not have been cloned if default environment is being used.
+        This module handles git:// URIs.
+
+        :param script: GitScript object with information on script location
+        :return: Python module
+        """
+        git_commit = get_commit_hash(
+            script.git_args.git_repo,
+            git_branch=script.git_args.git_branch,
+            short_hash=True,
+        )
+
+        clone_dir = "/tmp/clones/" + git_commit
+        if not os.path.isdir(clone_dir):
+            clone_repo(script.git_args, clone_dir)
+        path = clone_dir + "/" + script.script_uri[6:]
+
         loader = importlib.machinery.SourceFileLoader("user_module", path)
         user_module = types.ModuleType(loader.name)
         loader.exec_module(user_module)

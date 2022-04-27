@@ -335,7 +335,14 @@ class RestClientUI:
             return self._format_error(str(err))
         return self._tabulate(procedures)
 
-    def create(self, script_uri: str, *args, subarray_id=1, **kwargs) -> str:
+    def create(
+        self,
+        script_uri: str,
+        *args,
+        subarray_id=1,
+        default_git_env: str = "true",
+        **kwargs,
+    ) -> str:
         """
         Create a new Procedure.
 
@@ -348,6 +355,7 @@ class RestClientUI:
         :param script_uri: script URI, e.g., file:///test.py
         :param args: script positional arguments
         :param subarray_id: Sub-array controlled by this OET instance
+        :param default_git_env: Use default environment for running git scripts,if it is set to True
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.
         """
@@ -356,16 +364,20 @@ class RestClientUI:
         git_args = dict()
         init_kwargs = dict()
         init_kwargs["subarray_id"] = subarray_id
+
         for arg in kwargs.keys():
             if "git_repo" in arg or "git_branch" in arg or "git_commit" in arg:
                 git_args[arg] = kwargs[arg]
             else:
                 init_kwargs[arg] = kwargs[arg]
-
+        default_git_env = default_git_env.lower() == "true"
         init_args = dict(args=args, kwargs=init_kwargs)
         try:
             procedure = self._client.create(
-                script_uri, init_args=init_args, git_args=git_args
+                script_uri,
+                init_args=init_args,
+                git_args=git_args,
+                default_git_env=default_git_env,
             )
         except Exception as err:
             LOGGER.debug("received exception %s", err)
@@ -582,7 +594,11 @@ class RestAdapter:
         return [ProcedureSummary.from_json(d) for d in procedures_json]
 
     def create(
-        self, script_uri: str, init_args: Dict = None, git_args: Dict = None
+        self,
+        script_uri: str,
+        init_args: Dict = None,
+        git_args: Dict = None,
+        default_git_env: bool = True,
     ) -> ProcedureSummary:
         """
         Create a new Procedure.
@@ -600,6 +616,7 @@ class RestAdapter:
         :param script_uri: script URI, e.g., file://test.py or git://test.git
         :param init_args: script initialisation arguments
         :param git_args: git script arguments
+        :param default_git_env: Use default environment for running git scripts,if it is set to True
         :return: Summary of created procedure.
         """
         if not (script_uri.startswith("file://") or script_uri.startswith("git://")):
@@ -615,7 +632,12 @@ class RestAdapter:
                 " Filesystem script."
             )
         if "git://" in script_uri:
-            script = dict(script_type="git", script_uri=script_uri, git_args=git_args)
+            script = dict(
+                script_type="git",
+                script_uri=script_uri,
+                git_args=git_args,
+                default_git_env=default_git_env,
+            )
 
         request_json = {
             "script_args": {

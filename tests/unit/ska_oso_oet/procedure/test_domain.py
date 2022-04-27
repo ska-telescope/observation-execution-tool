@@ -3,6 +3,7 @@
 """
 Unit tests for the ska_oso_oet.procedure.domain module.
 """
+import importlib.machinery
 import multiprocessing
 import operator
 import time
@@ -20,6 +21,7 @@ from ska_oso_oet.procedure.domain import (
     FileSystemScript,
     GitArgs,
     GitScript,
+    ModuleFactory,
     ProcedureHistory,
     ProcedureInput,
     ProcedureState,
@@ -192,6 +194,7 @@ class TestExecutableScript:
         assert isinstance(script, GitScript)
         assert script.script_uri == "git://script.py"
         assert script.git_args == GitArgs()
+        assert script.default_git_env is True
 
     def test_filesystem_script_raises_error_on_incorrect_prefix(self):
         with pytest.raises(ValueError) as e:
@@ -1103,3 +1106,21 @@ def test_scan_id_persists_between_executions(
     next_scan_id = queue.get(timeout=1)
 
     assert next_scan_id == scan_id + 1
+
+
+class TestModuleFactory:
+    @patch.object(ModuleFactory, "_load_module_from_git")
+    def test_get_module_calls_git_load_function(self, mock_git_load):
+        mock_git_load.side_effect = [MagicMock(importlib.machinery.SourceFileLoader)]
+
+        git_script = GitScript("git://test/script.py", GitArgs())
+        _ = ModuleFactory.get_module(git_script)
+        mock_git_load.assert_called_once_with(git_script)
+
+    @patch.object(ModuleFactory, "_load_module_from_file")
+    def test_get_module_calls_file_load_function(self, mock_file_load):
+        mock_file_load.side_effect = [MagicMock(importlib.machinery.SourceFileLoader)]
+
+        file_script = FileSystemScript("file://test/script.py")
+        _ = ModuleFactory.get_module(file_script)
+        mock_file_load.assert_called_once_with(file_script.script_uri)
