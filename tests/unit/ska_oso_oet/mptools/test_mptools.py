@@ -143,13 +143,17 @@ def test_procworker_rejects_unexpected_arguments():
 
 def test_procworker_passes_excess_arguments_to_init_args():
     class ProcWorkerTest(ProcWorker):
-        def init_args(self, args):
+        def init_args(self, args, kwargs):
             (l,) = args
             l.extend(["ARG1", "ARG2"])
+            d = kwargs["mydict"]
+            d["k"] = "v"
 
     arglist = []
-    ProcWorkerTest("TEST", mp.Event(), mp.Event(), MPQueue(), arglist)
+    argdict = {}
+    ProcWorkerTest("TEST", mp.Event(), mp.Event(), MPQueue(), arglist, mydict=argdict)
     assert arglist == ["ARG1", "ARG2"]
+    assert argdict == {"k": "v"}
 
 
 def test_proc_worker_init_signals():
@@ -193,7 +197,7 @@ def test_proc_worker_no_main_func(caplog):
 
 def test_proc_worker_run(caplog):
     class ProcWorkerTest(ProcWorker):
-        def init_args(self, args):
+        def init_args(self, args, kwargs):
             self.args = args
 
         def main_func(self):
@@ -255,7 +259,7 @@ def _proc_worker_wrapper_helper(
 
 def test_proc_worker_wrapper(caplog):
     class ProcWorkerTest(ProcWorker):
-        def init_args(self, args):
+        def init_args(self, args, kwargs):
             self.args = args
 
         def main_func(self):
@@ -287,7 +291,7 @@ def test_proc_worker_exception(caplog):
     assert item
     assert item.msg_src == "TEST"
     assert item.msg_type == "FATAL"
-    assert item.msg == "Because this doesn't happen often"
+    assert 'raise NameError("Because this doesn\'t happen often")' in item.msg
 
     assert "Exception Shutdown" in caplog.text
 
@@ -495,7 +499,7 @@ class HangingProcWorker(ProcWorker):
     TerminateInterrupt when is_hard is True.
     """
 
-    def init_args(self, args):
+    def init_args(self, args, kwargs):
         (self.is_hard,) = args
 
     def main_loop(self):

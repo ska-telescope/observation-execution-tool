@@ -1,11 +1,23 @@
 """
 Static helper functions for cloning and working with a Git repository
 """
+import dataclasses
 import os
+from typing import Optional
 
 from git import Git, Repo
 
-from ska_oso_oet.procedure.domain import GitArgs
+
+@dataclasses.dataclass
+class GitArgs:
+    """
+    GitArgs captures information required to identify scripts
+    located in git repositories.
+    """
+
+    git_repo: Optional[str] = "https://gitlab.com/ska-telescope/ska-oso-scripting.git"
+    git_branch: Optional[str] = "master"
+    git_commit: Optional[str] = None
 
 
 def clone_repo(git_args: GitArgs, location: str) -> None:
@@ -34,26 +46,24 @@ def clone_repo(git_args: GitArgs, location: str) -> None:
         _checkout_commit(clone_dir, git_args.git_commit)
 
 
-def get_commit_hash(
-    git_url: str, git_tag: str = None, git_branch: str = None, short_hash=False
-) -> str:
+def get_commit_hash(git_args: GitArgs, short_hash=False) -> str:
     """
     Get a commit hash from a remote repository
 
-    :param git_url: URL of the repository
-    :param git_tag: The Git tag to find the corresponding commit hash for
-    :param git_branch: The Git branch to find the corresponding latest commit hash for
+    :param git_args: Arguments to point to git environment to get hash for
+    :param short_hash: Return first 7 characters of the hash
 
     :return: The SHA for the specified commit.
         If a tag and a branch are both supplied, the tag takes precedence.
         If neither are supplied, the latest commit on the default branch is used
     """
-    if git_tag:
-        response = Git().ls_remote("-t", git_url, git_tag)
-    elif git_branch:
-        response = Git().ls_remote("-h", git_url, git_branch)
+    if git_args.git_commit:
+        return git_args.git_commit
+
+    if git_args.git_branch != "master":
+        response = Git().ls_remote("-h", git_args.git_repo, git_args.git_branch)
     else:
-        response = Git().ls_remote(git_url, "HEAD")
+        response = Git().ls_remote(git_args.git_repo, "HEAD")
     if short_hash:
         return response[:7]
     return response.split("\\")[0]

@@ -86,7 +86,7 @@ and its initialisation method called with two arguments (e.g, the script init
 function was called as
 ``init(subarray_id=1, sb_uri=’file:///path/to/scheduling_block_123.json’)``. The
 script is ready to execute but is not yet executing, as shown by its state
-being ``CREATED``::
+being ``READY``::
 
     {
         "script_args": {
@@ -107,13 +107,17 @@ being ``CREATED``::
             "script_uri": "file:///path/to/observing_script.py",
         },
         "history": {
-            "process_states": {
-                 "CREATING": 1601463545.7789872,
-                 "CREATED": 1601463545.7789776
-                },
+            "process_states": [
+               ("CREATING", 1601463545.57689632),
+               ("IDLE", 1601463545.57843814),
+               ("LOADING", 1601463545.58043561),
+               ("IDLE", 1601463545.58865546),
+               ("RUNNING", 1601463545.62904726),
+               ("READY", 1601463545.7789776)
+            ],
             "stacktrace": null
-            },
-        "state": "CREATED",
+        },
+        "state": "READY",
         "uri": "http://localhost:5000/api/v1.0/procedures/1"
     }
 
@@ -164,19 +168,22 @@ Type: ``ProcedureState``
 ``ProcedureState`` is an enumeration representing the current lifecycle state of the Python process running the user
 script. It can be one of:
 
-  * ``CREATED``: script was successfully loaded by a Python subprocess and ``init`` function was successfully called.
-  * ``RUNNING``: script is running, i.e., the script's ``main`` function is currently executing.
+  * ``IDLE``: state between script preparation steps where no action is ongoing.
+  * ``CREATING``: script creation has been started.
+  * ``LOADING``: loading the specified script file to be executed.
+  * ``READY``: script is ready to run specified function, e.g. ``init`` or ``main``.
+  * ``RUNNING``: script is running, i.e., the script's ``init`` or ``main`` function is currently executing.
   * ``STOPPED``: script was terminated by the OET before the script could complete.
   * ``COMPLETED``: the script completed successfully, i.e., the ``main`` function completed and no exception was raised.
-  * ``FAILED``: an exception was raised during script execution.
+  * ``FAILED``: an exception was raised during script preparation or execution.
 
 Type: ``ProcedureHistory``
 --------------------------
 ``ProcedureHistory`` represents a timeline of ``ProcedureStates`` that the ``Procedure`` has passed through. Attributes
 are:
 
-  * ``dict process_states``: a dictionary of ``ProcedureStates`` and timestamps when that ``ProcedureState`` was
-    reached, e.g. ``process_states: {'CREATED': 18392174.543, 'RUNNING': 18392143.546, 'COMPLETED': 183925456.744})``.
+  * ``list process_states``: a List of ``ProcedureStates`` and timestamps when that ``ProcedureState`` was
+    reached, e.g. ``process_states: [('CREATING', 18392174.543), ('RUNNING', 18392143.546), ('COMPLETED', 183925456.744)]``.
   * ``string stacktrace``: populated with the stacktrace from the script if the final ``ProcedureState`` is ``FAILED``.
     This attribute is set to None for any other final state.
 
@@ -253,13 +260,17 @@ execution::
             "script_uri": "file:///path/to/observing_script.py"
         },
         "history": {
-            "process_states": {
-                "CREATING": 1601463545.7589678
-                "CREATED": 1601463545.7789776
-                },
+            "process_states": [
+               ("CREATING", 1601463545.7589678),
+               ("IDLE", 1601463545.7598525),
+               ("LOADING", 1601463545.7649524),
+               ("IDLE", 1601463545.7668241),
+               ("RUNNING", 1601463545.7694371),
+               ("READY", 1601463545.7748005)
+            ],
             "stacktrace": null
         },
-        "state": "CREATED",
+        "state": "READY",
         "uri": "http://localhost:5000/api/v1.0/procedures/2"
       }
     }
@@ -301,13 +312,17 @@ resource_allocation.py, and procedure #2 that will run observing_script.py::
             "script_uri": "file:///path/to/resource_allocation.py"
           },
           "history": {
-              "process_states": {
-                   "CREATING": 1601463545.7589678
-                   "CREATED": 1601463545.7789776
-                },
+              "process_states": [
+                   ("CREATING", 1601463545.7589678),
+                   ("IDLE", 1601463545.7598525),
+                   ("LOADING", 1601463545.7649524),
+                   ("IDLE", 1601463545.7668241),
+                   ("RUNNING", 1601463545.7694371),
+                   ("READY", 1601463545.7748005)
+                ],
               "stacktrace": null
 		  },
-          "state": "CREATED",
+          "state": "READY",
           "uri": "http://localhost:5000/api/v1.0/procedures/1"
         },
         {
@@ -329,13 +344,17 @@ resource_allocation.py, and procedure #2 that will run observing_script.py::
             "script_uri": "file:///path/to/observing_script.py"
           },
           "history": {
-               "process_states": {
-                   "CREATING": 1601463545.7589678
-                   "CREATED": 1601463545.7789885
-                  },
+               "process_states": [
+                   ("CREATING", 1601463545.7589678),
+                   ("IDLE", 1601463545.7598525),
+                   ("LOADING", 1601463545.7649524),
+                   ("IDLE", 1601463545.7668241),
+                   ("RUNNING", 1601463545.7694371),
+                   ("READY", 1601463545.7748005)
+               ],
                "stacktrace": null
           },
-          "state": "CREATED",
+          "state": "READY",
           "uri": "http://localhost:5000/api/v1.0/procedures/2"
         }
       ]
@@ -376,13 +395,17 @@ session below lists procedure #1::
           "script_uri": "file:///path/to/resource_allocation.py"
         },
         "history": {
-            "process_states": {
-                "CREATING": 1601463545.7589678
-                "CREATED": 1601463545.7789776
-                },
+            "process_states": [
+               ("CREATING", 1601463545.7589678),
+               ("IDLE", 1601463545.7598525),
+               ("LOADING", 1601463545.7649524),
+               ("IDLE", 1601463545.7668241),
+               ("RUNNING", 1601463545.7694371),
+               ("READY", 1601463545.7748005)
+            ],
             "stacktrace": null
         },
-        "state": "CREATED",
+        "state": "READY",
         "uri": "http://localhost:5000/api/v1.0/procedures/1"
       }
     }
@@ -426,14 +449,17 @@ argument scan_duration=14::
           "script_uri": "file:///path/to/observing_script.py"
         },
         "history": {
-            "process_states": {
-                "CREATING": 1601463545.7589678
-                "CREATED": 1601463545.7789885,
-                "RUNNING": 1601463545.7789997
-             },
+            "process_states": [
+               ("CREATING", 1601463545.7589678),
+               ("IDLE", 1601463545.7598525),
+               ("LOADING", 1601463545.7649524),
+               ("IDLE", 1601463545.7668241),
+               ("RUNNING", 1601463545.7694371),
+               ("READY", 1601463545.7748005)
+             ],
             "stacktrace": null
         }
-        "state": "RUNNING",
+        "state": "READY",
         "uri": "http://localhost:5000/api/v1.0/procedures/2"
       }
     }

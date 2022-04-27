@@ -249,7 +249,7 @@ class RestClientUI:
                 p.id,
                 p.script["script_uri"],
                 datetime.datetime.fromtimestamp(
-                    p.history["process_states"]["CREATED"], tz=datetime.timezone.utc
+                    p.history["process_states"][0][1], tz=datetime.timezone.utc
                 ).strftime("%Y-%m-%d %H:%M:%S"),
                 p.state,
             )
@@ -257,7 +257,13 @@ class RestClientUI:
         ]
 
         headers = ["ID", "Script", "Creation Time", "State"]
-        return tabulate.tabulate(table_rows, headers)
+        table_sections = tabulate.tabulate(table_rows, headers)
+        if procedures:
+            table_sections = (
+                table_sections
+                + "\n For more details, use oet command:- oet describe --pid=<id>"
+            )
+        return table_sections
 
     @staticmethod
     def _tabulate_for_describe(procedure: List[ProcedureSummary]) -> str:
@@ -281,9 +287,9 @@ class RestClientUI:
         table_rows_states = [
             (
                 datetime.datetime.fromtimestamp(
-                    procedure[0].history["process_states"][s], tz=datetime.timezone.utc
+                    s[1], tz=datetime.timezone.utc
                 ).strftime("%Y-%m-%d %H:%M:%S.%f"),
-                s,
+                s[0],
             )
             for s in procedure[0].history["process_states"]
         ]
@@ -330,10 +336,10 @@ class RestClientUI:
         """
         try:
             procedures = self._client.list(pid)
-            return self._tabulate(procedures)
         except Exception as err:
-            LOGGER.debug("received exception %s", err)
+            LOGGER.warning("received exception %s", err)
             return self._format_error(str(err))
+        return self._tabulate(procedures)
 
     def create(
         self,
@@ -379,10 +385,10 @@ class RestClientUI:
                 git_args=git_args,
                 default_git_env=default_git_env,
             )
-            return self._tabulate([procedure])
         except Exception as err:
             LOGGER.debug("received exception %s", err)
             return self._format_error(str(err))
+        return self._tabulate([procedure])
 
     def start(
         self, *args, pid=None, listen=True, **kwargs
@@ -413,13 +419,18 @@ class RestClientUI:
                 return
 
             procedure = procedures[-1]
-            if procedure.state != "CREATED":
+            if procedure.state != "READY":
                 yield (
                     f"The last procedure created is in {procedures[-1].state} state "
                     "and cannot be started, please specify a valid procedure ID."
                 )
                 return
             pid = procedure.id
+        else:
+            procedure = self._client.list(pid)[0]
+            if procedure.state != "READY":
+                yield (f"Cannot start a procedure in state {procedure.state}.")
+                return
 
         run_args = dict(args=args, kwargs=kwargs)
         try:
@@ -492,10 +503,10 @@ class RestClientUI:
             pid = procedures[-1].id
         try:
             procedure = self._client.list(pid)
-            return self._tabulate_for_describe(procedure)
         except Exception as err:
             LOGGER.debug("received exception %s", err)
             return self._format_error(str(err))
+        return self._tabulate_for_describe(procedure)
 
     def listen(
         self,
@@ -614,6 +625,9 @@ class RestAdapter:
         :param default_git_env: Use default environment for running git scripts,if it is set to True
         :return: Summary of created procedure.
         """
+        if not (script_uri.startswith("file://") or script_uri.startswith("git://")):
+            raise Exception(f"Script URI type not handled: {script_uri.split('//')[0]}")
+
         script = dict(script_type="filesystem", script_uri=script_uri)
         if init_args is None:
             init_args = dict(args=[], kwargs={})

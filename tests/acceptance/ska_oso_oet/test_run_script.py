@@ -1,5 +1,9 @@
+import logging
+
 import pytest
 from pytest_bdd import given, parsers, scenario, then, when
+
+LOGGER = logging.getLogger()
 
 
 @pytest.fixture(autouse=True)
@@ -29,14 +33,14 @@ def create_script(script, exec_env):
 @when(parsers.parse("the user runs oet start command"))
 def execute_run_command(exec_env):
     output = exec_env.run_oet_command("start")
-    assert "RUNNING" in output
+    assert "READY" in output
 
 
 @then(
     parsers.parse("the script should be in state {state} after execution is finished")
 )
 def execution_ends_in_expected_state(state, exec_env):
-    final_state = exec_env.wait_for_script_to_complete()
+    final_state = exec_env.wait_for_state(state)
     assert final_state == state
 
 
@@ -50,8 +54,9 @@ def test_oet_responsiveness():
 
 @when(parsers.parse("script {file} is running"))
 def script_is_running(exec_env):
-    result = exec_env.run_oet_command("start")
-    assert "RUNNING" in result
+    exec_env.run_oet_command("start")
+    state = exec_env.wait_for_state("RUNNING")
+    assert state == "RUNNING"
 
 
 @then(parsers.parse("the oet list command response shows {file} is running"))

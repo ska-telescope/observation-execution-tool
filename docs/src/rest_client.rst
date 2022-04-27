@@ -124,7 +124,7 @@ which will generate the output: ::
 
     ID  Script           Creation time        State
   ----  ---------------  -------------------  -------
-     1  file://test.py   2020-09-30 10:30:12  CREATED
+     1  file://test.py   2020-09-30 10:30:12  CREATING
 
 Note the use of both positional and keyword/value arguments for the
 procedure on the command line.
@@ -136,7 +136,7 @@ giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
-    2  file://test2.py  2020-09-30 10:35:12  CREATED
+    2  file://test2.py  2020-09-30 10:35:12  CREATING
 
 
 Now create a third procedure: ::
@@ -147,7 +147,7 @@ giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
-    3  git://test3.py    2020-09-30 10:40:12  CREATED
+    3  git://test3.py    2020-09-30 10:40:12  CREATING
 
 
 We can check the state of the procedures currently loaded by: ::
@@ -158,9 +158,9 @@ giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
-     1  file://test.py   2020-09-30 10:30:12  CREATED
-     2  file://test2.py  2020-09-30 10:35:12  CREATED
-     3  git://test3.py   2020-09-30 10:40:12  CREATED
+     1  file://test.py   2020-09-30 10:30:12  READY
+     2  file://test2.py  2020-09-30 10:35:12  READY
+     3  git://test3.py   2020-09-30 10:40:12  READY
 
 Alternatively, we could check the state of procedure 2 by typing: ::
 
@@ -170,7 +170,7 @@ giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
-    2   file://test2.py  2020-09-30 10:35:12  CREATED
+    2   file://test2.py  2020-09-30 10:35:12  READY
 
 Now that we have our procedures loaded we can start one of them running.
 At this point we supply the index number of the procedure to run, and
@@ -182,7 +182,7 @@ giving: ::
 
     ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
-    2   file://test2.py  2020-09-30 10:35:12  RUNNING
+    2   file://test2.py  2020-09-30 10:35:12  READY
 
 A 'list' command will give the same information: ::
 
@@ -192,9 +192,9 @@ giving: ::
 
     ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
-     1  file://test.py   2020-09-30 10:30:12  CREATED
+     1  file://test.py   2020-09-30 10:30:12  READY
      2  file://test2.py  2020-09-30 10:35:12  RUNNING
-     3  git://test3.py   2020-09-30 10:40:12  CREATED
+     3  git://test3.py   2020-09-30 10:40:12  READY
 
 A 'describe' command will give further detail on a procedure, no
 matter its state.::
@@ -209,7 +209,12 @@ giving: ::
 
   Time                        State
   --------------------------  -------
-  2020-09-30 10:19:38.646475  CREATED
+  2020-09-30 10:19:38.011584  CREATING
+  2020-09-30 10:19:38.016266  IDLE
+  2020-09-30 10:19:38.017883  LOADING
+  2020-09-30 10:19:38.018880  IDLE
+  2020-09-30 10:19:38.019006  RUNNING
+  2020-09-30 10:19:38.019021  READY
   2020-09-30 10:35:12.605270  RUNNING
 
   Method    Arguments    Keyword Arguments
@@ -228,8 +233,12 @@ giving: ::
 
   Time                        State
   --------------------------  -------
-  2020-09-30 10:40:38.646475  CREATED
-  2020-09-30 10:35:12.605270  RUNNING
+  2020-09-30 10:40:12.435305  CREATING
+  2020-09-30 10:40:12.435332  IDLE
+  2020-09-30 10:40:12.435364  LOADING
+  2020-09-30 10:40:12.435401  IDLE
+  2020-09-30 10:40:12.435433  RUNNING
+  2020-09-30 10:40:12.435642  READY
 
   Method    Arguments    Keyword Arguments
   --------  -----------  -------------------
@@ -259,7 +268,7 @@ giving: ::
     data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056247.0666442, 'cmd': PrepareProcessCommand(script_uri='file://scripts/eventbus.py', init_args=<ProcedureInput(, subarray_id=1)>)}
 
     event: procedure.lifecycle.created
-    data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056247.0666442, 'result': ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.CREATED, 1604056247.713874)], stacktrace=None)>, state=<ProcedureState.CREATED: 1>)}
+    data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056247.0666442, 'result': ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.READY, 1604056247.713874)], stacktrace=None)>, state=<ProcedureState.READY: 1>)}
 
 
 

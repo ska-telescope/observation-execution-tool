@@ -8,7 +8,6 @@ import copy
 import threading
 import time
 import types
-from collections import OrderedDict
 from http import HTTPStatus
 from unittest import mock
 
@@ -31,32 +30,38 @@ ENDPOINT = "api/v1.0/procedures"
 
 # Valid JSON struct for creating a new procedure
 CREATE_JSON = dict(
-    script={"script_type": "filesystem", "script_uri": "test:///test.py"},
+    script={"script_type": "filesystem", "script_uri": "file:///test.py"},
     script_args={"init": dict(args=(1, 2, 3), kwargs=dict(kw1="a", kw2="b"))},
 )
 
 # object expected to be returned when creating the Procedure defined above
 CREATE_SUMMARY = ProcedureSummary(
     id=1,
-    script=domain.FileSystemScript("test:///test.py"),
-    script_args={"init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b")},
+    script=domain.FileSystemScript("file:///test.py"),
+    script_args=[
+        domain.ArgCapture(
+            fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
+        )
+    ],
     history=domain.ProcedureHistory(
-        process_states=OrderedDict(
-            [
-                (domain.ProcedureState.CREATING, 1601294086.129294),
-                (domain.ProcedureState.CREATED, 1601295086.129294),
-            ]
-        ),
+        process_states=[
+            (domain.ProcedureState.CREATING, 1.0),  # process starting
+            (domain.ProcedureState.IDLE, 2.0),  # process created
+            (domain.ProcedureState.LOADING, 3.0),  # user script loading
+            (domain.ProcedureState.IDLE, 4.0),  # user script loaded
+            (domain.ProcedureState.RUNNING, 5.0),  # init called
+            (domain.ProcedureState.READY, 6.0),  # init complete
+        ],
         stacktrace=None,
     ),
-    state=domain.ProcedureState.CREATED,
+    state=domain.ProcedureState.READY,
 )
 
 # Valid JSON struct for creating a new procedure
 CREATE_GIT_JSON = dict(
     script={
         "script_type": "git",
-        "script_uri": "test:///test.py",
+        "script_uri": "git:///test.py",
         "default_git_env": False,
         "git_args": dict(git_repo="http://foo.git", git_branch="main"),
     },
@@ -67,47 +72,60 @@ CREATE_GIT_JSON = dict(
 CREATE_GIT_SUMMARY = ProcedureSummary(
     id=1,
     script=domain.GitScript(
-        "test:///test.py",
+        "git:///test.py",
         git_args=domain.GitArgs(git_repo="http://foo.git", git_branch="main"),
         default_git_env=False,
     ),
-    script_args={"init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b")},
+    script_args=[
+        domain.ArgCapture(
+            fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
+        )
+    ],
     history=domain.ProcedureHistory(
-        process_states=OrderedDict(
-            [
-                (domain.ProcedureState.CREATING, 1601294086.129294),
-                (domain.ProcedureState.CREATED, 1601295086.129294),
-            ]
-        ),
+        process_states=[
+            (domain.ProcedureState.CREATING, 1.0),  # process starting
+            (domain.ProcedureState.IDLE, 2.0),  # process created
+            (domain.ProcedureState.LOADING, 3.0),  # user script loading
+            (domain.ProcedureState.IDLE, 4.0),  # user script loaded
+            (domain.ProcedureState.RUNNING, 5.0),  # init called
+            (domain.ProcedureState.READY, 6.0),  # init complete
+        ],
         stacktrace=None,
     ),
-    state=domain.ProcedureState.CREATED,
+    state=domain.ProcedureState.READY,
 )
 
 ABORT_JSON = dict(state="STOPPED", abort=True)
 
 # Valid JSON struct for starting a prepared procedure
 RUN_JSON = dict(
-    script_uri="test:///test.py",
-    script_args={"run": dict(args=(4, 5, 6), kwargs=dict(kw3="c", kw4="d"))},
+    script_uri="file:///test.py",
+    script_args={"main": dict(args=(4, 5, 6), kwargs=dict(kw3="c", kw4="d"))},
     state="RUNNING",
 )
 
 # object expected to be returned when the procedure is executed
 RUN_SUMMARY = ProcedureSummary(
     id=1,
-    script=domain.FileSystemScript("test:///test.py"),
-    script_args={
-        "init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"),
-        "run": domain.ProcedureInput(4, 5, 6, kw3="c", kw4="d"),
-    },
-    history=domain.ProcedureHistory(
-        process_states=OrderedDict(
-            [
-                (domain.ProcedureState.CREATED, 1601295086.129294),
-                (domain.ProcedureState.RUNNING, 1601295086.129294),
-            ]
+    script=domain.FileSystemScript("file:///test.py"),
+    script_args=[
+        domain.ArgCapture(
+            fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
         ),
+        domain.ArgCapture(
+            fn="main", fn_args=domain.ProcedureInput(4, 5, 6, kw3="c", kw4="d"), time=1
+        ),
+    ],
+    history=domain.ProcedureHistory(
+        process_states=[
+            (domain.ProcedureState.CREATING, 1.0),  # process starting
+            (domain.ProcedureState.IDLE, 2.0),  # process created
+            (domain.ProcedureState.LOADING, 3.0),  # user script loading
+            (domain.ProcedureState.IDLE, 4.0),  # user script loaded
+            (domain.ProcedureState.RUNNING, 5.0),  # init called
+            (domain.ProcedureState.READY, 6.0),  # init complete
+            (domain.ProcedureState.RUNNING, 7.0),  # main called
+        ],
         stacktrace=None,
     ),
     state=domain.ProcedureState.RUNNING,
@@ -187,16 +205,17 @@ def assert_json_equal_to_procedure_summary(
             summary_json["script"]["git_args"]["git_commit"]
             == summary.script.git_args.git_commit
         )
-    for method_name, arg_dict in summary_json["script_args"].items():
-        i: ProcedureInput = summary.script_args[method_name]
+    for args in summary.script_args:
+        i: ProcedureInput = args.fn_args
+        arg_dict = summary_json["script_args"][args.fn]
         assert i.args == tuple(arg_dict["args"])
         assert i.kwargs == arg_dict["kwargs"]
     assert summary_json["state"] == summary.state.name
     assert summary_json["history"]["stacktrace"] == summary.history.stacktrace
-    for key, val in summary.history.process_states.items():
-        assert key.name in summary_json["history"]["process_states"]
-        assert val == summary_json["history"]["process_states"][key.name]
-        assert isinstance(summary_json["history"]["process_states"][key.name], float)
+    for i, state in enumerate(summary.history.process_states):
+        assert state[0].name == summary_json["history"]["process_states"][i][0]
+        assert state[1] == summary_json["history"]["process_states"][i][1]
+        assert isinstance(summary_json["history"]["process_states"][i][1], float)
 
 
 @pytest.fixture
@@ -461,8 +480,8 @@ def test_post_to_endpoint_sends_init_arguments(client):
 
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
-        script=domain.FileSystemScript(CREATE_SUMMARY.script.script_uri),
-        init_args=CREATE_SUMMARY.script_args["init"],
+        script=CREATE_SUMMARY.script,
+        init_args=CREATE_SUMMARY.script_args[0].fn_args,
     )
     assert helper.messages[0][1]["cmd"] == expected_cmd
 
@@ -489,12 +508,8 @@ def test_post_to_endpoint_sends_git_arguments(client):
 
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
-        script=domain.GitScript(
-            CREATE_GIT_SUMMARY.script.script_uri,
-            git_args=CREATE_GIT_SUMMARY.script.git_args,
-            default_git_env=False,
-        ),
-        init_args=CREATE_SUMMARY.script_args["init"],
+        script=CREATE_GIT_SUMMARY.script,
+        init_args=CREATE_SUMMARY.script_args[0].fn_args,
     )
     assert helper.messages[0][1]["cmd"] == expected_cmd
 
@@ -527,11 +542,11 @@ def test_post_to_endpoint_sends_default_git_arguments(client):
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
         script=domain.GitScript(
-            CREATE_GIT_SUMMARY.script.script_uri,
+            CREATE_GIT_SUMMARY.script.script_uri,  # pylint: disable=no-member
             git_args=domain.GitArgs(),
             default_git_env=False,
         ),
-        init_args=CREATE_SUMMARY.script_args["init"],
+        init_args=CREATE_GIT_SUMMARY.script_args[0].fn_args,
     )
     assert helper.messages[0][1]["cmd"] == expected_cmd
 
@@ -635,7 +650,9 @@ def test_put_procedure_calls_run_on_execution_service(client):
 
     # verify correct procedure was started
     expected_cmd = StartProcessCommand(
-        process_uid=RUN_SUMMARY.id, run_args=RUN_SUMMARY.script_args["run"]
+        process_uid=RUN_SUMMARY.id,
+        fn_name="main",
+        run_args=RUN_SUMMARY.script_args[1].fn_args,
     )
     assert helper.messages[2][1]["cmd"] == expected_cmd
 

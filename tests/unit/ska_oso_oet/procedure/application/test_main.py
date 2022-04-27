@@ -149,7 +149,7 @@ def test_script_execution_service_worker_verify_start_method_called(caplog):
     SES.start should be called when 'request.procedure.start' message is received
     """
     cmd = application.StartProcessCommand(
-        process_uid=123, run_args=domain.ProcedureInput()
+        process_uid=123, fn_name="main", run_args=domain.ProcedureInput()
     )
     with mock.patch(
         "ska_oso_oet.procedure.application.main.ScriptExecutionService.start"
@@ -168,7 +168,7 @@ def test_script_execution_service_worker_verify_prepare_method_called(caplog):
     SES.prepare should be called when 'request.procedure.create' message is received
     """
     cmd = application.PrepareProcessCommand(
-        script=domain.FileSystemScript("test:///hi"), init_args=domain.ProcedureInput()
+        script=domain.FileSystemScript("file:///hi"), init_args=domain.ProcedureInput()
     )
     with mock.patch(
         "ska_oso_oet.procedure.application.main.ScriptExecutionService.prepare"
@@ -271,7 +271,7 @@ def test_main_loop_ends_when_shutdown_event_is_set():
 
 def test_main_loop_ends_on_end_message():
     """
-    Main loop should terminate when end messsage is received.
+    Main loop should terminate when end message is received.
     """
     mock_ctx = mock.MagicMock()
 
