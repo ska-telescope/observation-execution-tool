@@ -26,18 +26,8 @@ RUN poetry install --no-dev
 USER tango
 RUN poetry config virtualenvs.create false
 
-# install git
-USER root
-#RUN --mount=type=cache,target=/var/lib/apt \
-RUN \
-   runtimeDeps='git' \
-   && DEBIAN_FRONTEND=noninteractive apt-get update \
-   && apt-get -y install --no-install-recommends $runtimeDeps
 USER tango
-
 # install ska-oso-scripting library
-# Exchange the RUN statements to cache pip wheels. Useful for developer environments.
-#RUN --mount=type=cache,target=/home/tango/.cache/pip,uid=1000,gid=1000 \
 RUN \
    python3 -m pip install \
    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==4.1.0
