@@ -28,7 +28,7 @@ def execution_ends_in_expected_state(state, exec_env):
     assert final_state == state
 
 
-@then(parsers.parse("oet describe should show stacktrace with the {error}"))
-def error_returned(error, exec_env):
+@then(parsers.parse("oet describe should show stacktrace with strings {error_strings}"))
+def error_returned(error_strings, exec_env):
     response = exec_env.run_oet_command("describe")
-    assert error in response
+    assert all([e in response for e in error_strings.split(", ")])
