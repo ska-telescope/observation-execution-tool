@@ -75,7 +75,9 @@ def test_get_hash_when_branch_given(mock_ls_remote_fn):
     mock_ls_remote_fn.return_value = (
         "69e93d57916f837ee93ca125f2785f0f6e21974d\\feature_branch"
     )
-    result = get_commit_hash(GitArgs(git_repo="https://gitlab.com/", git_branch="feature_branch"))
+    result = get_commit_hash(
+        GitArgs(git_repo="https://gitlab.com/", git_branch="feature_branch")
+    )
 
     assert mock_ls_remote_fn.call_args == mock.call(
         "ls_remote", "-h", "https://gitlab.com/", "feature_branch"

@@ -46,13 +46,12 @@ def clone_repo(git_args: GitArgs, location: str) -> None:
         _checkout_commit(clone_dir, git_args.git_commit)
 
 
-def get_commit_hash(
-    git_args: GitArgs, short_hash=False
-) -> str:
+def get_commit_hash(git_args: GitArgs, short_hash=False) -> str:
     """
     Get a commit hash from a remote repository
 
     :param git_args: Arguments to point to git environment to get hash for
+    :param short_hash: Return first 7 characters of the hash
 
     :return: The SHA for the specified commit.
         If a tag and a branch are both supplied, the tag takes precedence.
@@ -61,7 +60,7 @@ def get_commit_hash(
     if git_args.git_commit:
         return git_args.git_commit
 
-    if git_args.git_branch is not "master":
+    if git_args.git_branch != "master":
         response = Git().ls_remote("-h", git_args.git_repo, git_args.git_branch)
     else:
         response = Git().ls_remote(git_args.git_repo, "HEAD")
