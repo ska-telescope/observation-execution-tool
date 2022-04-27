@@ -705,11 +705,7 @@ class ModuleFactory:
         :param script: GitScript object with information on script location
         :return: Python module
         """
-        git_commit = get_commit_hash(
-            script.git_args.git_repo,
-            git_branch=script.git_args.git_branch,
-            short_hash=True,
-        )
+        git_commit = get_commit_hash(script.git_args, short_hash=True)
 
         clone_dir = "/tmp/clones/" + git_commit
         if not os.path.isdir(clone_dir):
