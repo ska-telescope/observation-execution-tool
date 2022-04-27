@@ -57,6 +57,7 @@ CREATE_GIT_JSON = dict(
     script={
         "script_type": "git",
         "script_uri": "test:///test.py",
+        "default_git_env": False,
         "git_args": dict(git_repo="http://foo.git", git_branch="main"),
     },
     script_args={"init": dict(args=(1, 2, 3), kwargs=dict(kw1="a", kw2="b"))},
@@ -68,6 +69,7 @@ CREATE_GIT_SUMMARY = ProcedureSummary(
     script=domain.GitScript(
         "test:///test.py",
         git_args=domain.GitArgs(git_repo="http://foo.git", git_branch="main"),
+        default_git_env=False,
     ),
     script_args={"init": domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b")},
     history=domain.ProcedureHistory(
@@ -490,6 +492,7 @@ def test_post_to_endpoint_sends_git_arguments(client):
         script=domain.GitScript(
             CREATE_GIT_SUMMARY.script.script_uri,
             git_args=CREATE_GIT_SUMMARY.script.git_args,
+            default_git_env=False,
         ),
         init_args=CREATE_SUMMARY.script_args["init"],
     )
@@ -524,7 +527,9 @@ def test_post_to_endpoint_sends_default_git_arguments(client):
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
         script=domain.GitScript(
-            CREATE_GIT_SUMMARY.script.script_uri, git_args=domain.GitArgs()
+            CREATE_GIT_SUMMARY.script.script_uri,
+            git_args=domain.GitArgs(),
+            default_git_env=False,
         ),
         init_args=CREATE_SUMMARY.script_args["init"],
     )

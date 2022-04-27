@@ -426,7 +426,9 @@ def test_process_manager_create_captures_git_arguments(manager, script):
     Verify that ProcessManager passes through git arguments to the procedures it creates
     """
     expected = GitArgs(git_repo="http://foo.git", git_commit="HEAD", git_branch="main")
-    git_script = GitScript(script_uri=script.script_uri, git_args=expected)
+    git_script = GitScript(
+        script_uri=script.script_uri, git_args=expected, default_git_env=False
+    )
     pid = manager.create(git_script, init_args=ProcedureInput())
     created = manager.procedures[pid]
     assert isinstance(created.script, GitScript)

@@ -210,7 +210,11 @@ def create_procedure():
             git_args = domain.GitArgs(**script_dict.get("git_args"))
         else:
             git_args = domain.GitArgs()
-        script = domain.GitScript(script_uri, git_args=git_args)
+        script = domain.GitScript(
+            script_uri,
+            git_args=git_args,
+            default_git_env=script_dict.get("default_git_env", True),
+        )
     else:
         description = {
             "type": "Malformed Request",

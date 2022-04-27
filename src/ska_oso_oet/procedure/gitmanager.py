@@ -34,7 +34,9 @@ def clone_repo(git_args: GitArgs, location: str) -> None:
         _checkout_commit(clone_dir, git_args.git_commit)
 
 
-def get_commit_hash(git_url: str, git_tag: str = None, git_branch: str = None) -> str:
+def get_commit_hash(
+    git_url: str, git_tag: str = None, git_branch: str = None, short_hash=False
+) -> str:
     """
     Get a commit hash from a remote repository
 
@@ -52,7 +54,8 @@ def get_commit_hash(git_url: str, git_tag: str = None, git_branch: str = None) -
         response = Git().ls_remote("-h", git_url, git_branch)
     else:
         response = Git().ls_remote(git_url, "HEAD")
-
+    if short_hash:
+        return response[:7]
     return response.split("\\")[0]
 
 
