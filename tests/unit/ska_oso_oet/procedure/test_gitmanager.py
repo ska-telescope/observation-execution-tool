@@ -43,8 +43,8 @@ def test_clone_not_done_if_already_cloned(mock_commit_hash_fn, mock_clone_fn, ma
     mock_commit_hash_fn.side_effect = [commit]
 
     # Add the commit to manager's list as if it has been previously cloned
-    manager._clones["fake-repo-name"] = []
-    manager._clones["fake-repo-name"].append(commit)
+    manager._clones["fake-repo-name"] = []  # pylint: disable=protected-access
+    manager._clones["fake-repo-name"].append(commit)  # pylint: disable=protected-access
 
     manager.clone_repo(GitArgs(git_repo="https://test.com/fake-repo-name.git"))
     mock_clone_fn.assert_not_called()
@@ -71,7 +71,12 @@ def test_repo_is_shallow_cloned_from_main_when_defaults_given(
         single_branch=True,
         branch="master",
     )
-    assert commit in manager._clones["ska-telescope-ska-oso-scripting"]
+    assert (
+        commit
+        in manager._clones[  # pylint: disable=protected-access
+            "ska-telescope-ska-oso-scripting"
+        ]
+    )
     assert "initial-file.txt" in os.listdir(expected_path)
 
 
@@ -96,7 +101,12 @@ def test_repo_is_shallow_cloned_from_branch(
         branch="feature-branch",
     )
 
-    assert commit in manager._clones["ska-telescope-ska-oso-scripting"]
+    assert (
+        commit
+        in manager._clones[  # pylint: disable=protected-access
+            "ska-telescope-ska-oso-scripting"
+        ]
+    )
     assert "initial-file.txt" in os.listdir(expected_path)
 
 
@@ -120,7 +130,7 @@ def test_repo_is_full_cloned_and_commit_checked_out_when_hash_given(
         expected_path,
     )
 
-    assert commit in manager._clones["test-repo"]
+    assert commit in manager._clones["test-repo"]  # pylint: disable=protected-access
     assert "initial-file.txt" in os.listdir(expected_path)
     assert "feature-a-file.txt" in os.listdir(expected_path)
 
