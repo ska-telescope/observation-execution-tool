@@ -6,7 +6,7 @@ import subprocess
 import venv
 
 from ska_oso_oet.procedure.domain import GitArgs
-from ska_oso_oet.procedure.gitmanager import get_commit_hash
+from ska_oso_oet.procedure.gitmanager import GitManager
 
 
 @dataclasses.dataclass
@@ -27,7 +27,7 @@ class EnvironmentManager:
         if git_args.git_commit:
             git_commit = git_args.git_commit
         else:
-            git_commit = get_commit_hash(git_args)
+            git_commit = GitManager.get_commit_hash(git_args)
 
         if git_commit in self._envs.keys():
             return self._envs.get(git_commit)

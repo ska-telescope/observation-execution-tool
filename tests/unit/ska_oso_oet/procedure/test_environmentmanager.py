@@ -29,7 +29,7 @@ def test_environment_is_returned_when_hash_exists():
     assert result == TEST_ENVIRONMENT
 
 
-@mock.patch("ska_oso_oet.procedure.environment.get_commit_hash")
+@mock.patch("ska_oso_oet.procedure.environment.GitManager.get_commit_hash")
 @mock.patch.object(venv, "create")
 @mock.patch.object(subprocess, "run")
 def test_environment_is_created_when_hash_is_new(

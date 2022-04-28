@@ -10,7 +10,6 @@ import importlib.machinery
 import itertools
 import logging
 import multiprocessing
-import os
 import signal
 import threading
 import time
@@ -20,13 +19,17 @@ from typing import Dict, List, Optional, Tuple
 from ska_oso_oet import mptools
 from ska_oso_oet.command import SCAN_ID_GENERATOR
 from ska_oso_oet.mptools import EventMessage
-from ska_oso_oet.procedure.gitmanager import GitArgs, clone_repo, get_commit_hash
+from ska_oso_oet.procedure.environment import EnvironmentManager
+from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 
 LOGGER = logging.getLogger(__name__)
 
 HISTORY_MAX_LENGTH = 10
 
 DEFAULT_SIGTERM_HANDLER = signal.getsignal(signal.SIGTERM)
+
+GM = GitManager()
+EM = EnvironmentManager()
 
 
 def script_signal_handler(
@@ -698,21 +701,20 @@ class ModuleFactory:
     @staticmethod
     def _load_module_from_git(script: GitScript) -> types.ModuleType:
         """
-        Load Python module from a git repository. Clone the repository if repo has not yet been cloned.
-        The repository will not have been cloned if default environment is being used.
-        This module handles git:// URIs.
+        Load Python module from a git repository. Clones the repository if repo has not yet
+        been cloned. The repository will not have been cloned if default environment is being
+        used. This module handles git:// URIs.
 
         :param script: GitScript object with information on script location
         :return: Python module
         """
-        git_commit = get_commit_hash(script.git_args, short_hash=True)
+        clone_path = GM.clone_repo(script.git_args)
 
-        clone_dir = "/tmp/clones/" + git_commit
-        if not os.path.isdir(clone_dir):
-            clone_repo(script.git_args, clone_dir)
-        path = clone_dir + "/" + script.script_uri[6:]
+        # remove prefix and any leading slashes
+        relative_script_path = script.script_uri[len(script.get_prefix()) :].lstrip("/")
+        script_path = clone_path + relative_script_path
 
-        loader = importlib.machinery.SourceFileLoader("user_module", path)
+        loader = importlib.machinery.SourceFileLoader("user_module", script_path)
         user_module = types.ModuleType(loader.name)
         loader.exec_module(user_module)
         return user_module
