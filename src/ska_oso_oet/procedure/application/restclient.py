@@ -346,7 +346,7 @@ class RestClientUI:
         script_uri: str,
         *args,
         subarray_id=1,
-        default_git_env: str = "true",
+        default_git_env: bool = True,
         **kwargs,
     ) -> str:
         """
@@ -376,7 +376,7 @@ class RestClientUI:
                 git_args[arg] = kwargs[arg]
             else:
                 init_kwargs[arg] = kwargs[arg]
-        default_git_env = default_git_env.lower() == "true"
+
         init_args = dict(args=args, kwargs=init_kwargs)
         try:
             procedure = self._client.create(

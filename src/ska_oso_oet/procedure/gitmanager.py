@@ -45,7 +45,7 @@ class GitManager:
             clone_args["single_branch"] = True
             clone_args["branch"] = git_args.git_branch
 
-        project_name = self._get_project_name(git_args.git_repo)
+        project_name = self.get_project_name(git_args.git_repo)
         clone_dir = self.base_dir + project_name + "/" + git_commit + "/"
 
         if project_name not in self._clones:
@@ -58,6 +58,11 @@ class GitManager:
             if git_args.git_commit:
                 self._checkout_commit(clone_dir, git_args.git_commit)
 
+        if not os.path.exists(clone_dir):
+            raise RuntimeError(
+                "Something went wrong when cloning the project, directory"
+                f" {clone_dir} does not exist"
+            )
         return clone_dir
 
     @staticmethod
@@ -84,7 +89,7 @@ class GitManager:
         return response.split("\\")[0]
 
     @staticmethod
-    def _get_project_name(git_repo):
+    def get_project_name(git_repo: str):
         """Get the git project name including full folder tree to avoid project
         name clashes (e.g. name for project at http://gitlab.com/ska-telescope/ska-oso-scripting
         is ska-telescope-ska-oso-scripting)"""

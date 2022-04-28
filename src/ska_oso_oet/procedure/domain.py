@@ -11,6 +11,9 @@ import itertools
 import logging
 import multiprocessing
 import signal
+import site
+import subprocess
+import sys
 import threading
 import time
 import types
@@ -19,7 +22,7 @@ from typing import Dict, List, Optional, Tuple
 from ska_oso_oet import mptools
 from ska_oso_oet.command import SCAN_ID_GENERATOR
 from ska_oso_oet.mptools import EventMessage
-from ska_oso_oet.procedure.environment import EnvironmentManager
+from ska_oso_oet.procedure.environment import Environment, EnvironmentManager
 from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 
 LOGGER = logging.getLogger(__name__)
@@ -287,12 +290,39 @@ class ScriptWorker(mptools.ProcWorker):
         self, evt: EventMessage
     ):  # pylint: disable=unused-argument,arguments-differ
 
-        if evt.msg_type not in ("LOAD", "RUN"):
+        if evt.msg_type not in ("ENV", "LOAD", "RUN"):
             self.log(logging.WARN, "Unexpected message: %s", evt)
             return
 
         if self._scan_counter:
             SCAN_ID_GENERATOR.backing = self._scan_counter
+
+        if evt.msg_type == "ENV":
+            self.publish_lifecycle(ProcedureState.LOADING)
+            env, script = evt.msg
+
+            if not isinstance(script, GitScript):
+                raise RuntimeError(
+                    "Cannot create virtual environment for script type"
+                    f" {script.__class__.__name__}"
+                )
+
+            clone_dir = GM.clone_repo(script.git_args)
+
+            site.addsitedir(env.site_packages)
+            assert env.site_packages in sys.path
+
+            # install the cloned project
+            try:
+                subprocess.check_output(
+                    [f"{env.location}/bin/python", "-m", "pip", "install", "."],
+                    cwd=clone_dir,
+                )
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(
+                    f"Error occurred when installing environment: {e.output}"
+                )
+            self.publish_lifecycle(ProcedureState.IDLE)
 
         if evt.msg_type == "LOAD":
             self.publish_lifecycle(ProcedureState.LOADING)
@@ -365,6 +395,7 @@ class ProcessManager:
         self.states: Dict[int, ProcedureState] = {}
         self.script_args: Dict[int, List[ArgCapture]] = {}
         self.scripts: Dict[int, ExecutableScript] = {}
+        self.environments: Dict[int, Environment] = {}
 
         # message boxes for manager to each script worker
         self.script_queues: Dict[int, mptools.MPQueue] = {}
@@ -447,8 +478,16 @@ class ProcessManager:
         work_q = self.ctx.MPQueue()
         self.script_queues[pid] = work_q
 
-        # prime the work queue with an initial message instructing it to load the child script
+        # prime the work queue with an initial message instructing it to set up environment,
+        # load the child script and run init function of the script
         msg_src = self.__class__.__name__
+
+        if isinstance(script, GitScript) and not script.default_git_env:
+            env = EM.create_env(script.git_args)
+            self.environments[pid] = env
+            env_msg = EventMessage(msg_src=msg_src, msg_type="ENV", msg=(None, script))
+            work_q.safe_put(env_msg)
+
         load_msg = EventMessage(msg_src=msg_src, msg_type="LOAD", msg=script)
         work_q.safe_put(load_msg)
         # ... and also to execute init
