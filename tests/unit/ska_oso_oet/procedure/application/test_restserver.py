@@ -18,13 +18,13 @@ from pubsub import pub
 import ska_oso_oet.procedure.domain as domain
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.application import restserver
-from ska_oso_oet.procedure.gitmanager import GitArgs
 from ska_oso_oet.procedure.application.application import (
     PrepareProcessCommand,
     StartProcessCommand,
     StopProcessCommand,
 )
 from ska_oso_oet.procedure.domain import ProcedureInput, ProcedureSummary
+from ska_oso_oet.procedure.gitmanager import GitArgs
 
 # Endpoint for the REST API
 ENDPOINT = "api/v1.0/procedures"

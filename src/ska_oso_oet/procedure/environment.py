@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import venv
 
-from ska_oso_oet.procedure.gitmanager import GitManager, GitArgs
+from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 
 
 @dataclasses.dataclass

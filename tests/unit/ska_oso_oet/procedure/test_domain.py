@@ -15,7 +15,6 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 import ska_oso_oet.mptools as mptools
-from ska_oso_oet.procedure.gitmanager import GitArgs
 from ska_oso_oet.procedure.domain import (
     HISTORY_MAX_LENGTH,
     ArgCapture,
@@ -28,6 +27,7 @@ from ska_oso_oet.procedure.domain import (
     ProcedureSummary,
     ProcessManager,
 )
+from ska_oso_oet.procedure.gitmanager import GitArgs
 
 
 @pytest.fixture

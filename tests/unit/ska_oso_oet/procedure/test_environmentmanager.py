@@ -5,8 +5,8 @@ import subprocess
 import unittest.mock as mock
 import venv
 
-from ska_oso_oet.procedure.gitmanager import GitArgs
 from ska_oso_oet.procedure.environment import Environment, EnvironmentManager
+from ska_oso_oet.procedure.gitmanager import GitArgs
 
 TEST_ENVIRONMENT = Environment(
     creating_condition=multiprocessing.Condition(),
