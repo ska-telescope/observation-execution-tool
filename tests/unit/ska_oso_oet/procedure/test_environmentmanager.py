@@ -5,7 +5,7 @@ import subprocess
 import unittest.mock as mock
 import venv
 
-from ska_oso_oet.procedure.domain import GitArgs
+from ska_oso_oet.procedure.gitmanager import GitArgs
 from ska_oso_oet.procedure.environment import Environment, EnvironmentManager
 
 TEST_ENVIRONMENT = Environment(
