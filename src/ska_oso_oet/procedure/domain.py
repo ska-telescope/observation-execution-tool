@@ -10,6 +10,7 @@ import importlib.machinery
 import itertools
 import logging
 import multiprocessing
+import os
 import signal
 import site
 import subprocess
@@ -30,9 +31,6 @@ LOGGER = logging.getLogger(__name__)
 HISTORY_MAX_LENGTH = 10
 
 DEFAULT_SIGTERM_HANDLER = signal.getsignal(signal.SIGTERM)
-
-GM = GitManager()
-EM = EnvironmentManager()
 
 
 def script_signal_handler(
@@ -298,7 +296,6 @@ class ScriptWorker(mptools.ProcWorker):
             SCAN_ID_GENERATOR.backing = self._scan_counter
 
         if evt.msg_type == "ENV":
-            self.publish_lifecycle(ProcedureState.LOADING)
             env, script = evt.msg
 
             if not isinstance(script, GitScript):
@@ -307,21 +304,30 @@ class ScriptWorker(mptools.ProcWorker):
                     f" {script.__class__.__name__}"
                 )
 
-            clone_dir = GM.clone_repo(script.git_args)
+            clone_dir = GitManager.clone_repo(script.git_args)
 
             site.addsitedir(env.site_packages)
             assert env.site_packages in sys.path
 
             # install the cloned project
-            try:
-                subprocess.check_output(
-                    [f"{env.location}/bin/python", "-m", "pip", "install", "."],
-                    cwd=clone_dir,
-                )
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(
-                    f"Error occurred when installing environment: {e.output}"
-                )
+            os.environ["POETRY_VIRTUALENVS_IN_PROJECT"] = "false"
+            os.environ["POETRY_VIRTUALENVS_CREATE"] = "false"
+            os.environ["POETRY_VIRTUALENVS_PATH"] = env.location
+
+            subprocess.check_call(
+                [
+                    f"{env.location}/bin/python",
+                    "-m",
+                    "pip",
+                    "install",
+                    "--index-url https://pypi.org/simple",
+                    "--no-cache-dir",
+                    "poetry",
+                ]
+            )
+            subprocess.check_call(
+                [f"{env.location}/bin/poetry", "install"], cwd=clone_dir
+            )
             self.publish_lifecycle(ProcedureState.IDLE)
 
         if evt.msg_type == "LOAD":
@@ -389,6 +395,7 @@ class ProcessManager:
         self.ctx = mptools.MainContext()
 
         self._pid_counter = itertools.count(1)
+        self.em = EnvironmentManager()
 
         # mappings of Procs to various identifying metadata
         self.procedures: Dict[int, mptools.Proc] = {}
@@ -483,9 +490,9 @@ class ProcessManager:
         msg_src = self.__class__.__name__
 
         if isinstance(script, GitScript) and not script.default_git_env:
-            env = EM.create_env(script.git_args)
+            env = self.em.create_env(script.git_args)
             self.environments[pid] = env
-            env_msg = EventMessage(msg_src=msg_src, msg_type="ENV", msg=(None, script))
+            env_msg = EventMessage(msg_src=msg_src, msg_type="ENV", msg=(env, script))
             work_q.safe_put(env_msg)
 
         load_msg = EventMessage(msg_src=msg_src, msg_type="LOAD", msg=script)
@@ -747,7 +754,7 @@ class ModuleFactory:
         :param script: GitScript object with information on script location
         :return: Python module
         """
-        clone_path = GM.clone_repo(script.git_args)
+        clone_path = GitManager.clone_repo(script.git_args)
 
         # remove prefix and any leading slashes
         relative_script_path = script.script_uri[len(script.get_prefix()) :].lstrip("/")

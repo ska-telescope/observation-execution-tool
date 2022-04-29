@@ -21,11 +21,10 @@ class GitArgs:
 
 
 class GitManager:
-    def __init__(self):
-        self._clones = {}
-        self.base_dir = "/tmp/clones/"
+    base_dir = "/tmp/clones/"
 
-    def clone_repo(self, git_args: GitArgs) -> str:
+    @staticmethod
+    def clone_repo(git_args: GitArgs) -> str:
         """
         Clone a remote repository into the local filesystem, with the HEAD pointing to the revision
         defined in the input
@@ -45,24 +44,23 @@ class GitManager:
             clone_args["single_branch"] = True
             clone_args["branch"] = git_args.git_branch
 
-        project_name = self.get_project_name(git_args.git_repo)
-        clone_dir = self.base_dir + project_name + "/" + git_commit + "/"
+        project_name = GitManager.get_project_name(git_args.git_repo)
+        clone_dir = GitManager.base_dir + project_name + "/" + git_commit + "/"
 
-        if project_name not in self._clones:
-            self._clones[project_name] = []
+        if os.path.exists(clone_dir):
+            return clone_dir
 
-        if git_commit not in self._clones[project_name]:
-            Repo.clone_from(git_args.git_repo, clone_dir, **clone_args)
-            self._clones[project_name].append(git_commit)
-
-            if git_args.git_commit:
-                self._checkout_commit(clone_dir, git_args.git_commit)
+        Repo.clone_from(git_args.git_repo, clone_dir, **clone_args)
 
         if not os.path.exists(clone_dir):
             raise RuntimeError(
                 "Something went wrong when cloning the project, directory"
                 f" {clone_dir} does not exist"
             )
+
+        if git_args.git_commit:
+            GitManager._checkout_commit(clone_dir, git_args.git_commit)
+
         return clone_dir
 
     @staticmethod
@@ -95,7 +93,8 @@ class GitManager:
         is ska-telescope-ska-oso-scripting)"""
         return "-".join(git_repo.split("/")[3:]).split(".")[0].replace("/", "-")
 
-    def _checkout_commit(self, location: str, hexsha: str) -> None:
+    @staticmethod
+    def _checkout_commit(location: str, hexsha: str) -> None:
         """
         Checkout an existing repository to a specific commit
 
