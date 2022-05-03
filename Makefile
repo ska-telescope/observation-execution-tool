@@ -70,3 +70,9 @@ k8s-pre-test:
 
 k8s-post-test:
 	kubectl -n $(KUBE_NAMESPACE) exec ska-oso-oet-rest-$(HELM_RELEASE)-0 -- rm -r /tmp/scripts
+
+# install helm plugin from https://github.com/quintush/helm-unittest
+k8s-chart-test:
+	mkdir -p charts/build; \
+	helm unittest charts/ska-oso-oet/ --helm3 --with-subchart \
+		--output-type JUnit --output-file charts/build/chart_template_tests.xml
