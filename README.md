@@ -27,6 +27,12 @@ make python-test
 make python-lint
 ```
 
+To run a helm chart unit tests to verify helm chart configuration:
+
+```
+make k8s-chart-test
+```
+
 To build a new Docker image for the OET, run
 
 ```
