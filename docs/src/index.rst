@@ -108,6 +108,8 @@ targets that can be useful for developers. These targets are:
 +-----------------+------------------------------------------------+
 | rest            | start the OET backend in a Docker container    |
 +-----------------+------------------------------------------------+
+| k8s-chart-test  | run helm chart unit tests                      |
++-----------------+------------------------------------------------+
 | help            | show a summary of the makefile targets above   |
 +-----------------+------------------------------------------------+
 
