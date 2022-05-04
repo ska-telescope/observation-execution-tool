@@ -8,6 +8,15 @@ tests:
       - hasDocuments:
           count: 3
 
+  - it: should have four documents rendered if ingress type is enabled.
+    set:
+      rest:
+        ingress:
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 4
+
   - it: should have the correct apiVersion, apps/v1, for the StatefulSet resource.
     documentIndex: 2
     asserts:

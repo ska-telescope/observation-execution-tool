@@ -28,8 +28,9 @@ make python-lint
 ```
 
 To run a helm chart unit tests to verify helm chart configuration:
-
+ 
 ```
+helm plugin install https://github.com/quintush/helm-unittest
 make k8s-chart-test
 ```
 
