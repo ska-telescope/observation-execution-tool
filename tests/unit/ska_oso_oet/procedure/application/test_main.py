@@ -21,58 +21,58 @@ from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_hel
 from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
 
 
-def test_event_bus_worker_verify_message_publishes_when_message_in_work_queue(caplog):
-    """
-    Verify that message event is published if the event originates from an
-    external source.
-    """
-    helper = PubSubHelper()
+class TestEventBusWorker:
+    def test_external_messages_are_published_locally(self, caplog):
+        """
+        Verify that message event is published if the event originates from an
+        external source.
+        """
+        helper = PubSubHelper()
 
-    work_q = MPQueue()
-    msg = EventMessage(
-        "EXTERNAL COMPONENT",
-        "PUBSUB",
-        dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
-    )
-    work_q.put(msg)
-    _proc_worker_wrapper_helper(
-        caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True
-    )
+        work_q = MPQueue()
+        msg = EventMessage(
+            "EXTERNAL COMPONENT",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
+        )
+        work_q.put(msg)
+        _proc_worker_wrapper_helper(
+            caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True
+        )
 
-    assert topics.request.procedure.list in helper.topic_list
+        assert topics.request.procedure.list in helper.topic_list
 
+    def test_internal_messages_not_republished(self, caplog):
+        """
+        Verify that message event is not published if the event originates from
+        an internal source.
+        """
+        helper = PubSubHelper()
 
-def test_event_bus_worker_does_not_publish_messages_from_self(caplog):
-    """
-    Verify that message event is not published if the event originates from
-    an internal source.
-    """
-    helper = PubSubHelper()
+        work_q = MPQueue()
+        # TEST is the default component name assigned in
+        # _proc_worker_wrapper_helper. This message should be ignored.
+        msg = EventMessage(
+            "TEST",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
+        )
 
-    work_q = MPQueue()
-    # TEST is the default component name assigned in
-    # _proc_worker_wrapper_helper. This message should be ignored.
-    msg = EventMessage(
-        "TEST",
-        "PUBSUB",
-        dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
-    )
+        work_q.put(msg)
+        # But coming from NONTEST, this message should be republished.
+        msg = EventMessage(
+            "NONTEST",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "456"}),
+        )
+        work_q.put(msg)
 
-    work_q.put(msg)
-    # But coming from NONTEST, this message should be republished.
-    msg = EventMessage(
-        "NONTEST",
-        "PUBSUB",
-        dict(topic=topics.request.procedure.list, kwargs={"request_id": "456"}),
-    )
-    work_q.put(msg)
+        _proc_worker_wrapper_helper(
+            caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True
+        )
 
-    _proc_worker_wrapper_helper(
-        caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True
-    )
-
-    assert len(helper.messages) == 1
-    assert helper.messages[0][1] == dict(msg_src="NONTEST", request_id="456")
+        assert len(helper.messages) == 1
+        assert helper.messages[0][1] == dict(msg_src="NONTEST", request_id="456")
 
 
 def test_script_execution_service_worker_verify_list_method_called(caplog):

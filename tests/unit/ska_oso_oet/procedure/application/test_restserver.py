@@ -16,6 +16,7 @@ import pytest
 from pubsub import pub
 
 import ska_oso_oet.procedure.domain as domain
+from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.application import restserver
 from ska_oso_oet.procedure.application.application import (
@@ -176,6 +177,21 @@ class PubSubHelper:
         s = cls.split(".")
         cls = getattr(module, s[0])
         return self.get_topic_class(cls, ".".join(s[1:]))
+
+    def messages_on_topic(self, topic):
+        return [
+            msg
+            for msg_topic, msg in self.messages
+            if msg_topic.name == topic._topicNameStr
+        ]
+
+    def wait_for_message_on_topic(self, topic, timeout=1.0, tick=0.01):
+        deadline = time.time() + timeout
+        sleep_secs = tick
+        len_before = len(self.messages_on_topic(topic))
+        while len(self.messages_on_topic(topic)) == len_before and sleep_secs > 0:
+            time.sleep(sleep_secs)
+            sleep_secs = mptools._sleep_secs(tick, deadline)
 
 
 def assert_json_equal_to_procedure_summary(

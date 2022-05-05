@@ -15,6 +15,8 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 import ska_oso_oet.mptools as mptools
+from ska_oso_oet.event import topics
+from ska_oso_oet.mptools import EventMessage, MPQueue
 from ska_oso_oet.procedure.domain import (
     HISTORY_MAX_LENGTH,
     ArgCapture,
@@ -27,7 +29,10 @@ from ska_oso_oet.procedure.domain import (
     ProcedureState,
     ProcedureSummary,
     ProcessManager,
+    ScriptWorker,
 )
+from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
+from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
 
 
 @pytest.fixture
@@ -37,6 +42,29 @@ def script(tmpdir):
     """
     script_path = tmpdir.join("script.py")
     script_path.write("def main(*args, **kwargs):\n\tpass")
+    return FileSystemScript(f"file://{str(script_path)}")
+
+
+@pytest.fixture
+def pubsub_script(tmpdir):
+    """
+    Pytest fixture to return a path to a script that emits OET events
+    """
+    script_path = tmpdir.join("script.py")
+    script_path.write(
+        """
+import threading
+from pubsub import pub
+from ska_oso_oet.event import topics
+
+def main(msg):
+    pub.sendMessage(
+        topics.user.script.announce,
+        msg_src=threading.current_thread().name,
+        msg=msg
+    )
+"""
+    )
     return FileSystemScript(f"file://{str(script_path)}")
 
 
@@ -315,6 +343,53 @@ def wait_for_state(
         sleep_secs = mptools._sleep_secs(tick, deadline)
 
 
+class TestScriptWorkerPubSub:
+    def test_external_messages_are_published_locally(self, caplog):
+        """
+        Verify that message event is published if the event originates from an
+        external source.
+        """
+        helper = PubSubHelper()
+
+        work_q = MPQueue()
+        msg = EventMessage(
+            "EXTERNAL COMPONENT",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
+        )
+        work_q.put(msg)
+        _proc_worker_wrapper_helper(
+            caplog, ScriptWorker, args=(work_q,), expect_shutdown_evt=True
+        )
+
+        msgs_on_topic = helper.messages_on_topic(topics.request.procedure.list)
+        assert len(msgs_on_topic) == 1
+
+    def test_internal_messages_not_republished(self, caplog):
+        """
+        Verify that message event is not published if the event originates from
+        an internal source.
+        """
+        helper = PubSubHelper()
+
+        work_q = MPQueue()
+        # TEST is the default component name assigned in
+        # _proc_worker_wrapper_helper. This message should not be published to pypubsub
+        msg = EventMessage(
+            "TEST",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
+        )
+        work_q.put(msg)
+
+        _proc_worker_wrapper_helper(
+            caplog, ScriptWorker, args=(work_q,), expect_shutdown_evt=True
+        )
+
+        msgs_on_topic = helper.messages_on_topic(topics.request.procedure.list)
+        assert len(msgs_on_topic) == 0
+
+
 class TestProcessManagerScriptWorkerIntegration:
     @staticmethod
     def assert_states(history: ProcedureHistory, expected: List[ProcedureState]):
@@ -508,6 +583,76 @@ class TestProcessManagerScriptWorkerIntegration:
         resume.wait(0.1)
         wait_for_state(manager, pid, ProcedureState.COMPLETED)
         assert manager.running is None
+
+    def test_happy_path_procedure_lifecycle_events(self, manager, script):
+        """
+        Verify that OET events are published at the appropriate times for a
+        happy-path script.
+        """
+        helper = PubSubHelper()
+
+        pid = manager.create(script, init_args=ProcedureInput())
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.created)
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
+
+        manager.run(pid, call="main", run_args=ProcedureInput())
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.stopped)
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
+
+        assert helper.topic_list == [
+            topics.procedure.lifecycle.created,
+            topics.procedure.lifecycle.started,
+            topics.procedure.lifecycle.stopped,
+        ]
+
+    def test_sad_path_procedure_lifecycle_events(self, manager, fail_script):
+        """
+        Verify that OET events are published at the appropriate times for a
+        sad-path script.
+        """
+        helper = PubSubHelper()
+
+        pid = manager.create(fail_script, init_args=ProcedureInput())
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.created)
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 0
+
+        manager.run(pid, call="main", run_args=ProcedureInput(msg="foo"))
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.stopped)
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 1
+
+        assert helper.topic_list == [
+            topics.procedure.lifecycle.created,
+            topics.procedure.lifecycle.started,
+            topics.procedure.lifecycle.failed,
+            topics.procedure.lifecycle.stopped,
+        ]
+
+    def test_events_emitted_from_scripts_republished(self, manager, pubsub_script):
+        """
+        Verify that OET events are published at the appropriate times for a
+        sad-path script.
+        """
+        helper = PubSubHelper()
+
+        pid = manager.create(pubsub_script, init_args=ProcedureInput())
+        wait_for_state(manager, pid, ProcedureState.READY)
+
+        manager.run(pid, call="main", run_args=ProcedureInput(msg="foo"))
+        helper.wait_for_message_on_topic(topics.user.script.announce)
+        user_msgs = helper.messages_on_topic(topics.user.script.announce)
+        assert len(user_msgs) == 1
 
 
 class TestProcessManager:
