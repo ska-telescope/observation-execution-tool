@@ -626,7 +626,7 @@ class TestProcessManagerScriptWorkerIntegration:
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 0
 
         manager.run(pid, call="main", run_args=ProcedureInput(msg="foo"))
-        helper.wait_for_message_on_topic(topics.procedure.lifecycle.stopped)
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.failed)
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 1
@@ -635,8 +635,8 @@ class TestProcessManagerScriptWorkerIntegration:
         assert helper.topic_list == [
             topics.procedure.lifecycle.created,
             topics.procedure.lifecycle.started,
-            topics.procedure.lifecycle.failed,
             topics.procedure.lifecycle.stopped,
+            topics.procedure.lifecycle.failed,
         ]
 
     def test_events_emitted_from_scripts_republished(self, manager, pubsub_script):

@@ -350,14 +350,6 @@ class ScriptWorker(mptools.ProcWorker):
             # raised by the signal handler on Proc.terminate()
             pass
 
-        except Exception:
-            # TODO: migrate these messages to the ProcessManager so that
-            # we can send result=ProcedureSummary
-            self.send_message(
-                topics.procedure.lifecycle.failed, request_id=None, result=None
-            )
-            raise
-
         finally:
             # this can't be moved to shutdown() yet as the mptools test functions
             # expect a SHUTDOWN message to be the last message sent. There is scope
@@ -621,6 +613,10 @@ class ProcessManager:
 
     # TODO make this function an instance of threading.Thread so that update_history
     # and cleanup can be methods on that class?
+    #
+    # For separation of concerns it could be good to split state history recording
+    # from state management
+    # TODO migrate history recording to new class or ScriptExecutionService?
     def status_updater(self):
         deletable_states = [
             ProcedureState.COMPLETED,
@@ -677,6 +673,13 @@ class ProcessManager:
                     update_history(event, ProcedureState.FAILED)
                     self.history[pid].stacktrace = event.msg
                     cleanup(event, ProcedureState.FAILED)
+
+                pub.sendMessage(
+                    topics.procedure.lifecycle.failed,
+                    msg_src=threading.current_thread().name,
+                    request_id=time.time(),
+                    result=self._summarise(pid),
+                )
 
             elif event.msg_type == "END":
                 self.ctx.log(logging.INFO, f"Shutdown Event received: {event.msg}")
