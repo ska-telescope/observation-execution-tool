@@ -39,7 +39,7 @@ class EnvironmentManager:
         venv.create(
             env_dir=venv_dir,
             clear=True,
-            system_site_packages=False,
+            system_site_packages=True,
             with_pip=True,
             symlinks=True,
         )

@@ -45,7 +45,7 @@ class GitManager:
             clone_args["branch"] = git_args.git_branch
 
         project_name = GitManager.get_project_name(git_args.git_repo)
-        clone_dir = GitManager.base_dir + project_name + "/" + git_commit + "/"
+        clone_dir = GitManager.base_dir + project_name + "/" + git_commit
 
         if os.path.exists(clone_dir):
             return clone_dir

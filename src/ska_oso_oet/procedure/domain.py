@@ -12,7 +12,6 @@ import logging
 import multiprocessing
 import os
 import signal
-import site
 import subprocess
 import sys
 import threading
@@ -305,29 +304,39 @@ class ScriptWorker(mptools.ProcWorker):
                 )
 
             clone_dir = GitManager.clone_repo(script.git_args)
+            sys.path.insert(0, env.site_packages)
 
-            site.addsitedir(env.site_packages)
-            assert env.site_packages in sys.path
-
-            # install the cloned project
-            os.environ["POETRY_VIRTUALENVS_IN_PROJECT"] = "false"
-            os.environ["POETRY_VIRTUALENVS_CREATE"] = "false"
-            os.environ["POETRY_VIRTUALENVS_PATH"] = env.location
-
-            subprocess.check_call(
-                [
-                    f"{env.location}/bin/python",
-                    "-m",
-                    "pip",
-                    "install",
-                    "--index-url https://pypi.org/simple",
-                    "--no-cache-dir",
-                    "poetry",
-                ]
-            )
-            subprocess.check_call(
-                [f"{env.location}/bin/poetry", "install"], cwd=clone_dir
-            )
+            try:
+                # Upgrade pip version, venv uses a pre-packaged pip which is outdated
+                subprocess.check_output(
+                    [
+                        f"{env.location}/bin/pip",
+                        "install",
+                        "--index-url=https://pypi.org/simple",
+                        "--upgrade",
+                        "pip",
+                    ]
+                )
+                if os.path.exists(clone_dir + "/pyproject.toml"):
+                    # Convert poetry requirements into a requirements.txt file
+                    subprocess.check_output(
+                        [
+                            "poetry",
+                            "export",
+                            "--output",
+                            "requirements.txt",
+                            "--without-hashes",
+                        ],
+                        cwd=clone_dir,
+                    )
+                subprocess.check_output(
+                    [f"{env.location}/bin/pip", "install", "."], cwd=clone_dir
+                )
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(
+                    "Something went wrong during script environment installation:"
+                    f" {e.output}"
+                ) from None
             self.publish_lifecycle(ProcedureState.IDLE)
 
         if evt.msg_type == "LOAD":
@@ -391,6 +400,10 @@ class ProcedureSummary:
 
 
 class ProcessManager:
+    """
+
+    ******************* Add shutdown instructions"""
+
     def __init__(self):
         self.ctx = mptools.MainContext()
 
@@ -701,6 +714,7 @@ class ProcessManager:
             multiprocessing.active_children()
 
     def shutdown(self):
+        """TODO: Add docstring"""
         # TODO: Find a better way to exit the PM MainContext
         self.ctx.__exit__(None, None, None)
 
@@ -758,7 +772,7 @@ class ModuleFactory:
 
         # remove prefix and any leading slashes
         relative_script_path = script.script_uri[len(script.get_prefix()) :].lstrip("/")
-        script_path = clone_path + relative_script_path
+        script_path = clone_path + "/" + relative_script_path
 
         loader = importlib.machinery.SourceFileLoader("user_module", script_path)
         user_module = types.ModuleType(loader.name)
