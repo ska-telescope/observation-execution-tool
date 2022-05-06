@@ -84,7 +84,7 @@ class GitManager:
             response = Git().ls_remote(git_args.git_repo, "HEAD")
         if short_hash:
             return response[:7]
-        return response.split("\\")[0]
+        return response[:40]
 
     @staticmethod
     def get_project_name(git_repo: str):
