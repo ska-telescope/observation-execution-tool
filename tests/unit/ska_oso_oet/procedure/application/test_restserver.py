@@ -15,16 +15,24 @@ import flask
 import pytest
 from pubsub import pub
 
-import ska_oso_oet.procedure.domain as domain
 from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.application import restserver
 from ska_oso_oet.procedure.application.application import (
+    ArgCapture,
     PrepareProcessCommand,
+    ProcedureHistory,
+    ProcedureSummary,
     StartProcessCommand,
     StopProcessCommand,
 )
-from ska_oso_oet.procedure.domain import ProcedureInput, ProcedureSummary
+from ska_oso_oet.procedure.domain import (
+    FileSystemScript,
+    GitArgs,
+    GitScript,
+    ProcedureInput,
+    ProcedureState,
+)
 
 # Endpoint for the REST API
 ENDPOINT = "api/v1.0/procedures"
@@ -38,24 +46,22 @@ CREATE_JSON = dict(
 # object expected to be returned when creating the Procedure defined above
 CREATE_SUMMARY = ProcedureSummary(
     id=1,
-    script=domain.FileSystemScript("file:///test.py"),
+    script=FileSystemScript("file:///test.py"),
     script_args=[
-        domain.ArgCapture(
-            fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
-        )
+        ArgCapture(fn="init", fn_args=ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1)
     ],
-    history=domain.ProcedureHistory(
+    history=ProcedureHistory(
         process_states=[
-            (domain.ProcedureState.CREATING, 1.0),  # process starting
-            (domain.ProcedureState.IDLE, 2.0),  # process created
-            (domain.ProcedureState.LOADING, 3.0),  # user script loading
-            (domain.ProcedureState.IDLE, 4.0),  # user script loaded
-            (domain.ProcedureState.RUNNING, 5.0),  # init called
-            (domain.ProcedureState.READY, 6.0),  # init complete
+            (ProcedureState.CREATING, 1.0),  # process starting
+            (ProcedureState.IDLE, 2.0),  # process created
+            (ProcedureState.LOADING, 3.0),  # user script loading
+            (ProcedureState.IDLE, 4.0),  # user script loaded
+            (ProcedureState.RUNNING, 5.0),  # init called
+            (ProcedureState.READY, 6.0),  # init complete
         ],
         stacktrace=None,
     ),
-    state=domain.ProcedureState.READY,
+    state=ProcedureState.READY,
 )
 
 # Valid JSON struct for creating a new procedure
@@ -72,28 +78,26 @@ CREATE_GIT_JSON = dict(
 # object expected to be returned when creating the Procedure defined above
 CREATE_GIT_SUMMARY = ProcedureSummary(
     id=1,
-    script=domain.GitScript(
+    script=GitScript(
         "git:///test.py",
-        git_args=domain.GitArgs(git_repo="http://foo.git", git_branch="main"),
+        git_args=GitArgs(git_repo="http://foo.git", git_branch="main"),
         default_git_env=False,
     ),
     script_args=[
-        domain.ArgCapture(
-            fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
-        )
+        ArgCapture(fn="init", fn_args=ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1)
     ],
-    history=domain.ProcedureHistory(
+    history=ProcedureHistory(
         process_states=[
-            (domain.ProcedureState.CREATING, 1.0),  # process starting
-            (domain.ProcedureState.IDLE, 2.0),  # process created
-            (domain.ProcedureState.LOADING, 3.0),  # user script loading
-            (domain.ProcedureState.IDLE, 4.0),  # user script loaded
-            (domain.ProcedureState.RUNNING, 5.0),  # init called
-            (domain.ProcedureState.READY, 6.0),  # init complete
+            (ProcedureState.CREATING, 1.0),  # process starting
+            (ProcedureState.IDLE, 2.0),  # process created
+            (ProcedureState.LOADING, 3.0),  # user script loading
+            (ProcedureState.IDLE, 4.0),  # user script loaded
+            (ProcedureState.RUNNING, 5.0),  # init called
+            (ProcedureState.READY, 6.0),  # init complete
         ],
         stacktrace=None,
     ),
-    state=domain.ProcedureState.READY,
+    state=ProcedureState.READY,
 )
 
 ABORT_JSON = dict(state="STOPPED", abort=True)
@@ -108,28 +112,28 @@ RUN_JSON = dict(
 # object expected to be returned when the procedure is executed
 RUN_SUMMARY = ProcedureSummary(
     id=1,
-    script=domain.FileSystemScript("file:///test.py"),
+    script=FileSystemScript("file:///test.py"),
     script_args=[
-        domain.ArgCapture(
-            fn="init", fn_args=domain.ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
+        ArgCapture(
+            fn="init", fn_args=ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
         ),
-        domain.ArgCapture(
-            fn="main", fn_args=domain.ProcedureInput(4, 5, 6, kw3="c", kw4="d"), time=1
+        ArgCapture(
+            fn="main", fn_args=ProcedureInput(4, 5, 6, kw3="c", kw4="d"), time=1
         ),
     ],
-    history=domain.ProcedureHistory(
+    history=ProcedureHistory(
         process_states=[
-            (domain.ProcedureState.CREATING, 1.0),  # process starting
-            (domain.ProcedureState.IDLE, 2.0),  # process created
-            (domain.ProcedureState.LOADING, 3.0),  # user script loading
-            (domain.ProcedureState.IDLE, 4.0),  # user script loaded
-            (domain.ProcedureState.RUNNING, 5.0),  # init called
-            (domain.ProcedureState.READY, 6.0),  # init complete
-            (domain.ProcedureState.RUNNING, 7.0),  # main called
+            (ProcedureState.CREATING, 1.0),  # process starting
+            (ProcedureState.IDLE, 2.0),  # process created
+            (ProcedureState.LOADING, 3.0),  # user script loading
+            (ProcedureState.IDLE, 4.0),  # user script loaded
+            (ProcedureState.RUNNING, 5.0),  # init called
+            (ProcedureState.READY, 6.0),  # init complete
+            (ProcedureState.RUNNING, 7.0),  # main called
         ],
         stacktrace=None,
     ),
-    state=domain.ProcedureState.RUNNING,
+    state=ProcedureState.RUNNING,
 )
 
 # resource partial URL for testing procedure execution with above JSON
@@ -208,7 +212,7 @@ def assert_json_equal_to_procedure_summary(
     assert summary_json["script"]["script_type"] == summary.script.get_type()
     assert summary_json["script"]["script_uri"] == summary.script.script_uri
     if summary_json["script"].get("git_args"):
-        assert isinstance(summary.script, domain.GitScript)
+        assert isinstance(summary.script, GitScript)
         assert (
             summary_json["script"]["git_args"]["git_repo"]
             == summary.script.git_args.git_repo
@@ -536,7 +540,7 @@ def test_post_to_endpoint_sends_default_git_arguments(client):
     new Procedure.
     """
     summary = copy.deepcopy(CREATE_GIT_SUMMARY)
-    summary.script.git_args = domain.GitArgs()
+    summary.script.git_args = GitArgs()
     spec = {
         topics.request.procedure.create: [
             ([topics.procedure.lifecycle.created], dict(result=summary))
@@ -557,9 +561,9 @@ def test_post_to_endpoint_sends_default_git_arguments(client):
 
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
-        script=domain.GitScript(
+        script=GitScript(
             CREATE_GIT_SUMMARY.script.script_uri,  # pylint: disable=no-member
-            git_args=domain.GitArgs(),
+            git_args=GitArgs(),
             default_git_env=False,
         ),
         init_args=CREATE_GIT_SUMMARY.script_args[0].fn_args,

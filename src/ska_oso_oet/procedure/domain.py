@@ -3,7 +3,6 @@ The ska_oso_oet.procedure.domain module holds domain entities from the script
 execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
-import copy
 import dataclasses
 import enum
 import importlib.machinery
@@ -13,9 +12,8 @@ import multiprocessing
 import os
 import signal
 import threading
-import time
 import types
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 
 from pubsub import pub
 
@@ -26,8 +24,6 @@ from ska_oso_oet.mptools import EventMessage
 from ska_oso_oet.procedure.gitmanager import GitArgs, clone_repo, get_commit_hash
 
 LOGGER = logging.getLogger(__name__)
-
-HISTORY_MAX_LENGTH = 10
 
 DEFAULT_SIGTERM_HANDLER = signal.getsignal(signal.SIGTERM)
 
@@ -67,7 +63,7 @@ class ProcedureState(enum.Enum):
     LOADING = enum.auto()
     READY = enum.auto()
     RUNNING = enum.auto()
-    COMPLETED = enum.auto()
+    COMPLETE = enum.auto()
     STOPPED = enum.auto()
     FAILED = enum.auto()
 
@@ -157,48 +153,6 @@ class ProcedureInput:
         return "<ProcedureInput({})>".format(", ".join((args, kwargs)))
 
 
-@dataclasses.dataclass
-class ProcedureHistory:
-    """
-    ProcedureHistory is a non-functional dataclass holding execution history of
-    a Procedure.
-
-    process_states: records time for each change of ProcedureState (list of
-        tuples where tuple contains the ProcedureState and time when state was
-        changed to)
-    stacktrace: None unless execution_error is True in which case stores
-        stacktrace from process
-    """
-
-    def __init__(
-        self,
-        process_states: Optional[List[Tuple[ProcedureState, float]]] = None,
-        stacktrace=None,
-    ):
-        if process_states is None:
-            process_states = []
-        self.process_states = process_states
-        self.stacktrace = stacktrace
-
-    def __eq__(self, other):
-        if not isinstance(other, ProcedureHistory):
-            return False
-        if (
-            self.process_states == other.process_states
-            and self.stacktrace == other.stacktrace
-        ):
-            return True
-        return False
-
-    def __repr__(self):
-        p_history = ", ".join(
-            ["({!s}, {!r})".format(s, t) for (s, t) in self.process_states]
-        )
-        return "<ProcessHistory(process_states=[{}], stacktrace={})>".format(
-            p_history, self.stacktrace
-        )
-
-
 class ScriptWorker(mptools.ProcWorker):
     """
     ScriptWorker loads user code in a child process, running functions of that
@@ -233,7 +187,23 @@ class ScriptWorker(mptools.ProcWorker):
         scan_counter: Optional[multiprocessing.Value] = None,
         **kwargs,
     ):
+        # Message is rolled by hand and sent via a direct message to the
+        # ProcessManager as we want to announce CREATING at the earliest
+        # possible moment; we can't announce via via pypubsub just yet as the
+        # intraprocess<->interprocess republish function is not registered
+        # till later in the construction process
+        msg = EventMessage(
+            msg_src=name,
+            msg_type="PUBSUB",
+            msg=dict(
+                topic="procedure.lifecycle.statechange",
+                kwargs=dict(new_state=ProcedureState.CREATING),
+            ),
+        )
+        event_q.put(msg)
+
         self.name = name
+
         self._scan_counter = scan_counter
         self.work_q = work_q
 
@@ -242,15 +212,28 @@ class ScriptWorker(mptools.ProcWorker):
 
         super().__init__(name, startup_event, shutdown_event, event_q, *args, **kwargs)
 
+        # AT2-591. The forked process inherits all subscriptions of the
+        # parent, which we do not want to maintain in this child process. This
+        # could be done before super().__init__() at the expense of losing the
+        # log message, as logging is set up in the super constructor
+        unsubscribed = pub.unsubAll()
+        self.log(
+            logging.DEBUG,
+            "Unsubscribed %s pypubsub subscriptions in Procedure #%s (PID=%s)",
+            len(unsubscribed),
+            self.name,
+            os.getpid(),
+        )
+
+        # Register a callback function so that all pypubsub messages broadcast
+        # in this process are also queued for distribution to remote processes
+        pub.subscribe(self.republish, pub.ALL_TOPICS)
+
     def init_args(self, args, kwargs):
         self.init_input = ProcedureInput(*args, **kwargs)
 
     def startup(self) -> None:
         super().startup()
-
-        # Register a callback function so that all pypubsub messages broadcast
-        # in this process are also queued for distribution to remote processes
-        pub.subscribe(self.republish, pub.ALL_TOPICS)
 
         # mark state as IDLE to signify that this child process started up
         # successfully
@@ -262,18 +245,32 @@ class ScriptWorker(mptools.ProcWorker):
         # Technically, unsubscribing is unnecessary as pypubsub holds weak
         # references to listeners and automatically unsubscribes listeners
         # that have been deleted
-        # pub.unsubscribe(self.republish, pub.ALL_TOPICS)
+        pub.unsubscribe(self.republish, pub.ALL_TOPICS)
 
     def publish_lifecycle(self, new_state: ProcedureState):
-        # TODO consider merging LifecycleMessage with EventMessage and topics
-        msg = LifecycleMessage(self.name, new_state)
-        self.event_q.safe_put(msg)
+        """
+        Broadcast a lifecycle status change event.
 
-    def send_message(self, topic, **kwargs):
+        :param new_state: new lifecycle state
         """
-        Publish an OET event message on the event bus.
-        """
-        pub.sendMessage(topic, msg_src=self.name, **kwargs)
+        # This message could be broadcast on pypubsub, letting the republish
+        # callback rebroadcast it on the mptools bus. But, we know there are no
+        # local subscribers so bypass the pypubsub step and broadcast directly to
+        # the inter-process event bus.
+        # pub.sendMessage(
+        #     topics.procedure.lifecycle.statechange,
+        #     msg_src=self.name,
+        #     new_state=new_state,
+        # )
+        msg = EventMessage(
+            msg_src=self.name,
+            msg_type="PUBSUB",
+            msg=dict(
+                topic="procedure.lifecycle.statechange",
+                kwargs=dict(new_state=new_state),
+            ),
+        )
+        self.event_q.put(msg)
 
     def republish(self, topic: pub.Topic = pub.AUTO_TOPIC, **kwargs) -> None:
         """
@@ -301,7 +298,7 @@ class ScriptWorker(mptools.ProcWorker):
 
             # not that this is a blocking put. If the queue is full, this call
             # will block until the queue has room to accept the message
-            self.log(logging.DEBUG, "Queueing internal event: %s", msg)
+            self.log(logging.DEBUG, "Republishing local pypubsub event: %s", msg)
             self.event_q.put(msg)
 
     def main_loop(self) -> None:
@@ -343,20 +340,14 @@ class ScriptWorker(mptools.ProcWorker):
                 else:
                     ret = self.main_func(item)
                     if ret == StopIteration:
-                        self.publish_lifecycle(ProcedureState.COMPLETED)
                         break
 
         except mptools.TerminateInterrupt:
             # raised by the signal handler on Proc.terminate()
             pass
 
-        finally:
-            # this can't be moved to shutdown() yet as the mptools test functions
-            # expect a SHUTDOWN message to be the last message sent. There is scope
-            # for rationalisation of mptools messages with OET topics.
-            self.send_message(
-                topics.procedure.lifecycle.stopped, request_id=None, result=None
-            )
+        else:
+            self.publish_lifecycle(ProcedureState.COMPLETE)
 
     # Relax pylint as we are deliberately redefining the superclass main_func
     # signature in this specialised subclass. This is intended to be a
@@ -393,10 +384,6 @@ class ScriptWorker(mptools.ProcWorker):
             except FileNotFoundError as e:
                 raise e from None
             self.publish_lifecycle(ProcedureState.IDLE)
-            # TODO ok to set request_id to None?
-            self.send_message(
-                topics.procedure.lifecycle.created, request_id=None, result=None
-            )
 
         if evt.msg_type == "RUN":
             fn_name, fn_args = evt.msg
@@ -415,9 +402,6 @@ class ScriptWorker(mptools.ProcWorker):
                 repr(fn_args).replace("<ProcedureInput", fn_name)[:-1],
             )
             self.publish_lifecycle(ProcedureState.RUNNING)
-            self.send_message(
-                topics.procedure.lifecycle.started, request_id=None, result=None
-            )
             fn = getattr(self.user_module, fn_name)
             fn(*fn_args.args, **fn_args.kwargs)
             self.publish_lifecycle(ProcedureState.READY)
@@ -429,84 +413,53 @@ class ScriptWorker(mptools.ProcWorker):
                 return StopIteration
 
 
-@dataclasses.dataclass
-class ArgCapture:
-    fn: str
-    fn_args: ProcedureInput
-    time: float
-
-
-@dataclasses.dataclass
-class ProcedureSummary:
-    """
-    ProcedureSummary is a brief representation of a runtime Procedure. It
-    captures essential information required to describe a Procedure and to
-    distinguish it from other Procedures.
-    """
-
-    id: int  # pylint: disable=invalid-name
-    script: ExecutableScript
-    script_args: List[ArgCapture]
-    history: ProcedureHistory
-    state: ProcedureState
-
-
 class ProcessManager:
     def __init__(self):
         self.ctx = mptools.MainContext()
 
+        # counter used to generate process ID for new processes
         self._pid_counter = itertools.count(1)
 
-        # mappings of Procs to various identifying metadata
+        # mapping of Proc ID to Proc
         self.procedures: Dict[int, mptools.Proc] = {}
-        self.states: Dict[int, ProcedureState] = {}
-        self.script_args: Dict[int, List[ArgCapture]] = {}
-        self.scripts: Dict[int, ExecutableScript] = {}
 
         # message boxes for manager to each script worker
         self.script_queues: Dict[int, mptools.MPQueue] = {}
-        self.history: Dict[int, ProcedureHistory] = {}
+
+        # maps Proc ID to current state
+        self.states: Dict[int, ProcedureState] = {}
 
         self._scan_id = multiprocessing.Value("i", 1)
 
         self._state_updating = threading.Lock()
-        status_update_thread = threading.Thread(
-            target=self.status_updater, name="StatusUpdate"
-        )
-        status_update_thread.start()
 
-    def _summarise(self, pid: int) -> ProcedureSummary:
-        state = self.states[pid]
-        script = self.scripts[pid]
-        # deepcopy to prevent returned copies being modified
-        script_args = copy.deepcopy(self.script_args[pid])
-        history = copy.deepcopy(self.history[pid])
-        return ProcedureSummary(
-            id=pid, script=script, script_args=script_args, history=history, state=state
-        )
+        # Register a callback function to update our record of the script state
+        # on script lifecycle events
+        pub.subscribe(self.update_state, topics.procedure.lifecycle.statechange)
 
-    def summarise(self, pids: Optional[List[int]] = None) -> List[ProcedureSummary]:
-        """
-        Return ProcedureSummary objects for Procedures with the requested IDs.
+        message_loop = threading.Thread(target=self.message_loop, name="Message Loop")
+        message_loop.start()
 
-        This method accepts an optional list of integers, representing the
-        Procedure IDs to summarise. If the pids is left undefined,
-        ProcedureSummary objects for all current Procedures will be returned.
+    def update_state(self, msg_src: str, new_state: ProcedureState):
+        deletable_states = [
+            ProcedureState.COMPLETE,
+            ProcedureState.FAILED,
+            ProcedureState.STOPPED,
+            ProcedureState.UNKNOWN,
+        ]
 
-        :param pids: optional list of Procedure IDs to summarise.
-        :return: list of ProcedureSummary objects
-        """
-        # freeze state to prevent mutation from events
+        pid = int(msg_src)
         with self._state_updating:
-            all_pids = self.states.keys()
-            if pids is None:
-                pids = all_pids
+            self.states[pid] = new_state
 
-            missing_pids = {p for p in pids if p not in all_pids}
-            if missing_pids:
-                raise ValueError(f"Process IDs not found: {missing_pids}")
-
-            return [self._summarise(pid) for pid in pids]
+            # clean up mptools resources
+            if new_state in deletable_states:
+                q = self.script_queues[pid]
+                del self.script_queues[pid]
+                self.ctx.queues.remove(q)
+                q.safe_close()
+                del self.procedures[pid]
+                del self.states[pid]
 
     @property
     def running(self) -> Optional[mptools.Proc]:
@@ -534,15 +487,8 @@ class ProcessManager:
         pid = next(self._pid_counter)
         LOGGER.debug("Creating ScriptWorker #%s for %s", pid, script)
 
-        now = time.time()
-        self.scripts[pid] = script
-        self.states[pid] = ProcedureState.CREATING
-        self.history[pid] = ProcedureHistory([(ProcedureState.CREATING, now)])
-        self.script_args[pid] = [ArgCapture(fn="init", fn_args=init_args, time=now)]
-
         # msg box for messages from manager to child, like 'run main function'
         work_q = self.ctx.MPQueue()
-        self.script_queues[pid] = work_q
 
         # prime the work queue with an initial message instructing it to load the child script
         msg_src = self.__class__.__name__
@@ -551,6 +497,9 @@ class ProcessManager:
         # ... and also to execute init
         init_msg = EventMessage(msg_src=msg_src, msg_type="RUN", msg=("init", None))
         work_q.safe_put(init_msg)
+
+        self.script_queues[pid] = work_q
+        self.states[pid] = ProcedureState.CREATING
 
         # Runtime error will be raised if Proc creation fails
         # TODO close and delete work_q, etc. on failure?
@@ -563,85 +512,13 @@ class ProcessManager:
             **init_args.kwargs,
         )
 
-        # Proc creation was successful. Continue.
+        # Proc creation was successful. Can store procedure and continue.
         self.procedures[pid] = procedure
-
-        self._prune_old_state()
 
         return pid
 
-    def _prune_old_state(self):
-        """
-        Remove the state associated with the oldest deletable Procedures so
-        that the state history remains below the history limit
-        HISTORY_MAX_LENGTH.
-
-        Note that we inspect the states dict. The entries for individual
-        processes are created and updated in a separate thread.
-
-        TODO: maintenance could also be done in the status update thread?
-        """
-        # Delete oldest deletable procedure if procedure limit reached
-        deletable_states = [
-            ProcedureState.COMPLETED,
-            ProcedureState.FAILED,
-            ProcedureState.STOPPED,
-            ProcedureState.UNKNOWN,
-        ]
-
-        with self._state_updating:
-            if len(self.states) > HISTORY_MAX_LENGTH:
-                lower_bound = len(self.states) - HISTORY_MAX_LENGTH
-                pids_to_consider = list(self.states.keys())[:lower_bound]
-                to_delete = {
-                    old_pid
-                    for old_pid in pids_to_consider
-                    if self.states.get(old_pid, None) in deletable_states
-                }
-
-                for old_pid in to_delete:
-                    self.ctx.log(
-                        logging.DEBUG,
-                        "Deleting state for %s PID #%s",
-                        self.states[old_pid].name,
-                        old_pid,
-                    )
-                    del self.states[old_pid]
-                    del self.history[old_pid]
-                    del self.script_args[old_pid]
-                    del self.scripts[old_pid]
-
-    # TODO make this function an instance of threading.Thread so that update_history
-    # and cleanup can be methods on that class?
-    #
-    # For separation of concerns it could be good to split state history recording
-    # from state management
-    # TODO migrate history recording to new class or ScriptExecutionService?
-    def status_updater(self):
-        deletable_states = [
-            ProcedureState.COMPLETED,
-            ProcedureState.FAILED,
-            ProcedureState.STOPPED,
-            ProcedureState.UNKNOWN,
-        ]
-
-        def update_history(event: EventMessage, new_state: ProcedureState):
-            msg_time: time.time = event.id
-            pid = int(event.msg_src)
-            self.states[pid] = new_state
-            self.history[pid].process_states.append((new_state, msg_time))
-
-        def cleanup(event: EventMessage, new_state: ProcedureState):
-            # clean up mptools resources
-            if new_state in deletable_states:
-                pid = int(event.msg_src)
-                q = self.script_queues[pid]
-                del self.script_queues[pid]
-                self.ctx.queues.remove(q)
-                q.safe_close()
-                del self.procedures[pid]
-
-        # intended to run in a background thread, updating Proc lifecycle state as events are received
+    def message_loop(self):
+        # intended to run in a background thread, handling each message as received
         while not self.ctx.shutdown_event.is_set():
             event: EventMessage = self.ctx.event_queue.safe_get()
             if not event:
@@ -655,30 +532,27 @@ class ProcessManager:
                 event.msg,
             )
 
+            # republish external pubsub events on local pypubsub bus
             if event.msg_type == "PUBSUB":
                 payload = event.msg
                 topic = payload["topic"]
                 pub.sendMessage(topic, msg_src=event.msg_src, **payload["kwargs"])
 
-            elif event.msg_type == "LIFECYCLE":
-                new_state = event.msg
-                with self._state_updating:
-                    update_history(event, new_state)
-                    cleanup(event, new_state)
-
+            # exception raised in worker
             elif event.msg_type == "FATAL":
                 self.ctx.log(logging.INFO, f"Fatal Event received: {event.msg}")
-                pid = int(event.msg_src)
-                with self._state_updating:
-                    update_history(event, ProcedureState.FAILED)
-                    self.history[pid].stacktrace = event.msg
-                    cleanup(event, ProcedureState.FAILED)
-
+                # announced here rather than in mptools ProcWorker to avoid
+                # introducing an mptools dependency on pypubsub
                 pub.sendMessage(
-                    topics.procedure.lifecycle.failed,
-                    msg_src=threading.current_thread().name,
-                    request_id=time.time(),
-                    result=self._summarise(pid),
+                    topics.procedure.lifecycle.statechange,
+                    msg_src=event.msg_src,
+                    new_state=ProcedureState.FAILED,
+                )
+                # announce stacktrace for any interested parties
+                pub.sendMessage(
+                    topics.procedure.lifecycle.stacktrace,
+                    msg_src=event.msg_src,
+                    stacktrace=event.msg,
                 )
 
             elif event.msg_type == "END":
@@ -723,11 +597,7 @@ class ProcessManager:
         LOGGER.debug("Sending 'run %s' message to PID %d", call, process_id)
         msg_was_sent = self.script_queues[process_id].safe_put(msg)
         if not msg_was_sent:
-            raise ValueError(f"Could not send start message to process {process_id}")
-
-        self.script_args[process_id].append(
-            ArgCapture(fn=call, fn_args=run_args, time=time.time())
-        )
+            raise ValueError(f"Could not send run message to process {process_id}")
 
     def stop(self, process_id: int) -> None:
         """
@@ -759,10 +629,11 @@ class ProcessManager:
             final_state = (
                 ProcedureState.STOPPED if terminated else ProcedureState.UNKNOWN
             )
-            msg = EventMessage(
-                msg_src=procedure.proc.name, msg_type="LIFECYCLE", msg=final_state
+            pub.sendMessage(
+                topics.procedure.lifecycle.statechange,
+                msg_src=str(process_id),
+                new_state=final_state,
             )
-            self.ctx.event_queue.safe_put(msg)
 
             # join any potentially zombie process, allowing it to clean up
             multiprocessing.active_children()

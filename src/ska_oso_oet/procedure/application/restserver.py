@@ -369,7 +369,7 @@ def update_procedure(procedure_id: int):
     return flask.jsonify({"procedure": make_public_summary(summary)})
 
 
-def make_public_summary(procedure: domain.ProcedureSummary):
+def make_public_summary(procedure: application.ProcedureSummary):
     """
     Convert a ProcedureSummary into JSON ready for client consumption.
 
