@@ -27,6 +27,7 @@ from ska_oso_oet.procedure.domain import (
     ProcedureSummary,
     ProcessManager,
 )
+from ska_oso_oet.procedure.environment import Environment
 from ska_oso_oet.procedure.gitmanager import GitArgs
 
 
@@ -619,6 +620,56 @@ class TestProcessManager:
             pid = manager.create(script, init_args=ProcedureInput())
             assert len(manager.procedures) == len_before + 1
             assert pid in manager.procedures
+
+    def test_create_sends_load_and_run_messages_for_filesystemscript(self, manager):
+        """
+        Verify that a call to ProcessManager.create() sends the load and run init
+        messages to ScriptWorker when filesystem script is created.
+        """
+        manager.ctx.Proc = MagicMock()
+        script = FileSystemScript(script_uri="file://test-script.py")
+        manager.create(script, init_args=ProcedureInput())
+        q = manager.script_queues[1]
+        load_msg = q.safe_get()
+        run_msg = q.safe_get()
+        assert load_msg.msg_type == "LOAD"
+        assert load_msg.msg == script
+        assert run_msg.msg_type == "RUN"
+        assert run_msg.msg == ("init", None)
+
+    def test_create_sends_load_and_run_messages_for_gitscript(self, manager):
+        """
+        Verify that a call to ProcessManager.create() sends the load and run init
+        messages to ScriptWorker when git script is created.
+        """
+        manager.ctx.Proc = MagicMock()
+        git_script = GitScript(script_uri="git://test-script.py", git_args=GitArgs())
+        manager.create(git_script, init_args=ProcedureInput())
+        q = manager.script_queues[1]
+        load_msg = q.safe_get()
+        run_msg = q.safe_get()
+        assert load_msg.msg_type == "LOAD"
+        assert load_msg.msg == git_script
+        assert run_msg.msg_type == "RUN"
+        assert run_msg.msg == ("init", None)
+
+    def test_create_sends_env_message(self, manager):
+        """
+        Verify that a call to ProcessManager.create() sends the env message to the
+        ScriptWorker when script type is GitScript and default_git_env is False.
+        """
+        manager.ctx.Proc = MagicMock()
+        manager.em.create_env = MagicMock()
+        expected_env = Environment(None, None, "1", time.time(), "/", "/site-packages")
+        manager.em.create_env.side_effect = [expected_env]
+        git_script = GitScript(
+            script_uri="git://test-script.py", git_args=GitArgs(), default_git_env=False
+        )
+        manager.create(git_script, init_args=ProcedureInput())
+        q = manager.script_queues[1]
+        env_msg = q.safe_get()
+        assert env_msg.msg_type == "ENV"
+        assert env_msg.msg == (expected_env, git_script)
 
     def test_create_removes_oldest_deletable_state(self, manager, script):
         """
