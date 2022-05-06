@@ -9,9 +9,17 @@ from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 
 
 @dataclasses.dataclass
-class Environment:
+class EnvironmentState:
+    """ """
+
+    env_id: str
     creating_condition: multiprocessing.Condition  # Set when environment is being created
     created_condition: multiprocessing.Condition  # Set when environment is ready to be used
+    creating: multiprocessing.Condition  # Set when environment is being created
+
+
+@dataclasses.dataclass
+class Environment:
     env_id: str
     created: datetime
     location: str
@@ -55,16 +63,19 @@ class EnvironmentManager:
         venv_site_pkgs = site_pkgs_call.stdout.decode("utf-8").strip()
 
         environment = Environment(
-            creating_condition=None,
-            created_condition=None,
             env_id=git_commit,
             created=datetime.datetime.now(),
             location=venv_dir,
             site_packages=venv_site_pkgs,
         )
-
-        self._envs[git_commit] = environment
-        return environment
+        state = EnvironmentState(
+            env_id=git_commit,
+            creating_condition=multiprocessing.Condition(),
+            created_condition=multiprocessing.Value("i", 0),
+            creating=multiprocessing.Value("i", 0),
+        )
+        self._envs[git_commit] = (environment, state)
+        return self._envs[git_commit]
 
     def delete_env(self, env_id):
         env = self._envs[env_id]
