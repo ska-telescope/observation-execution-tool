@@ -99,6 +99,8 @@ class MPQueue(mpq.Queue):
     # -- tldr; mp.Queue is a _method_ that returns an mpq.Queue object.  That object
     # requires a context for proper operation, so this __init__ does that work as well.
     def __init__(self, maxsize=0, *, ctx):
+        if ctx is None:
+            ctx = multiprocessing.get_context()
         super().__init__(maxsize, ctx=ctx)
 
     #     self.size = SharedCounter(0, ctx=ctx)
