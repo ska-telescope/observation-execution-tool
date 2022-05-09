@@ -13,6 +13,7 @@ and running procedures held in the remote server.
 """
 import dataclasses
 import datetime
+import itertools as IT
 import json
 import logging
 import operator
@@ -275,21 +276,22 @@ class RestClientUI:
 
         table_rows_args = [
             (
+                index,
                 s,
                 procedure[0].script_args[s]["args"],
                 procedure[0].script_args[s]["kwargs"],
             )
-            for s in procedure[0].script_args
+            for index, s in enumerate(procedure[0].script_args, start=1)
         ]
 
-        headers_args = ["Method", "Arguments", "Keyword Arguments"]
-
+        headers_args = ["Index", "Method", "Arguments", "Keyword Arguments"]
+        counter = IT.count(1)
         table_rows_states = [
             (
                 datetime.datetime.fromtimestamp(
                     s[1], tz=datetime.timezone.utc
                 ).strftime("%Y-%m-%d %H:%M:%S.%f"),
-                s[0],
+                f"{s[0]} {next(counter)}" if s[0] == "RUNNING" else s[0],
             )
             for s in procedure[0].history["process_states"]
         ]
