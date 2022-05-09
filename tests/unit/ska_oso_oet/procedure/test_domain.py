@@ -785,8 +785,8 @@ class TestProcessManager:
         assert env_msg.msg_type == "ENV"
         assert env_msg.msg == git_script
 
-        proc_args = manager.ctx.Proc.call_args
-        assert expected_env == proc_args.kwargs["environment"]
+        _, kwargs = manager.ctx.Proc.call_args
+        assert expected_env == kwargs["environment"]
 
     def test_create_removes_oldest_deletable_state(self, manager, script):
         """
