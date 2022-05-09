@@ -1,0 +1,49 @@
+---
+suite: ska-oso-oet-rest
+templates:
+  - rest.yaml
+tests:
+  - it: should have three documents rendered if ingress type is disabled.
+    asserts:
+      - hasDocuments:
+          count: 3
+
+  - it: should have four documents rendered if ingress type is enabled.
+    set:
+      rest:
+        ingress:
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 4
+
+  - it: should have the correct apiVersion, apps/v1, for the StatefulSet resource.
+    documentIndex: 2
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - isAPIVersion:
+          of: apps/v1
+
+  - it: should have the correct tango host configuration, databaseds-tango-base-test:10000.
+    documentIndex: 2
+    set:
+      global:
+        tango_host: databaseds-tango-base-test:10000
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TANGO_HOST
+            value: databaseds-tango-base-test:10000
+
+  - it: should have the correct SKUID URL configuration.
+    documentIndex: 2
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SKUID_URL
+            value: ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.cluster.local:9870
+
+
