@@ -1,4 +1,3 @@
-import datetime
 import multiprocessing
 import os.path
 import shutil
@@ -8,11 +7,7 @@ import venv
 
 import pytest
 
-from ska_oso_oet.procedure.environment import (
-    Environment,
-    EnvironmentManager,
-    EnvironmentState,
-)
+from ska_oso_oet.procedure.environment import Environment, EnvironmentManager
 from ska_oso_oet.procedure.gitmanager import GitArgs
 
 
@@ -39,34 +34,23 @@ def env_object(env_manager):
     """
     env = Environment(
         env_id="69e93d57916f837ee93ca125f2785f0f6e21974d",
-        created=datetime.datetime(2000, 1, 1),
+        created=multiprocessing.Event(),
+        creating=multiprocessing.Event(),
         location=f"{env_manager.base_dir}69e93d57916f837ee93ca125f2785f0f6e21974d",
         site_packages=f"{env_manager.base_dir}69e93d57916f837ee93ca125f2785f0f6e21974d/venv/lib/python3.7/site-packages",
     )
     return env
 
 
-@pytest.fixture()
-def env_state(env_object):
-    """ """
-    env_state = EnvironmentState(
-        env_id=env_object.env_id,
-        creating_condition=multiprocessing.Condition(),
-        created_condition=multiprocessing.Value("i", 0),
-        creating=multiprocessing.Value("i", 0),
-    )
-    return env_state
-
-
-def test_environment_is_returned_when_hash_exists(env_manager, env_object, env_state):
+def test_environment_is_returned_when_hash_exists(env_manager, env_object):
     env_manager._envs = {  # pylint: disable=protected-access
-        "69e93d57916f837ee93ca125f2785f0f6e21974d": (env_object, env_state)
+        "69e93d57916f837ee93ca125f2785f0f6e21974d": env_object
     }
 
     result = env_manager.create_env(
         GitArgs(git_commit="69e93d57916f837ee93ca125f2785f0f6e21974d")
     )
-    assert result == (env_object, env_state)
+    assert result == env_object
 
 
 @mock.patch("ska_oso_oet.procedure.environment.GitManager.get_commit_hash")
@@ -89,10 +73,9 @@ def test_environment_is_created_when_hash_is_new(
     result = env_manager.create_env(GitArgs())
 
     assert 1 == len(env_manager._envs)  # pylint: disable=protected-access
-    assert result[0].env_id == "69e93d57916f837ee93ca125f2785f0f6e21974d"
-    assert result[1].env_id == "69e93d57916f837ee93ca125f2785f0f6e21974d"
+    assert result.env_id == "69e93d57916f837ee93ca125f2785f0f6e21974d"
     assert (
-        result[0].site_packages
+        result.site_packages
         == f"{env_manager.base_dir}69e93d57916f837ee93ca125f2785f0f6e21974d/venv/lib/python3.7/site-packages"
     )
 

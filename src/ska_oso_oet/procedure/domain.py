@@ -22,11 +22,7 @@ from typing import Dict, List, Optional, Tuple
 from ska_oso_oet import mptools
 from ska_oso_oet.command import SCAN_ID_GENERATOR
 from ska_oso_oet.mptools import EventMessage
-from ska_oso_oet.procedure.environment import (
-    Environment,
-    EnvironmentManager,
-    EnvironmentState,
-)
+from ska_oso_oet.procedure.environment import Environment, EnvironmentManager
 from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 
 LOGGER = logging.getLogger(__name__)
@@ -68,6 +64,7 @@ class ProcedureState(enum.Enum):
     UNKNOWN = enum.auto()
     IDLE = enum.auto()
     CREATING = enum.auto()
+    PREP_ENV = enum.auto()
     LOADING = enum.auto()
     READY = enum.auto()
     RUNNING = enum.auto()
@@ -216,12 +213,12 @@ class ScriptWorker(mptools.ProcWorker):
         work_q: mptools.MPQueue,
         *args,
         scan_counter: Optional[multiprocessing.Value] = None,
-        environment_state: Optional[EnvironmentState] = None,
+        environment: Optional[Environment] = None,
         **kwargs,
     ):
         self.name = name
         self._scan_counter = scan_counter
-        self._environment_state = environment_state
+        self._environment = environment
         self.work_q = work_q
 
         # user_module will be set on LOAD message
@@ -301,11 +298,13 @@ class ScriptWorker(mptools.ProcWorker):
             SCAN_ID_GENERATOR.backing = self._scan_counter
 
         if evt.msg_type == "ENV":
-            self.publish_lifecycle(ProcedureState.LOADING)
-            if self._environment_state.created_condition.value == 0:
-                with self._environment_state.creating_condition:
-                    self._environment_state.creating.value = 1
-                    env, script = evt.msg
+            self.publish_lifecycle(ProcedureState.PREP_ENV)
+            if self._environment is None:
+                raise RuntimeError("Install failed, environment has not been defined")
+            if not self._environment.created.is_set():
+                if not self._environment.creating.is_set():
+                    self._environment.creating.set()
+                    script = evt.msg
 
                     if not isinstance(script, GitScript):
                         raise RuntimeError(
@@ -314,13 +313,13 @@ class ScriptWorker(mptools.ProcWorker):
                         )
 
                     clone_dir = GitManager.clone_repo(script.git_args)
-                    sys.path.insert(0, env.site_packages)
+                    sys.path.insert(0, self._environment.site_packages)
 
                     try:
                         # Upgrade pip version, venv uses a pre-packaged pip which is outdated
                         subprocess.check_output(
                             [
-                                f"{env.location}/bin/pip",
+                                f"{self._environment.location}/bin/pip",
                                 "install",
                                 "--index-url=https://pypi.org/simple",
                                 "--upgrade",
@@ -340,7 +339,8 @@ class ScriptWorker(mptools.ProcWorker):
                                 cwd=clone_dir,
                             )
                         subprocess.check_output(
-                            [f"{env.location}/bin/pip", "install", "."], cwd=clone_dir
+                            [f"{self._environment.location}/bin/pip", "install", "."],
+                            cwd=clone_dir,
                         )
                     except subprocess.CalledProcessError as e:
                         raise RuntimeError(
@@ -348,13 +348,9 @@ class ScriptWorker(mptools.ProcWorker):
                             f" installation: {e.output}"
                         ) from None
                         # TODO: How to handle if another process is waiting on created_condition but install fails?
-                    self._environment_state.creating_condition.notify_all()
-                    self._environment_state.created_condition.value = 1
-            elif self._environment_state.creating == 1:
-                with self._environment_state.creating_condition:
-                    self._environment_state.creating_condition.wait_for(
-                        self._environment_state.created_condition.value
-                    )
+                    self._environment.created.set()
+                else:
+                    self._environment.created.wait()
             self.publish_lifecycle(ProcedureState.IDLE)
 
         if evt.msg_type == "LOAD":
@@ -432,7 +428,6 @@ class ProcessManager:
         self.script_args: Dict[int, List[ArgCapture]] = {}
         self.scripts: Dict[int, ExecutableScript] = {}
         self.environments: Dict[int, Environment] = {}
-        self.env_states: Dict[int, EnvironmentState] = {}
 
         # message boxes for manager to each script worker
         self.script_queues: Dict[int, mptools.MPQueue] = {}
@@ -519,14 +514,13 @@ class ProcessManager:
         # load the child script and run init function of the script
         msg_src = self.__class__.__name__
 
-        env_state = None
+        env = None
         if isinstance(script, GitScript) and not script.default_git_env:
-            env, env_state = self.em.create_env(script.git_args, pid)
-            env_msg = EventMessage(msg_src=msg_src, msg_type="ENV", msg=(env, script))
+            env = self.em.create_env(script.git_args)
+            env_msg = EventMessage(msg_src=msg_src, msg_type="ENV", msg=script)
             work_q.safe_put(env_msg)
 
             self.environments[pid] = env
-            self.env_states[pid] = env_state
 
         load_msg = EventMessage(msg_src=msg_src, msg_type="LOAD", msg=script)
         work_q.safe_put(load_msg)
@@ -542,7 +536,7 @@ class ProcessManager:
             work_q,
             *init_args.args,
             scan_counter=self._scan_id,
-            environment_state=env_state,
+            environment=env,
             **init_args.kwargs,
         )
 

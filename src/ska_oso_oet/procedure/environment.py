@@ -1,5 +1,4 @@
 import dataclasses
-import datetime
 import multiprocessing
 import shutil
 import subprocess
@@ -9,19 +8,10 @@ from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 
 
 @dataclasses.dataclass
-class EnvironmentState:
-    """ """
-
-    env_id: str
-    creating_condition: multiprocessing.Condition  # Set when environment is being created
-    created_condition: multiprocessing.Condition  # Set when environment is ready to be used
-    creating: multiprocessing.Condition  # Set when environment is being created
-
-
-@dataclasses.dataclass
 class Environment:
     env_id: str
-    created: datetime
+    creating: multiprocessing.Event  # Set when environment is being created
+    created: multiprocessing.Event  # Set when environment is ready to be used
     location: str
     site_packages: str
 
@@ -64,17 +54,12 @@ class EnvironmentManager:
 
         environment = Environment(
             env_id=git_commit,
-            created=datetime.datetime.now(),
+            created=multiprocessing.Event(),
+            creating=multiprocessing.Event(),
             location=venv_dir,
             site_packages=venv_site_pkgs,
         )
-        state = EnvironmentState(
-            env_id=git_commit,
-            creating_condition=multiprocessing.Condition(),
-            created_condition=multiprocessing.Value("i", 0),
-            creating=multiprocessing.Value("i", 0),
-        )
-        self._envs[git_commit] = (environment, state)
+        self._envs[git_commit] = environment
         return self._envs[git_commit]
 
     def delete_env(self, env_id):

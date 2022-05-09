@@ -42,6 +42,32 @@ def script(tmpdir):
 
 
 @pytest.fixture
+def git_script(tmpdir):
+    """
+    Pytest fixture to return a path to a git script file
+    """
+    script_path = tmpdir.join("git_script.py")
+    script_path.write("def main(*args, **kwargs):\n\tpass")
+    return GitScript(
+        f"git://{str(script_path)}", git_args=GitArgs(), default_git_env=False
+    )
+
+
+@pytest.fixture
+def git_script_branch(tmpdir):
+    """
+    Pytest fixture to return a path to a script file
+    """
+    script_path = tmpdir.join("git_script_branch.py")
+    script_path.write("def main(*args, **kwargs):\n\tpass")
+    return GitScript(
+        f"git://{str(script_path)}",
+        git_args=GitArgs(git_branch="git-test-branch"),
+        default_git_env=False,
+    )
+
+
+@pytest.fixture
 def barrier_script(tmpdir):
     """
     Pytest fixture to return a path to a script that sets an event
@@ -406,6 +432,94 @@ class TestProcessManagerScriptWorkerIntegration:
         # most recent stacktrace should also have been captured and recorded in history
         assert random_exc_string in history.stacktrace
 
+    @patch("ska_oso_oet.procedure.domain.GitManager.clone_repo")
+    @patch("ska_oso_oet.procedure.domain.subprocess.check_output")
+    def test_environment_created_condition_is_set(
+        self, mock_subprocess_fn, mock_clone_fn, git_script, manager
+    ):
+        """
+        Verify event is correctly set on Environment object when env is being created.
+        """
+        environment = Environment(
+            "123",
+            multiprocessing.Event(),
+            multiprocessing.Event(),
+            "/",
+            "/python/site_packages",
+        )
+        manager.em.create_env = MagicMock()
+        manager.em.create_env.return_value = environment
+        # Return path to git file from clone call in env creation and module load
+        mock_clone_fn.side_effect = ["", ""]
+
+        pid = manager.create(git_script, init_args=ProcedureInput())
+        env = manager.environments[pid]
+        assert not env.created.is_set()
+        assert env.env_id == environment.env_id
+
+        wait_for_state(manager, pid, ProcedureState.READY, timeout=10)
+        assert env.created.is_set()
+
+    @patch("ska_oso_oet.procedure.domain.GitManager.clone_repo")
+    @patch("ska_oso_oet.procedure.domain.subprocess.check_output")
+    def test_shared_environment_waits_for_creation_to_complete(
+        self, mock_subprocess_fn, mock_clone_fn, git_script, git_script_branch, manager
+    ):
+        """
+        Verify calls to subprocess to install environment are only run if the environment does not yet exist.
+        In this tests the first two scripts run in the same environment and the third one creates a new environment.
+        """
+        environment = Environment(
+            "123",
+            multiprocessing.Event(),
+            multiprocessing.Event(),
+            "/",
+            "/python/site_packages",
+        )
+        environment2 = Environment(
+            "456",
+            multiprocessing.Event(),
+            multiprocessing.Event(),
+            "/",
+            "/python/site_packages",
+        )
+        manager.em.create_env = MagicMock()
+        manager.em.create_env.side_effect = [environment, environment, environment2]
+
+        # Return path to git file from clone call in env creation and module load
+        mock_clone_fn.return_value = ""
+        calls = multiprocessing.Value("i", 0)
+
+        def called(*args, **kwargs):
+            calls.value += 1
+
+        mock_subprocess_fn.side_effect = called
+
+        pid1 = manager.create(git_script, init_args=ProcedureInput())
+        env1 = manager.environments[pid1]
+        pid2 = manager.create(git_script, init_args=ProcedureInput())
+        env2 = manager.environments[pid2]
+
+        assert env1 == env2
+
+        wait_for_state(manager, pid1, ProcedureState.READY, timeout=10)
+        wait_for_state(manager, pid2, ProcedureState.READY, timeout=10)
+
+        # Subprocess should only be called twice because second script should
+        # just wait for first one to create the environment
+        assert calls.value == 2
+
+        pid3 = manager.create(git_script_branch, init_args=ProcedureInput())
+        env3 = manager.environments[pid3]
+
+        wait_for_state(manager, pid3, ProcedureState.READY, timeout=10)
+
+        assert env1 != env3
+        assert env3.created.is_set()
+
+        # Call count should go up because the new script should run in a new environment
+        assert calls.value == 4
+
     # @patch('ska_oso_oet.mptools.Proc.STARTUP_WAIT_SECS', new=300)
     def test_stop_during_init_sets_lifecycle_state_to_stopped(
         self, manager, init_hang_script
@@ -660,7 +774,7 @@ class TestProcessManager:
         """
         manager.ctx.Proc = MagicMock()
         manager.em.create_env = MagicMock()
-        expected_env = Environment(None, None, "1", time.time(), "/", "/site-packages")
+        expected_env = Environment("1", None, None, "/", "/site-packages")
         manager.em.create_env.side_effect = [expected_env]
         git_script = GitScript(
             script_uri="git://test-script.py", git_args=GitArgs(), default_git_env=False
@@ -669,7 +783,10 @@ class TestProcessManager:
         q = manager.script_queues[1]
         env_msg = q.safe_get()
         assert env_msg.msg_type == "ENV"
-        assert env_msg.msg == (expected_env, git_script)
+        assert env_msg.msg == git_script
+
+        proc_args = manager.ctx.Proc.call_args
+        assert expected_env == proc_args.kwargs["environment"]
 
     def test_create_removes_oldest_deletable_state(self, manager, script):
         """
