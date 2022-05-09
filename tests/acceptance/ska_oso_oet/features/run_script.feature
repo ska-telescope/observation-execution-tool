@@ -4,9 +4,9 @@ Scenario: User runs a script using OET
     Then the script should be in state <state> after execution is finished
 
     Examples:
-  | script                              | state      |
-  | file:///tmp/scripts/success.py      | COMPLETED  |
-  | file:///tmp/scripts/fail.py         | FAILED     |
+  | script                              | state    |
+  | file:///tmp/scripts/success.py      | COMPLETE |
+  | file:///tmp/scripts/fail.py         | FAILED   |
 
 
 Scenario: OET stays responsive when script is running
