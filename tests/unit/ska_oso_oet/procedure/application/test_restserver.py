@@ -197,6 +197,21 @@ class PubSubHelper:
             time.sleep(sleep_secs)
             sleep_secs = mptools._sleep_secs(tick, deadline)
 
+    def wait_for_lifecycle(self, state, timeout=1.0, tick=0.01):
+        deadline = time.time() + timeout
+        sleep_secs = tick
+
+        def any_msgs_with_state():
+            return any(
+                True
+                for m in self.messages_on_topic(topics.procedure.lifecycle.statechange)
+                if m["new_state"] == state
+            )
+
+        while not any_msgs_with_state() and sleep_secs > 0:
+            time.sleep(sleep_secs)
+            sleep_secs = mptools._sleep_secs(tick, deadline)
+
 
 def assert_json_equal_to_procedure_summary(
     summary: ProcedureSummary, summary_json: dict

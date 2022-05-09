@@ -13,13 +13,12 @@ import os
 import signal
 import threading
 import types
-from typing import Dict, Optional
+from typing import Callable, Dict, List, Optional
 
 from pubsub import pub
 
 from ska_oso_oet import mptools
 from ska_oso_oet.command import SCAN_ID_GENERATOR
-from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import EventMessage
 from ska_oso_oet.procedure.gitmanager import GitArgs, clone_repo, get_commit_hash
 
@@ -414,8 +413,12 @@ class ScriptWorker(mptools.ProcWorker):
 
 
 class ProcessManager:
-    def __init__(self):
-        self.ctx = mptools.MainContext()
+    def __init__(
+        self,
+        mp_context: Optional[multiprocessing.context.BaseContext] = None,
+        on_pubsub: Optional[List[Callable[[EventMessage], None]]] = None,
+    ):
+        self.ctx = mptools.MainContext(mp_context)
 
         # counter used to generate process ID for new processes
         self._pid_counter = itertools.count(1)
@@ -431,16 +434,64 @@ class ProcessManager:
 
         self._scan_id = multiprocessing.Value("i", 1)
 
-        self._state_updating = threading.Lock()
+        self._state_updating = threading.RLock()
 
-        # Register a callback function to update our record of the script state
-        # on script lifecycle events
-        pub.subscribe(self.update_state, topics.procedure.lifecycle.statechange)
+        # allow clients to add listeners to pubsub messages. This is necessary
+        # to inject a callback that can bridge MainContext message queues
+        # We do not register _update_state as a pypubsub subscription as
+        # it may then be invoked by other publications of that same event, for
+        # instance when the SESWorker's EventBusWorker queue publishes it
+        self._on_pubsub = [self._publish_as_pypubsub, self._update_state]
+        if on_pubsub is not None:
+            self._on_pubsub.extend(on_pubsub)
 
         message_loop = threading.Thread(target=self.message_loop, name="Message Loop")
         message_loop.start()
 
-    def update_state(self, msg_src: str, new_state: ProcedureState):
+    def _publish_as_pypubsub(self, event: EventMessage) -> None:
+        """
+        Publish an mptools EventMessage locally as a pypubsub message.
+
+        :param event: EventMessage to republish
+        """
+        payload = event.msg
+        topic = payload["topic"]
+        pub.sendMessage(topic, msg_src=event.msg_src, **payload["kwargs"])
+
+    def _on_fatal(self, event: EventMessage) -> None:
+        # event needs to be added to the queue so that other listeners
+        # can process it, otherwise we'd call update_state_do
+        # self._update_state_and_cleanup(int(event.msg_src), ProcedureState.FAILED)
+        self.ctx.event_queue.put(
+            EventMessage(
+                msg_src=event.msg_src,
+                msg_type="PUBSUB",
+                msg=dict(
+                    topic="procedure.lifecycle.statechange",
+                    kwargs=dict(new_state=ProcedureState.FAILED),
+                ),
+            )
+        )
+
+        # announce stacktrace for any interested parties
+        self.ctx.event_queue.put(
+            EventMessage(
+                msg_src=event.msg_src,
+                msg_type="PUBSUB",
+                msg=dict(
+                    topic="procedure.lifecycle.stacktrace",
+                    kwargs=dict(stacktrace=event.msg),
+                ),
+            )
+        )
+
+        # pub.sendMessage(
+        #     topics.procedure.lifecycle.stacktrace,
+        #     msg_src=event.msg_src,
+        #     stacktrace=event.msg,
+        # )
+
+    def _update_state_and_cleanup(self, pid: int, new_state: ProcedureState):
         deletable_states = [
             ProcedureState.COMPLETE,
             ProcedureState.FAILED,
@@ -448,7 +499,6 @@ class ProcessManager:
             ProcedureState.UNKNOWN,
         ]
 
-        pid = int(msg_src)
         with self._state_updating:
             self.states[pid] = new_state
 
@@ -460,6 +510,21 @@ class ProcessManager:
                 q.safe_close()
                 del self.procedures[pid]
                 del self.states[pid]
+
+    def _update_state(self, event: EventMessage):
+        """
+        Update Procedure state in response to a procedure.lifecycle.statechange
+        event.
+
+        :param event: EventMessage to process
+        """
+        payload = event.msg
+        if payload.get("topic", None) != "procedure.lifecycle.statechange":
+            return
+
+        pid = int(event.msg_src)
+        new_state = payload["kwargs"]["new_state"]
+        self._update_state_and_cleanup(pid, new_state)
 
     @property
     def running(self) -> Optional[mptools.Proc]:
@@ -532,28 +597,16 @@ class ProcessManager:
                 event.msg,
             )
 
-            # republish external pubsub events on local pypubsub bus
+            # republish external pubsub events on local pypubsub bus, plus
+            # give any registered listeners chance to see the message too
             if event.msg_type == "PUBSUB":
-                payload = event.msg
-                topic = payload["topic"]
-                pub.sendMessage(topic, msg_src=event.msg_src, **payload["kwargs"])
+                for cb in self._on_pubsub:
+                    cb(event)
 
             # exception raised in worker
             elif event.msg_type == "FATAL":
                 self.ctx.log(logging.INFO, f"Fatal Event received: {event.msg}")
-                # announced here rather than in mptools ProcWorker to avoid
-                # introducing an mptools dependency on pypubsub
-                pub.sendMessage(
-                    topics.procedure.lifecycle.statechange,
-                    msg_src=event.msg_src,
-                    new_state=ProcedureState.FAILED,
-                )
-                # announce stacktrace for any interested parties
-                pub.sendMessage(
-                    topics.procedure.lifecycle.stacktrace,
-                    msg_src=event.msg_src,
-                    stacktrace=event.msg,
-                )
+                self._on_fatal(event)
 
             elif event.msg_type == "END":
                 self.ctx.log(logging.INFO, f"Shutdown Event received: {event.msg}")
@@ -629,11 +682,16 @@ class ProcessManager:
             final_state = (
                 ProcedureState.STOPPED if terminated else ProcedureState.UNKNOWN
             )
-            pub.sendMessage(
-                topics.procedure.lifecycle.statechange,
+
+            msg = EventMessage(
                 msg_src=str(process_id),
-                new_state=final_state,
+                msg_type="PUBSUB",
+                msg=dict(
+                    topic="procedure.lifecycle.statechange",
+                    kwargs=dict(new_state=final_state),
+                ),
             )
+            self.ctx.event_queue.put(msg)
 
             # join any potentially zombie process, allowing it to clean up
             multiprocessing.active_children()

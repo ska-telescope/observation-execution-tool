@@ -6,11 +6,11 @@ Unit tests for the ska_oso_oet.procedure.domain module.
 import importlib.machinery
 import multiprocessing
 import time
-import uuid
 from multiprocessing import Manager
 from typing import List
 from unittest.mock import MagicMock, patch
 
+import pubsub.pub
 import pytest
 
 import ska_oso_oet.mptools as mptools
@@ -28,6 +28,12 @@ from ska_oso_oet.procedure.domain import (
 )
 from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
 from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
+
+multiprocessing_contexts = [
+    multiprocessing.get_context("spawn"),
+    multiprocessing.get_context("fork"),
+    multiprocessing.get_context("forkserver"),
+]
 
 
 @pytest.fixture
@@ -202,8 +208,9 @@ def manager():
     Pytest fixture to return a prepared ProcessManager
     """
     mgr = ProcessManager()
-    with mgr.ctx:
-        yield mgr
+    yield mgr
+    mgr.shutdown()
+    pubsub.pub.unsubAll()
 
 
 class TestExecutableScript:
@@ -317,12 +324,13 @@ def wait_for_state(
 
 
 class TestScriptWorkerPubSub:
-    def test_external_messages_are_published_locally(self, caplog):
+    @pytest.mark.parametrize("mp", multiprocessing_contexts)
+    def test_external_messages_are_published_locally(self, mp, caplog):
         """
         Verify that message event is published if the event originates from an
         external source.
         """
-        work_q = MPQueue()
+        work_q = MPQueue(ctx=mp)
         msg = EventMessage(
             "EXTERNAL COMPONENT",
             "PUBSUB",
@@ -330,7 +338,7 @@ class TestScriptWorkerPubSub:
         )
         work_q.put(msg)
         _proc_worker_wrapper_helper(
-            caplog, ScriptWorker, args=(work_q,), expect_shutdown_evt=True
+            mp, caplog, ScriptWorker, args=(work_q,), expect_shutdown_evt=True
         )
 
         # there's no easy way to assert that the external event was republished
@@ -338,14 +346,15 @@ class TestScriptWorkerPubSub:
         # republishing code was run via the log message
         assert "Republishing external event: EXTERNAL COMPONENT" in caplog.text
 
-    def test_internal_messages_not_republished(self, caplog):
+    @pytest.mark.parametrize("mp", multiprocessing_contexts)
+    def test_internal_messages_not_republished(self, mp, caplog):
         """
         Verify that message event is not published if the event originates from
         an internal source.
         """
         helper = PubSubHelper()
 
-        work_q = MPQueue()
+        work_q = MPQueue(ctx=mp)
         # TEST is the default component name assigned in
         # _proc_worker_wrapper_helper. This message should not be published to pypubsub
         msg = EventMessage(
@@ -356,7 +365,7 @@ class TestScriptWorkerPubSub:
         work_q.put(msg)
 
         _proc_worker_wrapper_helper(
-            caplog, ScriptWorker, args=(work_q,), expect_shutdown_evt=True
+            mp, caplog, ScriptWorker, args=(work_q,), expect_shutdown_evt=True
         )
 
         msgs_on_topic = helper.messages_on_topic(topics.request.procedure.list)
@@ -381,13 +390,6 @@ class TestProcessManagerScriptWorkerIntegration:
         are sent at the appropriate times too.
         """
         helper = PubSubHelper()
-
-        from pubsub import pub
-
-        def snoop(topicObj=pub.AUTO_TOPIC, **mesgData):
-            print('topic "%s": %s' % (topicObj.getName(), mesgData))
-
-        pub.subscribe(snoop, pub.ALL_TOPICS)
 
         init_running = multiprocessing.Barrier(2)
         main_running = multiprocessing.Barrier(2)
@@ -440,8 +442,7 @@ class TestProcessManagerScriptWorkerIntegration:
         pid = manager.create(fail_script, init_args=ProcedureInput())
         wait_for_state(manager, pid, ProcedureState.READY)
 
-        random_exc_string = str(uuid.uuid4())
-        manager.run(pid, call="main", run_args=ProcedureInput(random_exc_string))
+        manager.run(pid, call="main", run_args=ProcedureInput("foo"))
 
         wait_for_state(manager, pid, ProcedureState.FAILED)
         expected = [
@@ -454,6 +455,9 @@ class TestProcessManagerScriptWorkerIntegration:
             ProcedureState.RUNNING,  # main running
             ProcedureState.FAILED,  # exception raised
         ]
+        helper.wait_for_lifecycle(ProcedureState.FAILED)
+        # wait_for_state(manager, pid, ProcedureState.FAILED)
+        # helper.wait_for_message_on_topic(topics.procedure.lifecycle.stacktrace)
         self.assert_states(helper, pid, expected)
 
     # @patch('ska_oso_oet.mptools.Proc.STARTUP_WAIT_SECS', new=300)
@@ -483,7 +487,7 @@ class TestProcessManagerScriptWorkerIntegration:
             ProcedureState.RUNNING,  # init running
             ProcedureState.STOPPED,  # init stopped
         ]
-        wait_for_empty_message_queue(manager)
+        helper.wait_for_lifecycle(ProcedureState.STOPPED)
         self.assert_states(helper, pid, expected)
 
     def test_stop_during_main_sets_lifecycle_state_to_stopped(
@@ -499,12 +503,13 @@ class TestProcessManagerScriptWorkerIntegration:
         init_args = ProcedureInput(main_running)
 
         pid = manager.create(main_hang_script, init_args=init_args)
-        wait_for_state(manager, pid, ProcedureState.READY)
+        helper.wait_for_lifecycle(ProcedureState.READY)
         manager.run(pid, call="main", run_args=ProcedureInput())
         main_running.wait(0.5)
 
-        wait_for_empty_message_queue(manager)
+        helper.wait_for_lifecycle(ProcedureState.RUNNING)
         manager.stop(pid)
+        helper.wait_for_lifecycle(ProcedureState.STOPPED)
 
         expected = [
             ProcedureState.CREATING,  # ScriptWorker initialising
@@ -516,7 +521,6 @@ class TestProcessManagerScriptWorkerIntegration:
             ProcedureState.RUNNING,  # main running
             ProcedureState.STOPPED,  # main stopped
         ]
-        wait_for_empty_message_queue(manager)
         self.assert_states(helper, pid, expected)
 
     def test_running_set_to_none_on_stop(self, manager, init_hang_script):
@@ -782,6 +786,7 @@ class TestProcessManager:
         """
         Verify that ProcessManager stops a script execution
         """
+        helper = PubSubHelper()
         with Manager() as mgr:
             q = mgr.Queue()
             is_running = multiprocessing.Barrier(2)
@@ -790,12 +795,48 @@ class TestProcessManager:
             manager.run(pid, call="main", run_args=ProcedureInput())
 
             is_running.wait(0.1)
-            wait_for_empty_message_queue(manager)
+            helper.wait_for_lifecycle(ProcedureState.RUNNING)
             manager.stop(pid)
-
-            wait_for_empty_message_queue(manager)
+            helper.wait_for_lifecycle(ProcedureState.STOPPED)
             assert manager.running is None
             assert q.empty()
+
+    def test_callback_sees_received_pubsub_messages(self):
+        """
+        Callbacks passed to ProcessManager constructor should be given each
+        MPTools message received.
+        """
+        non_pubsub_msg = EventMessage("TEST", "foo", "bar")
+        pubsub_msg = EventMessage(
+            "EXTERNAL COMPONENT",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
+        )
+
+        cb_received = []
+        cb_called = multiprocessing.Event()
+
+        def cb(event):
+            cb_received.append(event)
+            cb_called.set()
+
+        manager = None
+        try:
+            manager = ProcessManager(on_pubsub=[cb])
+            manager.ctx.event_queue.put(non_pubsub_msg)
+            manager.ctx.event_queue.put(pubsub_msg)
+            manager.ctx.event_queue.put(non_pubsub_msg)
+            cb_called.wait(0.1)
+        finally:
+            if manager is not None:
+                manager.shutdown()
+
+        assert cb_called.is_set()
+        assert len(cb_received) == 1
+        # can't do direct eq comparison as queue item is pickled copy, hence
+        # object ID is different
+        received: EventMessage = cb_received.pop()
+        assert received.id == pubsub_msg.id and received.msg == pubsub_msg.msg
 
 
 class TestModuleFactory:

@@ -15,6 +15,7 @@ import pubsub.pub
 import pytest
 
 from ska_oso_oet.event import topics
+from ska_oso_oet.mptools import EventMessage, MPQueue
 from ska_oso_oet.procedure.application.application import (
     ArgCapture,
     PrepareProcessCommand,
@@ -30,6 +31,7 @@ from ska_oso_oet.procedure.domain import (
     ProcedureState,
     ProcessManager,
 )
+from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
 from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
 from tests.unit.ska_oso_oet.procedure.test_domain import (
     abort_script,
@@ -95,6 +97,44 @@ class TestProcedureHistory:
 
 
 class TestScriptExecutionService:
+    def test_callback_is_invoked_when_pubsub_message_received(self):
+        """
+        Confirm that a callback function sees pubsub messages received by the
+        SES's ProcessManager.
+        """
+        non_pubsub_msg = EventMessage("TEST", "foo", "bar")
+        pubsub_msg = EventMessage(
+            "EXTERNAL COMPONENT",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
+        )
+
+        ses = None
+        cb_received = []
+        cb_called = multiprocessing.Event()
+
+        def cb(event):
+            cb_received.append(event)
+            cb_called.set()
+
+        try:
+            ses = ScriptExecutionService(on_pubsub=[cb])
+            ses._process_manager.ctx.event_queue.put(non_pubsub_msg)
+            ses._process_manager.ctx.event_queue.put(pubsub_msg)
+            ses._process_manager.ctx.event_queue.put(non_pubsub_msg)
+            cb_called.wait(0.1)
+
+        finally:
+            if ses is not None:
+                ses.shutdown()
+
+        assert cb_called.is_set()
+        assert len(cb_received) == 1
+        # can't do direct eq comparison as queue item is pickled copy, hence
+        # object ID is different
+        received: EventMessage = cb_received.pop()
+        assert received.id == pubsub_msg.id and received.msg == pubsub_msg.msg
+
     def test_ses_calls_process_manager_as_expected(
         self, ses: ScriptExecutionService, main_hang_script
     ):
@@ -244,7 +284,7 @@ class TestScriptExecutionService:
         )
         _ = ses.start(run_cmd)
 
-        helper.wait_for_message_on_topic(topics.procedure.lifecycle.stacktrace)
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.failed)
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.complete)) == 0
@@ -539,6 +579,7 @@ class TestSESHistory:
             _ = ses.start(cmd)
             ses._wait_for_state(pid, ProcedureState.FAILED)
 
+            time.sleep(1.0)
             summary = ses._summarise(pid)
 
         assert summary.history.process_states == expected_states

@@ -31,7 +31,8 @@ import functools
 import logging
 import logging.config
 import logging.handlers
-import multiprocessing as mp
+import multiprocessing
+import multiprocessing.context as mpc
 import multiprocessing.queues as mpq
 import multiprocessing.synchronize as mps
 import signal
@@ -41,7 +42,7 @@ import time
 import traceback
 from queue import Empty, Full
 from types import FrameType
-from typing import Any, List, Tuple, Type, Union
+from typing import Any, List, Optional, Tuple, Type, Union
 
 MPQUEUE_TIMEOUT = 0.02
 
@@ -63,8 +64,10 @@ class SharedCounter(object):
     http://eli.thegreenplace.net/2012/01/04/shared-counter-with-pythons-multiprocessing/
     """
 
-    def __init__(self, n=0):
-        self.count = mp.Value("i", n)
+    def __init__(self, n=0, ctx: Optional[mpc.BaseContext] = None):
+        if ctx is None:
+            ctx = multiprocessing.get_context()
+        self.count = ctx.Value("i", n, ctx=ctx)
 
     def increment(self, n=1):
         """Increment the counter by n (default = 1)"""
@@ -95,29 +98,29 @@ class MPQueue(mpq.Queue):
     #
     # -- tldr; mp.Queue is a _method_ that returns an mpq.Queue object.  That object
     # requires a context for proper operation, so this __init__ does that work as well.
-    def __init__(self, maxsize=0):
-        ctx = mp.get_context()
+    def __init__(self, maxsize=0, *, ctx):
         super().__init__(maxsize, ctx=ctx)
-        self.size = SharedCounter(0)
 
-    def put(self, *args, **kwargs):
-        super().put(*args, **kwargs)
-        # size will not be incremented if Full is raised
-        self.size.increment(1)
-
-    def get(self, *args, **kwargs):
-        item = super().get(*args, **kwargs)
-        # size will not be decremented if Empty is raised
-        self.size.increment(-1)
-        return item
-
-    def qsize(self):
-        """Reliable implementation of multiprocessing.Queue.qsize()"""
-        return self.size.value
-
-    def empty(self):
-        """Reliable implementation of multiprocessing.Queue.empty()"""
-        return not self.qsize()
+    #     self.size = SharedCounter(0, ctx=ctx)
+    #
+    # def put(self, *args, **kwargs):
+    #     super().put(*args, **kwargs)
+    #     # size will not be incremented if Full is raised
+    #     self.size.increment(1)
+    #
+    # def get(self, *args, **kwargs):
+    #     item = super().get(*args, **kwargs)
+    #     # size will not be decremented if Empty is raised
+    #     self.size.increment(-1)
+    #     return item
+    #
+    # def qsize(self):
+    #     """Reliable implementation of multiprocessing.Queue.qsize()"""
+    #     return self.size.value
+    #
+    # def empty(self):
+    #     """Reliable implementation of multiprocessing.Queue.empty()"""
+    #     return not self.qsize()
 
     def safe_get(self, timeout: Union[float, None] = MPQUEUE_TIMEOUT):
         """
@@ -424,7 +427,6 @@ class ProcWorker:
             # TerminateInterrupt and KeyboardInterrupt
             self.log(logging.ERROR, f"Exception Shutdown: {exc}", exc_info=True)
 
-            # self.event_q.safe_put(EventMessage(self.name, "FATAL", f"{exc}"))
             stacktrace = traceback.format_exc()
             self.event_q.safe_put(EventMessage(self.name, "FATAL", f"{stacktrace}"))
             # -- TODO: call raise if in some sort of interactive mode
@@ -617,6 +619,7 @@ class Proc:
 
     def __init__(
         self,
+        mp: mpc.BaseContext,
         name: str,
         worker_class: Type[ProcWorker],
         shutdown_event: mps.Event,
@@ -756,13 +759,17 @@ class MainContext:
     # Seconds to wait for processes to respond to terminate before retrying
     TERMINATE_TIMEOUT_SECS = 0.1
 
-    def __init__(self):
+    def __init__(self, mp_ctx: Optional[mpc.BaseContext] = None):
+        if mp_ctx is None:
+            mp_ctx = multiprocessing.get_context()
+        self.mp_ctx = mp_ctx
+
         self.procs: List[Proc] = []
         self.queues: List[MPQueue] = []
         self.log = functools.partial(logging.log, extra=dict(source="MAIN"))
 
         # Event that is set to signify shutdown has been requested
-        self.shutdown_event = mp.Event()
+        self.shutdown_event = mp_ctx.Event()
 
         # main event queue receiving messages to be routed/acted upon
         self.event_queue = self.MPQueue()
@@ -797,12 +804,14 @@ class MainContext:
         """
         Create a new process managed by this context.
 
+        :param ctx: multiprocessing Context to use
         :param name: name for worker process
         :param worker_class: worker process class
         :param args: argument to pass to worker constructor
         :return: worker instance
         """
         proc = Proc(
+            self.mp_ctx,
             name,
             worker_class,
             self.shutdown_event,
@@ -822,7 +831,7 @@ class MainContext:
         :param kwargs: queue constructor kwargs
         :return: message queue instance
         """
-        queue = MPQueue(*args, **kwargs)
+        queue = MPQueue(*args, **kwargs, ctx=self.mp_ctx)
         self.queues.append(queue)
         return queue
 

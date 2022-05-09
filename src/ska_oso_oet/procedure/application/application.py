@@ -6,10 +6,11 @@ actions.
 """
 import collections
 import dataclasses
+import multiprocessing.context
 import os
 import threading
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from pubsub import pub
 
@@ -17,7 +18,7 @@ from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
 
 from .. import domain
-from ..domain import ProcedureState
+from ..domain import EventMessage, ProcedureState
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 ABORT_SCRIPT = domain.FileSystemScript("file://" + base_dir + "/abort.py")
@@ -160,7 +161,12 @@ class ScriptExecutionService:
         ProcedureState.STOPPED: topics.procedure.lifecycle.stopped,
     }
 
-    def __init__(self, abort_script: domain.ExecutableScript = ABORT_SCRIPT):
+    def __init__(
+        self,
+        mp_context: Optional[multiprocessing.context.BaseContext] = None,
+        abort_script: domain.ExecutableScript = ABORT_SCRIPT,
+        on_pubsub: Optional[List[Callable[[EventMessage], None]]] = None,
+    ):
         """
         Create a new ScriptExecutionService.
 
@@ -171,9 +177,15 @@ class ScriptExecutionService:
         different script, define the script URI in the abort_script_uri
         argument to this constructor.
 
-        :param abort_script_uri: URI of post-termination script
+        :param mp_context: multiprocessing context to use or None for default
+        :param abort_script: post-termination script for two-phase abort
+        :param on_pubsub: callbacks to call when PUBSUB message is received
         """
-        self._process_manager = domain.ProcessManager()
+        callbacks = [self._update_state, self._update_stacktrace]
+        if on_pubsub:
+            callbacks.extend(on_pubsub)
+
+        self._process_manager = domain.ProcessManager(mp_context, callbacks)
         self._abort_script = abort_script
 
         self.states: Dict[int, domain.ProcedureState] = {}
@@ -183,9 +195,9 @@ class ScriptExecutionService:
             ProcedureHistory
         )
 
-        self._state_updating = threading.Lock()
-        pub.subscribe(self._update_state, topics.procedure.lifecycle.statechange)
-        pub.subscribe(self._update_stacktrace, topics.procedure.lifecycle.stacktrace)
+        self._state_updating = threading.RLock()
+        # pub.subscribe(self._update_state, topics.procedure.lifecycle.statechange)
+        # pub.subscribe(self._update_stacktrace, topics.procedure.lifecycle.stacktrace)
 
     def prepare(self, cmd: PrepareProcessCommand) -> ProcedureSummary:
         """
@@ -353,18 +365,26 @@ class ScriptExecutionService:
                     del self.script_args[old_pid]
                     del self.scripts[old_pid]
 
-    def _update_state(self, msg_src: str, new_state: ProcedureState):
+    def _update_state(self, event: EventMessage) -> None:
         """
         Callback method that updates Procedure history whenever a message on
         the procedure.lifecycle.statechange topic is received.
+
+        :param event: EventMessage to process
         """
-        pid = int(msg_src)
+        payload = event.msg
+        if payload.get("topic", None) != "procedure.lifecycle.statechange":
+            return
+        pid = int(event.msg_src)
+        new_state = payload["kwargs"]["new_state"]
+
         now = time.time()
         with self._state_updating:
             previous = self.states.get(pid, None)
             self.states[pid] = new_state
             self.history[pid].process_states.append((new_state, now))
 
+        # publish a legacy lifecycle status change event when appropriate
         if new_state in self.state_to_topic:
             pub.sendMessage(
                 self.state_to_topic[new_state],
@@ -382,14 +402,20 @@ class ScriptExecutionService:
                 result=self._summarise(pid),
             )
 
-    def _update_stacktrace(self, msg_src: str, stacktrace: str):
+    def _update_stacktrace(self, event: EventMessage) -> None:
         """
         Callback method to record stacktrace event in the Procedure history
         whenever a message on procedure.lifecycle.stacktrace is received.
+
+        :param event: EventMessage to process
         """
-        pid = int(msg_src)
+        payload = event.msg
+        if payload.get("topic", None) != "procedure.lifecycle.stacktrace":
+            return
+        pid = int(event.msg_src)
+
         with self._state_updating:
-            self.history[pid].stacktrace = stacktrace
+            self.history[pid].stacktrace = event.msg["kwargs"]["stacktrace"]
 
     def _wait_for_state(self, pid: int, state: ProcedureState, timeout=1.0, tick=0.01):
         """
