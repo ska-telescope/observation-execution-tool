@@ -413,11 +413,43 @@ class ScriptWorker(mptools.ProcWorker):
 
 
 class ProcessManager:
+    """
+    ProcessManager is the parent for all ScriptWorker processes.
+
+    ProcessManager is responsible for launching ScriptWorker processes and
+    communicating API requests such as 'run main() function' or 'stop
+    execution' to the running scripts. If a script execution process does
+    not respond to the request, the process will be forcibly terminated.
+    ProcessManager delegates to the mptools framework for process
+    management functionality. Familiarity with mptools is useful in
+    understanding ProcessManager functionality.
+
+    ProcessManager is also responsible for communicating script events to
+    the rest of the system, such as events issued by the script or related
+    to the script execution lifecycle.
+
+    Note: ProcessManager does not maintain a history of script execution.
+    History is recorded and managed by the ScriptExecutionService.
+    """
+
     def __init__(
         self,
         mp_context: Optional[multiprocessing.context.BaseContext] = None,
         on_pubsub: Optional[List[Callable[[EventMessage], None]]] = None,
     ):
+        """
+        Create a new ProcessManager.
+
+        Functions passed in the on_pubsub argument will be called by the
+        ProcessManager every time the ProcessManager's message loop receives
+        a PUBSUB EventMessage. Callbacks should not perform significant
+        processing on the same thread, as this would block the ProcessManager
+        event loop.
+
+        :param mp_context: multiprocessing context use to create
+            multiprocessing primitives
+        :param on_pubsub: functions to call when a PUBSUB message is received
+        """
         self.ctx = mptools.MainContext(mp_context)
 
         # counter used to generate process ID for new processes
