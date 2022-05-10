@@ -213,14 +213,14 @@ giving: ::
   2020-09-30 10:19:38.016266  IDLE
   2020-09-30 10:19:38.017883  LOADING
   2020-09-30 10:19:38.018880  IDLE
-  2020-09-30 10:19:38.019006  RUNNING
+  2020-09-30 10:19:38.019006  RUNNING 1
   2020-09-30 10:19:38.019021  READY
-  2020-09-30 10:35:12.605270  RUNNING
+  2020-09-30 10:35:12.605270  RUNNING 2
 
-  Method    Arguments    Keyword Arguments
+  Index     Method    Arguments    Keyword Arguments
   --------  -----------  -------------------
-  init      []           {'subarray_id': 1}
-  run       []           {}
+      1      init      []           {'subarray_id': 1}
+      2      run       []           {}
 
 
 $oet describe --pid=3
@@ -237,13 +237,13 @@ giving: ::
   2020-09-30 10:40:12.435332  IDLE
   2020-09-30 10:40:12.435364  LOADING
   2020-09-30 10:40:12.435401  IDLE
-  2020-09-30 10:40:12.435433  RUNNING
+  2020-09-30 10:40:12.435433  RUNNING 1
   2020-09-30 10:40:12.435642  READY
 
-  Method    Arguments    Keyword Arguments
-  --------  -----------  -------------------
-  init      []           {'subarray_id': 1}
-  run       []           {}
+ Index       Method    Arguments    Keyword Arguments
+ --------   --------   ----------  -------------------
+   1          init      []           {'subarray_id': 1}
+   2          run       []           {}
 
   Repository           Branch    Commit
   ---------------      -------   -------------------
