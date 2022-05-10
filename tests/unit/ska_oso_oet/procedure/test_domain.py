@@ -467,7 +467,7 @@ class TestProcessManagerScriptWorkerIntegration:
     ):
         """
         Verify calls to subprocess to install environment are only run if the environment does not yet exist.
-        In this tests the first two scripts run in the same environment and the third one creates a new environment.
+        The first two scripts run in the same environment and the third one creates a new environment.
         """
         environment = Environment(
             "123",

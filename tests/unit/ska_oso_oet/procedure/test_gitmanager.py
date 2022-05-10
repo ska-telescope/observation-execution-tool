@@ -181,9 +181,7 @@ def mock_clone_repo(
 @pytest.fixture(scope="module")
 def test_repo(base_dir):
     """Creates a git repository, test-repo with two commits on main branch and one
-    commit on a feature branch, feature_a. Creates a separate sub-folder for each commit
-    and clones the repository state at that commit into the sub-folder, this is to mock
-    the way GitManager would do cloning (path is manager.base_dir/project_name/commit)"""
+    commit on a feature branch, feature_a."""
     # Remove any existing repo and initialise a new one
     repo_dir = base_dir + "test-repo/"
     shutil.rmtree(repo_dir, ignore_errors=True)
@@ -195,14 +193,12 @@ def test_repo(base_dir):
     file.close()
     test_repo.index.add(["initial-file.txt"])
     first = test_repo.index.commit("Initial commit! Directly to main branch")
-    # _ = Repo.clone_from(repo_dir, repo_dir + first.hexsha)
 
     file = open(repo_dir + "initial-file.txt", "a", encoding="utf-8")
     file.write("Adding to the first file.")
     file.close()
     test_repo.index.add(["initial-file.txt"])
     second = test_repo.index.commit("Some updates on the main branch")
-    # _ = Repo.clone_from(repo_dir, repo_dir + second.hexsha)
 
     # Commit changes to a feature branch
     test_repo.git.checkout("-b", "feature_a")
@@ -211,7 +207,6 @@ def test_repo(base_dir):
     file.close()
     test_repo.index.add(["feature-a-file.txt"])
     third = test_repo.index.commit("First Feature A file")
-    # _ = Repo.clone_from(repo_dir, repo_dir + third.hexsha, branch="feature_a")
 
     # As the hash depends on the time of the commit, it changes each time the test runs
     # We need to return the hashes from the test repo, so they can be asserted against
