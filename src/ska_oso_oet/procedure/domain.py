@@ -6,6 +6,7 @@ OS processes, process supervisors, signal handlers, etc.
 import copy
 import dataclasses
 import enum
+import errno
 import importlib.machinery
 import itertools
 import logging
@@ -359,8 +360,10 @@ class ScriptWorker(mptools.ProcWorker):
             self.log(logging.DEBUG, "Loading user script %s", script)
             try:
                 self.user_module = ModuleFactory.get_module(script)
-            except FileNotFoundError as e:
-                raise e from None
+            except FileNotFoundError:
+                raise FileNotFoundError(
+                    errno.ENOENT, os.strerror(errno.ENOENT), script.script_uri
+                ) from None
             self.publish_lifecycle(ProcedureState.IDLE)
 
         if evt.msg_type == "RUN":
