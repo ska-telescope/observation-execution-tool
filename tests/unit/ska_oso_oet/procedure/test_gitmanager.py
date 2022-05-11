@@ -112,6 +112,19 @@ def test_repo_is_full_cloned_and_commit_checked_out_when_hash_given(
     assert "feature-a-file.txt" in os.listdir(expected_path)
 
 
+@mock.patch.object(Repo, "clone_from")
+@mock.patch.object(GitManager, "get_commit_hash")
+def test_clone_raises_error_if_clone_dir_not_found(
+    mock_commit_hash_fn, mock_clone_fn, base_dir  # pylint: disable=unused-argument
+):
+    GitManager.base_dir = base_dir
+    commit = "ghi789"
+    mock_commit_hash_fn.side_effect = [commit]
+
+    with pytest.raises(IOError):
+        GitManager.clone_repo(GitArgs())
+
+
 @mock.patch.object(Git, "_call_process")
 def test_get_hash_when_branch_given(mock_ls_remote_fn):
     mock_ls_remote_fn.side_effect = [

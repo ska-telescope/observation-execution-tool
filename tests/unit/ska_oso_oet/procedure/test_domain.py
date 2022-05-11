@@ -487,7 +487,7 @@ class TestProcessManagerScriptWorkerIntegration:
         manager.em.create_env.side_effect = [environment, environment, environment2]
 
         # Return path to git file from clone call in env creation and module load
-        mock_clone_fn.return_value = ""
+        mock_clone_fn.return_value = "/"
         calls = multiprocessing.Value("i", 0)
 
         def called(*args, **kwargs):

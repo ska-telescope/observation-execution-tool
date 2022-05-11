@@ -4,6 +4,7 @@ Static helper functions for cloning and working with a Git repository
 import dataclasses
 import os
 from typing import Optional
+from urllib.parse import urlparse
 
 from git import Git, Repo
 
@@ -53,7 +54,7 @@ class GitManager:
         Repo.clone_from(git_args.git_repo, clone_dir, **clone_args)
 
         if not os.path.exists(clone_dir):
-            raise RuntimeError(
+            raise IOError(
                 "Something went wrong when cloning the project, directory"
                 f" {clone_dir} does not exist"
             )
@@ -91,7 +92,7 @@ class GitManager:
         """Get the git project name including full folder tree to avoid project
         name clashes (e.g. name for project at http://gitlab.com/ska-telescope/ska-oso-scripting
         is ska-telescope-ska-oso-scripting)"""
-        return "-".join(git_repo.split("/")[3:]).split(".")[0].replace("/", "-")
+        return urlparse(git_repo).path[1:].replace("/", "-").split(".")[0]
 
     @staticmethod
     def _checkout_commit(location: str, hexsha: str) -> None:

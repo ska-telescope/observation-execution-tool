@@ -327,7 +327,7 @@ class ScriptWorker(mptools.ProcWorker):
                                 "pip",
                             ]
                         )
-                        if os.path.exists(clone_dir + "/pyproject.toml"):
+                        if os.path.exists(os.path.join(clone_dir, "pyproject.toml")):
                             # Convert poetry requirements into a requirements.txt file
                             subprocess.check_output(
                                 [
