@@ -17,7 +17,7 @@ rest:
   function: script-execution
   domain: operations
   ingress:
-    enabled: true
+    enabled: false
   image:
     registry: artefact.skao.int
     image: ska-oso-oet
