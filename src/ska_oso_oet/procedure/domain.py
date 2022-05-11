@@ -428,6 +428,13 @@ class ProcessManager:
     the rest of the system, such as events issued by the script or related
     to the script execution lifecycle.
 
+    It is recommended that ProcessManager.shutdown() be called before the
+    ProcessManager is garbage collected. Failure to call shutdown could break
+    the any multiprocessing state held in the scope of the manager or its
+    child processes. This may or may not be a problem, depending on what is
+    held and whether that state is used elsewhere. In short, be safe and call
+    shutdown().
+
     Note: ProcessManager does not maintain a history of script execution.
     History is recorded and managed by the ScriptExecutionService.
     """

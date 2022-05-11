@@ -806,10 +806,10 @@ class MainContext:
         """
         Create a new process managed by this context.
 
-        :param ctx: multiprocessing Context to use
         :param name: name for worker process
         :param worker_class: worker process class
-        :param args: argument to pass to worker constructor
+        :param args: any worker class constructor args
+        :param kwargs: any worker class constructor kwargs
         :return: worker instance
         """
         proc = Proc(
