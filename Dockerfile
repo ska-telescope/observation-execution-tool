@@ -23,6 +23,8 @@ COPY pyproject.toml poetry.lock* ./
 # Install runtime dependencies and the app
 RUN poetry install --no-dev
 
+RUN git clone -b master https://gitlab.com/ska-telescope/ska-oso-scripting.git /app/scripting/
+
 USER tango
 RUN poetry config virtualenvs.create false
 
@@ -31,6 +33,5 @@ RUN \
    python3 -m pip install \
    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==4.1.0
 
-RUN git clone -b master https://github.com/jahio/hello-world-node-express.git /app/scripting/
 
 CMD ["python3", "-m", "ska_oso_oet.procedure.application.main"]
