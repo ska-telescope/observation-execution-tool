@@ -29,6 +29,7 @@ from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 LOGGER = logging.getLogger(__name__)
 
 HISTORY_MAX_LENGTH = 10
+ENV_CREATION_TIMEOUT = 600.0
 
 DEFAULT_SIGTERM_HANDLER = signal.getsignal(signal.SIGTERM)
 
@@ -351,7 +352,11 @@ class ScriptWorker(mptools.ProcWorker):
                         # TODO: How to handle if another process is waiting on created_condition but install fails?
                     self._environment.created.set()
                 else:
-                    self._environment.created.wait()
+                    # Environment is being created by another script. Wait for the
+                    # other process to finish environment installation before proceeding.
+                    # Throw a timeout error if env creation takes too long, likely means that
+                    # the environment installation has failed
+                    self._environment.created.wait(timeout=ENV_CREATION_TIMEOUT)
             self.publish_lifecycle(ProcedureState.IDLE)
 
         if evt.msg_type == "LOAD":
