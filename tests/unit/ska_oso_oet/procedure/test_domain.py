@@ -68,6 +68,26 @@ def git_script_branch(tmpdir):
 
 
 @pytest.fixture
+def git_sys_path_script(tmpdir):
+    """
+    Pytest fixture to return a path to a script file
+    """
+    script_path = tmpdir.join("git_sys_path_script.py")
+    script_path.write(
+        """
+import sys
+
+def main(site_package):
+    print(sys.path)
+    assert site_package in sys.path
+"""
+    )
+    return GitScript(
+        f"git://{str(script_path)}", git_args=GitArgs(), default_git_env=False
+    )
+
+
+@pytest.fixture
 def barrier_script(tmpdir):
     """
     Pytest fixture to return a path to a script that sets an event
@@ -457,7 +477,7 @@ class TestProcessManagerScriptWorkerIntegration:
         assert not env.created.is_set()
         assert env.env_id == environment.env_id
 
-        wait_for_state(manager, pid, ProcedureState.READY, timeout=10)
+        wait_for_state(manager, pid, ProcedureState.READY)
         assert env.created.is_set()
 
     @patch("ska_oso_oet.procedure.domain.GitManager.clone_repo")
@@ -502,8 +522,8 @@ class TestProcessManagerScriptWorkerIntegration:
 
         assert env1 == env2
 
-        wait_for_state(manager, pid1, ProcedureState.READY, timeout=10)
-        wait_for_state(manager, pid2, ProcedureState.READY, timeout=10)
+        wait_for_state(manager, pid1, ProcedureState.READY)
+        wait_for_state(manager, pid2, ProcedureState.READY)
 
         # Subprocess should only be called twice because second script should
         # just wait for first one to create the environment
@@ -512,13 +532,53 @@ class TestProcessManagerScriptWorkerIntegration:
         pid3 = manager.create(git_script_branch, init_args=ProcedureInput())
         env3 = manager.environments[pid3]
 
-        wait_for_state(manager, pid3, ProcedureState.READY, timeout=10)
+        wait_for_state(manager, pid3, ProcedureState.READY)
 
         assert env1 != env3
         assert env3.created.is_set()
 
         # Call count should go up because the new script should run in a new environment
         assert calls.value == 4
+
+    @patch("ska_oso_oet.procedure.domain.GitManager.clone_repo")
+    @patch("ska_oso_oet.procedure.domain.subprocess.check_output")
+    def test_shared_environment_sys_path_is_set(
+        self, mock_subprocess_fn, mock_clone_fn, git_sys_path_script, manager
+    ):
+        """
+        Verify site packages are added to sys.path correctly for scripts sharing an environment.
+        """
+        site_pkg = "/python/site_packages"
+        env = Environment(
+            "123",
+            multiprocessing.Event(),
+            multiprocessing.Event(),
+            "/",
+            site_pkg,
+        )
+        manager.em.create_env = MagicMock()
+        manager.em.create_env.side_effect = [env, env]
+
+        # Return path to git file from clone call in env creation and module load
+        mock_clone_fn.return_value = "/"
+
+        pid1 = manager.create(git_sys_path_script, init_args=ProcedureInput(site_pkg))
+        pid2 = manager.create(git_sys_path_script, init_args=ProcedureInput(site_pkg))
+
+        wait_for_state(manager, pid1, ProcedureState.READY)
+        wait_for_state(manager, pid2, ProcedureState.READY)
+
+        # Running the main function asserts the site_pkg is in sys.path
+        # If assertion fails, script state goes to FAILED, else it goes
+        # to COMPLETED
+        manager.run(pid1, call="main", run_args=ProcedureInput(site_pkg))
+        wait_for_state(manager, pid1, ProcedureState.COMPLETED)
+
+        manager.run(pid2, call="main", run_args=ProcedureInput(site_pkg))
+        wait_for_state(manager, pid2, ProcedureState.COMPLETED)
+
+        assert manager.states[pid1] == ProcedureState.COMPLETED
+        assert manager.states[pid2] == ProcedureState.COMPLETED
 
     # @patch('ska_oso_oet.mptools.Proc.STARTUP_WAIT_SECS', new=300)
     def test_stop_during_init_sets_lifecycle_state_to_stopped(

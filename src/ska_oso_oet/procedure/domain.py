@@ -315,7 +315,6 @@ class ScriptWorker(mptools.ProcWorker):
                         )
 
                     clone_dir = GitManager.clone_repo(script.git_args)
-                    sys.path.insert(0, self._environment.site_packages)
 
                     try:
                         # Upgrade pip version, venv uses a pre-packaged pip which is outdated
@@ -357,6 +356,8 @@ class ScriptWorker(mptools.ProcWorker):
                     # Throw a timeout error if env creation takes too long, likely means that
                     # the environment installation has failed
                     self._environment.created.wait(timeout=ENV_CREATION_TIMEOUT)
+
+            sys.path.insert(0, self._environment.site_packages)
             self.publish_lifecycle(ProcedureState.IDLE)
 
         if evt.msg_type == "LOAD":
