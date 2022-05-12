@@ -84,16 +84,6 @@ spec:
         domain: {{ .Values.rest.domain }}
         intent: production
     spec:
-      initContainers:
-      - name: check-databaseds-ready
-        image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{ .Values.rest.image.tag }}"
-        command:
-          - /usr/local/bin/wait-for-it.sh
-          - {{ if .Values.global.tango_host -}} {{ .Values.global.tango_host }} {{- else -}} databaseds-tango-base-{{ .Release.Name }}:10000 {{- end }}
-          - --timeout=30
-          - --strict
-          - --
-          - echo databaseds ready
       containers:
       - name: ska-oso-oet-rest
         image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{ .Values.rest.image.tag }}"
