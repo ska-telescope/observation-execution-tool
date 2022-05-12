@@ -174,7 +174,7 @@ script. It can be one of:
   * ``READY``: script is ready to run specified function, e.g. ``init`` or ``main``.
   * ``RUNNING``: script is running, i.e., the script's ``init`` or ``main`` function is currently executing.
   * ``STOPPED``: script was terminated by the OET before the script could complete.
-  * ``COMPLETED``: the script completed successfully, i.e., the ``main`` function completed and no exception was raised.
+  * ``COMPLETE``: the script completed successfully, i.e., the ``main`` function completed and no exception was raised.
   * ``FAILED``: an exception was raised during script preparation or execution.
 
 Type: ``ProcedureHistory``
@@ -183,7 +183,7 @@ Type: ``ProcedureHistory``
 are:
 
   * ``list process_states``: a List of ``ProcedureStates`` and timestamps when that ``ProcedureState`` was
-    reached, e.g. ``process_states: [('CREATING', 18392174.543), ('RUNNING', 18392143.546), ('COMPLETED', 183925456.744)]``.
+    reached, e.g. ``process_states: [('CREATING', 18392174.543), ('RUNNING', 18392143.546), ('COMPLETE', 183925456.744)]``.
   * ``string stacktrace``: populated with the stacktrace from the script if the final ``ProcedureState`` is ``FAILED``.
     This attribute is set to None for any other final state.
 
