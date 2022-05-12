@@ -197,20 +197,38 @@ class PubSubHelper:
             time.sleep(sleep_secs)
             sleep_secs = mptools._sleep_secs(tick, deadline)
 
-    def wait_for_lifecycle(self, state, timeout=1.0, tick=0.01):
+    def wait_for_lifecycle(self, state, msg_src=None, timeout=1.0, tick=0.01) -> bool:
+        """
+        Timebound wait for a lifecycle state event to be received signifying a
+        transition to the target state.
+
+        Returns True if the event was received.
+        """
         deadline = time.time() + timeout
         sleep_secs = tick
+
+        if msg_src is None:
+
+            def msg_src_matcher(m):
+                return True
+
+        else:
+
+            def msg_src_matcher(m):
+                return m.get("msg_src", None) == str(msg_src)
 
         def any_msgs_with_state():
             return any(
                 True
                 for m in self.messages_on_topic(topics.procedure.lifecycle.statechange)
-                if m["new_state"] == state
+                if m["new_state"] == state and msg_src_matcher(m)
             )
 
         while not any_msgs_with_state() and sleep_secs > 0:
             time.sleep(sleep_secs)
             sleep_secs = mptools._sleep_secs(tick, deadline)
+
+        return any_msgs_with_state()
 
 
 def assert_json_equal_to_procedure_summary(

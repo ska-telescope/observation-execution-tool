@@ -20,6 +20,19 @@ git submodule update --init --recursive
 
 ## Build and test
 
+Install dependencies with Poetry and activate the virtual environment
+
+```
+poetry install
+poetry shell
+```
+
+To build a new Docker image for the OET, run
+
+```
+make oci-build
+```
+
 Execute the test suite and lint the project with:
 
 ```
@@ -32,12 +45,6 @@ To run a helm chart unit tests to verify helm chart configuration:
 ```
 helm plugin install https://github.com/quintush/helm-unittest
 make k8s-chart-test
-```
-
-To build a new Docker image for the OET, run
-
-```
-make oci-build
 ```
 
 Execute the BDD acceptance tests in k8s environment with:
