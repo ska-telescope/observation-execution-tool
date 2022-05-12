@@ -100,11 +100,9 @@ spec:
         imagePullPolicy: {{ .Values.rest.image.pullPolicy }}
         command: ["python"]
         args: ["-m", "ska_oso_oet.procedure.application.main"]
-        env:
-          - name: TANGO_HOST
-            value: {{ if .Values.global.tango_host -}} {{ .Values.global.tango_host }} {{- else -}} databaseds-tango-base-{{ .Release.Name }}:10000 {{- end }}
-          - name: SKUID_URL
-            value: "ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:9870"
+        envFrom:
+          - configMapRef:
+              name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
         ports:
           - name: oet-backend
             containerPort: 5000
