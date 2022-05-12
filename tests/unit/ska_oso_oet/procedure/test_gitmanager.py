@@ -5,90 +5,150 @@ import unittest.mock as mock
 import pytest
 from git import Git, Repo
 
-from ska_oso_oet.procedure.domain import GitArgs
-from ska_oso_oet.procedure.gitmanager import (
-    _checkout_commit,
-    clone_repo,
-    get_commit_hash,
-)
+from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
+
+
+@pytest.fixture(scope="module")
+def base_dir():
+    """
+    Pytest fixture to return a base directory to clone repositories into during
+    test execution. Anything cloned there will be cleaned up when module tests are
+    completed.
+    """
+    base_dir = os.getcwd() + "/test_clones/"
+    yield base_dir
+    shutil.rmtree(base_dir, ignore_errors=True)
+
+
+def test_get_project_name():
+    git_repo_with_git = "https://gitlab.com/ska-telescope/ska-oso-scripting.git"
+    git_repo_no_git = "https://gitlab.com/ska-telescope/ska-oso-scripting"
+
+    expected = "ska-telescope-ska-oso-scripting"
+
+    name_with_git = GitManager.get_project_name(git_repo_with_git)
+    name_no_git = GitManager.get_project_name(git_repo_no_git)
+
+    assert name_with_git == expected
+    assert name_no_git == expected
 
 
 @mock.patch.object(Repo, "clone_from")
-def test_repo_is_shallow_cloned_from_main_when_defaults_given(mock_clone_fn):
+@mock.patch.object(GitManager, "get_commit_hash")
+def test_clone_not_done_if_already_cloned(mock_commit_hash_fn, mock_clone_fn):
+    commit = "123abc"
+    mock_commit_hash_fn.side_effect = [commit]
+
+    with mock.patch("os.path.exists") as mock_exists:
+        mock_exists.side_effect = [True]
+        GitManager.clone_repo(GitArgs(git_repo="https://test.com/fake-repo-name.git"))
+    mock_clone_fn.assert_not_called()
+
+
+@mock.patch.object(Repo, "clone_from")
+@mock.patch.object(GitManager, "get_commit_hash")
+def test_repo_is_shallow_cloned_from_main_when_defaults_given(
+    mock_commit_hash_fn, mock_clone_fn, base_dir
+):
+    GitManager.base_dir = base_dir
+    commit = "abcd123"
+    mock_commit_hash_fn.side_effect = [commit]
     mock_clone_fn.side_effect = mock_clone_repo
-    clone_repo(
-        GitArgs(),
-        location="~/ska/tmp/ska-oso-scripting",
-    )
+    GitManager.clone_repo(GitArgs())
+
+    expected_path = base_dir + "ska-telescope-ska-oso-scripting/" + commit
 
     mock_clone_fn.assert_called_once_with(
         "https://gitlab.com/ska-telescope/ska-oso-scripting.git",
-        os.path.expanduser("~/ska/tmp/ska-oso-scripting"),
+        expected_path,
         depth=1,
         single_branch=True,
         branch="master",
     )
-    assert "initial-file.txt" in os.listdir(
-        os.path.expanduser("~/ska/tmp/ska-oso-scripting")
-    )
+    assert "initial-file.txt" in os.listdir(expected_path)
 
 
 @mock.patch.object(Repo, "clone_from")
-def test_repo_is_shallow_cloned_from_branch(mock_clone_fn):
+@mock.patch.object(GitManager, "get_commit_hash")
+def test_repo_is_shallow_cloned_from_branch(
+    mock_commit_hash_fn, mock_clone_fn, base_dir
+):
+    GitManager.base_dir = base_dir
+    commit = "def456"
+    mock_commit_hash_fn.side_effect = [commit]
     mock_clone_fn.side_effect = mock_clone_repo
-    clone_repo(
+    GitManager.clone_repo(
         GitArgs(git_branch="feature-branch"),
-        location="~/ska/tmp/ska-oso-scripting",
     )
+    expected_path = base_dir + "ska-telescope-ska-oso-scripting/" + commit
 
     mock_clone_fn.assert_called_once_with(
         "https://gitlab.com/ska-telescope/ska-oso-scripting.git",
-        os.path.expanduser("~/ska/tmp/ska-oso-scripting"),
+        expected_path,
         depth=1,
         single_branch=True,
         branch="feature-branch",
     )
-    assert "initial-file.txt" in os.listdir(
-        os.path.expanduser("~/ska/tmp/ska-oso-scripting")
+
+    assert "initial-file.txt" in os.listdir(expected_path)
+
+
+@mock.patch.object(GitManager, "get_commit_hash")
+@mock.patch.object(GitManager, "get_project_name")
+def test_repo_is_full_cloned_and_commit_checked_out_when_hash_given(
+    mock_proj_name_fn, mock_commit_hash_fn, test_repo, base_dir
+):
+    GitManager.base_dir = base_dir
+    commit = test_repo[2]
+    mock_commit_hash_fn.side_effect = [commit]
+    # Mock project name so that it doesn't include full test file structure in the name
+    mock_proj_name_fn.side_effect = ["test-repo"]
+    GitManager.clone_repo(
+        GitArgs(git_repo=f"file://{base_dir}test-repo", git_commit=commit)
     )
+    expected_path = base_dir + "test-repo/" + commit
+
+    assert "initial-file.txt" in os.listdir(expected_path)
+    assert "feature-a-file.txt" in os.listdir(expected_path)
 
 
 @mock.patch.object(Repo, "clone_from")
-def test_repo_is_full_cloned_and_commit_checked_out_when_hash_given(
-    mock_clone_fn, test_repo
+@mock.patch.object(GitManager, "get_commit_hash")
+def test_clone_raises_error_if_clone_dir_not_found(
+    mock_commit_hash_fn, mock_clone_fn, base_dir  # pylint: disable=unused-argument
 ):
-    # This test is cheating slightly as it is not the mocked function which creates the repo but the pytest fixture
-    # To call the method with a hash, the repo needs to be created before the call.
-    mock_clone_fn.return_value = None
-    clone_repo(GitArgs(git_commit=test_repo[2]), location="~/ska/tmp/test-repo")
+    GitManager.base_dir = base_dir
+    commit = "ghi789"
+    mock_commit_hash_fn.side_effect = [commit]
 
-    mock_clone_fn.assert_called_once_with(
-        "https://gitlab.com/ska-telescope/ska-oso-scripting.git",
-        os.path.expanduser("~/ska/tmp/test-repo"),
-    )
-    assert "initial-file.txt" in os.listdir(os.path.expanduser("~/ska/tmp/test-repo"))
-    assert "feature-a-file.txt" in os.listdir(os.path.expanduser("~/ska/tmp/test-repo"))
+    with pytest.raises(IOError):
+        GitManager.clone_repo(GitArgs())
 
 
 @mock.patch.object(Git, "_call_process")
 def test_get_hash_when_branch_given(mock_ls_remote_fn):
-    mock_ls_remote_fn.return_value = (
-        "69e93d57916f837ee93ca125f2785f0f6e21974d\\feature_branch"
+    mock_ls_remote_fn.side_effect = [
+        "69e93d57916f837ee93ca125f2785f0f6e21974d\\feature_branch",
+        "69e93d57916f837ee93ca125f2785f0f6e21974d\tfeature_branch",
+    ]
+    result1 = GitManager.get_commit_hash(
+        GitArgs(git_repo="https://gitlab.com/", git_branch="feature_branch")
     )
-    result = get_commit_hash(
+    result2 = GitManager.get_commit_hash(
         GitArgs(git_repo="https://gitlab.com/", git_branch="feature_branch")
     )
 
     assert mock_ls_remote_fn.call_args == mock.call(
         "ls_remote", "-h", "https://gitlab.com/", "feature_branch"
     )
-    assert "69e93d57916f837ee93ca125f2785f0f6e21974d" == result
+    assert "69e93d57916f837ee93ca125f2785f0f6e21974d" == result1
+    assert "69e93d57916f837ee93ca125f2785f0f6e21974d" == result2
 
 
 @mock.patch.object(Git, "_call_process")
-def test_get_hash_from_main_branch_when_branch_or_tag_not_given(mock_ls_remote_fn):
+def test_get_hash_from_main_branch_when_branch_not_given(mock_ls_remote_fn):
     mock_ls_remote_fn.return_value = "69e93d57916f837ee93ca125f2785f0f6e21974d\\main"
-    result = get_commit_hash(GitArgs(git_repo="https://gitlab.com/"))
+    result = GitManager.get_commit_hash(GitArgs(git_repo="https://gitlab.com/"))
 
     assert mock_ls_remote_fn.call_args == mock.call(
         "ls_remote", "https://gitlab.com/", "HEAD"
@@ -96,18 +156,23 @@ def test_get_hash_from_main_branch_when_branch_or_tag_not_given(mock_ls_remote_f
     assert "69e93d57916f837ee93ca125f2785f0f6e21974d" == result
 
 
-def test_checkout_commit(test_repo):
-    _checkout_commit(location="~/ska/tmp/test-repo", hexsha=test_repo[2])
-
-    assert "initial-file.txt" in os.listdir(os.path.expanduser("~/ska/tmp/test-repo"))
-    assert "feature-a-file.txt" in os.listdir(os.path.expanduser("~/ska/tmp/test-repo"))
-
-    _checkout_commit(location="~/ska/tmp/test-repo", hexsha=test_repo[0])
-
-    assert "initial-file.txt" in os.listdir(os.path.expanduser("~/ska/tmp/test-repo"))
-    assert "feature-a-file.txt" not in os.listdir(
-        os.path.expanduser("~/ska/tmp/test-repo")
+def test_checkout_commit(test_repo, base_dir):
+    """Test that the _checkout_commit function checks out the given commit. Do this
+    in the main test-repo instead of the repos for individual hashes."""
+    test_repo_path = base_dir + "test-repo/"
+    GitManager._checkout_commit(  # pylint: disable=protected-access
+        location=test_repo_path, hexsha=test_repo[0]
     )
+
+    assert "initial-file.txt" in os.listdir(test_repo_path)
+    assert "feature-a-file.txt" not in os.listdir(test_repo_path)
+
+    GitManager._checkout_commit(  # pylint: disable=protected-access
+        location=test_repo_path, hexsha=test_repo[2]
+    )
+
+    assert "initial-file.txt" in os.listdir(test_repo_path)
+    assert "feature-a-file.txt" in os.listdir(test_repo_path)
 
 
 def mock_clone_repo(
@@ -126,28 +191,23 @@ def mock_clone_repo(
     return first.hexsha
 
 
-@pytest.fixture
-def test_repo():
+@pytest.fixture(scope="module")
+def test_repo(base_dir):
+    """Creates a git repository, test-repo with two commits on main branch and one
+    commit on a feature branch, feature_a."""
     # Remove any existing repo and initialise a new one
-    shutil.rmtree(os.path.expanduser("~/ska/tmp/test-repo"), ignore_errors=True)
-    test_repo = Repo.init(os.path.expanduser("~/ska/tmp/test-repo"))
+    repo_dir = base_dir + "test-repo/"
+    shutil.rmtree(repo_dir, ignore_errors=True)
+    test_repo = Repo.init(repo_dir)
 
     # Commit changes to the main branch
-    file = open(
-        os.path.expanduser("~/ska/tmp/test-repo/initial-file.txt"),
-        "x",
-        encoding="utf-8",
-    )
+    file = open(repo_dir + "initial-file.txt", "x", encoding="utf-8")
     file.write("This is the first file.")
     file.close()
     test_repo.index.add(["initial-file.txt"])
     first = test_repo.index.commit("Initial commit! Directly to main branch")
 
-    file = open(
-        os.path.expanduser("~/ska/tmp/test-repo/initial-file.txt"),
-        "a",
-        encoding="utf-8",
-    )
+    file = open(repo_dir + "initial-file.txt", "a", encoding="utf-8")
     file.write("Adding to the first file.")
     file.close()
     test_repo.index.add(["initial-file.txt"])
@@ -155,11 +215,7 @@ def test_repo():
 
     # Commit changes to a feature branch
     test_repo.git.checkout("-b", "feature_a")
-    file = open(
-        os.path.expanduser("~/ska/tmp/test-repo/feature-a-file.txt"),
-        "x",
-        encoding="utf-8",
-    )
+    file = open(repo_dir + "feature-a-file.txt", "x", encoding="utf-8")
     file.write("This a file on the feature_a branch.")
     file.close()
     test_repo.index.add(["feature-a-file.txt"])

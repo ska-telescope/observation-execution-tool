@@ -46,4 +46,3 @@ tests:
             name: SKUID_URL
             value: ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.cluster.local:9870
 
-

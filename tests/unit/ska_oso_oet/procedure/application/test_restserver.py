@@ -24,6 +24,7 @@ from ska_oso_oet.procedure.application.application import (
     StopProcessCommand,
 )
 from ska_oso_oet.procedure.domain import ProcedureInput, ProcedureSummary
+from ska_oso_oet.procedure.gitmanager import GitArgs
 
 # Endpoint for the REST API
 ENDPOINT = "api/v1.0/procedures"
@@ -73,7 +74,7 @@ CREATE_GIT_SUMMARY = ProcedureSummary(
     id=1,
     script=domain.GitScript(
         "git:///test.py",
-        git_args=domain.GitArgs(git_repo="http://foo.git", git_branch="main"),
+        git_args=GitArgs(git_repo="http://foo.git", git_branch="main"),
         default_git_env=False,
     ),
     script_args=[
@@ -520,7 +521,7 @@ def test_post_to_endpoint_sends_default_git_arguments(client):
     new Procedure.
     """
     summary = copy.deepcopy(CREATE_GIT_SUMMARY)
-    summary.script.git_args = domain.GitArgs()
+    summary.script.git_args = GitArgs()
     spec = {
         topics.request.procedure.create: [
             ([topics.procedure.lifecycle.created], dict(result=summary))
@@ -543,7 +544,7 @@ def test_post_to_endpoint_sends_default_git_arguments(client):
     expected_cmd = PrepareProcessCommand(
         script=domain.GitScript(
             CREATE_GIT_SUMMARY.script.script_uri,  # pylint: disable=no-member
-            git_args=domain.GitArgs(),
+            git_args=GitArgs(),
             default_git_env=False,
         ),
         init_args=CREATE_GIT_SUMMARY.script_args[0].fn_args,

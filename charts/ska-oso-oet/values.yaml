@@ -26,10 +26,10 @@ rest:
   resources:
     requests:
       cpu:  100m
-      memory: 128Mi
+      memory: 1024Mi
     limits:
       cpu:  1000m
-      memory: 128Mi
+      memory: 1024Mi
   livenessProbe:
     enabled: true
     initialDelaySeconds: 0

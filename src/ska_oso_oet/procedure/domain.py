@@ -6,12 +6,15 @@ OS processes, process supervisors, signal handlers, etc.
 import copy
 import dataclasses
 import enum
+import errno
 import importlib.machinery
 import itertools
 import logging
 import multiprocessing
 import os
 import signal
+import subprocess
+import sys
 import threading
 import time
 import types
@@ -20,11 +23,13 @@ from typing import Dict, List, Optional, Tuple
 from ska_oso_oet import mptools
 from ska_oso_oet.command import SCAN_ID_GENERATOR
 from ska_oso_oet.mptools import EventMessage
-from ska_oso_oet.procedure.gitmanager import GitArgs, clone_repo, get_commit_hash
+from ska_oso_oet.procedure.environment import Environment, EnvironmentManager
+from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 
 LOGGER = logging.getLogger(__name__)
 
 HISTORY_MAX_LENGTH = 10
+ENV_CREATION_TIMEOUT = 600.0
 
 DEFAULT_SIGTERM_HANDLER = signal.getsignal(signal.SIGTERM)
 
@@ -61,6 +66,7 @@ class ProcedureState(enum.Enum):
     UNKNOWN = enum.auto()
     IDLE = enum.auto()
     CREATING = enum.auto()
+    PREP_ENV = enum.auto()
     LOADING = enum.auto()
     READY = enum.auto()
     RUNNING = enum.auto()
@@ -209,10 +215,12 @@ class ScriptWorker(mptools.ProcWorker):
         work_q: mptools.MPQueue,
         *args,
         scan_counter: Optional[multiprocessing.Value] = None,
+        environment: Optional[Environment] = None,
         **kwargs,
     ):
         self.name = name
         self._scan_counter = scan_counter
+        self._environment = environment
         self.work_q = work_q
 
         # user_module will be set on LOAD message
@@ -284,12 +292,73 @@ class ScriptWorker(mptools.ProcWorker):
         self, evt: EventMessage
     ):  # pylint: disable=unused-argument,arguments-differ
 
-        if evt.msg_type not in ("LOAD", "RUN"):
+        if evt.msg_type not in ("ENV", "LOAD", "RUN"):
             self.log(logging.WARN, "Unexpected message: %s", evt)
             return
 
         if self._scan_counter:
             SCAN_ID_GENERATOR.backing = self._scan_counter
+
+        if evt.msg_type == "ENV":
+            self.publish_lifecycle(ProcedureState.PREP_ENV)
+            if self._environment is None:
+                raise RuntimeError("Install failed, environment has not been defined")
+            if not self._environment.created.is_set():
+                if not self._environment.creating.is_set():
+                    self._environment.creating.set()
+                    script = evt.msg
+
+                    if not isinstance(script, GitScript):
+                        raise RuntimeError(
+                            "Cannot create virtual environment for script type"
+                            f" {script.__class__.__name__}"
+                        )
+
+                    clone_dir = GitManager.clone_repo(script.git_args)
+
+                    try:
+                        # Upgrade pip version, venv uses a pre-packaged pip which is outdated
+                        subprocess.check_output(
+                            [
+                                f"{self._environment.location}/bin/pip",
+                                "install",
+                                "--index-url=https://pypi.org/simple",
+                                "--upgrade",
+                                "pip",
+                            ]
+                        )
+                        if os.path.exists(os.path.join(clone_dir, "pyproject.toml")):
+                            # Convert poetry requirements into a requirements.txt file
+                            subprocess.check_output(
+                                [
+                                    "poetry",
+                                    "export",
+                                    "--output",
+                                    "requirements.txt",
+                                    "--without-hashes",
+                                ],
+                                cwd=clone_dir,
+                            )
+                        subprocess.check_output(
+                            [f"{self._environment.location}/bin/pip", "install", "."],
+                            cwd=clone_dir,
+                        )
+                    except subprocess.CalledProcessError as e:
+                        raise RuntimeError(
+                            "Something went wrong during script environment"
+                            f" installation: {e.output}"
+                        ) from None
+                        # TODO: How to handle if another process is waiting on created_condition but install fails?
+                    self._environment.created.set()
+                else:
+                    # Environment is being created by another script. Wait for the
+                    # other process to finish environment installation before proceeding.
+                    # Throw a timeout error if env creation takes too long, likely means that
+                    # the environment installation has failed
+                    self._environment.created.wait(timeout=ENV_CREATION_TIMEOUT)
+
+            sys.path.insert(0, self._environment.site_packages)
+            self.publish_lifecycle(ProcedureState.IDLE)
 
         if evt.msg_type == "LOAD":
             self.publish_lifecycle(ProcedureState.LOADING)
@@ -297,8 +366,10 @@ class ScriptWorker(mptools.ProcWorker):
             self.log(logging.DEBUG, "Loading user script %s", script)
             try:
                 self.user_module = ModuleFactory.get_module(script)
-            except FileNotFoundError as e:
-                raise e from None
+            except FileNotFoundError:
+                raise FileNotFoundError(
+                    errno.ENOENT, os.strerror(errno.ENOENT), script.script_uri
+                ) from None
             self.publish_lifecycle(ProcedureState.IDLE)
 
         if evt.msg_type == "RUN":
@@ -352,16 +423,20 @@ class ProcedureSummary:
 
 
 class ProcessManager:
+    """"""
+
     def __init__(self):
         self.ctx = mptools.MainContext()
 
         self._pid_counter = itertools.count(1)
+        self.em = EnvironmentManager()
 
         # mappings of Procs to various identifying metadata
         self.procedures: Dict[int, mptools.Proc] = {}
         self.states: Dict[int, ProcedureState] = {}
         self.script_args: Dict[int, List[ArgCapture]] = {}
         self.scripts: Dict[int, ExecutableScript] = {}
+        self.environments: Dict[int, Environment] = {}
 
         # message boxes for manager to each script worker
         self.script_queues: Dict[int, mptools.MPQueue] = {}
@@ -444,8 +519,18 @@ class ProcessManager:
         work_q = self.ctx.MPQueue()
         self.script_queues[pid] = work_q
 
-        # prime the work queue with an initial message instructing it to load the child script
+        # prime the work queue with an initial message instructing it to set up environment,
+        # load the child script and run init function of the script
         msg_src = self.__class__.__name__
+
+        env = None
+        if isinstance(script, GitScript) and not script.default_git_env:
+            env = self.em.create_env(script.git_args)
+            env_msg = EventMessage(msg_src=msg_src, msg_type="ENV", msg=script)
+            work_q.safe_put(env_msg)
+
+            self.environments[pid] = env
+
         load_msg = EventMessage(msg_src=msg_src, msg_type="LOAD", msg=script)
         work_q.safe_put(load_msg)
         # ... and also to execute init
@@ -460,6 +545,7 @@ class ProcessManager:
             work_q,
             *init_args.args,
             scan_counter=self._scan_id,
+            environment=env,
             **init_args.kwargs,
         )
 
@@ -698,21 +784,20 @@ class ModuleFactory:
     @staticmethod
     def _load_module_from_git(script: GitScript) -> types.ModuleType:
         """
-        Load Python module from a git repository. Clone the repository if repo has not yet been cloned.
-        The repository will not have been cloned if default environment is being used.
-        This module handles git:// URIs.
+        Load Python module from a git repository. Clones the repository if repo has not yet
+        been cloned. The repository will not have been cloned if default environment is being
+        used. This module handles git:// URIs.
 
         :param script: GitScript object with information on script location
         :return: Python module
         """
-        git_commit = get_commit_hash(script.git_args, short_hash=True)
+        clone_path = GitManager.clone_repo(script.git_args)
 
-        clone_dir = "/tmp/clones/" + git_commit
-        if not os.path.isdir(clone_dir):
-            clone_repo(script.git_args, clone_dir)
-        path = clone_dir + "/" + script.script_uri[6:]
+        # remove prefix and any leading slashes
+        relative_script_path = script.script_uri[len(script.get_prefix()) :].lstrip("/")
+        script_path = clone_path + "/" + relative_script_path
 
-        loader = importlib.machinery.SourceFileLoader("user_module", path)
+        loader = importlib.machinery.SourceFileLoader("user_module", script_path)
         user_module = types.ModuleType(loader.name)
         loader.exec_module(user_module)
         return user_module
