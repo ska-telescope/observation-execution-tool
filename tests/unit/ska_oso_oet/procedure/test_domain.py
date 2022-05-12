@@ -738,61 +738,6 @@ class TestProcessManagerScriptWorkerIntegration:
         wait_for_state(manager, pid, ProcedureState.COMPLETE)
         assert manager.running is None
 
-    # def test_happy_path_procedure_lifecycle_events(self, manager, script):
-    #     """
-    #     Verify that OET events are published at the appropriate times for a
-    #     happy-path script.
-    #     """
-    #     helper = PubSubHelper()
-    #
-    #     pid = manager.create(script, init_args=ProcedureInput())
-    #     helper.wait_for_message_on_topic(topics.procedure.lifecycle.created)
-    #     assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
-    #     assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 0
-    #     assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 0
-    #     assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
-    #
-    #     manager.run(pid, call="main", run_args=ProcedureInput())
-    #     helper.wait_for_message_on_topic(topics.procedure.lifecycle.stopped)
-    #     assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
-    #     assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
-    #     assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 1
-    #     assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
-    #
-    #     assert helper.topic_list == [
-    #         topics.procedure.lifecycle.created,
-    #         topics.procedure.lifecycle.started,
-    #         topics.procedure.lifecycle.stopped,
-    #     ]
-    #
-    #     def test_sad_path_procedure_lifecycle_events(self, manager, fail_script):
-    #         """
-    #         Verify that OET events are published at the appropriate times for a
-    #         sad-path script.
-    #         """
-    #         helper = PubSubHelper()
-    #
-    #         pid = manager.create(fail_script, init_args=ProcedureInput())
-    #         helper.wait_for_message_on_topic(topics.procedure.lifecycle.created)
-    #         assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
-    #         assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 0
-    #         assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
-    #         assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 0
-    #
-    #         manager.run(pid, call="main", run_args=ProcedureInput(msg="foo"))
-    #         helper.wait_for_message_on_topic(topics.procedure.lifecycle.failed)
-    #         assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
-    #         assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
-    #         assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 1
-    #         assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 1
-    #
-    #         assert helper.topic_list == [
-    #             topics.procedure.lifecycle.created,
-    #             topics.procedure.lifecycle.started,
-    #             topics.procedure.lifecycle.stopped,
-    #             topics.procedure.lifecycle.failed,
-    #         ]
-    #
     def test_events_emitted_from_scripts_are_republished(self, manager, pubsub_script):
         """
         Verify that OET events are published at the appropriate times for a
