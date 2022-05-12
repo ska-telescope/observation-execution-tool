@@ -37,6 +37,7 @@ class TestEventBusWorker:
         Verify that message event is published if the event originates from an
         external source.
         """
+        pubsub.pub.unsubAll()
         helper = PubSubHelper()
 
         work_q = MPQueue(ctx=mp)
@@ -53,6 +54,7 @@ class TestEventBusWorker:
             )
 
         assert topics.request.procedure.list in helper.topic_list
+        work_q.safe_close()
 
     @pytest.mark.parametrize("mp", multiprocessing_contexts)
     def test_internal_messages_not_republished(self, mp, caplog):
@@ -60,6 +62,7 @@ class TestEventBusWorker:
         Verify that message event is not published if the event originates from
         an internal source.
         """
+        pubsub.pub.unsubAll()
         helper = PubSubHelper()
 
         work_q = MPQueue(ctx=mp)
@@ -88,6 +91,8 @@ class TestEventBusWorker:
         assert len(helper.messages) == 1
         assert helper.messages[0][1] == dict(msg_src="NONTEST", request_id="456")
 
+        work_q.safe_close()
+
 
 class TestScriptExecutionWorker:
     @pytest.mark.parametrize("mp", multiprocessing_contexts)
@@ -95,6 +100,7 @@ class TestScriptExecutionWorker:
         """
         SES.summarise should be called when 'request.procedure.list' message is received
         """
+        pubsub.pub.unsubAll()
         helper = PubSubHelper()
 
         work_q = MPQueue(ctx=mp)
@@ -127,11 +133,14 @@ class TestScriptExecutionWorker:
             topics.procedure.pool.list,  # response published
         ]
 
+        work_q.safe_close()
+
     @pytest.mark.parametrize("mp", multiprocessing_contexts)
     def test_handles_request_to_list_invalid_id(self, mp, caplog):
         """
         The ValueError raised when SES.summarise is given an invalid PID should be handled.
         """
+        pubsub.pub.unsubAll()
         helper = PubSubHelper()
 
         work_q = MPQueue(ctx=mp)
@@ -164,6 +173,8 @@ class TestScriptExecutionWorker:
         assert helper.messages[1][1] == dict(
             msg_src="TEST", request_id="123", result=[]
         )
+
+        work_q.safe_close()
 
     @pytest.mark.parametrize("mp", multiprocessing_contexts)
     def test_start_method_called(self, mp, caplog):
@@ -228,6 +239,7 @@ class TestScriptExecutionWorker:
 def assert_command_request_and_response(
     mp, caplog, mock_method, request_topic, response_topic, cmd
 ):
+    pubsub.pub.unsubAll()
     helper = PubSubHelper()
 
     work_q = MPQueue(ctx=mp)
@@ -254,6 +266,8 @@ def assert_command_request_and_response(
     assert mock_method.call_args[0][0] == cmd
 
     assert helper.topic_list == [request_topic, response_topic]
+
+    work_q.safe_close()
 
 
 def set_event(event, *args, **kwargs):
