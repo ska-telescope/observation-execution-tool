@@ -23,6 +23,15 @@ Components
 
    * - Component
      - Description
+   * - FlaskWorker
+     - FlaskWorker is a Flask application that presents a RESTful OET API, functioning as a REST adapter for the
+       ScriptExecutionService. Scripts can be created, controlled, and terminated via the REST API. The FlaskWorker
+       presents a REST resource for each script process created and managed by the ProcessManager.
+       |br|
+       |br|
+       FlaskWorker also presents a Server-Sent Event (SSE) data stream, republishing each event seen on the OET event
+       bus as an SSE event. This SSE stream gives remote clients visibility of actions taken by the OET backend and
+       events announced by scripting libraries and user scripts.
    * - main
      - The main component is the first component to be started when the OET backend is launched. It has two major
        responsibilities: first, it launches and thereafter manages the lifecycle of all components comprising the OET
@@ -35,33 +44,6 @@ Components
        |br|
        |br|
        The main component is the parent OS process of all other OET backend component processes.
-   * - REST server
-     - The REST server presents a RESTful OET API, functioning as a REST adapter for the OET's Pythonic script
-       control API. Scripts can be created, controlled, and terminated via the REST API. The REST server presents
-       a REST resources for each script process created and managed by the script supervisor.
-       |br|
-       |br|
-       The REST server also presents a Server-Sent Event (SSE) data stream, republishing each OET event seen on the OET
-       event bus as an SSE event. This SSE stream gives remote clients visibility of actions taken by the OET backend
-       and events announced by scripting libraries and user scripts.
-   * - script supervisor
-     - The Script Supervisor is responsible for managing the lifecycle of the script process and calling entry points
-       in the user script that, when requested, initialise the script and start its execution. The script supervisor
-       records the exit status of the user script and makes it available for inspection by a client, including any
-       traceback in the case of a script failure.
-       |br|
-       |br|
-       The Script Supervisor is the parent of the Python subprocess in which the user script executes, allowing the
-       supervisor to forcibly terminate the script subprocess if necessary.
-   * - script process
-     - Script Process represents the Python subprocess running the requested Python script. For SKA operations, most
-       scripts executed by the OET, and hence scripts that will run in a Script Process, will be 'observing scripts'
-       that control an SKA subarray. The content and purpose of these 'observing scripts' is contained and defined in
-       the ska-oso-scripting project.
-       |br|
-       |br|
-       Note that the OET backend is independent of the content and function of the script, which could serve any purpose
-       and is not limited to Tango-based telescope control.
    * - OET Web UI
      - **NOT IMPLEMENTED YET**
        |br|
@@ -69,20 +51,39 @@ Components
        The OET Web UI is a web interface for the OET that can be used to submit SBs for execution. This interface is
        intended to operate from the perspective of SB execution rather than generic script execution, thus providing a
        more user-friendly interface than the OET CLI that an operator or tester could use until the OST is available.
-   * - OET CLI
-     - OET CLI is a command-line interface used to invoke actions on the OET backend. The OET CLI is a general interface
-       whose operations (currently) focus on the script execution perspective (load script, abort script, etc.) rather
-       than the telescope-domain use cases (assign resources to subarray, execute SB, etc.).
-       |br|
-       |br|
-       In addition to controlling script execution, the OET CLI can be used to inspect the status of scripts that have
-       run or are running.
    * - OST
      - **NOT IMPLEMENTED YET**
        |br|
        |br|
        The SKA Online Scheduling Tool (OST) instructs the OET which SB should be executed next, taking into account
        aspects such as telescope resource availability, observing conditions, source visibility, science priority, etc.
+   * - ProcessManager
+     - ProcessManager is the parent of all ScriptWorker instances. ProcessManager is responsible for launching each
+       ScriptWorker processes and is a proxy for all ScriptWorker communication, relaying requests such as 'run function
+       X' tp the ScriptWorker and relaying events emitted by the ScriptWorker or the running user script to the rest of
+       the system.
+   * - RestClientUI
+     - RestClientUI provides a command-line interface for invoke actions on the OET backend. The CLI is a general interface
+       whose operations (currently) focus on the script execution perspective (load script, abort script, etc.) rather
+       than the telescope-domain use cases (assign resources to subarray, execute SB, etc.).
+       |br|
+       |br|
+       In addition to controlling script execution, the CLI can be used to inspect the status of scripts that have run
+       or are running.
+   * - ScriptExecutionService
+     - ScriptExecutionService present the high-level API for script execution. The ScriptExecutionService orchestrates
+       control to satisfy an API request. ScriptExecutionService is also responsible for recording script execution
+       history. ScriptExecutionService can return a presentation model of a script, its current statem and its execution
+       history. See ProcedureSummary in the backend module view.
+   * - ScriptWorker
+     - ScriptWorker represents the child Python process running the requested user script. For SKA operations, most
+       scripts executed by the OET, and hence scripts that will run in a Script Process, will be 'observing scripts'
+       that control an SKA subarray. The content and purpose of these 'observing scripts' is contained and defined in
+       the ska-oso-scripting project.
+       |br|
+       |br|
+       Note that the OET backend is independent of the content and function of the script, which could serve any purpose
+       and is not limited to Tango-based telescope control.
 
 
 Connectors
