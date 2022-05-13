@@ -25,7 +25,7 @@ class EnvironmentManager:
         base_dir: str = "/tmp/environments/",
     ):
         if mp_context is None:
-            mp_context = multiprocessing.get_context
+            mp_context = multiprocessing.get_context()
         self._mp_context = mp_context
 
         self.base_dir = base_dir
