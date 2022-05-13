@@ -1,4 +1,5 @@
 import json
+import multiprocessing
 import time
 from queue import Empty, Queue
 from typing import Generator, Optional, Union
@@ -85,11 +86,17 @@ class ServerSentEventsBlueprint(Blueprint):
     topics and stream pubsub events as server-sent events.
     """
 
+    def __init__(self, *args, mp_context=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if mp_context is None:
+            mp_context = multiprocessing.get_context()
+        self._mp_context = mp_context
+
     def messages(self) -> Generator[Message, None, None]:
         """
         A generator of Message objects created from received pubsub events
         """
-        q = MPQueue()
+        q = MPQueue(ctx=self._mp_context)
 
         def add_to_q(topic: pub.Topic = pub.AUTO_TOPIC, **kwargs):
             kwargs["topic"] = topic.name
@@ -369,7 +376,7 @@ def update_procedure(procedure_id: int):
     return flask.jsonify({"procedure": make_public_summary(summary)})
 
 
-def make_public_summary(procedure: domain.ProcedureSummary):
+def make_public_summary(procedure: application.ProcedureSummary):
     """
     Convert a ProcedureSummary into JSON ready for client consumption.
 

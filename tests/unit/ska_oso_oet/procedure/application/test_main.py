@@ -7,6 +7,9 @@ import multiprocessing as mp
 import unittest.mock as mock
 from functools import partial
 
+import pubsub.pub
+import pytest
+
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import EventMessage, MPQueue
 from ska_oso_oet.procedure import domain
@@ -20,191 +23,226 @@ from ska_oso_oet.procedure.application.main import (
 from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
 from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
 
-
-def test_event_bus_worker_verify_message_publishes_when_message_in_work_queue(caplog):
-    """
-    Verify that message event is published if the event originates from an
-    external source.
-    """
-    helper = PubSubHelper()
-
-    work_q = MPQueue()
-    msg = EventMessage(
-        "EXTERNAL COMPONENT",
-        "PUBSUB",
-        dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
-    )
-    work_q.put(msg)
-    _proc_worker_wrapper_helper(
-        caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True
-    )
-
-    assert topics.request.procedure.list in helper.topic_list
+multiprocessing_contexts = [
+    mp.get_context("spawn"),
+    mp.get_context("fork"),
+    mp.get_context("forkserver"),
+]
 
 
-def test_event_bus_worker_does_not_publish_messages_from_self(caplog):
-    """
-    Verify that message event is not published if the event originates from
-    an internal source.
-    """
-    helper = PubSubHelper()
+class TestEventBusWorker:
+    @pytest.mark.parametrize("mp", multiprocessing_contexts)
+    def test_external_messages_are_published_locally(self, mp, caplog):
+        """
+        Verify that message event is published if the event originates from an
+        external source.
+        """
+        pubsub.pub.unsubAll()
+        helper = PubSubHelper()
 
-    work_q = MPQueue()
-    # TEST is the default component name assigned in
-    # _proc_worker_wrapper_helper. This message should be ignored.
-    msg = EventMessage(
-        "TEST",
-        "PUBSUB",
-        dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
-    )
+        work_q = MPQueue(ctx=mp)
+        msg = EventMessage(
+            "EXTERNAL COMPONENT",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
+        )
+        work_q.put(msg)
 
-    work_q.put(msg)
-    # But coming from NONTEST, this message should be republished.
-    msg = EventMessage(
-        "NONTEST",
-        "PUBSUB",
-        dict(topic=topics.request.procedure.list, kwargs={"request_id": "456"}),
-    )
-    work_q.put(msg)
+        with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+            _proc_worker_wrapper_helper(
+                mp, caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True
+            )
 
-    _proc_worker_wrapper_helper(
-        caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True
-    )
+        assert topics.request.procedure.list in helper.topic_list
+        work_q.safe_close()
 
-    assert len(helper.messages) == 1
-    assert helper.messages[0][1] == dict(msg_src="NONTEST", request_id="456")
+    @pytest.mark.parametrize("mp", multiprocessing_contexts)
+    def test_internal_messages_not_republished(self, mp, caplog):
+        """
+        Verify that message event is not published if the event originates from
+        an internal source.
+        """
+        pubsub.pub.unsubAll()
+        helper = PubSubHelper()
 
-
-def test_script_execution_service_worker_verify_list_method_called(caplog):
-    """
-    SES.summarise should be called when 'request.procedure.list' message is received
-    """
-    helper = PubSubHelper()
-
-    work_q = MPQueue()
-    msg = EventMessage(
-        "TEST_SUMMARY",
-        "PUBSUB",
-        dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
-    )
-    work_q.put(msg)
-    event = mp.Event()
-
-    with mock.patch(
-        "ska_oso_oet.procedure.application.main.ScriptExecutionService.summarise"
-    ) as mock_cls:
-        mock_cls.side_effect = partial(set_event, event)
-        _proc_worker_wrapper_helper(
-            caplog,
-            ScriptExecutionServiceWorker,
-            args=(work_q,),
-            expect_shutdown_evt=True,
+        work_q = MPQueue(ctx=mp)
+        # TEST is the default component name assigned in
+        # _proc_worker_wrapper_helper. This message should be ignored.
+        msg = EventMessage(
+            "TEST",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
         )
 
-    assert event.is_set() is True
-    mock_cls.assert_called_once()
+        work_q.put(msg)
+        # But coming from NONTEST, this message should be republished.
+        msg = EventMessage(
+            "NONTEST",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "456"}),
+        )
+        work_q.put(msg)
 
-    assert helper.topic_list == [
-        topics.request.procedure.list,  # list requested
-        topics.procedure.pool.list,  # response published
-    ]
+        with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+            _proc_worker_wrapper_helper(
+                mp, caplog, EventBusWorker, args=(work_q,), expect_shutdown_evt=True
+            )
+
+        assert len(helper.messages) == 1
+        assert helper.messages[0][1] == dict(msg_src="NONTEST", request_id="456")
+
+        work_q.safe_close()
 
 
-def test_script_execution_service_worker_handles_request_to_list_invalid_id(caplog):
-    """
-    The ValueError raised when SES.summarise is given an invalid PID should be handled.
-    """
-    helper = PubSubHelper()
+class TestScriptExecutionWorker:
+    @pytest.mark.parametrize("mp", multiprocessing_contexts)
+    def test_list_method_called(self, mp, caplog):
+        """
+        SES.summarise should be called when 'request.procedure.list' message is received
+        """
+        pubsub.pub.unsubAll()
+        helper = PubSubHelper()
 
-    work_q = MPQueue()
-    msg = EventMessage(
-        "TEST_SUMMARY",
-        "PUBSUB",
-        dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
-    )
-    work_q.put(msg)
+        work_q = MPQueue(ctx=mp)
+        msg = EventMessage(
+            "TEST_SUMMARY",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
+        )
+        work_q.put(msg)
+        event = mp.Event()
 
-    with mock.patch(
-        "ska_oso_oet.procedure.application.main.ScriptExecutionService.summarise"
-    ) as mock_cls:
-        mock_cls.side_effect = ValueError
-        _proc_worker_wrapper_helper(
-            caplog,
-            ScriptExecutionServiceWorker,
-            args=(work_q,),
-            expect_shutdown_evt=True,
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ScriptExecutionService.summarise"
+        ) as mock_cls:
+            with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+                mock_cls.side_effect = partial(set_event, event)
+                _proc_worker_wrapper_helper(
+                    mp,
+                    caplog,
+                    ScriptExecutionServiceWorker,
+                    args=(work_q, mp),
+                    expect_shutdown_evt=True,
+                )
+
+        assert event.is_set() is True
+        mock_cls.assert_called_once()
+
+        assert helper.topic_list == [
+            topics.request.procedure.list,  # list requested
+            topics.procedure.pool.list,  # response published
+        ]
+
+        work_q.safe_close()
+
+    @pytest.mark.parametrize("mp", multiprocessing_contexts)
+    def test_handles_request_to_list_invalid_id(self, mp, caplog):
+        """
+        The ValueError raised when SES.summarise is given an invalid PID should be handled.
+        """
+        pubsub.pub.unsubAll()
+        helper = PubSubHelper()
+
+        work_q = MPQueue(ctx=mp)
+        msg = EventMessage(
+            "TEST_SUMMARY",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
+        )
+        work_q.put(msg)
+
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ScriptExecutionService.summarise"
+        ) as mock_cls:
+            with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+                mock_cls.side_effect = ValueError
+                _proc_worker_wrapper_helper(
+                    mp,
+                    caplog,
+                    ScriptExecutionServiceWorker,
+                    args=(work_q, mp),
+                    expect_shutdown_evt=True,
+                )
+
+        mock_cls.assert_called_once()
+
+        assert helper.topic_list == [
+            topics.request.procedure.list,  # list requested
+            topics.procedure.pool.list,  # response published
+        ]
+        assert helper.messages[1][1] == dict(
+            msg_src="TEST", request_id="123", result=[]
         )
 
-    mock_cls.assert_called_once()
+        work_q.safe_close()
 
-    assert helper.topic_list == [
-        topics.request.procedure.list,  # list requested
-        topics.procedure.pool.list,  # response published
-    ]
-    assert helper.messages[1][1] == dict(msg_src="TEST", request_id="123", result=[])
-
-
-def test_script_execution_service_worker_verify_start_method_called(caplog):
-    """
-    SES.start should be called when 'request.procedure.start' message is received
-    """
-    cmd = application.StartProcessCommand(
-        process_uid=123, fn_name="main", run_args=domain.ProcedureInput()
-    )
-    with mock.patch(
-        "ska_oso_oet.procedure.application.main.ScriptExecutionService.start"
-    ) as mock_method:
-        assert_command_request_and_response(
-            caplog,
-            mock_method,
-            topics.request.procedure.start,
-            topics.procedure.lifecycle.started,
-            cmd,
+    @pytest.mark.parametrize("mp", multiprocessing_contexts)
+    def test_start_method_called(self, mp, caplog):
+        """
+        SES.start should be called when 'request.procedure.start' message is received
+        """
+        cmd = application.StartProcessCommand(
+            process_uid=123, fn_name="main", run_args=domain.ProcedureInput()
         )
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ScriptExecutionService.start"
+        ) as mock_method:
+            assert_command_request_and_response(
+                mp,
+                caplog,
+                mock_method,
+                topics.request.procedure.start,
+                topics.procedure.lifecycle.started,
+                cmd,
+            )
 
-
-def test_script_execution_service_worker_verify_prepare_method_called(caplog):
-    """
-    SES.prepare should be called when 'request.procedure.create' message is received
-    """
-    cmd = application.PrepareProcessCommand(
-        script=domain.FileSystemScript("file:///hi"), init_args=domain.ProcedureInput()
-    )
-    with mock.patch(
-        "ska_oso_oet.procedure.application.main.ScriptExecutionService.prepare"
-    ) as mock_method:
-        assert_command_request_and_response(
-            caplog,
-            mock_method,
-            topics.request.procedure.create,
-            topics.procedure.lifecycle.created,
-            cmd,
+    @pytest.mark.parametrize("mp", multiprocessing_contexts)
+    def test_prepare_method_called(self, mp, caplog):
+        """
+        SES.prepare should be called when 'request.procedure.create' message is received
+        """
+        cmd = application.PrepareProcessCommand(
+            script=domain.FileSystemScript("file:///hi"),
+            init_args=domain.ProcedureInput(),
         )
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ScriptExecutionService.prepare"
+        ) as mock_method:
+            assert_command_request_and_response(
+                mp,
+                caplog,
+                mock_method,
+                topics.request.procedure.create,
+                topics.procedure.lifecycle.created,
+                cmd,
+            )
 
-
-def test_script_execution_service_worker_verify_stop_method_called(caplog):
-    """
-    SES.stop should be called when 'request.procedure.stop' message is received
-    """
-    cmd = application.StopProcessCommand(process_uid=123, run_abort=False)
-    with mock.patch(
-        "ska_oso_oet.procedure.application.main.ScriptExecutionService.stop"
-    ) as mock_method:
-        assert_command_request_and_response(
-            caplog,
-            mock_method,
-            topics.request.procedure.stop,
-            topics.procedure.lifecycle.stopped,
-            cmd,
-        )
+    @pytest.mark.parametrize("mp", multiprocessing_contexts)
+    def test_stop_method_called(self, mp, caplog):
+        """
+        SES.stop should be called when 'request.procedure.stop' message is received
+        """
+        cmd = application.StopProcessCommand(process_uid=123, run_abort=False)
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ScriptExecutionService.stop"
+        ) as mock_method:
+            assert_command_request_and_response(
+                mp,
+                caplog,
+                mock_method,
+                topics.request.procedure.stop,
+                topics.procedure.lifecycle.stopped,
+                cmd,
+            )
 
 
 def assert_command_request_and_response(
-    caplog, mock_method, request_topic, response_topic, cmd
+    mp, caplog, mock_method, request_topic, response_topic, cmd
 ):
+    pubsub.pub.unsubAll()
     helper = PubSubHelper()
 
-    work_q = MPQueue()
+    work_q = MPQueue(ctx=mp)
     msg = EventMessage(
         "UNITTEST",
         "PUBSUB",
@@ -214,15 +252,22 @@ def assert_command_request_and_response(
     event = mp.Event()
 
     mock_method.side_effect = partial(set_event, event)
-    _proc_worker_wrapper_helper(
-        caplog, ScriptExecutionServiceWorker, args=(work_q,), expect_shutdown_evt=True
-    )
+    with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+        _proc_worker_wrapper_helper(
+            mp,
+            caplog,
+            ScriptExecutionServiceWorker,
+            args=(work_q, mp),
+            expect_shutdown_evt=True,
+        )
 
     assert event.is_set()
     mock_method.assert_called_once()
     assert mock_method.call_args[0][0] == cmd
 
     assert helper.topic_list == [request_topic, response_topic]
+
+    work_q.safe_close()
 
 
 def set_event(event, *args, **kwargs):
@@ -232,7 +277,8 @@ def set_event(event, *args, **kwargs):
     event.set()
 
 
-def test_flask_worker_starts_flask(caplog):
+@pytest.mark.parametrize("mp", multiprocessing_contexts)
+def test_flask_worker_starts_flask(mp, caplog):
     """
     Verify that the FlaskWorker starts Flask.
     """
@@ -240,20 +286,25 @@ def test_flask_worker_starts_flask(caplog):
         # mock Flask causes connection error in shutdown as shutdown URL is accessed
         with mock.patch("requests.post"):
             _proc_worker_wrapper_helper(
-                caplog, FlaskWorker, args=(MPQueue(),), expect_shutdown_evt=True
+                mp,
+                caplog,
+                FlaskWorker,
+                args=(MPQueue(ctx=mp),),
+                expect_shutdown_evt=True,
             )
 
         mock_app_instance = mock_flask.return_value
         mock_app_instance.run.assert_called_once()
 
 
-def test_main_loop_ends_when_shutdown_event_is_set():
+@pytest.mark.parametrize("mp", multiprocessing_contexts)
+def test_main_loop_ends_when_shutdown_event_is_set(mp):
     """
     Main loop should terminate when shutdown event is set.
     """
     mock_ctx = mock.MagicMock()
 
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
     event_q.put(EventMessage("TEST", "PUBSUB", msg="foo"))
     event_q.put(EventMessage("TEST", "PUBSUB", msg="foo"))
     event_q.put(EventMessage("TEST", "PUBSUB", msg="foo"))
@@ -269,13 +320,14 @@ def test_main_loop_ends_when_shutdown_event_is_set():
     assert event_q.safe_close() == 2
 
 
-def test_main_loop_ends_on_end_message():
+@pytest.mark.parametrize("mp", multiprocessing_contexts)
+def test_main_loop_ends_on_end_message(mp):
     """
     Main loop should terminate when end message is received.
     """
     mock_ctx = mock.MagicMock()
 
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
     event_q.put(EventMessage("TEST", "PUBSUB", msg="foo"))
     event_q.put(EventMessage("TEST", "PUBSUB", msg="foo"))
     event_q.put(EventMessage("TEST", "PUBSUB", msg="foo"))
@@ -289,13 +341,14 @@ def test_main_loop_ends_on_end_message():
     assert event_q.safe_close() == 0
 
 
-def test_main_loop_adds_pubsub_messages_to_event_queues():
+@pytest.mark.parametrize("mp", multiprocessing_contexts)
+def test_main_loop_adds_pubsub_messages_to_event_queues(mp):
     """
     PUBSUB messages should be added to event queues.
     """
     mock_ctx = mock.MagicMock()
 
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
     event_q.put(EventMessage("TEST", "PUBSUB", msg="1"))
     event_q.put(EventMessage("TEST", "PUBSUB", msg="2"))
     event_q.put(EventMessage("TEST", "PUBSUB", msg="3"))
@@ -306,8 +359,8 @@ def test_main_loop_adds_pubsub_messages_to_event_queues():
     # should exit with three messages still in the event queue
     mock_ctx.shutdown_event.is_set.return_value = False
 
-    q1 = MPQueue()
-    q2 = MPQueue()
+    q1 = MPQueue(ctx=mp)
+    q2 = MPQueue(ctx=mp)
 
     main_loop(mock_ctx, [q1, q2])
 
@@ -317,13 +370,14 @@ def test_main_loop_adds_pubsub_messages_to_event_queues():
     event_q.safe_close()
 
 
-def test_main_loop_ignores_and_logs_events_of_unknown_types():
+@pytest.mark.parametrize("mp", multiprocessing_contexts)
+def test_main_loop_ignores_and_logs_events_of_unknown_types(mp):
     """
     Loop should log events it doesn't know how to handle.
     """
     mock_ctx = mock.MagicMock()
 
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
     event_q.put(EventMessage("TEST", "FOO", msg="1"))
     mock_ctx.event_queue = event_q
 
@@ -338,13 +392,14 @@ def test_main_loop_ignores_and_logs_events_of_unknown_types():
     assert "Unknown Event" in mock_ctx.log.call_args[0][1]
 
 
-def test_main_loop_checks_shutdown_event_after_every_queue_get():
+@pytest.mark.parametrize("mp", multiprocessing_contexts)
+def test_main_loop_checks_shutdown_event_after_every_queue_get(mp):
     """
     Loop should regularly check shutdown event,
     """
     mock_ctx = mock.MagicMock()
 
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
     mock_ctx.event_queue.safe_get.side_effect = [
         False,
         False,
@@ -360,13 +415,14 @@ def test_main_loop_checks_shutdown_event_after_every_queue_get():
     assert mock_ctx.shutdown_event.is_set.call_count == 3
 
 
-def test_main_loop_ends_on_fatal_message():
+@pytest.mark.parametrize("mp", multiprocessing_contexts)
+def test_main_loop_ends_on_fatal_message(mp):
     """
     Main loop should terminate when fatal messsage is received.
     """
     mock_ctx = mock.MagicMock()
 
-    event_q = MPQueue()
+    event_q = MPQueue(ctx=mp)
     event_q.put(EventMessage("TEST", "FATAL", msg="foo"))
     event_q.put(EventMessage("TEST", "END", msg="foo"))
     mock_ctx.event_queue = event_q

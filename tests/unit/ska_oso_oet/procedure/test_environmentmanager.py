@@ -1,7 +1,7 @@
 import multiprocessing
 import os.path
-import shutil
 import subprocess
+import tempfile
 import unittest.mock as mock
 import venv
 
@@ -18,11 +18,8 @@ def env_manager():
     the manager object for the duration of the tests and cleans up any files in the directory
     when test run is complete.
     """
-    base_dir = os.getcwd() + "/test_environments/"
-    mgr = EnvironmentManager()
-    mgr.base_dir = base_dir
-    yield mgr
-    shutil.rmtree(base_dir, ignore_errors=True)
+    with tempfile.TemporaryDirectory() as tempdir:
+        yield EnvironmentManager(base_dir=tempdir)
 
 
 @pytest.fixture()

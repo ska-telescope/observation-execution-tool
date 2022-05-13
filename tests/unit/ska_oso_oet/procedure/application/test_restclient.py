@@ -793,11 +793,11 @@ REST_ADAPTER_LIST_RESPONSE_FOR_DESCRIBE = [
                 ["RUNNING", 1601303225.8234824],
                 ["READY", 1601303225.8234867],
                 ["RUNNING", 1601303225.8702714],
-                ["COMPLETED", 1601303225.8702714],
+                ["COMPLETE", 1601303225.8702714],
             ],
             "stacktrace": None,
         },
-        state="COMPLETED",
+        state="COMPLETE",
     )
 ]
 
@@ -1118,7 +1118,7 @@ def test_restclientui_describe_when_stacktrace_not_present(mock_list_fn, capsys)
     captured = capsys.readouterr()
     lines = captured.out.split("\n")
 
-    assert "COMPLETED" in lines[13]
+    assert "COMPLETE" in lines[13]
     mock_list_fn.assert_called_with(1)
     assert mock_list_fn.call_count == 2
 

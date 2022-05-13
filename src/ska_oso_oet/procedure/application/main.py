@@ -1,5 +1,7 @@
 import logging.config
 import logging.handlers
+import multiprocessing
+import os
 import threading
 from typing import List
 
@@ -71,6 +73,17 @@ class EventBusWorker(QueueProcWorker):
         Connect republishing function to pypubsub.
         """
         super().startup()
+
+        # AT2-591. Clear any subscriptions inherited from parent process during fork
+        unsubscribed = pub.unsubAll()
+        self.log(
+            logging.DEBUG,
+            "Unsubscribed %s pypubsub subscriptions in Procedure #%s (PID=%s)",
+            len(unsubscribed),
+            self.name,
+            os.getpid(),
+        )
+
         # Request republish method be called for all pypubsub messages
         pub.subscribe(self.republish, pub.ALL_TOPICS)
 
@@ -135,7 +148,10 @@ class FlaskWorker(EventBusWorker):
         # self.flask can't be created in __init__ as we want this thread to belong to
         # the child process, not the spawning process
         self.flask = threading.Thread(  # pylint: disable=attribute-defined-outside-init
-            target=app.run, kwargs=dict(host="0.0.0.0")
+            target=app.run,
+            kwargs=dict(
+                host="0.0.0.0", use_reloader=False, use_debugger=False, debug=True
+            ),
         )
         self.flask.start()
 
@@ -175,6 +191,22 @@ class ScriptExecutionServiceWorker(EventBusWorker):
     to the world by the ScriptExecutionServiceWorker. This could change so
     that the ScriptExecutionService itself sends the message.
     """
+
+    def __init__(
+        self,
+        name: str,
+        startup_event: multiprocessing.Event,
+        shutdown_event: multiprocessing.Event,
+        event_q: MPQueue,
+        work_q: MPQueue,
+        mp_context: multiprocessing.context.BaseContext,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(
+            name, startup_event, shutdown_event, event_q, work_q, *args, **kwargs
+        )
+        self._mp_context = mp_context
 
     def prepare(
         self,
@@ -287,7 +319,9 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         # self.ses can't be created in __init__ as we want the service to belong to
         # the child process, not the spawning process
         self.ses = (  # pylint: disable=attribute-defined-outside-init
-            ScriptExecutionService()
+            ScriptExecutionService(
+                mp_context=self._mp_context, on_pubsub=[self.event_q.put]
+            )
         )
 
         # wire up topics to the corresponding SES methods
@@ -306,7 +340,7 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         super().shutdown()
 
 
-def main():
+def main(mp_ctx: multiprocessing.context.BaseContext):
     """
     Create the OET components and start an event loop that dispatches messages
     between them.
@@ -315,7 +349,8 @@ def main():
     """
     # All queues and processes are created via a MainContext so that they are
     # shared correctly and have consistent lifecycle management
-    with MainContext() as main_ctx:
+
+    with MainContext(mp_ctx) as main_ctx:
         # wire SIGINT and SIGTERM signal handlers to the shutdown_event Event
         # monitored by all processes, so that the processes know when
         # application termination has been requested.
@@ -336,7 +371,9 @@ def main():
 
         # create the OET components, which will run in child Python processes
         # and monitor the message queues here for event bus messages
-        main_ctx.Proc("SESWorker", ScriptExecutionServiceWorker, script_executor_q)
+        main_ctx.Proc(
+            "SESWorker", ScriptExecutionServiceWorker, script_executor_q, mp_ctx
+        )
         main_ctx.Proc("FlaskWorker", FlaskWorker, flask_q)
 
         # with all workers and queues set up, start processing messages
@@ -370,4 +407,5 @@ def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
 
 
 if __name__ == "__main__":
-    main()
+    mp = multiprocessing.get_context("fork")
+    main(mp)

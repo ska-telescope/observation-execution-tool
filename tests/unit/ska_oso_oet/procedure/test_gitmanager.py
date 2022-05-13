@@ -1,5 +1,6 @@
 import os
 import shutil
+import tempfile
 import unittest.mock as mock
 
 import pytest
@@ -15,9 +16,8 @@ def base_dir():
     test execution. Anything cloned there will be cleaned up when module tests are
     completed.
     """
-    base_dir = os.getcwd() + "/test_clones/"
-    yield base_dir
-    shutil.rmtree(base_dir, ignore_errors=True)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield tmpdir
 
 
 def test_get_project_name():

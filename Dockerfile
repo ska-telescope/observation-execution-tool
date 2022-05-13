@@ -23,11 +23,16 @@ COPY pyproject.toml poetry.lock* ./
 # Install runtime dependencies and the app
 RUN poetry install --no-dev
 
+# install ska-oso-scripting library to provide a default environment and set of
+# default control scripts. This is done as root so that the default environment
+# is installed to system dist-packages.
+RUN python3 -m pip install \
+    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==4.1.2
+
+# link default script location to a shorter path to make CLI interactions easier
+RUN ln -s /usr/local/lib/python3.7/dist-packages/scripts /scripts
+
 USER tango
 RUN poetry config virtualenvs.create false
-
-# install ska-oso-scripting library
-RUN \
-   python3 -m pip install ska-oso-scripting==4.1.0
 
 CMD ["python3", "-m", "ska_oso_oet.procedure.application.main"]
