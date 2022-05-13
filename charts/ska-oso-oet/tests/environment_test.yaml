@@ -43,7 +43,7 @@ tests:
           value:
             http://ska-oso-oet-rest-RELEASE-NAME:5000/api/v1.0/procedures
 
-  - it: should change OET_DISCARD_FIRST_EVENT defaults to true.
+  - it: should have OET_DISCARD_FIRST_EVENT default to true.
     documentIndex: 0
     asserts:
       - equal:
