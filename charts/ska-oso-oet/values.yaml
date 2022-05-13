@@ -19,7 +19,7 @@ rest:
   function: script-execution
   domain: operations
   featureFlags:
-    readViaPubSub: true
+    discardFirstEvent: true
   ingress:
     enabled: false
   image:

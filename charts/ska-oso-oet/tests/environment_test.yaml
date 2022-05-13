@@ -43,3 +43,23 @@ tests:
           value:
             http://ska-oso-oet-rest-RELEASE-NAME:5000/api/v1.0/procedures
 
+  - it: should change OET_DISCARD_FIRST_EVENT defaults to true.
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: data.OET_DISCARD_FIRST_EVENT
+          value:
+            "true"
+
+  - it: should change OET_DISCARD_FIRST_EVENT value if set in values.yaml.
+    documentIndex: 0
+    set:
+      rest:
+        featureFlags:
+          discardFirstEvent: false
+    asserts:
+      - equal:
+          path: data.OET_DISCARD_FIRST_EVENT
+          value:
+            "false"
+
