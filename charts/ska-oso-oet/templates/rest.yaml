@@ -102,7 +102,7 @@ spec:
             containerPort: 5000
         volumeMounts:
           - name: ska-oso-oet-scripts-volume
-            mountPath: /scripts
+            mountPath: /data
         resources:
 {{ toYaml .Values.rest.resources | indent 10 }}
         readinessProbe:
