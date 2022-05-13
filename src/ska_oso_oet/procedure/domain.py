@@ -544,7 +544,7 @@ class ProcessManager:
         self.states: Dict[int, ProcedureState] = {}
 
         # maps Proc IDs to venv environment
-        self.em = EnvironmentManager()
+        self.em = EnvironmentManager(self.ctx)
         self.environments: Dict[int, Environment] = {}
 
         self._scan_id = multiprocessing.Value("i", 1)
