@@ -41,17 +41,13 @@ def env_object(env_manager):
 
 def test_environment_is_returned_when_hash_exists(env_manager, env_object):
     commit = "69e93d57916f837ee93ca125f2785f0f6e21974d"
-    env_manager._envs = {  # pylint: disable=protected-access
-        commit: env_object
-    }
+    env_manager._envs = {commit: env_object}  # pylint: disable=protected-access
 
-    result = env_manager.create_env(
-        GitArgs(git_commit=commit)
-    )
+    result = env_manager.create_env(GitArgs(git_commit=commit))
     assert result == env_object
 
     # Clean up after the test
-    del env_manager._envs[commit]
+    del env_manager._envs[commit]  # pylint: disable=protected-access
 
 
 @mock.patch("ska_oso_oet.procedure.environment.GitManager.get_commit_hash")
@@ -80,7 +76,7 @@ def test_environment_is_created_when_hash_is_new(
         result.site_packages
         == f"{env_manager.base_dir}{commit}/venv/lib/python3.7/site-packages"
     )
-    del env_manager._envs[commit]
+    del env_manager._envs[commit]  # pylint: disable=protected-access
 
 
 def test_delete_env(env_manager, env_object):
