@@ -56,6 +56,10 @@ metadata:
 binaryData:
   hello_world.py: |-
 {{ .Files.Get "data/hello_world.py" | b64enc | indent 4 }}
+  low_sb_example.json: |-
+{{ .Files.Get "data/low_sb_example.json" | b64enc | indent 4 }}
+  mid_sb_example.json: |-
+{{ .Files.Get "data/mid_sb_example.json" | b64enc | indent 4 }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -134,6 +138,10 @@ spec:
             items:
               - key: hello_world.py
                 path: hello_world.py
+              - key: low_sb_example.json
+                path: low_sb_example.json
+              - key: mid_sb_example.json
+                path: mid_sb_example.json
   {{- with .Values.nodeSelector }}
 nodeSelector:
   {{ toYaml . | indent 8 }}
