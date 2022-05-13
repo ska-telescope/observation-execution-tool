@@ -1,0 +1,45 @@
+---
+suite: ska-oso-oet-rest
+templates:
+  - environment.yaml
+tests:
+  - it: should contain only one document.
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should be of type ConfigMap and have the correct apiVersion, v1.
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - isAPIVersion:
+          of: v1
+
+  - it: should have the correct tango host configuration.
+    documentIndex: 0
+    set:
+      global:
+        tango_host: databaseds-tango-base-test:10000
+    asserts:
+      - equal:
+          path: data.TANGO_HOST
+          value:
+            databaseds-tango-base-test:10000
+
+  - it: should have the correct SKUID URL configuration.
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: data.SKUID_URL
+          value:
+            ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.cluster.local:9870
+
+  - it: should have the correct OET_REST_URI configuration.
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: data.OET_REST_URI
+          value:
+            http://ska-oso-oet-rest-RELEASE-NAME:5000/api/v1.0/procedures
+
