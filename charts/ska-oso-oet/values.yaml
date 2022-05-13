@@ -6,6 +6,8 @@ minikube: true
 system: TM-mid
 telescope: SKA-mid
 subsystem: ska-oso-oet
+central_node: ska_mid/tm_central/central_node
+subarray: ska_mid/tm_subarray_node
 
 global:
   minikube: true
@@ -16,6 +18,8 @@ rest:
   component: rest
   function: script-execution
   domain: operations
+  featureFlags:
+    discardFirstEvent: true
   ingress:
     enabled: false
   image:
