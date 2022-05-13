@@ -40,14 +40,18 @@ def env_object(env_manager):
 
 
 def test_environment_is_returned_when_hash_exists(env_manager, env_object):
+    commit = "69e93d57916f837ee93ca125f2785f0f6e21974d"
     env_manager._envs = {  # pylint: disable=protected-access
-        "69e93d57916f837ee93ca125f2785f0f6e21974d": env_object
+        commit: env_object
     }
 
     result = env_manager.create_env(
-        GitArgs(git_commit="69e93d57916f837ee93ca125f2785f0f6e21974d")
+        GitArgs(git_commit=commit)
     )
     assert result == env_object
+
+    # Clean up after the test
+    del env_manager._envs[commit]
 
 
 @mock.patch("ska_oso_oet.procedure.environment.GitManager.get_commit_hash")
@@ -56,13 +60,14 @@ def test_environment_is_returned_when_hash_exists(env_manager, env_object):
 def test_environment_is_created_when_hash_is_new(
     mock_subprocess_fn, mock_venv_fn, mock_git_fn, env_manager
 ):
-    mock_git_fn.return_value = "69e93d57916f837ee93ca125f2785f0f6e21974d"
+    commit = "69e93d57916f837ee93ca125f2785f0f6e21974d"
+    mock_git_fn.return_value = commit
     mock_venv_fn.side_effect = None
     mock_subprocess_fn.return_value = subprocess.CompletedProcess(
         args="",
         returncode=1,
         stdout=bytes(
-            f"{env_manager.base_dir}69e93d57916f837ee93ca125f2785f0f6e21974d/venv/lib/python3.7/site-packages",
+            f"{env_manager.base_dir}{commit}/venv/lib/python3.7/site-packages",
             "utf-8",
         ),
     )
@@ -70,11 +75,12 @@ def test_environment_is_created_when_hash_is_new(
     result = env_manager.create_env(GitArgs())
 
     assert 1 == len(env_manager._envs)  # pylint: disable=protected-access
-    assert result.env_id == "69e93d57916f837ee93ca125f2785f0f6e21974d"
+    assert result.env_id == commit
     assert (
         result.site_packages
-        == f"{env_manager.base_dir}69e93d57916f837ee93ca125f2785f0f6e21974d/venv/lib/python3.7/site-packages"
+        == f"{env_manager.base_dir}{commit}/venv/lib/python3.7/site-packages"
     )
+    del env_manager._envs[commit]
 
 
 def test_delete_env(env_manager, env_object):
