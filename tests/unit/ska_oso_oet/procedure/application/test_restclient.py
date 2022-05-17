@@ -31,7 +31,7 @@ CREATE_PROCESS_RESPONSE = {
                     "subarray": 1,
                 },
             },
-            "run": {"args": [], "kwargs": {}},
+            "main": {"args": [], "kwargs": {}},
         },
         "script": {
             "script_type": "filesystem",
@@ -66,7 +66,7 @@ LIST_PROCEDURES_POSITIVE_RESPONSE = {
                         "subarray": 1,
                     },
                 },
-                "run": {"args": [], "kwargs": {"scan_duration": 14}},
+                "main": {"args": [], "kwargs": {"scan_duration": 14}},
             },
             "script": {
                 "script_type": "filesystem",
@@ -100,7 +100,7 @@ PROCEDURE_POSITIVE_RESPONSE = {
                     "subarray": 1,
                 },
             },
-            "run": {"args": [], "kwargs": {"scan_duration": 14}},
+            "main": {"args": [], "kwargs": {"scan_duration": 14}},
         },
         "script": {
             "script_type": "filesystem",
@@ -129,7 +129,7 @@ START_PROCESS_RESPONSE = {
                     "subarray": 1,
                 },
             },
-            "run": {"args": [], "kwargs": {"scan_duration": 14}},
+            "main": {"args": [], "kwargs": {"scan_duration": 14}},
         },
         "script": {
             "script_type": "filesystem",
@@ -345,7 +345,7 @@ def test_create_process_raises_exception_for_wrong_status():
 
 def test_start_execute_sends_empty_run_args_when_undefined_by_user():
     """Check that default script args are sent"""
-    expected_script_args_payload = {"run": {"args": [], "kwargs": {}}}
+    expected_script_args_payload = {"main": {"args": [], "kwargs": {}}}
 
     # create a mock requests object
     with requests_mock.Mocker() as mock_server:
@@ -365,7 +365,7 @@ def test_start_execute_sends_empty_run_args_when_undefined_by_user():
 def test_start_execute_sends_correct_script_args_when_user_provides_arguments():
     """Check that user-supplied script arguments are sent"""
     user_args = dict(args=[1, 2, 3], kwargs=dict(kw1="a", kw2="b"))
-    expected_script_args = {"run": user_args}
+    expected_script_args = {"main": user_args}
 
     # create a mock requests object
     with requests_mock.Mocker() as mock_server:
@@ -487,7 +487,7 @@ REST_ADAPTER_CREATE_RESPONSE = ProcedureSummary(
     uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
     script_args={
         "init": {"args": [], "kwargs": {"subarray_id": 1}},
-        "run": {"args": [], "kwargs": {}},
+        "main": {"args": [], "kwargs": {}},
     },
     script={
         "script_type": "filesystem",
@@ -506,7 +506,7 @@ REST_ADAPTER_CREATE_RESPONSE_WITH_GIT_ARGS = ProcedureSummary(
     uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
     script_args={
         "init": {"args": [], "kwargs": {"subarray_id": 1}},
-        "run": {"args": [], "kwargs": {}},
+        "main": {"args": [], "kwargs": {}},
     },
     script={
         "script_uri": "git:///app/scripts/allocate.py",
@@ -532,7 +532,7 @@ REST_ADAPTER_LIST_RESPONSE = [
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
-            "run": {"args": [], "kwargs": {}},
+            "main": {"args": [], "kwargs": {}},
         },
         script={
             "script_uri": "git:///app/scripts/allocate.py",
@@ -561,7 +561,7 @@ REST_ADAPTER_LIST_RESPONSE = [
         uri="http://127.0.0.1:5000/api/v1.0/procedures/2",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
-            "run": {"args": [], "kwargs": {}},
+            "main": {"args": [], "kwargs": {}},
         },
         script={
             "script_uri": "git:///app/scripts/allocate.py",
@@ -593,7 +593,7 @@ REST_ADAPTER_LIST_RESPONSE_WITH_STACKTRACE = [
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
-            "run": {"args": [], "kwargs": {}},
+            "main": {"args": [], "kwargs": {}},
         },
         script={
             "script_uri": "file:///app/scripts/allocate.py",
@@ -636,7 +636,7 @@ REST_ADAPTER_LIST_RESPONSE_WITH_GIT_ARGS = [
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
-            "run": {"args": [], "kwargs": {}},
+            "main": {"args": [], "kwargs": {}},
         },
         script={
             "script_uri": "git:///app/scripts/allocate.py",
@@ -667,7 +667,7 @@ REST_ADAPTER_START_RESPONSE = ProcedureSummary(
     uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
     script_args={
         "init": {"args": [], "kwargs": {"subarray_id": 1}},
-        "run": {"args": [], "kwargs": {}},
+        "main": {"args": [], "kwargs": {}},
     },
     script={
         "script_uri": "file:///app/scripts/allocate.py",
@@ -693,7 +693,7 @@ REST_ADAPTER_LIST_RESPONSE_FOR_STOP = [
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
-            "run": {"args": [], "kwargs": {}},
+            "main": {"args": [], "kwargs": {}},
         },
         script={
             "script_uri": "file:///app/scripts/test_working.py",
@@ -721,7 +721,7 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
-            "run": {"args": [], "kwargs": {}},
+            "main": {"args": [], "kwargs": {}},
         },
         script={
             "script_uri": "file:///app/scripts/test_working.py",
@@ -746,7 +746,7 @@ REST_ADAPTER_TWO_RUNNING_PROCEDURES = [
         uri="http://127.0.0.1:5000/api/v1.0/procedures/2",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
-            "run": {"args": [], "kwargs": {}},
+            "main": {"args": [], "kwargs": {}},
         },
         script={
             "script_uri": "file:///app/scripts/test_working.py",
@@ -778,7 +778,7 @@ REST_ADAPTER_LIST_RESPONSE_FOR_DESCRIBE = [
         uri="http://127.0.0.1:5000/api/v1.0/procedures/1",
         script_args={
             "init": {"args": [], "kwargs": {"subarray_id": 1}},
-            "run": {"args": [], "kwargs": {}},
+            "main": {"args": [], "kwargs": {}},
         },
         script={
             "script_uri": "file:///app/scripts/test_working.py",
