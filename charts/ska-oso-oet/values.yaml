@@ -6,6 +6,8 @@ minikube: true
 system: TM-mid
 telescope: SKA-mid
 subsystem: ska-oso-oet
+central_node: ska_mid/tm_central/central_node
+subarray: ska_mid/tm_subarray_node
 
 global:
   minikube: true
@@ -16,20 +18,22 @@ rest:
   component: rest
   function: script-execution
   domain: operations
+  featureFlags:
+    discardFirstEvent: true
   ingress:
     enabled: false
   image:
     registry: artefact.skao.int
     image: ska-oso-oet
-    tag: 3.0.0
+    tag: 4.0.0
     pullPolicy: IfNotPresent
   resources:
     requests:
       cpu:  100m
-      memory: 128Mi
+      memory: 1024Mi
     limits:
       cpu:  1000m
-      memory: 128Mi
+      memory: 1024Mi
   livenessProbe:
     enabled: true
     initialDelaySeconds: 0

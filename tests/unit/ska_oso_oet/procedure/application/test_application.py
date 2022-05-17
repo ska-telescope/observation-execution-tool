@@ -1,448 +1,633 @@
-# pylint: disable=W0212
-# - W0212(protected-access) - tests need to access protected props
+# pylint: disable=protected-access, unused-import
+# - protected-access - tests need to access protected props
+# - unused-import - test fixtures imported from test_domain
 """
 Unit tests for the ska_oso_oet.procedure.application module.
 """
 
+import multiprocessing
 import time
 import unittest.mock as mock
-from unittest.mock import MagicMock, patch
+import uuid
+from unittest.mock import MagicMock, call, patch
 
+import pubsub.pub
 import pytest
 
+from ska_oso_oet.event import topics
+from ska_oso_oet.mptools import EventMessage, MPQueue
 from ska_oso_oet.procedure.application.application import (
+    ArgCapture,
     PrepareProcessCommand,
+    ProcedureHistory,
+    ProcedureSummary,
     ScriptExecutionService,
     StartProcessCommand,
     StopProcessCommand,
 )
 from ska_oso_oet.procedure.domain import (
-    ArgCapture,
     FileSystemScript,
-    ProcedureHistory,
     ProcedureInput,
     ProcedureState,
-    ProcedureSummary,
+    ProcessManager,
+)
+from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
+from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
+from tests.unit.ska_oso_oet.procedure.test_domain import (
+    abort_script,
+    fail_script,
+    init_hang_script,
+    main_hang_script,
+    script,
 )
 
 
 @pytest.fixture
-def abort_script(tmpdir):
+def sleep_script(tmpdir):
     """
-    Pytest fixture to return a path to a script file
+    Pytest fixture to return a path to a script that sleeps a user-defined
+    amount of time.
     """
-    script_path = tmpdir.join("abort.py")
+    script_path = tmpdir.join("sleep_script.py")
     script_path.write(
         """
 import time
 
-def main(l, item):
-    time.sleep(2)
-    l.add(item)
+def init(subarray_id):
+    pass
+
+def main(secs):
+    time.sleep(secs)
 """
     )
-    return f"file://{str(script_path)}"
+    return FileSystemScript(f"file://{str(script_path)}")
 
 
 @pytest.fixture
-def summary():
-    init_args = ProcedureInput(1, 2, a="b", c="d")
-    run_args = ProcedureInput(3, 4, e="f", g="h")
+def ses():
+    """
+    Pytest fixture to return a ScriptExecutionService with automatic cleanup.
+    """
+    pubsub.pub.unsubAll()
+    ses = ScriptExecutionService()
+    yield ses
+    ses.shutdown()
 
-    summary = ProcedureSummary(
-        id=123,
-        script=FileSystemScript("file://test.py"),
-        script_args=[
-            ArgCapture(fn="init", fn_args=init_args, time=5),
-            ArgCapture(fn="main", fn_args=run_args, time=8),
-        ],
-        history=ProcedureHistory(
+
+class TestProcedureHistory:
+    def test_procedure_history_default_values_are_as_expected(self):
+        """
+        Verify that ProcedureHistory default values are set as
+        expected if not provided.
+        """
+        procedure_history = ProcedureHistory()
+        assert procedure_history.process_states == []
+        assert procedure_history.stacktrace is None
+
+    def test_procedure_history_eq(self):
+        """
+        Verify ProcedureHistory equality
+        """
+        ph1 = ProcedureHistory()
+        ph2 = ProcedureHistory()
+        ph3 = ProcedureHistory([(ProcedureState.IDLE, 1601053634.9669704)])
+        assert ph1 == ph2
+        assert ph1 != ph3
+        assert ph1 != object()
+
+
+class TestScriptExecutionService:
+    def test_callback_is_invoked_when_pubsub_message_received(self):
+        """
+        Confirm that a callback function sees pubsub messages received by the
+        SES's ProcessManager.
+        """
+        non_pubsub_msg = EventMessage("TEST", "foo", "bar")
+        pubsub_msg = EventMessage(
+            "EXTERNAL COMPONENT",
+            "PUBSUB",
+            dict(topic=topics.request.procedure.list, kwargs={"request_id": "123"}),
+        )
+
+        ses = None
+        cb_received = []
+        cb_called = multiprocessing.Event()
+
+        def cb(event):
+            cb_received.append(event)
+            cb_called.set()
+
+        try:
+            ses = ScriptExecutionService(on_pubsub=[cb])
+            ses._process_manager.ctx.event_queue.put(non_pubsub_msg)
+            ses._process_manager.ctx.event_queue.put(pubsub_msg)
+            ses._process_manager.ctx.event_queue.put(non_pubsub_msg)
+            cb_called.wait(0.1)
+
+        finally:
+            if ses is not None:
+                ses.shutdown()
+
+        assert cb_called.is_set()
+        assert len(cb_received) == 1
+        # can't do direct eq comparison as queue item is pickled copy, hence
+        # object ID is different
+        received: EventMessage = cb_received.pop()
+        assert received.id == pubsub_msg.id and received.msg == pubsub_msg.msg
+
+    def test_ses_calls_process_manager_as_expected(
+        self, ses: ScriptExecutionService, main_hang_script
+    ):
+        """
+        Verify ScriptExecutionService interactions with ProcessManager for
+        standard script execution.
+        """
+        mgr = mock.Mock(wraps=ses._process_manager)
+        ses._process_manager = mgr
+
+        main_running = multiprocessing.Barrier(2)
+        prepare_cmd = PrepareProcessCommand(
+            script=main_hang_script, init_args=ProcedureInput(main_running)
+        )
+        summary = ses.prepare(prepare_cmd)
+        pid = summary.id
+        mgr.create.assert_called_once_with(
+            prepare_cmd.script, init_args=prepare_cmd.init_args
+        )
+
+        ses._wait_for_state(pid, ProcedureState.READY)
+        run_cmd = StartProcessCommand(
+            process_uid=pid, fn_name="main", run_args=ProcedureInput()
+        )
+        _ = ses.start(run_cmd)
+        mgr.run.assert_called_once_with(
+            run_cmd.process_uid, call=run_cmd.fn_name, run_args=run_cmd.run_args
+        )
+
+        ses._wait_for_state(pid, ProcedureState.RUNNING)
+        main_running.wait(0.1)
+        stop_cmd = StopProcessCommand(process_uid=pid, run_abort=False)
+        _ = ses.stop(stop_cmd)
+        mgr.stop.assert_called_once_with(stop_cmd.process_uid)
+
+        # assert no other calls to ProcessManager
+        assert len(mgr.method_calls) == 3
+
+    def test_two_phase_abort_calls_process_manager_as_expected(
+        self, sleep_script, script
+    ):
+        """
+        Verify ScriptExecutionService interactions with ProcessManager when
+        terminating a script with a request to run the follow-on abort script
+        """
+        pubsub.pub.unsubAll()
+        # fixture accepts any positional args and kwargs, which is useful as the
+        # subarray ID will be passed to the abort script
+        ses = ScriptExecutionService(abort_script=script)
+        subarray_id = 3
+        try:
+            prepare_cmd = PrepareProcessCommand(
+                script=sleep_script, init_args=ProcedureInput(subarray_id=subarray_id)
+            )
+            summary = ses.prepare(prepare_cmd)
+            pid = summary.id
+
+            ses._wait_for_state(pid, ProcedureState.READY)
+            run_cmd = StartProcessCommand(
+                process_uid=pid,
+                fn_name="main",
+                run_args=ProcedureInput(
+                    2
+                ),  # max 2 seconds before process completes naturally
+            )
+            _ = ses.start(run_cmd)
+            ses._wait_for_state(pid, ProcedureState.RUNNING)
+
+            # wrap the manager here so that we only capture calls related to stop
+            mgr = mock.Mock(wraps=ses._process_manager)
+            ses._process_manager = mgr
+
+            stop_cmd = StopProcessCommand(process_uid=pid, run_abort=True)
+            _ = ses.stop(stop_cmd)
+
+            assert len(mgr.method_calls) == 3
+            mgr.stop.assert_called_once_with(1)
+            mgr.create.assert_called_once_with(
+                script, init_args=ProcedureInput(subarray_id=subarray_id)
+            )
+            mgr.run.assert_called_once_with(
+                pid + 1, call="main", run_args=ProcedureInput()
+            )
+
+        finally:
+            ses.shutdown()
+
+    def test_happy_path_events(self, ses, script):
+        """
+        Verify that OET events are published at the appropriate times for
+        happy-path script execution.
+        """
+        helper = PubSubHelper()
+
+        prepare_cmd = PrepareProcessCommand(script=script, init_args=ProcedureInput())
+        summary = ses.prepare(prepare_cmd)
+
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.created)
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.complete)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
+
+        run_cmd = StartProcessCommand(
+            process_uid=summary.id, fn_name="main", run_args=ProcedureInput()
+        )
+        _ = ses.start(run_cmd)
+
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.complete)
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.complete)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
+
+        filtered = [
+            t for t in helper.topic_list if t != topics.procedure.lifecycle.statechange
+        ]
+        assert filtered == [
+            topics.procedure.lifecycle.created,
+            topics.procedure.lifecycle.started,
+            topics.procedure.lifecycle.complete,
+        ]
+
+    def test_sad_path_events(self, ses, fail_script):
+        """
+        Verify that OET events are published at the appropriate times for a
+        script that raises an exception.
+        """
+        helper = PubSubHelper()
+
+        prepare_cmd = PrepareProcessCommand(
+            script=fail_script, init_args=ProcedureInput()
+        )
+        summary = ses.prepare(prepare_cmd)
+
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.created)
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.complete)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 0
+
+        run_cmd = StartProcessCommand(
+            process_uid=summary.id, fn_name="main", run_args=ProcedureInput(msg="foo")
+        )
+        _ = ses.start(run_cmd)
+
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.failed)
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.complete)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 0
+
+        filtered = [
+            t for t in helper.topic_list if t != topics.procedure.lifecycle.statechange
+        ]
+        assert filtered == [
+            topics.procedure.lifecycle.created,
+            topics.procedure.lifecycle.started,
+            topics.procedure.lifecycle.failed,
+            topics.procedure.lifecycle.stacktrace,
+        ]
+
+    def test_stop_events(self, ses, init_hang_script):
+        """
+        Verify the behaviour of SES.stop(), confirming that OET events are published
+        at the appropriate times when a script is terminated.
+        """
+        helper = PubSubHelper()
+
+        init_running = multiprocessing.Barrier(2)
+        prepare_cmd = PrepareProcessCommand(
+            script=init_hang_script, init_args=ProcedureInput(init_running)
+        )
+        summary = ses.prepare(prepare_cmd)
+        pid = summary.id
+        ses._wait_for_state(pid, ProcedureState.IDLE)
+
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.complete)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 0
+
+        init_running.wait(0.1)
+        ses._wait_for_state(pid, ProcedureState.READY)
+
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.complete)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 0
+
+        stop_cmd = StopProcessCommand(process_uid=pid, run_abort=False)
+        _ = ses.stop(stop_cmd)
+        ses._wait_for_state(pid, ProcedureState.STOPPED)
+
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.complete)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.failed)) == 0
+        assert len(helper.messages_on_topic(topics.procedure.lifecycle.stopped)) == 1
+
+        filtered = [
+            t for t in helper.topic_list if t != topics.procedure.lifecycle.statechange
+        ]
+        assert filtered == [
+            topics.procedure.lifecycle.created,
+            topics.procedure.lifecycle.started,
+            topics.procedure.lifecycle.stopped,
+        ]
+
+    def test_summarise_with_no_procedures(self, ses):
+        assert ses.summarise() == []
+
+    def test_summarise_returns_specific_summary(self, ses):
+        ses.states = {
+            10: ProcedureState.COMPLETE,
+            20: ProcedureState.RUNNING,
+            30: ProcedureState.IDLE,
+        }
+
+        with patch.object(ScriptExecutionService, "_summarise") as method:
+            _ = ses.summarise([20])
+            method.assert_called_once_with(20)
+
+    def test_summarise_returns_all_summaries_when_no_pid_requested(self, ses):
+        ses.states = {
+            10: ProcedureState.COMPLETE,
+            20: ProcedureState.RUNNING,
+            30: ProcedureState.IDLE,
+        }
+
+        expected = [1, 2, 3]
+        with patch.object(ScriptExecutionService, "_summarise") as method:
+            method.side_effect = expected
+
+            actual = ses.summarise()
+            assert actual == expected
+            method.assert_has_calls(
+                [call(pid) for pid in ses.states.keys()], any_order=True
+            )
+
+    def test_summarise_fails_when_invalid_pid_requested(self, ses):
+        ses.states = {
+            10: ProcedureState.COMPLETE,
+            20: ProcedureState.RUNNING,
+            30: ProcedureState.IDLE,
+        }
+
+        with pytest.raises(ValueError):
+            ses.summarise([10, 11, 30])
+
+    def test_scalar_summarise(self, ses, script):  # pylint: disable=protected-access
+        """
+        Verify that the private _summarise method compiles the execution
+        history correctly.
+
+        Note that this test exercises the SES and ProcessManager, hence this
+        also functions as an integration test between the two.
+        """
+        t = 12345
+        init_args = ProcedureInput(1, 2, a="b", c="d")
+        run_args = ProcedureInput(3, 4, e="f", g="h")
+        history = ProcedureHistory(
             [
-                (ProcedureState.CREATING, 1),
-                (ProcedureState.IDLE, 2),
-                (ProcedureState.LOADING, 3),
-                (ProcedureState.IDLE, 4),
-                (ProcedureState.READY, 5),
-                (ProcedureState.RUNNING, 6),
-                (ProcedureState.READY, 7),
-                (ProcedureState.COMPLETED, 8),
+                (ProcedureState.CREATING, t),
+                (ProcedureState.IDLE, t),
+                (ProcedureState.LOADING, t),
+                (ProcedureState.IDLE, t),
+                (ProcedureState.READY, t),
+                (ProcedureState.RUNNING, t),
+                (ProcedureState.READY, t),
+                (ProcedureState.COMPLETE, t),
             ],
             stacktrace=None,
-        ),
-        state=ProcedureState.COMPLETED,
-    )
-    return summary
-
-
-def create_empty_procedure_summary(
-    procedure_id: int, script_uri: str, history: ProcedureHistory
-):
-    """
-    Utility function to create a null procedure summary. The returned
-    procedure defines zero script arguments.
-
-    :param procedure_id: procedure ID
-    :param script_uri: path to script
-    :param history: Procedure history
-    :return: corresponding ProcedureSummary object
-    """
-    return ProcedureSummary(
-        id=procedure_id,
-        script=FileSystemScript(script_uri),
-        script_args=[
-            ArgCapture(fn="init", fn_args=ProcedureInput(), time=time.time()),
-            ArgCapture(fn="main", fn_args=ProcedureInput(), time=time.time()),
-        ],
-        history=history,
-        state=ProcedureState.IDLE,
-    )
-
-
-def test_ses_create_summary_calls_service_correctly():
-    """
-    Verify that the private method _create_summary calls the
-    ProcessManager.summarise function correctly
-    """
-    with patch("ska_oso_oet.procedure.domain.ProcessManager") as mock_pm:
-        mgr = mock_pm.return_value
-        mgr.summarise = mock.MagicMock()
-
-        service = ScriptExecutionService()
-        service.summarise([123, 456])  # pylint: disable=protected-access
-
-        mgr.summarise.assert_called_once_with([123, 456])
-
-
-def test_ses_prepare_call_sequence_and_returns_summary_for_created_process(summary):
-    """
-    Verify that ScriptExecutionService.prepare() calls the appropriate domain
-    object methods for process creation and returns the expected summary object
-    """
-    script = FileSystemScript("file://test.py")
-    cmd = PrepareProcessCommand(script=script, init_args=ProcedureInput())
-
-    with patch("ska_oso_oet.procedure.domain.ProcessManager") as mock_pm:
-        # get the mock ProcessManager instance
-        mgr = mock_pm.return_value
-        # tell ProcessManager.create to return PID 123, which is subsequently
-        # used for lookup
-        mgr.create.return_value = 123
-        mgr.summarise = MagicMock(return_value=[summary])
-
-        service = ScriptExecutionService()
-        returned = service.prepare(cmd)
-
-        mgr.create.assert_called_once_with(script, init_args=ProcedureInput())
-        assert returned == summary
-
-
-def test_ses_start_calls_process_manager_function_and_returns_summary(summary):
-    """
-    Verify that ScriptExecutionService.start() calls the appropriate domain
-    object methods for starting process execution and returns the expected
-    summary object
-    """
-    cmd = StartProcessCommand(
-        process_uid=123, fn_name="main", run_args=ProcedureInput(1, 2, 3)
-    )
-
-    with patch("ska_oso_oet.procedure.domain.ProcessManager") as mock_pm:
-        # get the mock ProcessManager instance
-        mgr = mock_pm.return_value
-        mgr.summarise = MagicMock(return_value=[summary])
-
-        service = ScriptExecutionService()
-        returned = service.start(cmd)
-
-        # service should call run() and return the summary for the executed
-        # procedure
-        mgr.run.assert_called_once_with(
-            123, call="main", run_args=ProcedureInput(1, 2, 3)
         )
-        assert returned == summary
 
+        prepare_cmd = PrepareProcessCommand(script, init_args=init_args)
+        with patch("time.time", MagicMock(return_value=t)):
+            summary = ses.prepare(prepare_cmd)
+            pid = summary.id
+            ses._wait_for_state(pid, ProcedureState.READY)
 
-# REDUNDANT - covered in ProcessManager tests
-# def test_ses_summarise_returns_summaries_for_requested_pids():
-#     """
-#     ScriptExecutionService.summarise() should only return status for requested
-#     procedures.
-#     """
-#     procedure_a = Procedure(FileSystemScript("test://a"), procedure_id=1)
-#     procedure_b = Procedure(FileSystemScript("test://b"), procedure_id=2)
-#     procedure_c = Procedure(FileSystemScript("test://c"), procedure_id=3)
-#     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
-#
-#     expected = [
-#         create_empty_procedure_summary(1, "test://a", procedure_a.history),
-#         create_empty_procedure_summary(3, "test://c", procedure_c.history),
-#     ]
-#
-#     with mock.patch(
-#         "ska_oso_oet.procedure.application.application.domain.ProcessManager"
-#     ) as mock_pm:
-#         # get the mock ProcessManager instance
-#         instance = mock_pm.return_value
-#         # the manager's procedures attribute holds created procedures and is
-#         # used for retrieval
-#         instance.procedures = procedures
-#
-#         service = ScriptExecutionService()
-#         returned = service.summarise([1, 3])
-#
-#         assert returned == expected
+            run_cmd = StartProcessCommand(
+                process_uid=pid, fn_name="main", run_args=run_args
+            )
+            ses.start(run_cmd)
+            ses._wait_for_state(pid, ProcedureState.COMPLETE)
 
-# REDUNDANT - covered in ProcessManager tests
-# def test_ses_summarise_fails_when_invalid_pid_requested():
-#     """
-#     Verify that ScriptExecutionService.summarise() fails when an invalid
-#     procedure ID is requested.
-#     """
-#     procedure_a = Procedure(FileSystemScript("test://a"))
-#     procedure_b = Procedure(FileSystemScript("test://b"))
-#     procedure_c = Procedure(FileSystemScript("test://c"))
-#     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
-#
-#     with mock.patch(
-#         "ska_oso_oet.procedure.application.application.domain.ProcessManager"
-#     ) as mock_pm:
-#         # get the mock ProcessManager instance
-#         instance = mock_pm.return_value
-#         # the manager's procedures attribute holds created procedures and is
-#         # used for retrieval
-#         instance.procedures = procedures
-#
-#         service = ScriptExecutionService()
-#         with pytest.raises(ValueError):
-#             service.summarise([543534])
-
-# REDUNDANT - covered in ProcessManager tests
-# def test_ses_summarise_returns_all_summaries_when_no_pid_requested():
-#     """
-#     Verify that summaries for all procedures are returned when no specific PID
-#     is requested.
-#     """
-#     procedure_a = Procedure(FileSystemScript("test://a"), procedure_id=1)
-#     procedure_b = Procedure(FileSystemScript("test://b"), procedure_id=2)
-#     procedure_c = Procedure(FileSystemScript("test://c"), procedure_id=3)
-#     procedures = {1: procedure_a, 2: procedure_b, 3: procedure_c}
-#
-#     expected = [
-#         create_empty_procedure_summary(1, "test://a", procedure_a.history),
-#         create_empty_procedure_summary(2, "test://b", procedure_b.history),
-#         create_empty_procedure_summary(3, "test://c", procedure_c.history),
-#     ]
-#
-#     with mock.patch(
-#         "ska_oso_oet.procedure.application.application.domain.ProcessManager"
-#     ) as mock_pm:
-#         # get the mock ProcessManager instance
-#         instance = mock_pm.return_value
-#         # the manager's procedures attribute holds created procedures and is
-#         # used for retrieval
-#         instance.procedures = procedures
-#
-#         service = ScriptExecutionService()
-#         returned = service.summarise()
-#
-#         assert returned == expected
-
-
-def test_ses_stop_calls_process_manager_function(abort_script):
-    """
-    Verify that ScriptExecutionService.stop() calls the appropriate
-    ProcessManager methods to stop process execution, then prepares and
-    starts a new Process running the abort script.
-    """
-    # Test script/procedures will target sub-array 4
-    subarray_id = 4
-    # PID of running script
-    running_pid = 50
-    # PID of new abort Process will be 123
-    abort_pid = 123
-
-    # Create Procedure representing the script to be stopped
-    script_to_stop = FileSystemScript("file://a")
-    stop_args = [
-        ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1),
-        ArgCapture(fn="main", fn_args=ProcedureInput(), time=2),
-    ]
-    running_summary = [
-        ProcedureSummary(
-            id=running_pid,
-            script=script_to_stop,
-            script_args=stop_args,
-            history=ProcedureHistory(),
-            state=ProcedureState.RUNNING,
+        expected = ProcedureSummary(
+            id=pid,
+            script=script,
+            script_args=[
+                ArgCapture(fn="init", fn_args=init_args, time=t),
+                ArgCapture(fn="main", fn_args=run_args, time=t),
+            ],
+            history=history,
+            state=ProcedureState.COMPLETE,
         )
-    ]
 
-    abort_script_o = FileSystemScript(abort_script)
-    abort_script_args = [
-        ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1),
-        ArgCapture(fn="main", fn_args=ProcedureInput(), time=2),
-    ]
+        summary = ses._summarise(pid)
+        assert summary == expected
 
-    # When SES.stop() is called, the SES should stop the current process,
-    # prepare a process for the abort script, then set the abort process
-    # running..
-    cmd_stop = StopProcessCommand(process_uid=running_pid, run_abort=True)
-    cmd_create = PrepareProcessCommand(
-        script=abort_script_o,
-        init_args=ProcedureInput(subarray_id=subarray_id),
-    )
-    abort_created = [
-        ProcedureSummary(
-            id=abort_pid,
-            script=FileSystemScript(abort_script),
-            script_args=abort_script_args,
-            history=ProcedureHistory(),
+    def test_scalar_summarise_raises_exception_on_invalid_input(self, ses):
+        with pytest.raises(KeyError):
+            ses._summarise(9999)
+
+    def test_ses_get_subarray_id_for_requested_pid(self, ses):
+        """
+        Verify that the private method _get_subarray_id returns
+        subarray id correctly
+        """
+        subarray_id = 123
+        process_pid = 456
+
+        init_args = ArgCapture(
+            fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1
+        )
+        process_summary = ProcedureSummary(
+            id=process_pid,
+            script=FileSystemScript("file://a"),
+            script_args=[init_args],
+            history=mock.MagicMock(),
             state=ProcedureState.IDLE,
         )
-    ]
+        expected = [process_summary]
 
-    cmd_run = StartProcessCommand(
-        process_uid=abort_pid, fn_name="main", run_args=ProcedureInput()
-    )
+        with patch.object(
+            ScriptExecutionService, "_summarise", return_value=process_summary
+        ) as method:
+            returned = ses._get_subarray_id(process_pid)
 
-    # .. before returning a summary of the running abort Process
-    expected = [
-        ProcedureSummary(
-            id=abort_pid,
-            script=FileSystemScript(abort_script),
-            script_args=abort_script_args,
-            history=ProcedureHistory(),
-            state=ProcedureState.RUNNING,
-        )
-    ]
+            assert method.called_with(process_pid)
+            assert returned == expected[0].script_args[0].fn_args.kwargs["subarray_id"]
 
-    with mock.patch(
-        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
-    ) as mock_pm:
-        # get the mock ProcessManager instance, preparing it for SES access
-        instance = mock_pm.return_value
-
-        # Expect first call to summarise to be to get details on the currently running
-        # script, second call is when abort script has been created and third one is
-        # when the abort script has been started
-        instance.summarise.side_effect = [running_summary, abort_created, expected]
-
-        service = ScriptExecutionService(abort_script_uri=abort_script)
-        returned = service.stop(cmd_stop)
-
-        # service should call stop -> create -> run, then return list containing
-        # summary
-        instance.stop.assert_called_once_with(cmd_stop.process_uid)
-        instance.create.assert_called_once_with(
-            cmd_create.script, init_args=cmd_create.init_args
-        )
-        instance.run.assert_called_once_with(
-            cmd_run.process_uid, call="main", run_args=cmd_run.run_args
-        )
-        assert returned == expected
-
-
-def test_ses_stop_calls_process_manager_function_with_no_script_execution(abort_script):
-    """
-    Verify that ScriptExecutionService.stop() calls the appropriate domain
-    object methods to stop process execution without executing a subsequent
-    abort python script.
-    """
-    # PID of running process
-    running_pid = 123
-    running_args = [
-        ArgCapture(fn="init", fn_args=ProcedureInput(subarray_id=1), time=1),
-        ArgCapture(fn="main", fn_args=ProcedureInput(), time=2),
-    ]
-    running_summary = [
-        ProcedureSummary(
-            id=123,
-            script=mock.MagicMock(),
-            script_args=running_args,
+    def test_ses_get_subarray_id_fails_on_missing_subarray_id(self, ses):
+        """
+        Verify that an exception is raised when subarray ID is missing for requested
+        PID
+        """
+        init_args = ArgCapture(fn="init", fn_args=ProcedureInput(), time=1)
+        process_summary = ProcedureSummary(
+            id=1,
+            script=FileSystemScript("file://a"),
+            script_args=[init_args],
             history=mock.MagicMock(),
-            state=ProcedureState.RUNNING,
+            state=ProcedureState.IDLE,
         )
-    ]
 
-    cmd = StopProcessCommand(process_uid=running_pid, run_abort=False)
-
-    # returned summary list should be empty if abort script is bypassed
-    expected = []
-
-    with patch("ska_oso_oet.procedure.domain.ProcessManager") as mock_pm:
-        mgr = mock_pm.return_value
-
-        # Summarise to be called once when getting details for the running script
-        mgr.summarise.side_effect = [running_summary]
-        mgr.create = MagicMock(return_value=12345)
-        mgr.stop = MagicMock(return_value="foo")
-
-        service = ScriptExecutionService(abort_script_uri=abort_script)
-        returned = service.stop(cmd)
-
-        # service should call stop() and return empty list
-        mgr.stop.assert_called_once_with(running_pid)
-        mgr.create.assert_not_called()
-        assert returned == expected
+        with patch.object(
+            ScriptExecutionService, "_summarise", return_value=process_summary
+        ):
+            with pytest.raises(ValueError):
+                ses._get_subarray_id(1)  # pylint: disable=protected-access
 
 
-def test_ses_get_subarray_id_for_requested_pid():
-    """
-    Verify that the private method _get_subarray_id returns
-    subarray id correctly
-    """
-    subarray_id = 123
-    process_pid = 456
+class TestSESHistory:
+    def test_init_args_are_captured_in_history(self, ses):
+        """
+        Verify that arguments to prepare() are captured and stored.
+        """
+        script = FileSystemScript("file://test.py")
+        init_args = ProcedureInput(5, 6, 7, kw3="c", kw4="d")
+        now = time.time()
+        pid = 567
 
-    init_args = ArgCapture(
-        fn="init", fn_args=ProcedureInput(subarray_id=subarray_id), time=1
-    )
-    process_summary = ProcedureSummary(
-        id=process_pid,
-        script=FileSystemScript("file://a"),
-        script_args=[init_args],
-        history=mock.MagicMock(),
-        state=ProcedureState.IDLE,
-    )
-    expected = [process_summary]
+        # sending this command...
+        cmd = PrepareProcessCommand(script=script, init_args=init_args)
+        # ... should record this in the script_args
+        expected = ArgCapture(fn="init", fn_args=init_args, time=now)
 
-    with mock.patch(
-        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
-    ) as mock_pm:
-        # get the mock ProcessManager instance
-        instance = mock_pm.return_value
-        # Summarise is called to get details on the script
-        instance.summarise.side_effect = [[process_summary]]
+        with patch("time.time", MagicMock(return_value=now)):
+            with patch.object(ProcessManager, "create", return_value=pid):
+                with patch.object(ScriptExecutionService, "_summarise"):
+                    _ = ses.prepare(cmd)
 
-        service = ScriptExecutionService()
-        returned = service._get_subarray_id(process_pid)
+        assert len(ses.script_args[pid]) == 1
+        assert ses.script_args[pid] == [expected]
 
-        assert instance.summarise.called_with(process_pid)
-        assert returned == expected[0].script_args[0].fn_args.kwargs["subarray_id"]
+    def test_run_args_are_captured_in_history(self, ses):
+        """
+        Verify that arguments to start() are captured and stored
+        """
+        timestamp = 12345
+        pid = 456
+        fn_name = "foo"
+        run_args = ProcedureInput(5, 6, 7, kw3="c", kw4="d")
 
+        # must create process for history entries to be present
+        script = FileSystemScript("file://test.py")
+        cmd = PrepareProcessCommand(script=script, init_args=ProcedureInput())
+        with patch.object(ProcessManager, "create", return_value=pid):
+            with patch.object(ScriptExecutionService, "_summarise"):
+                _ = ses.prepare(cmd)
 
-def test_ses_get_subarray_id_fails_on_missing_subarray_id():
-    """
-    Verify that an exception is raised when subarray id is missing for requested
-    PID
-    """
-    init_args = ArgCapture(fn="init", fn_args=ProcedureInput(), time=1)
-    process_summary = ProcedureSummary(
-        id=1,
-        script=FileSystemScript("file://a"),
-        script_args=[init_args],
-        history=mock.MagicMock(),
-        state=ProcedureState.IDLE,
-    )
+        # now we can test when method invocation args are recorded
+        cmd = StartProcessCommand(pid, fn_name=fn_name, run_args=run_args)
+        expected = ArgCapture(fn=fn_name, fn_args=run_args, time=timestamp)
 
-    with mock.patch(
-        "ska_oso_oet.procedure.application.application.domain.ProcessManager"
-    ) as mock_pm:
-        # get the mock ProcessManager instance
-        instance = mock_pm.return_value
-        # Summarise is called to get details on the script
-        instance.summarise.side_effect = [[process_summary]]
+        with patch("time.time", MagicMock(return_value=timestamp)):
+            with patch.object(ScriptExecutionService, "_summarise"):
+                with patch.object(ProcessManager, "run"):
+                    _ = ses.start(cmd)
 
-        service = ScriptExecutionService()
-        with pytest.raises(ValueError):
-            service._get_subarray_id(1)  # pylint: disable=protected-access
+        assert len(ses.script_args[pid]) == 2
+        assert ses.script_args[pid][1] == expected
+
+    def test_failure_and_stacktrace_recorded_in_history(
+        self, ses: ScriptExecutionService, fail_script
+    ):
+        t = 12345
+        random_exc_string = str(uuid.uuid4())
+        init_args = ProcedureInput()
+        run_args = ProcedureInput(random_exc_string)
+        expected_states = [
+            (ProcedureState.CREATING, t),  # ScriptWorker initialising
+            (ProcedureState.IDLE, t),  # ScriptWorker ready
+            (ProcedureState.LOADING, t),  # load user module
+            (ProcedureState.IDLE, t),  # user module loaded
+            # fail script has no init so no IDLE->READY expected
+            (ProcedureState.READY, t),  # init complete
+            (ProcedureState.RUNNING, t),  # main running
+            (ProcedureState.FAILED, t),  # exception raised
+        ]
+
+        with patch("time.time", MagicMock(return_value=t)):
+            prepare_cmd = PrepareProcessCommand(script=fail_script, init_args=init_args)
+            summary = ses.prepare(prepare_cmd)
+
+            pid = summary.id
+            ses._wait_for_state(pid, ProcedureState.READY)
+
+            assert summary.history.stacktrace is None
+
+            cmd = StartProcessCommand(
+                process_uid=pid, fn_name="main", run_args=run_args
+            )
+            _ = ses.start(cmd)
+            ses._wait_for_state(pid, ProcedureState.FAILED)
+
+            time.sleep(1.0)
+            summary = ses._summarise(pid)
+
+        assert summary.history.process_states == expected_states
+
+        # most recent stacktrace should also have been captured and recorded in history
+        assert random_exc_string in summary.history.stacktrace
+
+    def test_exceeding_history_limit_removes_oldest_deletable_state(self, ses, script):
+        """
+        Verify that SES removes the oldest deletable state and history when
+        the record limit is reached.
+        """
+        prepare_cmd = PrepareProcessCommand(script=script, init_args=ProcedureInput())
+
+        # reduce max history to make test quicker
+        limit = 3
+        with patch(
+            "ska_oso_oet.procedure.application.application.HISTORY_MAX_LENGTH",
+            new=limit,
+        ):
+            for _ in range(limit):
+                summary = ses.prepare(prepare_cmd)
+                pid = summary.id
+                ses._wait_for_state(pid, ProcedureState.READY)
+                run_cmd = StartProcessCommand(
+                    process_uid=pid, fn_name="main", run_args=ProcedureInput()
+                )
+                summary = ses.start(run_cmd)
+                pid = summary.id
+
+            ses._wait_for_state(pid, ProcedureState.COMPLETE)
+            assert len(ses.history) == limit
+            assert len(ses.script_args) == limit
+            assert len(ses.states) == limit
+            assert len(ses.scripts) == limit
+
+            oldest_pid = next(iter(ses.states.keys()))
+            assert oldest_pid in ses.history
+            assert oldest_pid in ses.script_args
+            assert oldest_pid in ses.states
+            assert oldest_pid in ses.scripts
+
+            _ = ses.prepare(prepare_cmd)
+
+        # adding procedure should not increase the number of procedures
+        # and should remove the oldest procedure
+        assert len(ses.history) == limit
+        assert oldest_pid not in ses.history
+        assert oldest_pid not in ses.script_args
+        assert oldest_pid not in ses.states
+        assert oldest_pid not in ses.scripts

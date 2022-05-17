@@ -75,6 +75,42 @@ class procedure:
         Topic for events related to procedure lifecycle.
         """
 
+        class statechange:
+            """
+            Emitted when a procedure status changes.
+
+            To be amalgamated and rationalised with other lifecycle events to
+            better handle rerunnable scripts.
+            """
+
+            def msgDataSpec(msg_src, new_state):
+                """
+                - msg_src: component from which the request originated
+                - new_state: new state
+                """
+
+        class stacktrace:
+            """
+            Announces cause of a Procedure failure.
+            """
+
+            def msgDataSpec(msg_src, stacktrace):
+                """
+                - msg_src: component from which the request originated
+                - stacktrace: stacktrace as a string
+                """
+
+        class complete:
+            """
+            Emitted when a Procedure has completed successfully and is no longer
+            available to be called.
+            """
+
+            def msgDataSpec(msg_src, request_id, result):
+                """
+                - msg_src: ID of Procedure that completed
+                """
+
         class created:
             """
             Emitted when a procedure is created, i.e., a script is loaded and
@@ -90,7 +126,7 @@ class procedure:
 
         class started:
             """
-            Emitted when a procedure starts, i.e., script starts execution.
+            Emitted when any user function in a procedure is running, i.e., script init is called
             """
 
             def msgDataSpec(msg_src, request_id, result):

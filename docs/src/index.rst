@@ -113,8 +113,29 @@ targets that can be useful for developers. These targets are:
 | help            | show a summary of the makefile targets above   |
 +-----------------+------------------------------------------------+
 
+Local development with k8s
+==========================
+OET REST server can be deployed locally using Helm and Kubernetes and OET CLI
+:doc:`rest_client` can be used to communicate with the server. OET CLI is
+installed as part of the Poetry virtual environment (see README) or can be
+used inside a running OET container/pod.
+
+If using OET CLI within Poetry virtual environment these steps are needed
+for the CLI to access the REST server:
+
+- set `rest.ingress.enabled` to `true` in `charts/ska-oso-oet/values.yaml`
+- set `OET_REST_URI` environment variable with `export OET_REST_URI=http://<minikube IP>/ska-oso-oet/api/v1.0/procedures`
+
+To deploy OET REST server run
+
+::
+
+   make k8s-chart-install && make k8s-wait
+
+
+
 Feature flags
--------------
+=============
 OET feature flags are configured via environment variables and configuration
 files. The configuration file, ska_oso_oet.ini, can be located either in the user's
 home directory, or the root of the installation folder.

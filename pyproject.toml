@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ska-oso-oet"
-version = "3.0.0"
+version = "4.0.0"
 description = "SKA Observation Execution Tool"
 authors = ["Team Buttons"]
 license = "BSD-3-Clause"
@@ -31,7 +31,6 @@ url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 [tool.poetry.dependencies]
 python = "^3.7"
 fire = "^0.4.0"
-numpy = "1.17.2"
 pytango = "^9.3.3"
 Flask = "^2.0.3"
 jsonpickle = "^2.1.0"

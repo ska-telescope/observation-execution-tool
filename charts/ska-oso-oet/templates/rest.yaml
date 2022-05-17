@@ -56,6 +56,10 @@ metadata:
 binaryData:
   hello_world.py: |-
 {{ .Files.Get "data/hello_world.py" | b64enc | indent 4 }}
+  low_sb_example.json: |-
+{{ .Files.Get "data/low_sb_example.json" | b64enc | indent 4 }}
+  mid_sb_example.json: |-
+{{ .Files.Get "data/mid_sb_example.json" | b64enc | indent 4 }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -84,33 +88,21 @@ spec:
         domain: {{ .Values.rest.domain }}
         intent: production
     spec:
-      initContainers:
-      - name: check-databaseds-ready
-        image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{ .Values.rest.image.tag }}"
-        command:
-          - /usr/local/bin/wait-for-it.sh
-          - {{ if .Values.global.tango_host -}} {{ .Values.global.tango_host }} {{- else -}} databaseds-tango-base-{{ .Release.Name }}:10000 {{- end }}
-          - --timeout=30
-          - --strict
-          - --
-          - echo databaseds ready
       containers:
       - name: ska-oso-oet-rest
         image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{ .Values.rest.image.tag }}"
         imagePullPolicy: {{ .Values.rest.image.pullPolicy }}
         command: ["python"]
         args: ["-m", "ska_oso_oet.procedure.application.main"]
-        env:
-          - name: TANGO_HOST
-            value: {{ if .Values.global.tango_host -}} {{ .Values.global.tango_host }} {{- else -}} databaseds-tango-base-{{ .Release.Name }}:10000 {{- end }}
-          - name: SKUID_URL
-            value: "ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:9870"
+        envFrom:
+          - configMapRef:
+              name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
         ports:
           - name: oet-backend
             containerPort: 5000
         volumeMounts:
           - name: ska-oso-oet-scripts-volume
-            mountPath: /scripts
+            mountPath: /data
         resources:
 {{ toYaml .Values.rest.resources | indent 10 }}
         readinessProbe:
@@ -136,6 +128,10 @@ spec:
             items:
               - key: hello_world.py
                 path: hello_world.py
+              - key: low_sb_example.json
+                path: low_sb_example.json
+              - key: mid_sb_example.json
+                path: mid_sb_example.json
   {{- with .Values.nodeSelector }}
 nodeSelector:
   {{ toYaml . | indent 8 }}
