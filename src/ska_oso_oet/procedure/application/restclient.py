@@ -681,7 +681,7 @@ class RestAdapter:
         if run_args is None:
             run_args = dict(args=[], kwargs={})
 
-        request_json = {"script_args": {"run": run_args}, "state": "RUNNING"}
+        request_json = {"script_args": {"main": run_args}, "state": "RUNNING"}
         LOGGER.debug("Start payload: %s", request_json)
 
         response = requests.put(url, json=request_json)
