@@ -75,6 +75,7 @@ Components
         * ``COMPLETE``: the user script has completed successfully and the child process exited cleanly.
         * ``STOPPED``: the user script was forcibly terminated
         * ``FAILED``: the script process terminated due to an exception.
+        * ``UNKNOWN``: script termination failed, leaving the script in an unknown state and effectively unmanaged
 
    * - ProcedureSummary
      - ProcedureSummary is a presentation model capturing information on a script and its execution history. Through
