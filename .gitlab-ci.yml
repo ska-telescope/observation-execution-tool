@@ -21,6 +21,7 @@ stages:
   - lint
   - build
   - test
+  - cleanup
   - publish
   - pages
   - scan
