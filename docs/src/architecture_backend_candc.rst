@@ -60,7 +60,7 @@ Components
    * - ProcessManager
      - ProcessManager is the parent of all ScriptWorker instances. ProcessManager is responsible for launching each
        ScriptWorker processes and is a proxy for all ScriptWorker communication, relaying requests such as 'run function
-       X' tp the ScriptWorker and relaying events emitted by the ScriptWorker or the running user script to the rest of
+       X' to the ScriptWorker and relaying events emitted by the ScriptWorker or the running user script to the rest of
        the system.
    * - RestClientUI
      - RestClientUI provides a command-line interface for invoke actions on the OET backend. The CLI is a general interface
