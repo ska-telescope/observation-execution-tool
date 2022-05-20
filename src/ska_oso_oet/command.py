@@ -179,13 +179,24 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
             self, attr: Attribute  # pylint: disable=unused-argument
         ) -> tango.EventData:
             """
-            Read an event from the queue.
+            Read an event from the queue. This function blocks until an event
+            is received.
 
             With a single subscription active at any one time, the attribute
             is ignored by this implementation but is expected to be required
             by strategy that support multiple attribute subscriptions.
             """
-            return self._queue.get()  # TODO: 1. implement timeout functionality
+            while True:
+                try:
+                    # TODO: 1. implement variable timeout functionality?
+
+                    # Queue.get without timeout cannot be interrupted by
+                    # SIGINT, so it's very important to use a timeout to give
+                    # the mptools signal handlers a chance to run
+                    evt = self._queue.get(timeout=0.01)
+                    return evt
+                except queue.Empty:
+                    pass
 
         def notify(self, evt: tango.EventData):
             """
