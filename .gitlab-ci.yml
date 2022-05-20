@@ -48,6 +48,8 @@ test-chart-templates:
 on_k8s_test_failure:
     stage: cleanup
     needs: ["k8s-test"]
+    variables:
+      KUBE_NAMESPACE: 'ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA'
     script:
       - make k8s-uninstall-chart
       - kubectl -n $KUBE_NAMESPACE delete pods,svc,daemonsets,deployments,replicasets,statefulsets,cronjobs,jobs,ingresses,configmaps --all
