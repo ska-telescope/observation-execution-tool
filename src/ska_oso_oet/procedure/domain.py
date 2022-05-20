@@ -16,7 +16,7 @@ import subprocess
 import sys
 import threading
 import types
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Type
 
 from pubsub import pub
 
@@ -164,12 +164,13 @@ class ScriptWorker(mptools.ProcWorker):
     ScriptWorker loads user code in a child process, running functions of that
     user code on request.
 
-    ScriptWorker acts when a message is received on its work queue. It responds to three
+    ScriptWorker acts when a message is received on its work queue. It responds to four
     types of messages:
 
     1. LOAD - to load the specified code in this process
-    2. RUN - to run the named function in this process
-    3. PUBSUB - external pubsub messages that should be published locally
+    2. ENV - to install the dependencies for the specified script in this process
+    3. RUN - to run the named function in this process
+    4. PUBSUB - external pubsub messages that should be published locally
 
     ScriptWorker converts external inter-process mptool pub/sub messages to
     intra-process pypubsub pub/sub messages. That is, EventMessages received on the
@@ -196,7 +197,7 @@ class ScriptWorker(mptools.ProcWorker):
     ):
         # Message is rolled by hand and sent via a direct message to the
         # ProcessManager as we want to announce CREATING at the earliest
-        # possible moment; we can't announce via via pypubsub just yet as the
+        # possible moment; we can't announce via pypubsub just yet as the
         # intraprocess<->interprocess republish function is not registered
         # till later in the construction process
         msg = EventMessage(
@@ -309,6 +310,118 @@ class ScriptWorker(mptools.ProcWorker):
             self.log(logging.DEBUG, "Republishing local pypubsub event: %s", msg)
             self.event_q.put(msg)
 
+    def _on_pubsub(self, evt: EventMessage) -> None:
+        # take the work item - the external pub/sub EventMessage - and
+        # rebroadcast it locally as a pypubsub message, avoiding an infinite
+        # loop by ignoring events that originated from us.
+        if evt.msg_src != self.name:
+            self.log(logging.DEBUG, "Republishing external event: %s", evt)
+            payload = evt.msg
+            topic = payload["topic"]
+            pub.sendMessage(topic, msg_src=evt.msg_src, **payload["kwargs"])
+        else:
+            self.log(logging.DEBUG, "Discarding internal event: %s", evt)
+
+    def _on_env(self, evt: EventMessage) -> None:
+        self.publish_lifecycle(ProcedureState.PREP_ENV)
+        if self._environment is None:
+            raise RuntimeError("Install failed, environment has not been defined")
+        if not self._environment.created.is_set():
+            if not self._environment.creating.is_set():
+                self._environment.creating.set()
+                script = evt.msg
+
+                if not isinstance(script, GitScript):
+                    raise RuntimeError(
+                        "Cannot create virtual environment for script type"
+                        f" {script.__class__.__name__}"
+                    )
+
+                clone_dir = GitManager.clone_repo(script.git_args)
+
+                try:
+                    # Upgrade pip version, venv uses a pre-packaged pip which is outdated
+                    subprocess.check_output(
+                        [
+                            f"{self._environment.location}/bin/pip",
+                            "install",
+                            "--index-url=https://pypi.org/simple",
+                            "--upgrade",
+                            "pip",
+                        ]
+                    )
+                    if os.path.exists(os.path.join(clone_dir, "pyproject.toml")):
+                        # Convert poetry requirements into a requirements.txt file
+                        subprocess.check_output(
+                            [
+                                "poetry",
+                                "export",
+                                "--output",
+                                "requirements.txt",
+                                "--without-hashes",
+                            ],
+                            cwd=clone_dir,
+                        )
+                    subprocess.check_output(
+                        [f"{self._environment.location}/bin/pip", "install", "."],
+                        cwd=clone_dir,
+                    )
+                except subprocess.CalledProcessError as e:
+                    raise RuntimeError(
+                        "Something went wrong during script environment"
+                        f" installation: {e.output}"
+                    ) from None
+                    # TODO: How to handle if another process is waiting on created_condition but install fails?
+                self._environment.created.set()
+            else:
+                # Environment is being created by another script. Wait for the
+                # other process to finish environment installation before proceeding.
+                # Throw a timeout error if env creation takes too long, likely means that
+                # the environment installation has failed
+                self._environment.created.wait(timeout=ENV_CREATION_TIMEOUT)
+
+        sys.path.insert(0, self._environment.site_packages)
+        self.publish_lifecycle(ProcedureState.IDLE)
+
+    def _on_load(self, evt: EventMessage) -> None:
+        self.publish_lifecycle(ProcedureState.LOADING)
+        script: ExecutableScript = evt.msg
+        self.log(logging.DEBUG, "Loading user script %s", script)
+        try:
+            self.user_module = ModuleFactory.get_module(script)
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                errno.ENOENT, os.strerror(errno.ENOENT), script.script_uri
+            ) from None
+        self.publish_lifecycle(ProcedureState.IDLE)
+
+    def _on_run(self, evt: EventMessage) -> Optional[Type[StopIteration]]:
+        fn_name, fn_args = evt.msg
+
+        # special case: get init args from instance, check for method.
+        # we may want to revisit whether init remains a special case
+        if fn_name == "init":
+            if not hasattr(self.user_module, "init"):
+                self.publish_lifecycle(ProcedureState.READY)
+                return
+            fn_args = self.init_input
+
+        self.log(
+            logging.DEBUG,
+            "Calling user function %s",
+            repr(fn_args).replace("<ProcedureInput", fn_name)[:-1],
+        )
+        self.publish_lifecycle(ProcedureState.RUNNING)
+        fn = getattr(self.user_module, fn_name)
+        fn(*fn_args.args, **fn_args.kwargs)
+        self.publish_lifecycle(ProcedureState.READY)
+
+        # to be refined. indicates that script can not be rerun, thus allowing
+        # the ScriptWorker to complete. other scripts might be rerun and go back
+        # to idle
+        if fn_name == "main":
+            return StopIteration
+
     def main_loop(self) -> None:
         """
         main_loop delivers each event received on the work queue to the
@@ -344,11 +457,28 @@ class ScriptWorker(mptools.ProcWorker):
                 if item == "END":
                     break
 
-                # otherwise call main function with the queue item
+                # otherwise handle the event based on type
                 else:
-                    ret = self.main_func(item)
-                    if ret == StopIteration:
-                        break
+                    if item.msg_type not in ("LOAD", "RUN", "PUBSUB", "ENV"):
+                        self.log(logging.WARN, "Unexpected message: %s", item)
+                        return
+
+                    if self._scan_counter:
+                        SCAN_ID_GENERATOR.backing = self._scan_counter
+
+                    if item.msg_type == "PUBSUB":
+                        self._on_pubsub(item)
+
+                    if item.msg_type == "ENV":
+                        self._on_env(item)
+
+                    if item.msg_type == "LOAD":
+                        self._on_load(item)
+
+                    if item.msg_type == "RUN":
+                        ret = self._on_run(item)
+                        if ret == StopIteration:
+                            break
 
         except mptools.TerminateInterrupt:
             # raised by the signal handler on Proc.terminate()
@@ -356,132 +486,6 @@ class ScriptWorker(mptools.ProcWorker):
 
         else:
             self.publish_lifecycle(ProcedureState.COMPLETE)
-
-    # Relax pylint as we are deliberately redefining the superclass main_func
-    # signature in this specialised subclass. This is intended to be a
-    # template, hence the implementation doesn't use item.
-    def main_func(
-        self, evt: EventMessage
-    ):  # pylint: disable=unused-argument,arguments-differ
-
-        if evt.msg_type not in ("LOAD", "RUN", "PUBSUB", "ENV"):
-            self.log(logging.WARN, "Unexpected message: %s", evt)
-            return
-
-        if self._scan_counter:
-            SCAN_ID_GENERATOR.backing = self._scan_counter
-
-        if evt.msg_type == "PUBSUB":
-            # take the work item - the external pub/sub EventMessage - and
-            # rebroadcast it locally as a pypubsub message, avoiding an infinite
-            # loop by ignoring events that originated from us.
-            if evt.msg_src != self.name:
-                self.log(logging.DEBUG, "Republishing external event: %s", evt)
-                payload = evt.msg
-                topic = payload["topic"]
-                pub.sendMessage(topic, msg_src=evt.msg_src, **payload["kwargs"])
-            else:
-                self.log(logging.DEBUG, "Discarding internal event: %s", evt)
-
-        if evt.msg_type == "ENV":
-            self.publish_lifecycle(ProcedureState.PREP_ENV)
-            if self._environment is None:
-                raise RuntimeError("Install failed, environment has not been defined")
-            if not self._environment.created.is_set():
-                if not self._environment.creating.is_set():
-                    self._environment.creating.set()
-                    script = evt.msg
-
-                    if not isinstance(script, GitScript):
-                        raise RuntimeError(
-                            "Cannot create virtual environment for script type"
-                            f" {script.__class__.__name__}"
-                        )
-
-                    clone_dir = GitManager.clone_repo(script.git_args)
-
-                    try:
-                        # Upgrade pip version, venv uses a pre-packaged pip which is outdated
-                        subprocess.check_output(
-                            [
-                                f"{self._environment.location}/bin/pip",
-                                "install",
-                                "--index-url=https://pypi.org/simple",
-                                "--upgrade",
-                                "pip",
-                            ]
-                        )
-                        if os.path.exists(os.path.join(clone_dir, "pyproject.toml")):
-                            # Convert poetry requirements into a requirements.txt file
-                            subprocess.check_output(
-                                [
-                                    "poetry",
-                                    "export",
-                                    "--output",
-                                    "requirements.txt",
-                                    "--without-hashes",
-                                ],
-                                cwd=clone_dir,
-                            )
-                        subprocess.check_output(
-                            [f"{self._environment.location}/bin/pip", "install", "."],
-                            cwd=clone_dir,
-                        )
-                    except subprocess.CalledProcessError as e:
-                        raise RuntimeError(
-                            "Something went wrong during script environment"
-                            f" installation: {e.output}"
-                        ) from None
-                        # TODO: How to handle if another process is waiting on created_condition but install fails?
-                    self._environment.created.set()
-                else:
-                    # Environment is being created by another script. Wait for the
-                    # other process to finish environment installation before proceeding.
-                    # Throw a timeout error if env creation takes too long, likely means that
-                    # the environment installation has failed
-                    self._environment.created.wait(timeout=ENV_CREATION_TIMEOUT)
-
-            sys.path.insert(0, self._environment.site_packages)
-            self.publish_lifecycle(ProcedureState.IDLE)
-
-        if evt.msg_type == "LOAD":
-            self.publish_lifecycle(ProcedureState.LOADING)
-            script: ExecutableScript = evt.msg
-            self.log(logging.DEBUG, "Loading user script %s", script)
-            try:
-                self.user_module = ModuleFactory.get_module(script)
-            except FileNotFoundError:
-                raise FileNotFoundError(
-                    errno.ENOENT, os.strerror(errno.ENOENT), script.script_uri
-                ) from None
-            self.publish_lifecycle(ProcedureState.IDLE)
-
-        if evt.msg_type == "RUN":
-            fn_name, fn_args = evt.msg
-
-            # special case: get init args from instance, check for method.
-            # we may want to revisit whether init remains a special case
-            if fn_name == "init":
-                if not hasattr(self.user_module, "init"):
-                    self.publish_lifecycle(ProcedureState.READY)
-                    return
-                fn_args = self.init_input
-
-            self.log(
-                logging.DEBUG,
-                "Calling user function %s",
-                repr(fn_args).replace("<ProcedureInput", fn_name)[:-1],
-            )
-            self.publish_lifecycle(ProcedureState.RUNNING)
-            fn = getattr(self.user_module, fn_name)
-            fn(*fn_args.args, **fn_args.kwargs)
-            self.publish_lifecycle(ProcedureState.READY)
-
-            # to be refined. indicates that script can not be rerun, thus allowing
-            # the ScriptWorker to complete. other scripts might be rerun and go back
-            # to idle
-            if fn_name == "main":
-                return StopIteration
 
 
 class ProcessManager:
