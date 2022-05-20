@@ -44,6 +44,15 @@ test-chart-templates:
     reports:
       junit: build/reports/chart_template_tests.xml
 
+on_k8s_test_failure:
+    stage: cleanup
+    needs: ["k8s-test"]
+    script:
+      - make k8s-uninstall-chart
+      - kubectl -n $KUBE_NAMESPACE delete pods,svc,daemonsets,deployments,replicasets,statefulsets,cronjobs,jobs,ingresses,configmaps --all
+      - make k8s-delete-namespace
+    when: on_failure
+
 
 include:
   # Python
