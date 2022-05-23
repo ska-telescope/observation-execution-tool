@@ -389,7 +389,7 @@ class TestScriptWorkerPubSub:
         )
 
         # there's no easy way to assert that the external event was republished
-        # on an an independent pypubsub bus. Workaround is to assert that the
+        # on an independent pypubsub bus. Workaround is to assert that the
         # republishing code was run via the log message
         assert "Republishing external event: EXTERNAL COMPONENT" in caplog.text
 
@@ -417,6 +417,53 @@ class TestScriptWorkerPubSub:
 
         msgs_on_topic = helper.messages_on_topic(topics.request.procedure.list)
         assert len(msgs_on_topic) == 0
+
+    @patch("ska_oso_oet.procedure.domain.ModuleFactory.get_module")
+    @pytest.mark.parametrize("mp", multiprocessing_contexts)
+    def test_on_load(self, mock_module_fn, mp, caplog):
+        """ """
+        mock_module_fn.side_effect = MagicMock()
+        script = GitScript("git://test.py", GitArgs())
+        evt = EventMessage("test", "LOAD", script)
+
+        work_q = MPQueue(ctx=mp)
+        work_q.put(evt)
+
+        _proc_worker_wrapper_helper(
+            mp, caplog, ScriptWorker, args=(work_q,), expect_shutdown_evt=True
+        )
+        assert mock_module_fn.called_once_with(script)
+
+    @patch("ska_oso_oet.procedure.domain.ScriptWorker._on_run")
+    @patch("ska_oso_oet.procedure.domain.ScriptWorker._on_load")
+    @patch("ska_oso_oet.procedure.domain.ScriptWorker._on_env")
+    def test_script_worker_calls_correct_function_on_message_type(
+        self, mock_env_fn, mock_load_fn, mock_run_fn, caplog
+    ):
+        mp = multiprocessing.get_context()
+        script = GitScript("git://test.py", GitArgs())
+        env_evt = EventMessage("test", "ENV", script)
+        load_evt = EventMessage("test", "LOAD", script)
+        run_evt = EventMessage("test", "RUN", ("init", None))
+        work_q = MPQueue(ctx=mp)
+        work_q.put(env_evt)
+        work_q.put(load_evt)
+        work_q.put(run_evt)
+
+        _proc_worker_wrapper_helper(
+            mp, caplog, ScriptWorker, args=(work_q,), expect_shutdown_evt=True
+        )
+        env_args, _ = mock_env_fn.call_args
+        assert env_args[0].msg_type == env_evt.msg_type
+        mock_env_fn.assert_called_once()
+
+        load_args, _ = mock_load_fn.call_args
+        assert load_args[0].msg_type == load_evt.msg_type
+        mock_load_fn.assert_called_once()
+
+        run_args, _ = mock_run_fn.call_args
+        assert run_args[0].msg_type == run_evt.msg_type
+        mock_run_fn.assert_called_once()
 
 
 class TestProcessManagerScriptWorkerIntegration:

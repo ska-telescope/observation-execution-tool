@@ -10,7 +10,7 @@ def test_script_not_found():
 def script_is_running(file, exec_env):
     exec_env.create(file)
     exec_env.run_oet_command("start")
-    state = exec_env.get_script_state()
+    state = exec_env.wait_for_state("RUNNING")
     assert state == "RUNNING"
 
 
