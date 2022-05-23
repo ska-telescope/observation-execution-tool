@@ -52,7 +52,6 @@ on_k8s_test_failure:
       KUBE_NAMESPACE: 'ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA'
     script:
       - make k8s-uninstall-chart
-      - kubectl -n $KUBE_NAMESPACE delete pods,svc,daemonsets,deployments,replicasets,statefulsets,cronjobs,jobs,ingresses,configmaps --all
       - make k8s-delete-namespace
     when: on_failure
 
