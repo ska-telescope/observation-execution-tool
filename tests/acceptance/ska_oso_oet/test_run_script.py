@@ -42,7 +42,6 @@ def execute_run_command(exec_env):
 def execution_ends_in_expected_state(state, exec_env):
     final_state = exec_env.wait_for_state(state)
     assert final_state == state
-    assert False
 
 
 @scenario(
