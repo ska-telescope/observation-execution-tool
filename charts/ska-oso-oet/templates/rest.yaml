@@ -121,8 +121,19 @@ spec:
           timeoutSeconds: {{ .Values.rest.livenessProbe.timeoutSeconds }}
           successThreshold: {{ .Values.rest.livenessProbe.successThreshold }}
           failureThreshold: {{ .Values.rest.livenessProbe.failureThreshold }}
+      initContainers:
+      - name: copy
+        image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{ .Values.rest.image.tag }}"
+        command: ["bash", "-c", "cp /tmp-data/* /tmp/oda/"]
+        volumeMounts:
+        - mountPath: /tmp-data
+          name: temp-ska-oso-oet-scripts-volume
+        - mountPath: /tmp/oda
+          name: ska-oso-oet-scripts-volume
       volumes:
         - name: ska-oso-oet-scripts-volume
+          emptyDir: {}
+        - name: temp-ska-oso-oet-scripts-volume
           configMap:
             name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-scripts
             items:
