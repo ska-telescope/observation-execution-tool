@@ -623,7 +623,7 @@ class RestAdapter:
         script_uri: str,
         init_args: Dict = None,
         git_args: Dict = None,
-        create_env: bool = True,
+        create_env: bool = False,
     ) -> ProcedureSummary:
         """
         Create a new Procedure.
