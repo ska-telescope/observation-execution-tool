@@ -351,13 +351,14 @@ class RestClientUI:
         git_repo: str = None,
         git_branch: str = None,
         git_commit: str = None,
-        default_git_env: bool = True,
+        create_env: bool = False,
         **kwargs,
     ) -> str:
         """
         Create a new Procedure.
 
-        Arguments will be passed to the Procedure's init function. Git arguments should only be provided if script_uri prefix is git://
+        Arguments will be passed to the Procedure's init function. Git arguments should only
+        be provided if script_uri prefix is git://
 
         Example on running procedure from filesystem:
 
@@ -370,9 +371,11 @@ class RestClientUI:
         :param script_uri: script URI, e.g., file:///test.py
         :param args: script positional arguments
         :param subarray_id: Sub-array controlled by this OET instance
-        :param git_repo: Path to git repository, will point to http://gitlab.com/ska-telescope/ska-oso-scripting if not provided
+        :param git_repo: Path to git repository, will point to
+        http://gitlab.com/ska-telescope/ska-oso-scripting if not provided
         :param git_branch: Branch within the git repository, defaults to master if not provided
-        :param git_commit: Git commit hash, defaults to latest commit on the given branch. Branch does not need to be specified if commit hash is provided
+        :param git_commit: Git commit hash, defaults to latest commit on the given branch.
+        Branch does not need to be specified if commit hash is provided
         :param create_env: Install dependencies from the procedure source project. Set to False by default.
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.
@@ -399,7 +402,7 @@ class RestClientUI:
                 script_uri,
                 init_args=init_args,
                 git_args=git_args,
-                default_git_env=default_git_env,
+                create_env=create_env,
             )
         except Exception as err:
             LOGGER.debug("received exception %s", err)
@@ -620,7 +623,7 @@ class RestAdapter:
         script_uri: str,
         init_args: Dict = None,
         git_args: Dict = None,
-        default_git_env: bool = True,
+        create_env: bool = True,
     ) -> ProcedureSummary:
         """
         Create a new Procedure.
@@ -638,7 +641,7 @@ class RestAdapter:
         :param script_uri: script URI, e.g., file://test.py or git://test.git
         :param init_args: script initialisation arguments
         :param git_args: git script arguments
-        :param default_git_env: Use default environment for running git scripts,if it is set to True
+        :param create_env: Install dependencies from the procedure source project. Set to False by default.
         :return: Summary of created procedure.
         """
         if not (script_uri.startswith("file://") or script_uri.startswith("git://")):
@@ -658,7 +661,7 @@ class RestAdapter:
                 script_type="git",
                 script_uri=script_uri,
                 git_args=git_args,
-                default_git_env=default_git_env,
+                create_env=create_env,
             )
 
         request_json = {

@@ -77,9 +77,7 @@ def git_script(tmpdir):
     """
     script_path = tmpdir.join("git_script.py")
     script_path.write("def main(*args, **kwargs):\n\tpass")
-    return GitScript(
-        f"git://{str(script_path)}", git_args=GitArgs(), default_git_env=False
-    )
+    return GitScript(f"git://{str(script_path)}", git_args=GitArgs(), create_env=True)
 
 
 @pytest.fixture
@@ -92,7 +90,7 @@ def git_script_branch(tmpdir):
     return GitScript(
         f"git://{str(script_path)}",
         git_args=GitArgs(git_branch="git-test-branch"),
-        default_git_env=False,
+        create_env=True,
     )
 
 
@@ -111,9 +109,7 @@ def main(site_package):
     assert site_package in sys.path
 """
     )
-    return GitScript(
-        f"git://{str(script_path)}", git_args=GitArgs(), default_git_env=False
-    )
+    return GitScript(f"git://{str(script_path)}", git_args=GitArgs(), create_env=True)
 
 
 @pytest.fixture
@@ -271,7 +267,7 @@ class TestExecutableScript:
         assert isinstance(script, GitScript)
         assert script.script_uri == "git://script.py"
         assert script.git_args == GitArgs()
-        assert script.default_git_env is True
+        assert script.create_env is False
 
     def test_filesystem_script_raises_error_on_incorrect_prefix(self):
         with pytest.raises(ValueError) as e:
@@ -859,14 +855,14 @@ class TestProcessManager:
     def test_create_sends_env_message(self, manager):
         """
         Verify that a call to ProcessManager.create() sends the env message to the
-        ScriptWorker when script type is GitScript and default_git_env is False.
+        ScriptWorker when script type is GitScript and create_env is True.
         """
         manager.ctx.Proc = MagicMock()
         manager.em.create_env = MagicMock()
         expected_env = Environment("1", None, None, "/", "/site-packages")
         manager.em.create_env.side_effect = [expected_env]
         git_script = GitScript(
-            script_uri="git://test-script.py", git_args=GitArgs(), default_git_env=False
+            script_uri="git://test-script.py", git_args=GitArgs(), create_env=True
         )
         manager.create(git_script, init_args=ProcedureInput())
         q = manager.script_queues[1]

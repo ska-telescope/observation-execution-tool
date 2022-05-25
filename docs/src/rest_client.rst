@@ -139,9 +139,9 @@ giving: ::
     2  file://test2.py  2020-09-30 10:35:12  CREATING
 
 
-Now create a third procedure: ::
+Now create a third procedure that will be pulled from git: ::
 
-  $ oet create git://test3.py --git_repo="http://foo.git" --git_branch="master"
+  $ oet create git://test3.py --git_repo="http://foo.git" --git_branch="test" --create_env=True
 
 giving: ::
 
