@@ -348,22 +348,32 @@ class RestClientUI:
         script_uri: str,
         *args,
         subarray_id=1,
+        git_repo: str = None,
+        git_branch: str = None,
+        git_commit: str = None,
         default_git_env: bool = True,
         **kwargs,
     ) -> str:
         """
         Create a new Procedure.
 
-        Arguments will be passed to the Procedure initialiser.
+        Arguments will be passed to the Procedure's init function. Git arguments should only be provided if script_uri prefix is git://
 
-        Example:
+        Example on running procedure from filesystem:
 
             oet create file:///path/to/script.py 'hello' --verbose=true
+
+        Example for running procedure from git:
+
+            oet create git:///path/to/script.py --git_repo=http://gitlab.com/repo-name --create_env=False
 
         :param script_uri: script URI, e.g., file:///test.py
         :param args: script positional arguments
         :param subarray_id: Sub-array controlled by this OET instance
-        :param default_git_env: Use default environment for running git scripts,if it is set to True
+        :param git_repo: Path to git repository, will point to http://gitlab.com/ska-telescope/ska-oso-scripting if not provided
+        :param git_branch: Branch within the git repository, defaults to master if not provided
+        :param git_commit: Git commit hash, defaults to latest commit on the given branch. Branch does not need to be specified if commit hash is provided
+        :param create_env: Install dependencies from the procedure source project. Set to False by default.
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.
         """
@@ -374,10 +384,14 @@ class RestClientUI:
         init_kwargs["subarray_id"] = subarray_id
 
         for arg in kwargs.keys():
-            if "git_repo" in arg or "git_branch" in arg or "git_commit" in arg:
-                git_args[arg] = kwargs[arg]
-            else:
-                init_kwargs[arg] = kwargs[arg]
+            init_kwargs[arg] = kwargs[arg]
+
+        if git_repo:
+            git_args["git_repo"] = git_repo
+        if git_branch:
+            git_args["git_branch"] = git_branch
+        if git_commit:
+            git_args["git_commit"] = git_commit
 
         init_args = dict(args=args, kwargs=init_kwargs)
         try:
@@ -611,8 +625,8 @@ class RestAdapter:
         """
         Create a new Procedure.
 
-        Arguments given in init_args will be passed to the Procedure
-        initialiser. The init_args argument should be a dict with 'args' and
+        Arguments given in init_args will be passed to the Procedure's
+        init function. The init_args argument should be a dict with 'args' and
         'kwargs' entries for positional and named arguments respectively,
         e.g.,
 
