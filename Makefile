@@ -31,7 +31,7 @@ endif
 
 # Set the k8s test command run inside the testing pod to only run the acceptance
 # tests (no k8s pod deployment required for unit tests)
-K8S_TEST_TEST_COMMAND = cd .. && pytest ./tests/acceptance | tee pytest.stdout
+K8S_TEST_TEST_COMMAND = pytest ./tests/acceptance | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the integration tests
 PYTHON_TEST_FILE = tests/unit/
