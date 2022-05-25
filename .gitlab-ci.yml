@@ -53,7 +53,7 @@ on_k8s_test_failure:
     script:
       - make k8s-uninstall-chart
       - make k8s-delete-namespace
-    when: on_failure
+    when: always
 
 
 include:
