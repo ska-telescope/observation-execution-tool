@@ -3,9 +3,9 @@
 #
 # pylint: disable=broad-except
 """
-Client for the OET REST Service.
+Command-line client for the OET REST Service.
 
-This client can be used to interact with a remote OET script executor. It can
+This program is used to control and monitor a remote OET script executor. It can
 be used to request 'procedure creation', which loads a Python script and
 prepares it for execution; to 'start a procedure', which starts execution of a
 script prepared in a prior 'create procedure' call, and to list all prepared
@@ -99,14 +99,16 @@ class ProcedureSummary:
 
 class RestClientUI:
     """
-    OET script execution client.
+    OET command-line interface.
 
-    This client can be used to connect to a remote OET script execution
-    service. With this client, you can create procedures, list procedures, and
-    start a procedure that is ready for execution.
+    This program is used to control and monitor a remote OET script executor.
+    Using this tool, you can instruct the remote OET backend to load a Python
+    script, call a function of that script, and abort script execution. This
+    tool can also report a recent history of script execution and monitor the
+    events published by the OET backend and running scripts.
 
-    Multiple procedures may be initialised, but only one script may be
-    running at any one time.
+    Note that multiple scripts may be loaded and prepared for execution, but
+    only one script can run at a time.
     """
 
     TOPIC_DICT = {
@@ -328,7 +330,7 @@ class RestClientUI:
 
     def list(self, pid=None) -> str:
         """
-        List procedures registered on the targeted server.
+        List the state of current and recently run scripts.
 
         This command has an optional arguments: a numeric procedure ID to list.
         If no ID is specified, all procedures will be listed.
@@ -355,24 +357,66 @@ class RestClientUI:
         **kwargs,
     ) -> str:
         """
-        Create a new Procedure.
+        Prepare a Procedure (=prepare to run a script).
 
-        Arguments will be passed to the Procedure's init function. Git arguments should only
-        be provided if script_uri prefix is git://
+        This command tells the OET backend to prepare to run a user script.
+        The OET backend will load the requested script, prepare the Python
+        environment if requested, and call the script's init function if
+        present.
 
-        Example on running procedure from filesystem:
+        The OET can load scripts from the container filesystem and from remote
+        git repositories.
 
-            oet create file:///path/to/script.py 'hello' --verbose=true
+        The user script URI should begin with either file:// to reference a
+        script that exists within the OET backend's filesystem / default
+        environment, or git:// to give the relative path of a script within
+        a git project.
+
+        The OET has some default behaviour regarding non-default scripts
+        such as git scripts that can be modified through use of the --git_repo,
+        --git_branch, --git_commit, and --create_env command line arguments.
+
+        1. --git_repo: By default, the OET assumes the referenced script
+           belongs to the ska-oso-scripting gitlab project, and will retrieve
+           the project and attempt to find the file accordingly. To point to
+           a different git repository, define the --git_repo argument.
+
+        2. --git_branch: By default, the OET retrieves the default git project
+           for the specified git project (usually main or master). Defining
+           the --git_branch argument will cause the specified git branch to be
+           retrieved.
+
+        3. --git-commit: By default, the OET will use the latest commit for
+           the target git branch. A different commit can be specified by
+           setting the  --git_commit argument to a git commit hash. Note that
+           this will override any --git_branch setting.
+
+        4. --create_env: By default, the script will execute using the
+           default Python environment of the OET backend container. If the
+           script has dependencies not met by the default environment, setting
+           --create_env=True will instruct the OET to create a new Python
+           environment and install the project's dependencies, as specified
+           by the project's Poetry configuration or requirements.txt. If a
+           suitable environment already exists on the backend, as denoted by
+           matching git commit hash for the create request, the existing
+           environment will be reused.
+
+        Arguments will be passed to the Procedure's init function. Git
+        arguments should only be provided if script_uri prefix is git://
+
+        Example for running procedure from filesystem:
+
+            oet create file:///scripts/observe.py subarray_id=2 --verbose=true
 
         Example for running procedure from git:
 
-            oet create git:///path/to/script.py --git_repo=http://gitlab.com/repo-name --create_env=False
+            oet create git://relative/path/to/script.py --git_repo=http://gitlab.com/repo-name --create_env=False
 
         :param script_uri: script URI, e.g., file:///test.py
         :param args: script positional arguments
         :param subarray_id: Sub-array controlled by this OET instance
-        :param git_repo: Path to git repository, will point to
-        http://gitlab.com/ska-telescope/ska-oso-scripting if not provided
+        :param git_repo: Path to git repository
+            (default=http://gitlab.com/ska-telescope/ska-oso-scripting)
         :param git_branch: Branch within the git repository, defaults to master if not provided
         :param git_commit: Git commit hash, defaults to latest commit on the given branch.
         Branch does not need to be specified if commit hash is provided
@@ -413,20 +457,36 @@ class RestClientUI:
         self, *args, pid=None, listen=True, **kwargs
     ) -> Generator[str, None, None]:
         """
-        Start a specified Procedure.
+        Run a Procedure.
 
         This will start the procedure with the specified ID. If no procedure
         ID is declared, the most recent procedure to be created will be
         started.
 
-        Arguments provided to start will be passed to the script.
+        By default, this interface will run the requested command and then
+        immediately start listening to the OET backend's event stream so that
+        events and messages emitted by the backend and user script are seen.
+        To stop listening to events, press CTRL+C. Add the --listen=False
+        argument to the command to run the command silent, with no connection
+        to the event stream.
 
-        Example:
+        This command instructs the OET to run the main() function of the
+        target script. Arguments provided on the command line will be passed
+        as positional and keyword arguments to the main() function.
 
-            oet start --pid=3 'hello' --verbose=true
+        Examples:
+
+            # calls main() of the last created script, passing the SBI ID to
+            # the function. Equivalent to main('sbi-mvp01-20200325-00001')
+            oet start sbi-mvp01-20200325-00001
+
+            # calls main() of the script PID #3, passing the positional argument
+            # and keyword arguments to the script. Equivalent to calling
+            # main('hello', foo='bar')
+            oet start --pid=3 'hello' --foo=bar
 
         :param pid: ID of the procedure to start
-        :param listen: True to display events
+        :param listen: display events (default=True)
         :param args: late-binding position arguments for script
         :param kwargs: late-binding kwargs for script
         :return: Table entry for running procedure
@@ -475,7 +535,7 @@ class RestClientUI:
 
     def stop(self, pid=None, run_abort=True) -> str:
         """
-        Stop a specified Procedure.
+        Terminate execution.
 
         This will stop the execution of a currently running procedure
         with the specified ID.If no procedure ID is declared, the first
@@ -507,7 +567,7 @@ class RestClientUI:
 
     def describe(self, pid=None) -> str:
         """
-        Display information on the specified procedure.
+        Display Procedure information.
 
         This will display the state history of a specified procedure,
         including the stack trace is the procedure failed. If no procedure ID
@@ -533,7 +593,13 @@ class RestClientUI:
         exclude: Optional[str] = "request,procedure.pool",
     ) -> Generator[str, None, None]:
         """
-        Display real time oet events published by scripts.
+        Display OET events.
+
+        This command will display all events emitted by the OET and user scripts
+        that meet the topic filter criteria set by the --topics and --exclude
+        command line arguments.
+
+        The stop displaying events, press CTRL+C.
 
         :param topics: event topics to display, or 'all' for all (default='all')
         :param exclude: event topics to exclude (default='request,procedure.pool')
