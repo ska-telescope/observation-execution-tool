@@ -126,7 +126,7 @@ class GitScript(FileSystemScript):
     """
 
     git_args: GitArgs
-    default_git_env: Optional[bool] = True
+    create_env: Optional[bool] = False
 
     def get_type(self):
         return "git"
@@ -679,7 +679,7 @@ class ProcessManager:
         msg_src = self.__class__.__name__
 
         env = None
-        if isinstance(script, GitScript) and not script.default_git_env:
+        if isinstance(script, GitScript) and script.create_env:
             env = self.em.create_env(script.git_args)
             env_msg = EventMessage(msg_src=msg_src, msg_type="ENV", msg=script)
             work_q.safe_put(env_msg)

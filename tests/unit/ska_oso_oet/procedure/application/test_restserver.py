@@ -69,7 +69,7 @@ CREATE_GIT_JSON = dict(
     script={
         "script_type": "git",
         "script_uri": "git:///test.py",
-        "default_git_env": False,
+        "create_env": True,
         "git_args": dict(git_repo="http://foo.git", git_branch="main"),
     },
     script_args={"init": dict(args=(1, 2, 3), kwargs=dict(kw1="a", kw2="b"))},
@@ -81,7 +81,7 @@ CREATE_GIT_SUMMARY = ProcedureSummary(
     script=GitScript(
         "git:///test.py",
         git_args=GitArgs(git_repo="http://foo.git", git_branch="main"),
-        default_git_env=False,
+        create_env=True,
     ),
     script_args=[
         ArgCapture(fn="init", fn_args=ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1)
@@ -597,7 +597,7 @@ def test_post_to_endpoint_sends_default_git_arguments(client):
         script=GitScript(
             CREATE_GIT_SUMMARY.script.script_uri,  # pylint: disable=no-member
             git_args=GitArgs(),
-            default_git_env=False,
+            create_env=True,
         ),
         init_args=CREATE_GIT_SUMMARY.script_args[0].fn_args,
     )
