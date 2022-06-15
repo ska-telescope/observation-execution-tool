@@ -1,0 +1,122 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+mainframe seq: ScriptWorker
+
+autonumber
+
+participant "proc :\nProc" as Proc #lightblue
+participant "proc.proc :\nmultiprocessing.Process" as Process #lightblue
+participant "proc_worker_wrapper :\nfunction" as proc_worker_wrapper
+participant "worker :\nScriptWorker" as ScriptWorker
+
+create Process
+Proc -> Process: «create»
+note left
+""Proc"", running in the parent Python process,
+creates a new ""multiprocessing.Process""
+configured to run the ""proc_worker_wrapper""
+helper function as the new child process starts.
+end note
+
+Proc -> Process: start()
+note left
+With all preparation complete within the parent
+process, the ""start"" method is called to begin
+process creation.
+end note
+
+par
+
+Proc -> Proc : wait for startup event
+note right
+""Proc"" now waits a maximum of ""TIMEOUT""
+seconds for the process creation to complete.
+end note
+
+alt startup event set within timeout
+[o<-- Proc : ScriptWorker ID
+note right
+If the startup event is set within the timeout,
+process creation is considered successful and
+the ScriptWorker ID is returned to the client.
+end note
+else
+[o<-- Proc : «raise exception»
+note right
+Otherwise, process creation is considered failed
+and an exception is raised.
+end note
+end
+
+else
+
+Process ->> proc_worker_wrapper: «call»
+note left
+The ""multiprocessing.Process"" spawns
+a new child Python interpreter process
+and runs the ""proc_worker_wrapper""
+helper function run in this new process.
+end note
+
+create ScriptWorker
+proc_worker_wrapper -> ScriptWorker: «create»
+note left
+The helper function creates a new ScriptWorker
+instance, passing it the arguments specified
+in step #1, such as startup events to set, work
+queues to monitor, etc.
+end note
+
+proc_worker_wrapper -> ScriptWorker: run()
+note left
+The helper function now hands over control
+to the ScriptWorker, calling the ""run()""
+method, after which the helper function is
+complete.
+end note
+
+ScriptWorker ->o]: STATE=CREATED
+note left
+The ScriptWorker emits a state change event
+at the earliest possible opportunity to signify
+that the ""ScriptWorker"" instance was created
+and that the constructor is now running.
+end note
+
+ScriptWorker -> ScriptWorker: init_signals()
+note left
+POSIX signal handlers are installed in the
+child process, allowing the main process
+to raise asynchronous exceptions in the
+ScriptWorker on receipt of an appropriate
+POSIX signal from the parent process. This
+is the mechanism used for terminating
+script execution.
+end note
+
+ScriptWorker -> Proc: startup event set
+note left
+The ScriptWorker constructor sets the
+""multiprocessing.Event"" monitored by the
+""Proc"" core running in the parent process,
+notifying the parent that startup is complete.
+end note
+
+note over ScriptWorker
+With initialisation complete, the main loop
+now begins which starts monitoring the work
+queue for messages from the parent process.
+end note
+
+
+ref over ScriptWorker
+
+See
+seq:ScriptWorker.main_loop
+
+end
+
+end
+
+@enduml

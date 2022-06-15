@@ -1,0 +1,177 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+
+mainframe **Scripting API over REST**
+
+autonumber
+
+participant cli as "CLI :\nRestClientUI" #lightgreen
+participant FlaskWorker as "REST backend :\nFlaskWorker" #lightblue
+participant call_and_respond as "call_and_respond :\nfunction" #lightblue
+participant queue as "queue :\nQueue" #lightblue
+participant Callback as "callback :\nfunction" #lightblue
+participant fw_pubsub as "FlaskWorker pubsub :\npypubsub" #lightblue
+participant ses_pubsub as "SESWorker pubsub :\npypubsub"
+participant ScriptExecutionServiceWorker as "SESWorker :\nScriptExecutionServiceWorker"
+participant ScriptExecutionService as "Script Execution API :\nScriptExecutionService"
+
+cli -> FlaskWorker: HTTP POST
+note right
+The User executes an OET CLI command at
+the terminal. The OET CLI uses HTTP POST
+to sends a JSON object encapsulating the
+request (script location, script arguments,
+etc.) to the REST backend.
+end note
+
+FlaskWorker -> call_and_respond: call_and_respond(...)
+note right
+""FlaskWorker"" creates a ""PrepareProcessCommand""
+encapsulating the request details and invokes the
+ ""call_and_respond"" helper function to announce
+the event on the //Create Procedure requested// request
+topic and to expect a response on the //Procedure//
+//created// response topic.
+end note
+
+create queue
+call_and_respond -> queue: «create»
+note right
+""call_and_respond"" creates a ""Queue"" that will receive the
+response event emitted in response to this request.
+end note
+
+create Callback
+call_and_respond -> Callback: «create»
+note right
+A callback function is created whose sole responsibility
+is to put events onto a queue if the event payload
+includes a unique correlation ID.
+end note
+
+call_and_respond -> fw_pubsub: subscribe(callback, topic=//«response topic»//)
+note right
+The callback function is subscribed to the response topic.
+Thereafter, pypubsub will invoke the callback function
+whenever for any events published on the response topic.
+end note
+
+call_and_respond -> fw_pubsub: sendMessage(//«request topic»//, ...)
+note right
+An event is published announcing a user request was
+received, the type of requested denoted by the request
+topic. The event payload includes all positional and
+keyword arguments passed to call_and_respond and varies
+depending on context. For instance, a 'prepare process'
+request would include details of the script to run and script
+initialisation arguments; a 'start process' request would
+contain details of the process ID to start and the method to
+call, etc. The helper function inserts a unique correlation ID
+to the event payload, the same correlation ID given to the
+callback function for filtering events.
+end note
+
+par
+
+ref over fw_pubsub, ses_pubsub
+**inter-process pubsub**
+end
+
+ses_pubsub -> ScriptExecutionServiceWorker: call(...)
+note left
+SESWorker has its various methods subscribed to the
+appropriate request topics. For example, the  ""prepare""
+method is subscribed to the //Prepare Process request//
+topic; the ""start"" method is subscribed to the //start//
+//process request// topic, and so on. The appropriate method
+for this event request topic is called with the event details.
+end note
+
+ScriptExecutionServiceWorker -> ScriptExecutionService:
+note left
+SESWorker method extracts details of the request from the
+event and calls the appropriate method of the ""ScriptExecutionService""
+with the extracted arguments. Ths ""ScriptExecutionService"" will
+perform the appropriate action (load a script, start script execution,
+abort a script, etc.).
+end note
+
+ScriptExecutionService -> ScriptExecutionServiceWorker: result
+note left
+The ""ScriptExecutionService"" returns the result.
+end note
+
+ScriptExecutionServiceWorker -> ses_pubsub: sendMessage(//«response topic»//, ...)
+note left
+SESWorker publishes an event on the response topic
+The event payload will either be a ""ProcedureSummary""
+if the call was successful or a stacktrace representation
+if the call failed. The response event payload also includes
+the correlation ID included in the request event payload
+which triggered this action.
+end note
+
+ref over fw_pubsub, ses_pubsub
+**inter-process pubsub**
+end
+
+
+loop each event published on response topic
+fw_pubsub -> Callback: call(...)
+note left
+As a subscriber to the response topic, the callback
+function is called with the event.
+end note
+
+opt response ID matches request ID
+Callback -> queue: put(event)
+note left
+If the correlation ID in the response event matches
+the correlation ID in the request, the response event
+is added to the queue.
+end note
+end
+end
+
+else
+call_and_respond -> queue: get(timeout=TIMEOUT)
+note left
+Meanwhile. ""call_and_respond"" waits at most TIMEOUT
+seconds for the response event to appear on the queue.
+end note
+
+opt no response received within timeout
+cli <-- call_and_respond: HTTP error + JSON error object
+note right
+If a result is not received within the timeout period, a HTTP
+error response is returned to the client including a JSON
+object containing details of the timeout error.
+end note
+end opt
+
+alt response indicates success
+FlaskWorker <-- call_and_respond: event payload
+note right
+If the response event indicates success, the event
+payload is extracted and returned to the calling function.
+end note
+
+cli <-- FlaskWorker: HTTP OK + ProcedureSummary JSON
+note right
+A JSON representation of the ""ProcedureSummary"" object
+in the response is created and returned to the user.
+end note
+
+else response indicates error
+cli <-- call_and_respond: HTTP error + JSON error object
+note right
+If a result is not received within the timeout period, a HTTP
+error response is returned to the UI including a JSON object
+containing details of the exception described in the event.
+end note
+end alt
+
+end
+
+@enduml

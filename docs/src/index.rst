@@ -36,9 +36,18 @@
   :caption: Public API Documentation
   :hidden:
 
-  package/oet/command
-  package/oet/features
+  package/ska_oso_oet/command
+  package/ska_oso_oet/features
 
+.. toctree::
+  :maxdepth: 1
+  :caption: Private API Documentation
+  :hidden:
+
+  package/ska_oso_oet/event/topics
+  package/ska_oso_oet/mptools
+  package/ska_oso_oet/procedure
+  package/ska_oso_oet/procedure/application
 
 ==========================
 Observation Execution Tool

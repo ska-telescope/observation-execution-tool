@@ -1,0 +1,154 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+package ska_oso_oet.procedure {
+
+    package application as application_pkg {
+
+        package application <<Rectangle>> {
+            class ScriptExecutionService {
+                prepare(cmd: PrepareProcessCommand) -> ProcedureSummary
+                start(cmd: StartProcessCommand) -> ProcedureSummary
+                stop(cmd: StopProcessCommand) -> List[ProcedureSummary]
+                summarise(pids: List[int]) -> List[[ProcedureSummary]
+            }
+        }
+        note top
+        See UI and Service API view
+        for information on the input
+        arguments and output types for
+        ""ScriptExecutionService"".
+        end note
+
+        package main <<Rectangle>> {
+            class EventBusWorker {
+                work_q: MPQueue
+                main_func(event)
+            }
+        }
+        note top
+            See UI and Service API
+            module view for more
+            information on
+            ""EventBusWorker"" use.
+        end note
+    }
+
+    package mptools <<Rectangle>> {
+        class MainContext {
+            queues: List[MPQueue]
+            Proc() -> Proc
+            MPQueue() -> MPQueue
+            stop_procs()
+            stop_queues()
+        }
+
+        class Proc {
+            proc: ProcWorker
+            full_stop()
+            terminate()
+        }
+
+        class ProcWorker {
+            startup_event: multiprocessing.Event
+            shutdown_event: multiprocessing.Event
+            {abstract} main_func()
+            main_loop()
+            {method} ...
+        }
+
+        class QueueProcWorker {
+            {abstract} main_func(event)
+            main_loop()
+        }
+
+        class MPQueue {
+            put()
+            safe_get() -> Any
+        }
+
+        MainContext *-down- "0..*" Proc
+        Proc "1" *-right- "1" ProcWorker
+        QueueProcWorker --|> ProcWorker
+        ProcWorker o-- "1" MPQueue: event_q
+        MainContext *- "1" MPQueue: event_q
+    }
+
+    package domain <<Rectangle>> {
+        class ProcessManager {
+            states: Dict[int, ProcedureState]
+            create(...)
+            run(...)
+            stop(...)
+        }
+
+        class EnvironmentManager {
+            create_env(...)
+            delete_env(...)
+        }
+
+        class Environment {
+            env_id: abstract
+            site_packages: str
+            ...
+        }
+
+        class ScriptWorker {
+            work_q: mptools.MPQueue
+            main_func()
+            main_loop()
+            load(script: ExecutableScript)
+            call_fn(...)
+        }
+
+        abstract class ExecutableScript
+        class GitScript
+        class FilesystemScript
+        class EmbeddedStringScript
+        GitScript --|> ExecutableScript
+        FilesystemScript --|> ExecutableScript
+        EmbeddedStringScript --|> ExecutableScript
+
+        enum ProcedureState {
+            UNKNOWN
+            CREATING
+            IDLE
+            LOADING
+            READY
+            RUNNING
+            COMPLETE
+            STOPPED
+            FAILED
+        }
+
+        class ProcedureInput {
+            args: List
+            kwargs: Dict[str, Any]
+        }
+
+        ProcessManager *-left- "1" EnvironmentManager
+        ProcessManager *-right-- "1" MainContext
+        EnvironmentManager *-- "0..*" Environment
+        ProcessManager -down[hidden]- ScriptWorker
+    }
+
+    ScriptExecutionService *-- "1" ProcessManager
+    ScriptWorker --|> ProcWorker
+
+}
+
+package multiprocessing {
+    class Event
+    class Queue
+}
+MPQueue --|> Queue
+
+EventBusWorker --|> QueueProcWorker
+
+Environment -down[hidden]- GitScript
+
+MPQueue -up[hidden]- ProcWorker
+ProcedureInput -right[hidden]- ProcedureState
+ProcedureState -up[hidden]- ExecutableScript
+
+@enduml

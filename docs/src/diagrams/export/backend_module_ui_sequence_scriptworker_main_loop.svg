@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="1624px" preserveAspectRatio="none" style="width:1014px;height:1624px;background:#FFFFFF;" version="1.1" viewBox="0 0 1014 1624" width="1014px" zoomAndPan="magnify"><defs/><g><rect fill="#FFFFFF" height="1613.8027" style="stroke:#000000;stroke-width:1.5;" width="999" x="9" y="5"/><path d="M215,5 L215,14.4883 L205,24.4883 L9,24.4883 " fill="none" style="stroke:#000000;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="196" x="12" y="19.5352">seq: ScriptWorker.main_loop</text><rect height="1224.9453" style="stroke:#000000;stroke-width:1.5;fill:none;" width="981.5" x="15" y="96.4648"/><rect height="1193.6348" style="stroke:#000000;stroke-width:1.5;fill:none;" width="961.5" x="25" y="120.7754"/><rect height="144.4844" style="stroke:#000000;stroke-width:1.5;fill:none;" width="637.5" x="54" y="1335.4102"/><line style="stroke:#181818;stroke-width:0.5;fill:none;stroke-dasharray:5.0,5.0;" x1="348" x2="348" y1="79.4648" y2="1562.8262"/><line style="stroke:#181818;stroke-width:0.5;fill:none;stroke-dasharray:5.0,5.0;" x1="552.5" x2="552.5" y1="79.4648" y2="1562.8262"/><line style="stroke:#181818;stroke-width:0.5;fill:none;stroke-dasharray:5.0,5.0;" x1="674.5" x2="674.5" y1="79.4648" y2="1562.8262"/><line style="stroke:#181818;stroke-width:0.5;fill:none;stroke-dasharray:5.0,5.0;" x1="815.5" x2="815.5" y1="79.4648" y2="1562.8262"/><line style="stroke:#181818;stroke-width:0.5;fill:none;stroke-dasharray:5.0,5.0;" x1="935.5" x2="935.5" y1="79.4648" y2="1562.8262"/><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="102" x="297" y="31.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="56" x="320" y="52.0234">worker :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="88" x="304" y="68.5117">ScriptWorker</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="102" x="297" y="1561.8262"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="56" x="320" y="1582.3613">worker :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="88" x="304" y="1598.8496">ScriptWorker</text><rect fill="#E2E2F0" height="30.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="101" x="502.5" y="47.9766"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="87" x="509.5" y="68.5117">: GitManager</text><rect fill="#E2E2F0" height="30.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="101" x="502.5" y="1561.8262"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="87" x="509.5" y="1582.3613">: GitManager</text><rect fill="#E2E2F0" height="30.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="123" x="613.5" y="47.9766"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="109" x="620.5" y="68.5117">: ModuleFactory</text><rect fill="#E2E2F0" height="30.4883" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="123" x="613.5" y="1561.8262"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="109" x="620.5" y="1582.3613">: ModuleFactory</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="138" x="746.5" y="31.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="97" x="767" y="52.0234">user_module :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="124" x="753.5" y="68.5117">types.ModuleType</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="138" x="746.5" y="1561.8262"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="97" x="767" y="1582.3613">user_module :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="124" x="753.5" y="1598.8496">types.ModuleType</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="82" x="894.5" y="31.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="60" x="905.5" y="52.0234">pubsub :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="68" x="901.5" y="68.5117">pypubsub</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="82" x="894.5" y="1561.8262"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="60" x="905.5" y="1582.3613">pubsub :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="68" x="901.5" y="1598.8496">pypubsub</text><path d="M15,96.4648 L89,96.4648 L89,103.7754 L79,113.7754 L15,113.7754 L15,96.4648 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="1224.9453" style="stroke:#000000;stroke-width:1.5;" width="981.5" x="15" y="96.4648"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="29" x="30" y="110.0332">loop</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="279" x="104" y="109.0996">[shutdown_event not set and loop not terminated]</text><path d="M25,120.7754 L87,120.7754 L87,128.0859 L77,138.0859 L25,138.0859 L25,120.7754 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="1193.6348" style="stroke:#000000;stroke-width:1.5;" width="961.5" x="25" y="120.7754"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="17" x="40" y="134.3438">alt</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="74" x="102" y="133.4102">[message ==</text><text fill="#000000" font-family="monospace" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="21" x="180" y="133.1362">ENV</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="52" x="205" y="133.4102">message]</text><path d="M70,143.0859 L70,198.0859 L626,198.0859 L626,153.0859 L616,143.0859 L70,143.0859 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M616,143.0859 L616,153.0859 L626,153.0859 L616,143.0859 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="17" x="76" y="160.6543">An</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="24" x="97" y="160.3306">ENV</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="481" x="125" y="160.6543">message is a request to clone a git project and install it into a Python virtual</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="327" x="76" y="175.9648">environment. This block is synchronised on a set of</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="168" x="407" y="175.6411">multiprocessing.Event</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="36" x="575" y="175.9648">s that</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="529" x="76" y="191.2754">prevent concurrent requests from cloning and installing into the same environment.</text><ellipse cx="998" cy="235.2334" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="981,231.9834,991,235.9834,981,239.9834,985,235.9834" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="987" y1="235.9834" y2="235.9834"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="355" y="231.2412">1</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="136" x="368" y="230.8286">STATE == PREP_ENV</text><path d="M63,209.0176 L63,249.0176 L343,249.0176 L343,219.0176 L333,209.0176 L63,209.0176 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,209.0176 L333,219.0176 L343,219.0176 L333,209.0176 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="256" x="69" y="226.5859">A state event is published to denote that</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="259" x="69" y="241.8965">environment preparation is commencing.</text><polygon fill="#181818" points="541,305.5703,551,309.5703,541,313.5703,545,309.5703" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="547" y1="309.5703" y2="309.5703"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="355" y="304.8281">2</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="168" x="368" y="304.8281">clone_repo(script.git_args)</text><path d="M35,259.6387 L35,345.6387 L343,345.6387 L343,269.6387 L333,259.6387 L35,259.6387 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,259.6387 L333,269.6387 L343,269.6387 L333,259.6387 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="287" x="41" y="277.207">The git repository is cloned, with files written</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="248" x="41" y="292.5176">to a predictable path that combines the</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="282" x="41" y="307.8281">project name and commit hash. If the cloned</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="272" x="41" y="323.1387">repository already exists on the filesystem,</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="74" x="41" y="338.4492">it is reused.</text><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="390" y1="384.3125" y2="384.3125"/><line style="stroke:#181818;stroke-width:1.0;" x1="390" x2="390" y1="384.3125" y2="397.3125"/><line style="stroke:#181818;stroke-width:1.0;" x1="349" x2="390" y1="397.3125" y2="397.3125"/><polygon fill="#181818" points="359,393.3125,349,397.3125,359,401.3125,355,397.3125" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="355" y="379.5703">3</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="87" x="368" y="379.5703">install project</text><path d="M45,356.1914 L45,411.1914 L343,411.1914 L343,366.1914 L333,356.1914 L45,356.1914 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,356.1914 L333,366.1914 L343,366.1914 L333,356.1914 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="273" x="51" y="373.7598">The cloned project is now installed into the</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="224" x="51" y="389.0703">virtual environment specified in the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="88" x="51" y="404.0571">Environment</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="94" x="143" y="404.3809">included in the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="24" x="241" y="404.0571">ENV</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="59" x="269" y="404.3809">message.</text><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="390" y1="473.21" y2="473.21"/><line style="stroke:#181818;stroke-width:1.0;" x1="390" x2="390" y1="473.21" y2="486.21"/><line style="stroke:#181818;stroke-width:1.0;" x1="349" x2="390" y1="486.21" y2="486.21"/><polygon fill="#181818" points="359,482.21,349,486.21,359,490.21,355,486.21" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="355" y="468.4678">4</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="105" x="368" y="468.4678">use environment</text><path d="M47,422.123 L47,523.123 L343,523.123 L343,432.123 L333,422.123 L47,422.123 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,422.123 L333,432.123 L343,432.123 L333,422.123 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="53" y="439.3677">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="138" x="153" y="439.6914">now makes its Python</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="275" x="53" y="455.002">interpreter use the configured environment.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="245" x="53" y="470.3125">This only affects the Python process in</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="65" x="53" y="485.623">which this</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="122" y="485.2993">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="87" x="222" y="485.623">is running; all</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="253" x="53" y="500.9336">other Python  processes continue to use</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="177" x="53" y="516.2441">their existing configuration.</text><ellipse cx="998" cy="560.2021" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="981,556.9521,991,560.9521,981,564.9521,985,560.9521" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="987" y1="560.9521" y2="560.9521"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="355" y="556.21">5</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="104" x="368" y="555.7974">STATE == IDLE</text><path d="M86,533.9863 L86,573.9863 L343,573.9863 L343,543.9863 L333,533.9863 L86,533.9863 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,533.9863 L333,543.9863 L343,543.9863 L333,533.9863 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="208" x="92" y="551.5547">The ScriptWorker announces that</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="24" x="304" y="551.231">ENV</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="150" x="92" y="566.8652">processing is complete.</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="25" x2="986.5" y1="580.6074" y2="580.6074"/><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="74" x="30" y="591.2422">[message ==</text><text fill="#000000" font-family="monospace" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="28" x="108" y="590.9683">LOAD</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="52" x="140" y="591.2422">message]</text><path d="M86,599.5625 L86,654.5625 L609,654.5625 L609,609.5625 L599,599.5625 L86,599.5625 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M599,599.5625 L599,609.5625 L609,609.5625 L599,599.5625 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="9" x="92" y="617.1309">A</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="32" x="105" y="616.8071">LOAD</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="447" x="141" y="617.1309">message is a request to load a user script. Note that this step does not</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="502" x="92" y="632.4414">run any code in the user script, it only retrieves and loads the user script in this</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="92" y="647.4282">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="53" x="192" y="647.752">process.</text><ellipse cx="998" cy="691.71" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="981,688.46,991,692.46,981,696.46,985,692.46" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="987" y1="692.46" y2="692.46"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="355" y="687.7178">6</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="128" x="368" y="687.3052">STATE == LOADING</text><path d="M78,665.4941 L78,705.4941 L343,705.4941 L343,675.4941 L333,665.4941 L78,665.4941 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,665.4941 L333,675.4941 L343,675.4941 L333,665.4941 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="208" x="84" y="683.0625">The ScriptWorker announces that</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="32" x="296" y="682.7388">LOAD</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="173" x="84" y="698.373">processing is commencing.</text><polygon fill="#181818" points="663,785.0127,673,789.0127,663,793.0127,667,789.0127" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="669" y1="789.0127" y2="789.0127"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="355" y="784.2705">7</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="118" x="368" y="784.2705">get_module(script)</text><path d="M88,716.1152 L88,848.1152 L343,848.1152 L343,726.1152 L333,716.1152 L88,716.1152 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,716.1152 L333,726.1152 L343,726.1152 L333,716.1152 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="213" x="94" y="733.6836">The user script is loaded from the</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="234" x="94" y="748.9941">filesystem, either from the cloned git</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="231" x="94" y="764.3047">project if the script was identified as</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="7" x="94" y="779.6152">a</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="72" x="105" y="779.2915">GitScript</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="149" x="177" y="779.6152">, or a standalone file on</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="222" x="94" y="794.9258">the pod filesystem if the script was</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="89" x="94" y="810.2363">identified as a</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="128" x="187" y="809.9126">FilesystemScript</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="4" x="315" y="810.2363">.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="208" x="94" y="825.5469">The script is converted to Python</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="213" x="94" y="840.8574">bytecode and is now ready to run.</text><ellipse cx="998" cy="884.8154" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="981,881.5654,991,885.5654,981,889.5654,985,885.5654" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="987" y1="885.5654" y2="885.5654"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="355" y="880.8232">8</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="104" x="368" y="880.4106">STATE == IDLE</text><path d="M78,858.5996 L78,898.5996 L343,898.5996 L343,868.5996 L333,858.5996 L78,858.5996 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,858.5996 L333,868.5996 L343,868.5996 L333,858.5996 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="208" x="84" y="876.168">The ScriptWorker announces that</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="32" x="296" y="875.8442">LOAD</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="150" x="84" y="891.4785">processing is complete.</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="25" x2="986.5" y1="905.2207" y2="905.2207"/><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="74" x="30" y="915.8555">[message ==</text><text fill="#000000" font-family="monospace" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="21" x="108" y="915.5815">RUN</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="52" x="133" y="915.8555">message]</text><path d="M87,924.1758 L87,1010.1758 L609,1010.1758 L609,934.1758 L599,924.1758 L87,924.1758 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M599,924.1758 L599,934.1758 L609,934.1758 L599,924.1758 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="9" x="93" y="941.7441">A</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="24" x="106" y="941.4204">RUN</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="443" x="134" y="941.7441">message is a request to run a function of a user script. The framework</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="501" x="93" y="957.0547">allows for any function to be called. Scripts usually have two functions defined:</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="15" x="93" y="972.3652">an</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="32" x="112" y="972.0415">init</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="408" x="148" y="972.3652">function which is called immediately on loading the script, and a</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="32" x="560" y="972.0415">main</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="493" x="93" y="987.6758">function which is called by the user at a time of their choosing. This sequence</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="273" x="93" y="1002.9863">shows the path for a non-init function call.</text><ellipse cx="998" cy="1046.9443" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="981,1043.6943,991,1047.6943,981,1051.6943,985,1047.6943" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="987" y1="1047.6943" y2="1047.6943"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="355" y="1042.9521">9</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="128" x="368" y="1042.5396">STATE == RUNNING</text><path d="M86,1020.7285 L86,1060.7285 L343,1060.7285 L343,1030.7285 L333,1020.7285 L86,1020.7285 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,1020.7285 L333,1030.7285 L343,1030.7285 L333,1020.7285 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="208" x="92" y="1038.2969">The ScriptWorker announces that</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="24" x="304" y="1037.9731">RUN</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="173" x="92" y="1053.6074">processing is commencing.</text><polygon fill="#181818" points="803.5,1101.9707,813.5,1105.9707,803.5,1109.9707,807.5,1105.9707" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="809.5" y1="1105.9707" y2="1105.9707"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="355" y="1101.2285">10</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="93" x="377" y="1101.2285">«call function»</text><path d="M42,1071.3496 L42,1126.3496 L343,1126.3496 L343,1081.3496 L333,1071.3496 L42,1071.3496 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,1071.3496 L333,1081.3496 L343,1081.3496 L333,1071.3496 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="254" x="48" y="1088.918">The requested function is retrieved from</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="256" x="48" y="1104.2285">the user script and called, passing in the</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="189" x="48" y="1119.5391">the arguments included in the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="24" x="241" y="1119.2153">RUN</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="59" x="269" y="1119.5391">message.</text><ellipse cx="998" cy="1163.4971" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="981,1160.2471,991,1164.2471,981,1168.2471,985,1164.2471" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="987" y1="1164.2471" y2="1164.2471"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="355" y="1159.5049">11</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="112" x="377" y="1159.0923">STATE == READY</text><path d="M86,1137.2813 L86,1177.2813 L343,1177.2813 L343,1147.2813 L333,1137.2813 L86,1137.2813 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,1137.2813 L333,1147.2813 L343,1147.2813 L333,1137.2813 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="208" x="92" y="1154.8496">The ScriptWorker announces that</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="24" x="304" y="1154.5259">RUN</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="150" x="92" y="1170.1602">processing is complete.</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="25" x2="986.5" y1="1183.9023" y2="1183.9023"/><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="74" x="30" y="1194.5371">[message ==</text><text fill="#000000" font-family="monospace" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="42" x="108" y="1194.2632">PUBSUB</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="52" x="154" y="1194.5371">message]</text><path d="M53,1202.8574 L53,1227.8574 L643,1227.8574 L643,1212.8574 L633,1202.8574 L53,1202.8574 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M633,1202.8574 L633,1212.8574 L643,1212.8574 L633,1202.8574 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="9" x="59" y="1220.4258">A</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="48" x="72" y="1220.1021">PUBSUB</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="504" x="124" y="1220.4258">message is a request to publish an external event as a local pypubsub message.</text><polygon fill="#181818" points="923.5,1276.4443,933.5,1280.4443,923.5,1284.4443,927.5,1280.4443" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="929.5" y1="1280.4443" y2="1280.4443"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="355" y="1275.7021">12</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="104" x="377" y="1275.7021">sendMessage(...)</text><path d="M67,1238.168 L67,1309.168 L343,1309.168 L343,1248.168 L333,1238.168 L67,1238.168 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,1238.168 L333,1248.168 L343,1248.168 L333,1238.168 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="226" x="73" y="1255.7363">The external event is published as a</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="255" x="73" y="1271.0469">local event. This makes the event visible</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="246" x="73" y="1286.3574">to the user script, if the user script has</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="209" x="73" y="1301.668">subscribed to the message topic.</text><path d="M54,1335.4102 L138,1335.4102 L138,1342.7207 L128,1352.7207 L54,1352.7207 L54,1335.4102 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="144.4844" style="stroke:#000000;stroke-width:1.5;" width="637.5" x="54" y="1335.4102"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="39" x="69" y="1348.9785">break</text><ellipse cx="998" cy="1422.2129" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="981,1418.9629,991,1422.9629,981,1426.9629,985,1422.9629" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="987" y1="1422.9629" y2="1422.9629"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="355" y="1418.2207">13</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="92" x="377" y="1418.2207">EventMessage(</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="40" x="469" y="1417.897">FATAL</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="91" x="509" y="1418.2207">, «stacktrace»)</text><path d="M64,1357.7207 L64,1474.7207 L343,1474.7207 L343,1367.7207 L333,1357.7207 L64,1357.7207 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,1357.7207 L333,1367.7207 L343,1367.7207 L333,1357.7207 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="258" x="70" y="1375.2891">If an exception is raised at any point, the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="70" y="1390.2759">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="147" x="170" y="1390.5996">captures the stacktrace</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="99" x="70" y="1405.9102">and publishes a</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="40" x="173" y="1405.5864">FATAL</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="99" x="217" y="1405.9102">message on the</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="36" x="70" y="1421.2207">topic.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="4" x="70" y="1436.5313"> </text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="252" x="70" y="1451.8418">This exception handling code is defined</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="69" x="70" y="1467.1523">in the base</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="80" x="143" y="1466.8286">ProcWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="36" x="227" y="1467.1523">class.</text><ellipse cx="998" cy="1525.7656" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="981,1522.5156,991,1526.5156,981,1530.5156,985,1526.5156" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="348" x2="987" y1="1526.5156" y2="1526.5156"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="355" y="1521.7734">14</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="136" x="377" y="1521.3608">STATE == COMPLETE</text><path d="M53,1491.8945 L53,1546.8945 L343,1546.8945 L343,1501.8945 L333,1491.8945 L53,1491.8945 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M333,1491.8945 L333,1501.8945 L343,1501.8945 L333,1491.8945 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="59" y="1509.1392">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="161" x="159" y="1509.4629">announces that the script</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="269" x="59" y="1524.7734">is complete. This is the final message, and</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="146" x="59" y="1540.084">the child process ends.</text><!--MD5=[4afd44cc5a66504916e5417408ea3e83]
+@startuml
+'https://plantuml.com/sequence-diagram
+
+mainframe seq: ScriptWorker.main_loop
+
+autonumber
+
+participant "worker :\nScriptWorker" as ScriptWorker
+participant ": GitManager" as GitManager
+participant ": ModuleFactory" as ModuleFactory
+participant "user_module :\ntypes.ModuleType" as user_module
+participant "pubsub :\npypubsub" as pubsub
+
+loop shutdown_event not set and loop not terminated
+
+alt message == ""ENV"" message
+note over ScriptWorker
+An ""ENV"" message is a request to clone a git project and install it into a Python virtual
+environment. This block is synchronised on a set of ""multiprocessing.Event""s that
+prevent concurrent requests from cloning and installing into the same environment.
+end note
+
+ScriptWorker ->o]: ""STATE == PREP_ENV""
+note left
+A state event is published to denote that
+environment preparation is commencing.
+end note
+
+ScriptWorker -> GitManager : clone_repo(script.git_args)
+note left
+The git repository is cloned, with files written
+to a predictable path that combines the
+project name and commit hash. If the cloned
+repository already exists on the filesystem,
+it is reused.
+end note
+
+ScriptWorker -> ScriptWorker : install project
+note left
+The cloned project is now installed into the
+virtual environment specified in the
+""Environment"" included in the ""ENV"" message.
+end note
+
+ScriptWorker -> ScriptWorker : use environment
+note left
+""ScriptWorker"" now makes its Python
+interpreter use the configured environment.
+This only affects the Python process in
+which this ""ScriptWorker"" is running; all
+other Python  processes continue to use
+their existing configuration.
+end note
+
+ScriptWorker ->o]: ""STATE == IDLE""
+note left
+The ScriptWorker announces that ""ENV""
+processing is complete.
+end note
+
+else message == ""LOAD"" message
+note over ScriptWorker
+A ""LOAD"" message is a request to load a user script. Note that this step does not
+run any code in the user script, it only retrieves and loads the user script in this
+""ScriptWorker"" process.
+end note
+
+ScriptWorker ->o]: ""STATE == LOADING""
+note left
+The ScriptWorker announces that ""LOAD""
+processing is commencing.
+end note
+
+ScriptWorker -> ModuleFactory : get_module(script)
+note left
+The user script is loaded from the
+filesystem, either from the cloned git
+project if the script was identified as
+a ""GitScript"", or a standalone file on
+the pod filesystem if the script was
+identified as a ""FilesystemScript"".
+The script is converted to Python
+bytecode and is now ready to run.
+end note
+
+ScriptWorker ->o]: ""STATE == IDLE""
+note left
+The ScriptWorker announces that ""LOAD""
+processing is complete.
+end note
+
+else message == ""RUN"" message
+note over ScriptWorker
+A ""RUN"" message is a request to run a function of a user script. The framework
+allows for any function to be called. Scripts usually have two functions defined:
+an ""init"" function which is called immediately on loading the script, and a ""main""
+function which is called by the user at a time of their choosing. This sequence
+shows the path for a non-init function call.
+end note
+
+ScriptWorker ->o]: ""STATE == RUNNING""
+note left
+The ScriptWorker announces that ""RUN""
+processing is commencing.
+end note
+
+ScriptWorker -> user_module : «call function»
+note left
+The requested function is retrieved from
+the user script and called, passing in the
+the arguments included in the ""RUN"" message.
+end note
+
+ScriptWorker ->o]: ""STATE == READY""
+note left
+The ScriptWorker announces that ""RUN""
+processing is complete.
+end note
+
+else message == ""PUBSUB"" message
+note over ScriptWorker
+A ""PUBSUB"" message is a request to publish an external event as a local pypubsub message.
+end note
+
+ScriptWorker -> pubsub : sendMessage(...)
+note left
+The external event is published as a
+local event. This makes the event visible
+to the user script, if the user script has
+subscribed to the message topic.
+end note
+
+end
+
+end
+
+break
+ScriptWorker ->o]: EventMessage(""FATAL"", «stacktrace»)
+note left
+If an exception is raised at any point, the
+""ScriptWorker"" captures the stacktrace
+and publishes a ""FATAL"" message on the
+topic.
+
+This exception handling code is defined
+in the base ""ProcWorker"" class.
+end note
+end
+
+ScriptWorker ->o]: ""STATE == COMPLETE""
+note left
+""ScriptWorker"" announces that the script
+is complete. This is the final message, and
+the child process ends.
+end note
+
+
+@enduml
+
+@startuml
+
+mainframe seq: ScriptWorker.main_loop
+
+autonumber
+
+participant "worker :\nScriptWorker" as ScriptWorker
+participant ": GitManager" as GitManager
+participant ": ModuleFactory" as ModuleFactory
+participant "user_module :\ntypes.ModuleType" as user_module
+participant "pubsub :\npypubsub" as pubsub
+
+loop shutdown_event not set and loop not terminated
+
+alt message == ""ENV"" message
+note over ScriptWorker
+An ""ENV"" message is a request to clone a git project and install it into a Python virtual
+environment. This block is synchronised on a set of ""multiprocessing.Event""s that
+prevent concurrent requests from cloning and installing into the same environment.
+end note
+
+ScriptWorker ->o]: ""STATE == PREP_ENV""
+note left
+A state event is published to denote that
+environment preparation is commencing.
+end note
+
+ScriptWorker -> GitManager : clone_repo(script.git_args)
+note left
+The git repository is cloned, with files written
+to a predictable path that combines the
+project name and commit hash. If the cloned
+repository already exists on the filesystem,
+it is reused.
+end note
+
+ScriptWorker -> ScriptWorker : install project
+note left
+The cloned project is now installed into the
+virtual environment specified in the
+""Environment"" included in the ""ENV"" message.
+end note
+
+ScriptWorker -> ScriptWorker : use environment
+note left
+""ScriptWorker"" now makes its Python
+interpreter use the configured environment.
+This only affects the Python process in
+which this ""ScriptWorker"" is running; all
+other Python  processes continue to use
+their existing configuration.
+end note
+
+ScriptWorker ->o]: ""STATE == IDLE""
+note left
+The ScriptWorker announces that ""ENV""
+processing is complete.
+end note
+
+else message == ""LOAD"" message
+note over ScriptWorker
+A ""LOAD"" message is a request to load a user script. Note that this step does not
+run any code in the user script, it only retrieves and loads the user script in this
+""ScriptWorker"" process.
+end note
+
+ScriptWorker ->o]: ""STATE == LOADING""
+note left
+The ScriptWorker announces that ""LOAD""
+processing is commencing.
+end note
+
+ScriptWorker -> ModuleFactory : get_module(script)
+note left
+The user script is loaded from the
+filesystem, either from the cloned git
+project if the script was identified as
+a ""GitScript"", or a standalone file on
+the pod filesystem if the script was
+identified as a ""FilesystemScript"".
+The script is converted to Python
+bytecode and is now ready to run.
+end note
+
+ScriptWorker ->o]: ""STATE == IDLE""
+note left
+The ScriptWorker announces that ""LOAD""
+processing is complete.
+end note
+
+else message == ""RUN"" message
+note over ScriptWorker
+A ""RUN"" message is a request to run a function of a user script. The framework
+allows for any function to be called. Scripts usually have two functions defined:
+an ""init"" function which is called immediately on loading the script, and a ""main""
+function which is called by the user at a time of their choosing. This sequence
+shows the path for a non-init function call.
+end note
+
+ScriptWorker ->o]: ""STATE == RUNNING""
+note left
+The ScriptWorker announces that ""RUN""
+processing is commencing.
+end note
+
+ScriptWorker -> user_module : «call function»
+note left
+The requested function is retrieved from
+the user script and called, passing in the
+the arguments included in the ""RUN"" message.
+end note
+
+ScriptWorker ->o]: ""STATE == READY""
+note left
+The ScriptWorker announces that ""RUN""
+processing is complete.
+end note
+
+else message == ""PUBSUB"" message
+note over ScriptWorker
+A ""PUBSUB"" message is a request to publish an external event as a local pypubsub message.
+end note
+
+ScriptWorker -> pubsub : sendMessage(...)
+note left
+The external event is published as a
+local event. This makes the event visible
+to the user script, if the user script has
+subscribed to the message topic.
+end note
+
+end
+
+end
+
+break
+ScriptWorker ->o]: EventMessage(""FATAL"", «stacktrace»)
+note left
+If an exception is raised at any point, the
+""ScriptWorker"" captures the stacktrace
+and publishes a ""FATAL"" message on the
+topic.
+
+This exception handling code is defined
+in the base ""ProcWorker"" class.
+end note
+end
+
+ScriptWorker ->o]: ""STATE == COMPLETE""
+note left
+""ScriptWorker"" announces that the script
+is complete. This is the final message, and
+the child process ends.
+end note
+
+
+@enduml
+
+PlantUML version 1.2022.5(Sat Apr 30 11:55:52 BST 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: GB
+--></g></svg>

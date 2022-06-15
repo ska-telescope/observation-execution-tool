@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="1228px" preserveAspectRatio="none" style="width:1027px;height:1228px;background:#FFFFFF;" version="1.1" viewBox="0 0 1027 1228" width="1027px" zoomAndPan="magnify"><defs/><g><rect fill="#FFFFFF" height="1217.5684" style="stroke:#000000;stroke-width:1.5;" width="1019.5" x="2" y="5"/><path d="M132,5 L132,14.4883 L122,24.4883 L2,24.4883 " fill="none" style="stroke:#000000;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="120" x="5" y="19.5352">seq: ScriptWorker</text><rect height="905.9531" style="stroke:#000000;stroke-width:1.5;fill:none;" width="995" x="15" y="243.6387"/><rect height="135.8633" style="stroke:#000000;stroke-width:1.5;fill:none;" width="670" x="8" y="318.5703"/><line style="stroke:#181818;stroke-width:0.5;fill:none;stroke-dasharray:5.0,5.0;" x1="334.5" x2="334.5" y1="79.4648" y2="1166.5918"/><line style="stroke:#181818;stroke-width:0.5;fill:none;stroke-dasharray:5.0,5.0;" x1="514" x2="514" y1="140.0859" y2="1166.5918"/><line style="stroke:#181818;stroke-width:0.5;fill:none;stroke-dasharray:5.0,5.0;" x1="700" x2="700" y1="79.4648" y2="1166.5918"/><line style="stroke:#181818;stroke-width:0.5;fill:none;stroke-dasharray:5.0,5.0;" x1="847" x2="847" y1="595.2969" y2="1166.5918"/><rect fill="#ADD8E6" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="53" x="308.5" y="31.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="39" x="315.5" y="52.0234">proc :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="30" x="320" y="68.5117">Proc</text><rect fill="#ADD8E6" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="53" x="308.5" y="1165.5918"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="39" x="315.5" y="1186.127">proc :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="30" x="320" y="1202.6152">Proc</text><rect fill="#ADD8E6" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="180" x="424" y="1165.5918"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="74" x="477" y="1186.127">proc.proc :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="166" x="431" y="1202.6152">multiprocessing.Process</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="172" x="614" y="31.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="158" x="621" y="52.0234">proc_worker_wrapper :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57" x="671.5" y="68.5117">function</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="172" x="614" y="1165.5918"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="158" x="621" y="1186.127">proc_worker_wrapper :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57" x="671.5" y="1202.6152">function</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="102" x="796" y="1165.5918"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="56" x="819" y="1186.127">worker :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="88" x="803" y="1202.6152">ScriptWorker</text><polygon fill="#181818" points="412,106.7754,422,110.7754,412,114.7754,416,110.7754" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="335" x2="418" y1="110.7754" y2="110.7754"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="342" y="106.0332">1</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="52" x="355" y="106.0332">«create»</text><rect fill="#ADD8E6" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="180" x="424" y="101.0977"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="74" x="477" y="121.6328">proc.proc :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="166" x="431" y="138.1211">multiprocessing.Process</text><path d="M10,94.4648 L10,165.4648 L330,165.4648 L330,104.4648 L320,94.4648 L10,94.4648 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M320,94.4648 L320,104.4648 L330,104.4648 L320,94.4648 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="32" x="16" y="111.7095">Proc</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="245" x="48" y="112.0332">, running in the parent Python process,</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="85" x="16" y="127.3438">creates a new</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="184" x="105" y="127.02">multiprocessing.Process</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="134" x="16" y="142.6543">configured to run the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="152" x="154" y="142.3306">proc_worker_wrapper</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="299" x="16" y="157.9648">helper function as the new child process starts.</text><polygon fill="#181818" points="502,206.3281,512,210.3281,502,214.3281,506,210.3281" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="335" x2="508" y1="210.3281" y2="210.3281"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="342" y="205.5859">2</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="37" x="355" y="205.5859">start()</text><path d="M13,175.707 L13,230.707 L330,230.707 L330,185.707 L320,175.707 L13,175.707 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M320,175.707 L320,185.707 L330,185.707 L320,175.707 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="296" x="19" y="193.2754">With all preparation complete within the parent</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="77" x="19" y="208.5859">process, the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="40" x="100" y="208.2622">start</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="160" x="144" y="208.5859">method is called to begin</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="108" x="19" y="223.8965">process creation.</text><path d="M15,243.6387 L83,243.6387 L83,250.9492 L73,260.9492 L15,260.9492 L15,243.6387 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="905.9531" style="stroke:#000000;stroke-width:1.5;" width="995" x="15" y="243.6387"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="23" x="30" y="257.207">par</text><line style="stroke:#181818;stroke-width:1.0;" x1="335" x2="377" y1="286.415" y2="286.415"/><line style="stroke:#181818;stroke-width:1.0;" x1="377" x2="377" y1="286.415" y2="299.415"/><line style="stroke:#181818;stroke-width:1.0;" x1="336" x2="377" y1="299.415" y2="299.415"/><polygon fill="#181818" points="346,295.415,336,299.415,346,303.415,342,299.415" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="342" y="281.6729">3</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="135" x="355" y="281.6729">wait for startup event</text><path d="M502,265.9492 L502,305.9492 L812,305.9492 L812,275.9492 L802,265.9492 L502,265.9492 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M802,265.9492 L802,275.9492 L812,275.9492 L802,265.9492 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="32" x="508" y="283.1938">Proc</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="158" x="544" y="283.5176">now waits a maximum of</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="56" x="706" y="283.1938">TIMEOUT</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="289" x="508" y="298.8281">seconds for the process creation to complete.</text><path d="M8,318.5703 L70,318.5703 L70,325.8809 L60,335.8809 L8,335.8809 L8,318.5703 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="135.8633" style="stroke:#000000;stroke-width:1.5;" width="670" x="8" y="318.5703"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="17" x="23" y="332.1387">alt</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="187" x="85" y="331.2051">[startup event set within timeout]</text><polygon fill="#181818" points="24,371.502,14,375.502,24,379.502,20,375.502" style="stroke:#181818;stroke-width:1.0;"/><ellipse cx="334.5" cy="374.752" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="18" x2="330" y1="375.502" y2="375.502"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="30" y="370.7598">4</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="98" x="43" y="370.7598">ScriptWorker ID</text><path d="M340,340.8809 L340,395.8809 L651,395.8809 L651,350.8809 L641,340.8809 L340,340.8809 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M641,340.8809 L641,350.8809 L651,350.8809 L641,340.8809 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="282" x="346" y="358.4492">If the startup event is set within the timeout,</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="290" x="346" y="373.7598">process creation is considered successful and</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="278" x="346" y="389.0703">the ScriptWorker ID is returned to the client.</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="8" x2="678" y1="402.8125" y2="402.8125"/><polygon fill="#181818" points="24,431.7783,14,435.7783,24,439.7783,20,435.7783" style="stroke:#181818;stroke-width:1.0;"/><ellipse cx="334.5" cy="435.0283" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="18" x2="330" y1="435.7783" y2="435.7783"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="30" y="431.0361">5</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="110" x="43" y="431.0361">«raise exception»</text><path d="M340,408.8125 L340,448.8125 L663,448.8125 L663,418.8125 L653,408.8125 L340,408.8125 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M653,408.8125 L653,418.8125 L663,418.8125 L653,408.8125 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="302" x="346" y="426.3809">Otherwise, process creation is considered failed</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="169" x="346" y="441.6914">and an exception is raised.</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="15" x2="1010" y1="462.4336" y2="462.4336"/><line style="stroke:#181818;stroke-width:1.0;" x1="698" x2="688" y1="510.71" y2="506.71"/><line style="stroke:#181818;stroke-width:1.0;" x1="698" x2="688" y1="510.71" y2="514.71"/><line style="stroke:#181818;stroke-width:1.0;" x1="514" x2="699" y1="510.71" y2="510.71"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="521" y="505.9678">6</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="36" x="534" y="505.9678">«call»</text><path d="M226,468.4336 L226,539.4336 L509,539.4336 L509,478.4336 L499,468.4336 L226,468.4336 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M499,468.4336 L499,478.4336 L509,478.4336 L499,468.4336 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="23" x="232" y="486.002">The</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="184" x="259" y="485.6782">multiprocessing.Process</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="47" x="447" y="486.002">spawns</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="241" x="232" y="501.3125">a new child Python interpreter process</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="79" x="232" y="516.623">and runs the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="152" x="315" y="516.2993">proc_worker_wrapper</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="251" x="232" y="531.9336">helper function run in this new process.</text><polygon fill="#181818" points="784,561.9863,794,565.9863,784,569.9863,788,565.9863" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="700" x2="790" y1="565.9863" y2="565.9863"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="707" y="561.2441">7</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="52" x="720" y="561.2441">«create»</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="102" x="796" y="556.3086"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="56" x="819" y="576.8438">worker :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="88" x="803" y="593.332">ScriptWorker</text><path d="M378,549.6758 L378,620.6758 L695,620.6758 L695,559.6758 L685,549.6758 L378,549.6758 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M685,549.6758 L685,559.6758 L695,559.6758 L685,549.6758 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="296" x="384" y="567.2441">The helper function creates a new ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="279" x="384" y="582.5547">instance, passing it the arguments specified</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="292" x="384" y="597.8652">in step #1, such as startup events to set, work</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="147" x="384" y="613.1758">queues to monitor, etc.</text><polygon fill="#181818" points="835,669.1943,845,673.1943,835,677.1943,839,673.1943" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="700" x2="841" y1="673.1943" y2="673.1943"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="707" y="668.4521">8</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="29" x="720" y="668.4521">run()</text><path d="M399,630.918 L399,701.918 L695,701.918 L695,640.918 L685,630.918 L399,630.918 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M685,630.918 L685,640.918 L695,640.918 L685,630.918 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="275" x="405" y="648.4863">The helper function now hands over control</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="195" x="405" y="663.7969">to the ScriptWorker, calling the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="40" x="604" y="663.4731">run()</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="265" x="405" y="679.1074">method, after which the helper function is</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="62" x="405" y="694.418">complete.</text><ellipse cx="1011.5" cy="753.6865" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="994.5,750.4365,1004.5,754.4365,994.5,758.4365,998.5,754.4365" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="847" x2="1000.5" y1="754.4365" y2="754.4365"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="854" y="749.6943">9</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="107" x="867" y="749.6943">STATE=CREATED</text><path d="M536,712.1602 L536,783.1602 L842,783.1602 L842,722.1602 L832,712.1602 L536,712.1602 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M832,712.1602 L832,722.1602 L842,722.1602 L832,712.1602 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="279" x="542" y="729.7285">The ScriptWorker emits a state change event</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="285" x="542" y="745.0391">at the earliest possible opportunity to signify</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="49" x="542" y="760.3496">that the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="595" y="760.0259">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="131" x="695" y="760.3496">instance was created</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="255" x="542" y="775.6602">and that the constructor is now running.</text><line style="stroke:#181818;stroke-width:1.0;" x1="847" x2="889" y1="852.1445" y2="852.1445"/><line style="stroke:#181818;stroke-width:1.0;" x1="889" x2="889" y1="852.1445" y2="865.1445"/><line style="stroke:#181818;stroke-width:1.0;" x1="848" x2="889" y1="865.1445" y2="865.1445"/><polygon fill="#181818" points="858,861.1445,848,865.1445,858,869.1445,854,865.1445" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="854" y="847.4023">10</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="81" x="876" y="847.4023">init_signals()</text><path d="M553,793.4023 L553,910.4023 L842,910.4023 L842,803.4023 L832,793.4023 L553,793.4023 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M832,793.4023 L832,803.4023 L842,803.4023 L832,793.4023 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="257" x="559" y="810.9707">POSIX signal handlers are installed in the</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="257" x="559" y="826.2813">child process, allowing the main process</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="252" x="559" y="841.5918">to raise asynchronous exceptions in the</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="259" x="559" y="856.9023">ScriptWorker on receipt of an appropriate</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="268" x="559" y="872.2129">POSIX signal from the parent process. This</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="244" x="559" y="887.5234">is the mechanism used for terminating</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="106" x="559" y="902.834">script execution.</text><polygon fill="#181818" points="346,958.8525,336,962.8525,346,966.8525,342,962.8525" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="340" x2="846" y1="962.8525" y2="962.8525"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="352" y="958.1104">11</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="106" x="374" y="958.1104">startup event set</text><path d="M25,920.5762 L25,991.5762 L330,991.5762 L330,930.5762 L320,920.5762 L25,920.5762 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M320,920.5762 L320,930.5762 L330,930.5762 L320,920.5762 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="238" x="31" y="938.1445">The ScriptWorker constructor sets the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="168" x="31" y="953.1313">multiprocessing.Event</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="108" x="203" y="953.4551">monitored by the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="32" x="31" y="968.4419">Proc</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="221" x="67" y="968.7656">core running in the parent process,</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="284" x="31" y="984.0762">notifying the parent that startup is complete.</text><path d="M693,1001.8184 L693,1056.8184 L1000,1056.8184 L1000,1011.8184 L990,1001.8184 L693,1001.8184 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M990,1001.8184 L990,1011.8184 L1000,1011.8184 L990,1001.8184 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="268" x="699" y="1019.3867">With initialisation complete, the main loop</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="286" x="699" y="1034.6973">now begins which starts monitoring the work</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="285" x="699" y="1050.0078">queue for messages from the parent process.</text><rect height="81.8418" style="stroke:#000000;stroke-width:1.5;fill:none;" width="169" x="793" y="1062.75"/><path d="M793,1062.75 L857,1062.75 L857,1069.75 L847,1079.75 L793,1079.75 L793,1062.75 " fill="#EEEEEE" style="stroke:#000000;stroke-width:2.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="19" x="806" y="1077.3184">ref</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="4" x="875.5" y="1095.3516"> </text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="20" x="867.5" y="1109.4844">See</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="161" x="797" y="1123.6172">seq:ScriptWorker.main_loop</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="4" x="875.5" y="1137.75"> </text><!--MD5=[befbf98bd37d3748f4dd42c1141392e4]
+@startuml
+'https://plantuml.com/sequence-diagram
+
+mainframe seq: ScriptWorker
+
+autonumber
+
+participant "proc :\nProc" as Proc #lightblue
+participant "proc.proc :\nmultiprocessing.Process" as Process #lightblue
+participant "proc_worker_wrapper :\nfunction" as proc_worker_wrapper
+participant "worker :\nScriptWorker" as ScriptWorker
+
+create Process
+Proc -> Process: «create»
+note left
+""Proc"", running in the parent Python process,
+creates a new ""multiprocessing.Process""
+configured to run the ""proc_worker_wrapper""
+helper function as the new child process starts.
+end note
+
+Proc -> Process: start()
+note left
+With all preparation complete within the parent
+process, the ""start"" method is called to begin
+process creation.
+end note
+
+par
+
+Proc -> Proc : wait for startup event
+note right
+""Proc"" now waits a maximum of ""TIMEOUT""
+seconds for the process creation to complete.
+end note
+
+alt startup event set within timeout
+[o<- - Proc : ScriptWorker ID
+note right
+If the startup event is set within the timeout,
+process creation is considered successful and
+the ScriptWorker ID is returned to the client.
+end note
+else
+[o<- - Proc : «raise exception»
+note right
+Otherwise, process creation is considered failed
+and an exception is raised.
+end note
+end
+
+else
+
+Process ->> proc_worker_wrapper: «call»
+note left
+The ""multiprocessing.Process"" spawns
+a new child Python interpreter process
+and runs the ""proc_worker_wrapper""
+helper function run in this new process.
+end note
+
+create ScriptWorker
+proc_worker_wrapper -> ScriptWorker: «create»
+note left
+The helper function creates a new ScriptWorker
+instance, passing it the arguments specified
+in step #1, such as startup events to set, work
+queues to monitor, etc.
+end note
+
+proc_worker_wrapper -> ScriptWorker: run()
+note left
+The helper function now hands over control
+to the ScriptWorker, calling the ""run()""
+method, after which the helper function is
+complete.
+end note
+
+ScriptWorker ->o]: STATE=CREATED
+note left
+The ScriptWorker emits a state change event
+at the earliest possible opportunity to signify
+that the ""ScriptWorker"" instance was created
+and that the constructor is now running.
+end note
+
+ScriptWorker -> ScriptWorker: init_signals()
+note left
+POSIX signal handlers are installed in the
+child process, allowing the main process
+to raise asynchronous exceptions in the
+ScriptWorker on receipt of an appropriate
+POSIX signal from the parent process. This
+is the mechanism used for terminating
+script execution.
+end note
+
+ScriptWorker -> Proc: startup event set
+note left
+The ScriptWorker constructor sets the
+""multiprocessing.Event"" monitored by the
+""Proc"" core running in the parent process,
+notifying the parent that startup is complete.
+end note
+
+note over ScriptWorker
+With initialisation complete, the main loop
+now begins which starts monitoring the work
+queue for messages from the parent process.
+end note
+
+
+ref over ScriptWorker
+
+See
+seq:ScriptWorker.main_loop
+
+end
+
+end
+
+@enduml
+
+@startuml
+
+mainframe seq: ScriptWorker
+
+autonumber
+
+participant "proc :\nProc" as Proc #lightblue
+participant "proc.proc :\nmultiprocessing.Process" as Process #lightblue
+participant "proc_worker_wrapper :\nfunction" as proc_worker_wrapper
+participant "worker :\nScriptWorker" as ScriptWorker
+
+create Process
+Proc -> Process: «create»
+note left
+""Proc"", running in the parent Python process,
+creates a new ""multiprocessing.Process""
+configured to run the ""proc_worker_wrapper""
+helper function as the new child process starts.
+end note
+
+Proc -> Process: start()
+note left
+With all preparation complete within the parent
+process, the ""start"" method is called to begin
+process creation.
+end note
+
+par
+
+Proc -> Proc : wait for startup event
+note right
+""Proc"" now waits a maximum of ""TIMEOUT""
+seconds for the process creation to complete.
+end note
+
+alt startup event set within timeout
+[o<- - Proc : ScriptWorker ID
+note right
+If the startup event is set within the timeout,
+process creation is considered successful and
+the ScriptWorker ID is returned to the client.
+end note
+else
+[o<- - Proc : «raise exception»
+note right
+Otherwise, process creation is considered failed
+and an exception is raised.
+end note
+end
+
+else
+
+Process ->> proc_worker_wrapper: «call»
+note left
+The ""multiprocessing.Process"" spawns
+a new child Python interpreter process
+and runs the ""proc_worker_wrapper""
+helper function run in this new process.
+end note
+
+create ScriptWorker
+proc_worker_wrapper -> ScriptWorker: «create»
+note left
+The helper function creates a new ScriptWorker
+instance, passing it the arguments specified
+in step #1, such as startup events to set, work
+queues to monitor, etc.
+end note
+
+proc_worker_wrapper -> ScriptWorker: run()
+note left
+The helper function now hands over control
+to the ScriptWorker, calling the ""run()""
+method, after which the helper function is
+complete.
+end note
+
+ScriptWorker ->o]: STATE=CREATED
+note left
+The ScriptWorker emits a state change event
+at the earliest possible opportunity to signify
+that the ""ScriptWorker"" instance was created
+and that the constructor is now running.
+end note
+
+ScriptWorker -> ScriptWorker: init_signals()
+note left
+POSIX signal handlers are installed in the
+child process, allowing the main process
+to raise asynchronous exceptions in the
+ScriptWorker on receipt of an appropriate
+POSIX signal from the parent process. This
+is the mechanism used for terminating
+script execution.
+end note
+
+ScriptWorker -> Proc: startup event set
+note left
+The ScriptWorker constructor sets the
+""multiprocessing.Event"" monitored by the
+""Proc"" core running in the parent process,
+notifying the parent that startup is complete.
+end note
+
+note over ScriptWorker
+With initialisation complete, the main loop
+now begins which starts monitoring the work
+queue for messages from the parent process.
+end note
+
+
+ref over ScriptWorker
+
+See
+seq:ScriptWorker.main_loop
+
+end
+
+end
+
+@enduml
+
+PlantUML version 1.2022.5(Sat Apr 30 11:55:52 BST 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: GB
+--></g></svg>

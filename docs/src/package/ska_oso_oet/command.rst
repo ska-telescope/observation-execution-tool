@@ -1,8 +1,8 @@
-.. _command-guide:
+.. _api-ska_oso_oet-command:
 
-***********
-oet.command
-***********
+*******************
+ska_oso_oet.command
+*******************
 
 Event handling
 **************

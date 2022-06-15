@@ -1,0 +1,157 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+mainframe seq: ScriptWorker.main_loop
+
+autonumber
+
+participant "worker :\nScriptWorker" as ScriptWorker
+participant ": GitManager" as GitManager
+participant ": ModuleFactory" as ModuleFactory
+participant "user_module :\ntypes.ModuleType" as user_module
+participant "pubsub :\npypubsub" as pubsub
+
+loop shutdown_event not set and loop not terminated
+
+alt message == ""ENV"" message
+note over ScriptWorker
+An ""ENV"" message is a request to clone a git project and install it into a Python virtual
+environment. This block is synchronised on a set of ""multiprocessing.Event""s that
+prevent concurrent requests from cloning and installing into the same environment.
+end note
+
+ScriptWorker ->o]: ""STATE == PREP_ENV""
+note left
+A state event is published to denote that
+environment preparation is commencing.
+end note
+
+ScriptWorker -> GitManager : clone_repo(script.git_args)
+note left
+The git repository is cloned, with files written
+to a predictable path that combines the
+project name and commit hash. If the cloned
+repository already exists on the filesystem,
+it is reused.
+end note
+
+ScriptWorker -> ScriptWorker : install project
+note left
+The cloned project is now installed into the
+virtual environment specified in the
+""Environment"" included in the ""ENV"" message.
+end note
+
+ScriptWorker -> ScriptWorker : use environment
+note left
+""ScriptWorker"" now makes its Python
+interpreter use the configured environment.
+This only affects the Python process in
+which this ""ScriptWorker"" is running; all
+other Python  processes continue to use
+their existing configuration.
+end note
+
+ScriptWorker ->o]: ""STATE == IDLE""
+note left
+The ScriptWorker announces that ""ENV""
+processing is complete.
+end note
+
+else message == ""LOAD"" message
+note over ScriptWorker
+A ""LOAD"" message is a request to load a user script. Note that this step does not
+run any code in the user script, it only retrieves and loads the user script in this
+""ScriptWorker"" process.
+end note
+
+ScriptWorker ->o]: ""STATE == LOADING""
+note left
+The ScriptWorker announces that ""LOAD""
+processing is commencing.
+end note
+
+ScriptWorker -> ModuleFactory : get_module(script)
+note left
+The user script is loaded from the
+filesystem, either from the cloned git
+project if the script was identified as
+a ""GitScript"", or a standalone file on
+the pod filesystem if the script was
+identified as a ""FilesystemScript"".
+The script is converted to Python
+bytecode and is now ready to run.
+end note
+
+ScriptWorker ->o]: ""STATE == IDLE""
+note left
+The ScriptWorker announces that ""LOAD""
+processing is complete.
+end note
+
+else message == ""RUN"" message
+note over ScriptWorker
+A ""RUN"" message is a request to run a function of a user script. The framework
+allows for any function to be called. Scripts usually have two functions defined:
+an ""init"" function which is called immediately on loading the script, and a ""main""
+function which is called by the user at a time of their choosing. This sequence
+shows the path for a non-init function call.
+end note
+
+ScriptWorker ->o]: ""STATE == RUNNING""
+note left
+The ScriptWorker announces that ""RUN""
+processing is commencing.
+end note
+
+ScriptWorker -> user_module : «call function»
+note left
+The requested function is retrieved from
+the user script and called, passing in the
+the arguments included in the ""RUN"" message.
+end note
+
+ScriptWorker ->o]: ""STATE == READY""
+note left
+The ScriptWorker announces that ""RUN""
+processing is complete.
+end note
+
+else message == ""PUBSUB"" message
+note over ScriptWorker
+A ""PUBSUB"" message is a request to publish an external event as a local pypubsub message.
+end note
+
+ScriptWorker -> pubsub : sendMessage(...)
+note left
+The external event is published as a
+local event. This makes the event visible
+to the user script, if the user script has
+subscribed to the message topic.
+end note
+
+end
+
+end
+
+break
+ScriptWorker ->o]: EventMessage(""FATAL"", «stacktrace»)
+note left
+If an exception is raised at any point, the
+""ScriptWorker"" captures the stacktrace
+and publishes a ""FATAL"" message on the
+topic.
+
+This exception handling code is defined
+in the base ""ProcWorker"" class.
+end note
+end
+
+ScriptWorker ->o]: ""STATE == COMPLETE""
+note left
+""ScriptWorker"" announces that the script
+is complete. This is the final message, and
+the child process ends.
+end note
+
+@enduml

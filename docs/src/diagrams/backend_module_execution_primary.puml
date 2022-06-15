@@ -1,0 +1,158 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+package ska_oso_oet.procedure {
+
+package application as application_pkg {
+
+    package restclient <<Rectangle>> {
+        class RestClientUI {
+            create(...)
+            start(...)
+            stop(...)
+            list(...)
+            describe(...)
+            listen(...)
+        }
+    }
+
+    package main <<Rectangle>> {
+        class ScriptExecutionServiceWorker {
+            prepare(...)
+            start(...)
+            stop(...)
+            list(...)
+            on_load(evt: EventMessage)
+            on_run(evt: EventMessage)
+            on_env(evt: EventMessage)
+            on_pubsub(evt: EventMessage)
+        }
+
+        class FlaskWorker {
+        }
+
+        class EventBusWorker {
+            main_loop(...)
+            main_func(...)
+            republish(...)
+        }
+
+        ScriptExecutionServiceWorker -right-|> EventBusWorker
+        FlaskWorker -left-|> EventBusWorker
+    }
+
+    package restserver <<Rectangle>> {
+        class app <<function return value>> {
+        }
+
+        class API
+
+        class ServerSentEventsBlueprint
+
+        app o-- API
+        app o-- ServerSentEventsBlueprint
+    }
+
+    package application <<Rectangle>> {
+        class ScriptExecutionService {
+            prepare(cmd: PrepareProcessCommand) -> ProcedureSummary
+            start(cmd: StartProcessCommand) -> ProcedureSummary
+            stop(cmd: StopProcessCommand) -> List[ProcedureSummary]
+            summarise(pids: List[int]) -> List[[ProcedureSummary]
+        }
+
+        class ProcedureSummary {
+            id: int
+            script: domain.ExecutableScript
+            script_args: ...
+            state: domain.ProcedureState
+        }
+
+        class ProcedureHistory {
+            {field} process_states: List[(ProcedureState, time)]
+            stacktrace: Optional[str]
+        }
+        ProcedureSummary --> ProcedureHistory
+
+        together {
+        class PrepareProcessCommand {
+            script: domain.ExecutableScript
+            init_args: domain.ProcedureInput
+        }
+
+        class StartProcessCommand {
+            process_uid: int
+            fn_name: str
+            run_args: domain.ProcedureInput
+        }
+
+        class StopProcessCommand {
+            process_uid: int
+            run_abort: bool
+        }
+        }
+        PrepareProcessCommand -[hidden]- StartProcessCommand
+        StartProcessCommand -[hidden]- StopProcessCommand
+    }
+    FlaskWorker *-- app
+    ScriptExecutionServiceWorker *-- ScriptExecutionService
+
+}
+
+    package domain <<Rectangle>> {
+        abstract class ExecutableScript
+        class GitScript
+        class FilesystemScript
+        class EmbeddedStringScript
+        GitScript -down-|> ExecutableScript
+        FilesystemScript -left-|> ExecutableScript
+        EmbeddedStringScript -right-|> ExecutableScript
+        ExecutableScript -up[hidden]- ProcedureInput
+
+        enum ProcedureState {
+            UNKNOWN
+            CREATING
+            IDLE
+            LOADING
+            READY
+            RUNNING
+            COMPLETE
+            STOPPED
+            FAILED
+        }
+
+        class ProcedureInput {
+            args: List
+            kwargs: Dict[str, Any]
+        }
+    }
+
+    ProcedureHistory ---> ProcedureState
+    ProcedureSummary ---> ProcedureInput
+    ProcedureState -left[hidden]-> ProcedureInput
+}
+
+package flask {
+    class Flask
+    class Blueprint
+
+    Flask -down[hidden]- Blueprint
+}
+
+app -|> Flask
+API -|> Blueprint
+ServerSentEventsBlueprint --|> Blueprint
+
+package pypubsub {
+}
+ska_oso_oet.procedure -[dashed]-> pypubsub: uses
+
+main -down[hidden]--> application
+restserver -left[hidden]--> application
+restserver -right[hidden]--> flask
+FlaskWorker -down[hidden]--> restserver
+ScriptExecutionService -down[hidden]- ProcedureSummary
+ScriptExecutionService -down[hidden]- PrepareProcessCommand
+PrepareProcessCommand -right[hidden]- ProcedureSummary
+
+@enduml
