@@ -1,42 +1,96 @@
-.. _rest-client:
+.. _cli:
 
-***********
-REST Client
-***********
+*********************
+OET command line tool
+*********************
 
-SKA observations will be controlled by ‘Procedures’. Each 'Procedure'
-comprises a Python script and a set of arguments, some of which will be
-set when the script is loaded and some at run-time.
+.. note::
 
-The management of 'Procedures' and the processes which execute them is
-handled by the OET backend, which implements the methods
-described in the :doc:`architecture_module_rest_api`. The OET backend lets the user:
+   The OET currently focuses on generic script execution. That is, the
+   interface focuses on loading, running, and stopping Python scripts, rather
+   than specific commands for controlling the telescope. An interface that
+   focuses more on the goals that a user want to achieve by running the script
+   is part of the design but not yet implemented. Once implemented, it should
+   be possible to say ``oet allocate``, ``oet observe``, or similar.
 
-* Load requested Procedure scripts with initialization arguments and
-  have them ready for execution.
-* When required, pass run-time arguments to a script and start a process
-  executing it.
-* Stop the script mid-execution by terminating the process executing it.
+The ``oet`` command can be used to control a remote OET deployment [#f2]_.
+Using ``oet``, a remote OET deployment can be instructed to:
 
-The REST Client provides a command line interface (CLI) through which
-the user can communicate with the backend remotely.  The
-address of the remote REST server can be specified at the command line
+#. load a Python script using ``oet create``;
+#. run a function contained in the Python script using ``oet start``;
+#. stop a running Python function using ``oet stop``;
+#. observe OET messages and script messages using ``oet listen``.
+
+In addition, the current and historic state of Python processes running on
+the backend can be inspected with
+
+#. ``oet list`` to list all scripts that are prepared to run or are currently
+   running;
+#. ``oet describe`` to inspect the current and historic state of a specific
+   process.
+
+General help and specific help is available at the command line by adding the
+``--help`` argument. For example:
+
+.. code-block:: bash
+
+  # get a general overview of the OET CLI
+  $ oet --help
+
+  # get specific help on the oet create command
+  $ oet create -- --help
+
+  # get specific help on the oet describe command
+  $ oet describe -- --help
+
+
+Installation
+************
+
+The OET command line tool is available as the ``oet`` command at the terminal.
+If the ``oet`` command is not available, install it with:
+
+.. code-block:: bash
+
+   $ pip install --upgrade ska_oso_oet
+
+At the time of writing, the OET CLI is not packaged separately and hence
+requires OET backend dependencies - including PyTango - to be installed on the
+target machine. As PyTango bindings are not available for MacOS, it is not
+currently possible to install the OET CLI on MacOS.
+
+
+Configuration
+*************
+
+The address of the remote OET backend can be specified at the command line
 via the ``server-url`` argument, or set session-wide by setting the
-``OET_REST_URI`` environment variable, e.g.,::
+``OET_REST_URI`` environment variable, e.g.,
 
-  export OET_REST_URI=http://my-rest-service:5000/api/v1.0/procedures
+.. code-block:: bash
+
+  # provide the server URL when running the command, e.g.
+  $ oet --server-url=http://my-oet-deployment.com:5000/api/v1.0/procedures list
+
+  # alternatively, set the server URL for a session by defining an environment variable
+  $ export OET_REST_URI=http://my-oet-deployment.com:5000/api/v1.0/procedures
+  $ oet list
+  $ oet describe
+  $ oet create ...
 
 By default, the client assumes it is operating within a SKAMPI environment
 and attempts to connect to a REST server using the default REST service name
 of http://ska-oso-oet-rest:5000/api/v1.0/procedures. If running the OET
-client within SKAMPI via the oet-ssh or oet-jupyter services, the
-``OET_REST_URI`` variable is automatically set.
+client within a SKAMPI pod, the ``OET_REST_URI`` should automatically be set.
 
-The methods available through the REST Client map closely to the
-:doc:`architecture_module_rest_api` of the server and are described below.
+
+Commands
+********
+
+The commands available via ``oet`` are described below.
 
 +--------------------+---------------+------------------------------------------------------+-------------------------------------+
-| REST Client Method | Parameters    | Default                                              | Description                         |
+| OET CLI action     | Parameters    | Default                                              | Description                         |
 +====================+===============+======================================================+=====================================+
 | create             | server-url    | See note above                                       | **Prepare a new procedure**         |
 |                    +---------------+------------------------------------------------------+                                     |
@@ -101,21 +155,12 @@ The methods available through the REST Client map closely to the
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to
 those specified by name e.g. --myparam=12.
 
-Help Information
-----------------
-General help information can be obtained by typing the command: ::
-
-  $ oet
-
-Detailed help information for specific commands is also available e.g.::
-
-  $ oet create --help
 
 Examples
---------
+********
 
 This section runs through an example session in which we will
-load two new 'Procedures' and then run one of them.
+load two new 'Procedures' [#f1]_ and then run one of them.
 First we load the procedures: ::
 
   $ oet create file://test.py 'hello' --verbose=true
@@ -302,3 +347,10 @@ full observation, e.g.,::
   # create process for telescope standby script
   oet create file:///scripts/standby.py
   oet start
+
+
+.. rubric:: Footnotes
+
+.. [#f2] Specifically, the cli tool acts as a REST client that interfaces with
+   the OET REST API described in :doc:`architecture_module_rest_api`.
+.. [#f1] For reference, the OET architecture refers to Python scripts as `Procedures`.
