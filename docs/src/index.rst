@@ -22,8 +22,8 @@
   :hidden:
 
   architecture_backend_candc
-  architecture_backend_module_execution
   architecture_backend_module_ui
+  architecture_backend_module_execution
   architecture_module_rest_api
 
 
