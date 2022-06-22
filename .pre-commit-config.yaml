@@ -4,7 +4,9 @@ repos:
     hooks:
       - id: debug-statements
       - id: end-of-file-fixer
+        exclude: ^(docs/src/diagrams/export/)
       - id: trailing-whitespace
+        exclude: ^(docs/src/diagrams/export/)
       - id: check-json
   - repo: https://github.com/ambv/black
     rev: 22.3.0

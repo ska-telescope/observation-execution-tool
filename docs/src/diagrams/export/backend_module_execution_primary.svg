@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="1678px" preserveAspectRatio="none" style="width:1403px;height:1678px;background:#FFFFFF;" version="1.1" viewBox="0 0 1403 1678" width="1403px" zoomAndPan="magnify"><defs/><g><!--MD5=[4caa97c3b43e5ccb768f5326915ee1d4]
+cluster ska_oso_oet.procedure--><g id="cluster_ska_oso_oet.procedure"><path d="M8.5,6 L171.5,6 A3.75,3.75 0 0 1 174,8.5 L181,28.4883 L1200.5,28.4883 A2.5,2.5 0 0 1 1203,30.9883 L1203,1668.5 A2.5,2.5 0 0 1 1200.5,1671 L8.5,1671 A2.5,2.5 0 0 1 6,1668.5 L6,8.5 A2.5,2.5 0 0 1 8.5,6 " style="stroke:#000000;stroke-width:1.5;fill:none;"/><line style="stroke:#000000;stroke-width:1.5;fill:none;" x1="6" x2="181" y1="28.4883" y2="28.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="162" x="10" y="21.5352">ska_oso_oet.procedure</text></g><!--MD5=[e05846e0557a046bf7b9258196848ed8]
+cluster application_pkg--><g id="cluster_application_pkg"><path d="M40.5,57 L121.5,57 A3.75,3.75 0 0 1 124,59.5 L131,79.4883 L1160.5,79.4883 A2.5,2.5 0 0 1 1163,81.9883 L1163,1247.5 A2.5,2.5 0 0 1 1160.5,1250 L40.5,1250 A2.5,2.5 0 0 1 38,1247.5 L38,59.5 A2.5,2.5 0 0 1 40.5,57 " style="stroke:#000000;stroke-width:1.5;fill:none;"/><line style="stroke:#000000;stroke-width:1.5;fill:none;" x1="38" x2="131" y1="79.4883" y2="79.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="80" x="42" y="72.5352">application</text></g><!--MD5=[c1d103f90895134f040fa18b35926cd5]
+cluster restclient--><g id="cluster_restclient"><rect height="198" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;fill:none;" width="148" x="991" y="132.5"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="68" x="1031" y="148.0352">restclient</text></g><!--MD5=[a70b0d373322012744ecc119c63f921b]
+cluster main--><g id="cluster_main"><rect height="247" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;fill:none;" width="631" x="328" y="108"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="36" x="625.5" y="123.5352">main</text></g><!--MD5=[01b908eab77bdc64a587d21ad331408b]
+cluster restserver--><g id="cluster_restserver"><rect height="298.5" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;fill:none;" width="357" x="774" y="562.5"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="72" x="916.5" y="578.0352">restserver</text></g><!--MD5=[3ff016c1aa5003d713567a073e2181a6]
+cluster application--><g id="cluster_application"><rect height="684" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;fill:none;" width="664" x="70" y="534"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="80" x="362" y="549.5352">application</text></g><!--MD5=[27f772719433d509ddbc20ff768eba08]
+cluster domain--><g id="cluster_domain"><rect height="356" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1.0;fill:none;" width="576" x="300" y="1283"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="54" x="561" y="1298.5352">domain</text></g><!--MD5=[71c2ab1c1c8272e025db689c64a870a2]
+cluster flask--><g id="cluster_flask"><path d="M1245.5,746 L1282.5,746 A3.75,3.75 0 0 1 1285,748.5 L1292,768.4883 L1390.5,768.4883 A2.5,2.5 0 0 1 1393,770.9883 L1393,1025 A2.5,2.5 0 0 1 1390.5,1027.5 L1245.5,1027.5 A2.5,2.5 0 0 1 1243,1025 L1243,748.5 A2.5,2.5 0 0 1 1245.5,746 " style="stroke:#000000;stroke-width:1.5;fill:none;"/><line style="stroke:#000000;stroke-width:1.5;fill:none;" x1="1243" x2="1292" y1="768.4883" y2="768.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="36" x="1247" y="761.5352">flask</text></g><!--MD5=[9d427ac4c893214c110f9de4912e3cde]
+class RestClientUI--><g id="elem_RestClientUI"><rect codeLine="8" fill="#F1F1F1" height="146.9297" id="RestClientUI" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="115" x="1007.5" y="167.5"/><ellipse cx="1022.5" cy="183.5" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M1024.9731,189.6431 Q1024.3921,189.9419 1023.7529,190.0913 Q1023.1138,190.2407 1022.4082,190.2407 Q1019.9014,190.2407 1018.5815,188.5889 Q1017.2617,186.937 1017.2617,183.8159 Q1017.2617,180.6865 1018.5815,179.0347 Q1019.9014,177.3828 1022.4082,177.3828 Q1023.1138,177.3828 1023.7612,177.5322 Q1024.4087,177.6816 1024.9731,177.9805 L1024.9731,180.7031 Q1024.3423,180.1221 1023.7488,179.8523 Q1023.1553,179.5825 1022.5244,179.5825 Q1021.1797,179.5825 1020.4949,180.6492 Q1019.8101,181.7158 1019.8101,183.8159 Q1019.8101,185.9077 1020.4949,186.9744 Q1021.1797,188.041 1022.5244,188.041 Q1023.1553,188.041 1023.7488,187.7712 Q1024.3423,187.5015 1024.9731,186.9204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="83" x="1036.5" y="188.791">RestClientUI</text><line style="stroke:#181818;stroke-width:0.5;" x1="1008.5" x2="1121.5" y1="199.5" y2="199.5"/><line style="stroke:#181818;stroke-width:0.5;" x1="1008.5" x2="1121.5" y1="207.5" y2="207.5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="64" x="1013.5" y="225.0352">create(...)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="53" x="1013.5" y="241.5234">start(...)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="52" x="1013.5" y="258.0117">stop(...)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="42" x="1013.5" y="274.5">list(...)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="80" x="1013.5" y="290.9883">describe(...)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="59" x="1013.5" y="307.4766">listen(...)</text></g><!--MD5=[33f72e11af6101778dcafb71668d1add]
+class ScriptExecutionServiceWorker--><g id="elem_ScriptExecutionServiceWorker"><rect codeLine="19" fill="#F1F1F1" height="179.9063" id="ScriptExecutionServiceWorker" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="236" x="371" y="151"/><ellipse cx="386" cy="167" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M388.4731,173.1431 Q387.8921,173.4419 387.2529,173.5913 Q386.6138,173.7407 385.9082,173.7407 Q383.4014,173.7407 382.0815,172.0889 Q380.7617,170.437 380.7617,167.3159 Q380.7617,164.1865 382.0815,162.5347 Q383.4014,160.8828 385.9082,160.8828 Q386.6138,160.8828 387.2612,161.0322 Q387.9087,161.1816 388.4731,161.4805 L388.4731,164.2031 Q387.8423,163.6221 387.2488,163.3523 Q386.6553,163.0825 386.0244,163.0825 Q384.6797,163.0825 383.9949,164.1492 Q383.3101,165.2158 383.3101,167.3159 Q383.3101,169.4077 383.9949,170.4744 Q384.6797,171.541 386.0244,171.541 Q386.6553,171.541 387.2488,171.2712 Q387.8423,171.0015 388.4731,170.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="204" x="400" y="172.291">ScriptExecutionServiceWorker</text><line style="stroke:#181818;stroke-width:0.5;" x1="372" x2="606" y1="183" y2="183"/><line style="stroke:#181818;stroke-width:0.5;" x1="372" x2="606" y1="191" y2="191"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="76" x="377" y="208.5352">prepare(...)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="53" x="377" y="225.0234">start(...)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="52" x="377" y="241.5117">stop(...)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="42" x="377" y="258">list(...)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="189" x="377" y="274.4883">on_load(evt: EventMessage)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="183" x="377" y="290.9766">on_run(evt: EventMessage)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="183" x="377" y="307.4648">on_env(evt: EventMessage)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="211" x="377" y="323.9531">on_pubsub(evt: EventMessage)</text></g><!--MD5=[17238aaf72f47361d520c29dfe37cd7f]
+class FlaskWorker--><g id="elem_FlaskWorker"><rect codeLine="30" fill="#F1F1F1" height="48" id="FlaskWorker" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="116" x="819" y="217"/><ellipse cx="834" cy="233" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M836.4731,239.1431 Q835.8921,239.4419 835.2529,239.5913 Q834.6138,239.7407 833.9082,239.7407 Q831.4014,239.7407 830.0815,238.0889 Q828.7617,236.437 828.7617,233.3159 Q828.7617,230.1865 830.0815,228.5347 Q831.4014,226.8828 833.9082,226.8828 Q834.6138,226.8828 835.2612,227.0322 Q835.9087,227.1816 836.4731,227.4805 L836.4731,230.2031 Q835.8423,229.6221 835.2488,229.3523 Q834.6553,229.0825 834.0244,229.0825 Q832.6797,229.0825 831.9949,230.1492 Q831.3101,231.2158 831.3101,233.3159 Q831.3101,235.4077 831.9949,236.4744 Q832.6797,237.541 834.0244,237.541 Q834.6553,237.541 835.2488,237.2712 Q835.8423,237.0015 836.4731,236.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="84" x="848" y="238.291">FlaskWorker</text><line style="stroke:#181818;stroke-width:0.5;" x1="820" x2="934" y1="249" y2="249"/><line style="stroke:#181818;stroke-width:0.5;" x1="820" x2="934" y1="257" y2="257"/></g><!--MD5=[182a5f28d356566e59ae05a80103f461]
+class EventBusWorker--><g id="elem_EventBusWorker"><rect codeLine="33" fill="#F1F1F1" height="97.4648" id="EventBusWorker" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="142" x="642" y="192.5"/><ellipse cx="657" cy="208.5" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M659.4731,214.6431 Q658.8921,214.9419 658.2529,215.0913 Q657.6138,215.2407 656.9082,215.2407 Q654.4014,215.2407 653.0815,213.5889 Q651.7617,211.937 651.7617,208.8159 Q651.7617,205.6865 653.0815,204.0347 Q654.4014,202.3828 656.9082,202.3828 Q657.6138,202.3828 658.2612,202.5322 Q658.9087,202.6816 659.4731,202.9805 L659.4731,205.7031 Q658.8423,205.1221 658.2488,204.8523 Q657.6553,204.5825 657.0244,204.5825 Q655.6797,204.5825 654.9949,205.6492 Q654.3101,206.7158 654.3101,208.8159 Q654.3101,210.9077 654.9949,211.9744 Q655.6797,213.041 657.0244,213.041 Q657.6553,213.041 658.2488,212.7712 Q658.8423,212.5015 659.4731,211.9204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="110" x="671" y="213.791">EventBusWorker</text><line style="stroke:#181818;stroke-width:0.5;" x1="643" x2="783" y1="224.5" y2="224.5"/><line style="stroke:#181818;stroke-width:0.5;" x1="643" x2="783" y1="232.5" y2="232.5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="94" x="648" y="250.0352">main_loop(...)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="93" x="648" y="266.5234">main_func(...)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="87" x="648" y="283.0117">republish(...)</text></g><!--MD5=[d26137e5d461602f48e26353ca7979f6]
+class app--><g id="elem_app"><rect codeLine="44" fill="#F1F1F1" height="56.6211" id="app" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="158" x="841" y="605.5"/><ellipse cx="856" cy="625.8105" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M858.4731,631.9536 Q857.8921,632.2524 857.2529,632.4019 Q856.6138,632.5513 855.9082,632.5513 Q853.4014,632.5513 852.0815,630.8994 Q850.7617,629.2476 850.7617,626.1265 Q850.7617,622.9971 852.0815,621.3452 Q853.4014,619.6934 855.9082,619.6934 Q856.6138,619.6934 857.2612,619.8428 Q857.9087,619.9922 858.4731,620.291 L858.4731,623.0137 Q857.8423,622.4326 857.2488,622.1628 Q856.6553,621.8931 856.0244,621.8931 Q854.6797,621.8931 853.9949,622.9597 Q853.3101,624.0264 853.3101,626.1265 Q853.3101,628.2183 853.9949,629.2849 Q854.6797,630.3516 856.0244,630.3516 Q856.6553,630.3516 857.2488,630.0818 Q857.8423,629.812 858.4731,629.231 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="130" x="868" y="622.1016">«function return value»</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26" x="920" y="638.168">app</text><line style="stroke:#181818;stroke-width:0.5;" x1="842" x2="998" y1="646.1211" y2="646.1211"/><line style="stroke:#181818;stroke-width:0.5;" x1="842" x2="998" y1="654.1211" y2="654.1211"/></g><!--MD5=[68767c78be08caa96780c014af9fbeaa]
+class API--><g id="elem_API"><rect codeLine="47" fill="#F1F1F1" height="48" id="API" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="54" x="798" y="789"/><ellipse cx="813" cy="805" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M815.4731,811.1431 Q814.8921,811.4419 814.2529,811.5913 Q813.6138,811.7407 812.9082,811.7407 Q810.4014,811.7407 809.0815,810.0889 Q807.7617,808.437 807.7617,805.3159 Q807.7617,802.1865 809.0815,800.5347 Q810.4014,798.8828 812.9082,798.8828 Q813.6138,798.8828 814.2612,799.0322 Q814.9087,799.1816 815.4731,799.4805 L815.4731,802.2031 Q814.8423,801.6221 814.2488,801.3523 Q813.6553,801.0825 813.0244,801.0825 Q811.6797,801.0825 810.9949,802.1492 Q810.3101,803.2158 810.3101,805.3159 Q810.3101,807.4077 810.9949,808.4744 Q811.6797,809.541 813.0244,809.541 Q813.6553,809.541 814.2488,809.2712 Q814.8423,809.0015 815.4731,808.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="22" x="827" y="810.291">API</text><line style="stroke:#181818;stroke-width:0.5;" x1="799" x2="851" y1="821" y2="821"/><line style="stroke:#181818;stroke-width:0.5;" x1="799" x2="851" y1="829" y2="829"/></g><!--MD5=[ac5fbc7e172a153817156d672bf2c325]
+class ServerSentEventsBlueprint--><g id="elem_ServerSentEventsBlueprint"><rect codeLine="49" fill="#F1F1F1" height="48" id="ServerSentEventsBlueprint" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="211" x="887.5" y="789"/><ellipse cx="902.5" cy="805" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M904.9731,811.1431 Q904.3921,811.4419 903.7529,811.5913 Q903.1138,811.7407 902.4082,811.7407 Q899.9014,811.7407 898.5815,810.0889 Q897.2617,808.437 897.2617,805.3159 Q897.2617,802.1865 898.5815,800.5347 Q899.9014,798.8828 902.4082,798.8828 Q903.1138,798.8828 903.7612,799.0322 Q904.4087,799.1816 904.9731,799.4805 L904.9731,802.2031 Q904.3423,801.6221 903.7488,801.3523 Q903.1553,801.0825 902.5244,801.0825 Q901.1797,801.0825 900.4949,802.1492 Q899.8101,803.2158 899.8101,805.3159 Q899.8101,807.4077 900.4949,808.4744 Q901.1797,809.541 902.5244,809.541 Q903.1553,809.541 903.7488,809.2712 Q904.3423,809.0015 904.9731,808.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="179" x="916.5" y="810.291">ServerSentEventsBlueprint</text><line style="stroke:#181818;stroke-width:0.5;" x1="888.5" x2="1097.5" y1="821" y2="821"/><line style="stroke:#181818;stroke-width:0.5;" x1="888.5" x2="1097.5" y1="829" y2="829"/></g><!--MD5=[4048a361f681e6f68b2b7284d5ce3ea6]
+class ScriptExecutionService--><g id="elem_ScriptExecutionService"><rect codeLine="56" fill="#F1F1F1" height="113.9531" id="ScriptExecutionService" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="450" x="241" y="577"/><ellipse cx="384.25" cy="593" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M386.7231,599.1431 Q386.1421,599.4419 385.5029,599.5913 Q384.8638,599.7407 384.1582,599.7407 Q381.6514,599.7407 380.3315,598.0889 Q379.0117,596.437 379.0117,593.3159 Q379.0117,590.1865 380.3315,588.5347 Q381.6514,586.8828 384.1582,586.8828 Q384.8638,586.8828 385.5112,587.0322 Q386.1587,587.1816 386.7231,587.4805 L386.7231,590.2031 Q386.0923,589.6221 385.4988,589.3523 Q384.9053,589.0825 384.2744,589.0825 Q382.9297,589.0825 382.2449,590.1492 Q381.5601,591.2158 381.5601,593.3159 Q381.5601,595.4077 382.2449,596.4744 Q382.9297,597.541 384.2744,597.541 Q384.9053,597.541 385.4988,597.2712 Q386.0923,597.0015 386.7231,596.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="155" x="404.75" y="598.291">ScriptExecutionService</text><line style="stroke:#181818;stroke-width:0.5;" x1="242" x2="690" y1="609" y2="609"/><line style="stroke:#181818;stroke-width:0.5;" x1="242" x2="690" y1="617" y2="617"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="438" x="247" y="634.5352">prepare(cmd: PrepareProcessCommand) -&gt; ProcedureSummary</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="394" x="247" y="651.0234">start(cmd: StartProcessCommand) -&gt; ProcedureSummary</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="425" x="247" y="667.5117">stop(cmd: StopProcessCommand) -&gt; List[ProcedureSummary]</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="372" x="247" y="684">summarise(pids: List[int]) -&gt; List[[ProcedureSummary]</text></g><!--MD5=[6400ffe083689ac1542ec7825ea5fe0e]
+class ProcedureSummary--><g id="elem_ProcedureSummary"><rect codeLine="63" fill="#F1F1F1" height="113.9531" id="ProcedureSummary" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="228" x="407" y="756"/><ellipse cx="449.9" cy="772" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M452.3731,778.1431 Q451.7921,778.4419 451.1529,778.5913 Q450.5138,778.7407 449.8082,778.7407 Q447.3014,778.7407 445.9815,777.0889 Q444.6617,775.437 444.6617,772.3159 Q444.6617,769.1865 445.9815,767.5347 Q447.3014,765.8828 449.8082,765.8828 Q450.5138,765.8828 451.1612,766.0322 Q451.8087,766.1816 452.3731,766.4805 L452.3731,769.2031 Q451.7423,768.6221 451.1488,768.3523 Q450.5553,768.0825 449.9244,768.0825 Q448.5797,768.0825 447.8949,769.1492 Q447.2101,770.2158 447.2101,772.3159 Q447.2101,774.4077 447.8949,775.4744 Q448.5797,776.541 449.9244,776.541 Q450.5553,776.541 451.1488,776.2712 Q451.7423,776.0015 452.3731,775.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="134" x="470.1" y="777.291">ProcedureSummary</text><line style="stroke:#181818;stroke-width:0.5;" x1="408" x2="634" y1="788" y2="788"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="39" x="413" y="805.5352">id: int</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="216" x="413" y="822.0234">script: domain.ExecutableScript</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="95" x="413" y="838.5117">script_args: ...</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="201" x="413" y="855">state: domain.ProcedureState</text><line style="stroke:#181818;stroke-width:0.5;" x1="408" x2="634" y1="861.9531" y2="861.9531"/></g><!--MD5=[22b6e3484d9aeab608aa525a34a7a5de]
+class ProcedureHistory--><g id="elem_ProcedureHistory"><rect codeLine="70" fill="#F1F1F1" height="80.9766" id="ProcedureHistory" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="305" x="396.5" y="939"/><ellipse cx="485.75" cy="955" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M488.2231,961.1431 Q487.6421,961.4419 487.0029,961.5913 Q486.3638,961.7407 485.6582,961.7407 Q483.1514,961.7407 481.8315,960.0889 Q480.5117,958.437 480.5117,955.3159 Q480.5117,952.1865 481.8315,950.5347 Q483.1514,948.8828 485.6582,948.8828 Q486.3638,948.8828 487.0112,949.0322 Q487.6587,949.1816 488.2231,949.4805 L488.2231,952.2031 Q487.5923,951.6221 486.9988,951.3523 Q486.4053,951.0825 485.7744,951.0825 Q484.4297,951.0825 483.7449,952.1492 Q483.0601,953.2158 483.0601,955.3159 Q483.0601,957.4077 483.7449,958.4744 Q484.4297,959.541 485.7744,959.541 Q486.4053,959.541 486.9988,959.2712 Q487.5923,959.0015 488.2231,958.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="118" x="506.25" y="960.291">ProcedureHistory</text><line style="stroke:#181818;stroke-width:0.5;" x1="397.5" x2="700.5" y1="971" y2="971"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="293" x="402.5" y="988.5352">process_states: List[(ProcedureState, time)]</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="164" x="402.5" y="1005.0234">stacktrace: Optional[str]</text><line style="stroke:#181818;stroke-width:0.5;" x1="397.5" x2="700.5" y1="1011.9766" y2="1011.9766"/></g><!--MD5=[b160dcce9b08a809ce85f2ff29fa367c]
+class PrepareProcessCommand--><g id="elem_PrepareProcessCommand"><rect codeLine="77" fill="#F1F1F1" height="80.9766" id="PrepareProcessCommand" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="241" x="120.5" y="772.5"/><ellipse cx="150.35" cy="788.5" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M152.8231,794.6431 Q152.2421,794.9419 151.6029,795.0913 Q150.9638,795.2407 150.2582,795.2407 Q147.7514,795.2407 146.4315,793.5889 Q145.1117,791.937 145.1117,788.8159 Q145.1117,785.6865 146.4315,784.0347 Q147.7514,782.3828 150.2582,782.3828 Q150.9638,782.3828 151.6112,782.5322 Q152.2587,782.6816 152.8231,782.9805 L152.8231,785.7031 Q152.1923,785.1221 151.5988,784.8523 Q151.0053,784.5825 150.3744,784.5825 Q149.0297,784.5825 148.3449,785.6492 Q147.6601,786.7158 147.6601,788.8159 Q147.6601,790.9077 148.3449,791.9744 Q149.0297,793.041 150.3744,793.041 Q151.0053,793.041 151.5988,792.7712 Q152.1923,792.5015 152.8231,791.9204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="176" x="167.65" y="793.791">PrepareProcessCommand</text><line style="stroke:#181818;stroke-width:0.5;" x1="121.5" x2="360.5" y1="804.5" y2="804.5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="216" x="126.5" y="822.0352">script: domain.ExecutableScript</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="229" x="126.5" y="838.5234">init_args: domain.ProcedureInput</text><line style="stroke:#181818;stroke-width:0.5;" x1="121.5" x2="360.5" y1="845.4766" y2="845.4766"/></g><!--MD5=[0a8e784e9ba9565fe84d8c228ee2a213]
+class StartProcessCommand--><g id="elem_StartProcessCommand"><rect codeLine="82" fill="#F1F1F1" height="97.4648" id="StartProcessCommand" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="243" x="118.5" y="931"/><ellipse cx="158.7" cy="947" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M161.1731,953.1431 Q160.5921,953.4419 159.9529,953.5913 Q159.3138,953.7407 158.6082,953.7407 Q156.1014,953.7407 154.7815,952.0889 Q153.4617,950.437 153.4617,947.3159 Q153.4617,944.1865 154.7815,942.5347 Q156.1014,940.8828 158.6082,940.8828 Q159.3138,940.8828 159.9612,941.0322 Q160.6087,941.1816 161.1731,941.4805 L161.1731,944.2031 Q160.5423,943.6221 159.9488,943.3523 Q159.3553,943.0825 158.7244,943.0825 Q157.3797,943.0825 156.6949,944.1492 Q156.0101,945.2158 156.0101,947.3159 Q156.0101,949.4077 156.6949,950.4744 Q157.3797,951.541 158.7244,951.541 Q159.3553,951.541 159.9488,951.2712 Q160.5423,951.0015 161.1731,950.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="155" x="178.3" y="952.291">StartProcessCommand</text><line style="stroke:#181818;stroke-width:0.5;" x1="119.5" x2="360.5" y1="963" y2="963"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="108" x="124.5" y="980.5352">process_uid: int</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="85" x="124.5" y="997.0234">fn_name: str</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="231" x="124.5" y="1013.5117">run_args: domain.ProcedureInput</text><line style="stroke:#181818;stroke-width:0.5;" x1="119.5" x2="360.5" y1="1020.4648" y2="1020.4648"/></g><!--MD5=[333b187127690081bdcb02f6bb878b0d]
+class StopProcessCommand--><g id="elem_StopProcessCommand"><rect codeLine="88" fill="#F1F1F1" height="80.9766" id="StopProcessCommand" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="186" x="147" y="1089"/><ellipse cx="162" cy="1105" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M164.4731,1111.1431 Q163.8921,1111.4419 163.2529,1111.5913 Q162.6138,1111.7407 161.9082,1111.7407 Q159.4014,1111.7407 158.0815,1110.0889 Q156.7617,1108.437 156.7617,1105.3159 Q156.7617,1102.1865 158.0815,1100.5347 Q159.4014,1098.8828 161.9082,1098.8828 Q162.6138,1098.8828 163.2612,1099.0322 Q163.9087,1099.1816 164.4731,1099.4805 L164.4731,1102.2031 Q163.8423,1101.6221 163.2488,1101.3523 Q162.6553,1101.0825 162.0244,1101.0825 Q160.6797,1101.0825 159.9949,1102.1492 Q159.3101,1103.2158 159.3101,1105.3159 Q159.3101,1107.4077 159.9949,1108.4744 Q160.6797,1109.541 162.0244,1109.541 Q162.6553,1109.541 163.2488,1109.2712 Q163.8423,1109.0015 164.4731,1108.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="154" x="176" y="1110.291">StopProcessCommand</text><line style="stroke:#181818;stroke-width:0.5;" x1="148" x2="332" y1="1121" y2="1121"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="108" x="153" y="1138.5352">process_uid: int</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="107" x="153" y="1155.0234">run_abort: bool</text><line style="stroke:#181818;stroke-width:0.5;" x1="148" x2="332" y1="1161.9766" y2="1161.9766"/></g><!--MD5=[13263f9aae361c96bd995cd1c2420d0a]
+class ExecutableScript--><g id="elem_ExecutableScript"><rect codeLine="102" fill="#F1F1F1" height="48" id="ExecutableScript" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="146" x="537" y="1575"/><ellipse cx="552" cy="1591" fill="#A9DCDF" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M551.8633,1586.3481 L550.7095,1591.4199 L553.0254,1591.4199 Z M550.3691,1584.1069 L553.3657,1584.1069 L556.7109,1596.5 L554.2622,1596.5 L553.4985,1593.437 L550.2197,1593.437 L549.4727,1596.5 L547.0239,1596.5 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing" textLength="114" x="566" y="1596.291">ExecutableScript</text><line style="stroke:#181818;stroke-width:0.5;" x1="538" x2="682" y1="1607" y2="1607"/><line style="stroke:#181818;stroke-width:0.5;" x1="538" x2="682" y1="1615" y2="1615"/></g><!--MD5=[5388228dfd16e8b25647ca0284da0e89]
+class GitScript--><g id="elem_GitScript"><rect codeLine="103" fill="#F1F1F1" height="48" id="GitScript" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="90" x="361" y="1392"/><ellipse cx="376" cy="1408" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M378.4731,1414.1431 Q377.8921,1414.4419 377.2529,1414.5913 Q376.6138,1414.7407 375.9082,1414.7407 Q373.4014,1414.7407 372.0815,1413.0889 Q370.7617,1411.437 370.7617,1408.3159 Q370.7617,1405.1865 372.0815,1403.5347 Q373.4014,1401.8828 375.9082,1401.8828 Q376.6138,1401.8828 377.2612,1402.0322 Q377.9087,1402.1816 378.4731,1402.4805 L378.4731,1405.2031 Q377.8423,1404.6221 377.2488,1404.3523 Q376.6553,1404.0825 376.0244,1404.0825 Q374.6797,1404.0825 373.9949,1405.1492 Q373.3101,1406.2158 373.3101,1408.3159 Q373.3101,1410.4077 373.9949,1411.4744 Q374.6797,1412.541 376.0244,1412.541 Q376.6553,1412.541 377.2488,1412.2712 Q377.8423,1412.0015 378.4731,1411.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="58" x="390" y="1413.291">GitScript</text><line style="stroke:#181818;stroke-width:0.5;" x1="362" x2="450" y1="1424" y2="1424"/><line style="stroke:#181818;stroke-width:0.5;" x1="362" x2="450" y1="1432" y2="1432"/></g><!--MD5=[a69e1ba87608a25246e7971a0bc46dd9]
+class FilesystemScript--><g id="elem_FilesystemScript"><rect codeLine="104" fill="#F1F1F1" height="48" id="FilesystemScript" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="142" x="718" y="1575"/><ellipse cx="733" cy="1591" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M735.4731,1597.1431 Q734.8921,1597.4419 734.2529,1597.5913 Q733.6138,1597.7407 732.9082,1597.7407 Q730.4014,1597.7407 729.0815,1596.0889 Q727.7617,1594.437 727.7617,1591.3159 Q727.7617,1588.1865 729.0815,1586.5347 Q730.4014,1584.8828 732.9082,1584.8828 Q733.6138,1584.8828 734.2612,1585.0322 Q734.9087,1585.1816 735.4731,1585.4805 L735.4731,1588.2031 Q734.8423,1587.6221 734.2488,1587.3523 Q733.6553,1587.0825 733.0244,1587.0825 Q731.6797,1587.0825 730.9949,1588.1492 Q730.3101,1589.2158 730.3101,1591.3159 Q730.3101,1593.4077 730.9949,1594.4744 Q731.6797,1595.541 733.0244,1595.541 Q733.6553,1595.541 734.2488,1595.2712 Q734.8423,1595.0015 735.4731,1594.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="110" x="747" y="1596.291">FilesystemScript</text><line style="stroke:#181818;stroke-width:0.5;" x1="719" x2="859" y1="1607" y2="1607"/><line style="stroke:#181818;stroke-width:0.5;" x1="719" x2="859" y1="1615" y2="1615"/></g><!--MD5=[4cd8da3cc660ccc805077feb75940c49]
+class EmbeddedStringScript--><g id="elem_EmbeddedStringScript"><rect codeLine="105" fill="#F1F1F1" height="48" id="EmbeddedStringScript" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="185" x="316.5" y="1575"/><ellipse cx="331.5" cy="1591" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M333.9731,1597.1431 Q333.3921,1597.4419 332.7529,1597.5913 Q332.1138,1597.7407 331.4082,1597.7407 Q328.9014,1597.7407 327.5815,1596.0889 Q326.2617,1594.437 326.2617,1591.3159 Q326.2617,1588.1865 327.5815,1586.5347 Q328.9014,1584.8828 331.4082,1584.8828 Q332.1138,1584.8828 332.7612,1585.0322 Q333.4087,1585.1816 333.9731,1585.4805 L333.9731,1588.2031 Q333.3423,1587.6221 332.7488,1587.3523 Q332.1553,1587.0825 331.5244,1587.0825 Q330.1797,1587.0825 329.4949,1588.1492 Q328.8101,1589.2158 328.8101,1591.3159 Q328.8101,1593.4077 329.4949,1594.4744 Q330.1797,1595.541 331.5244,1595.541 Q332.1553,1595.541 332.7488,1595.2712 Q333.3423,1595.0015 333.9731,1594.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="153" x="345.5" y="1596.291">EmbeddedStringScript</text><line style="stroke:#181818;stroke-width:0.5;" x1="317.5" x2="500.5" y1="1607" y2="1607"/><line style="stroke:#181818;stroke-width:0.5;" x1="317.5" x2="500.5" y1="1615" y2="1615"/></g><!--MD5=[8cd6aba8f60734d95fc306fd5c65d7ab]
+class ProcedureInput--><g id="elem_ProcedureInput"><rect codeLine="123" fill="#F1F1F1" height="80.9766" id="ProcedureInput" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="157" x="657.5" y="1375.5"/><ellipse cx="681.05" cy="1391.5" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M683.5231,1397.6431 Q682.9421,1397.9419 682.3029,1398.0913 Q681.6638,1398.2407 680.9582,1398.2407 Q678.4514,1398.2407 677.1315,1396.5889 Q675.8117,1394.937 675.8117,1391.8159 Q675.8117,1388.6865 677.1315,1387.0347 Q678.4514,1385.3828 680.9582,1385.3828 Q681.6638,1385.3828 682.3112,1385.5322 Q682.9587,1385.6816 683.5231,1385.9805 L683.5231,1388.7031 Q682.8923,1388.1221 682.2988,1387.8523 Q681.7053,1387.5825 681.0744,1387.5825 Q679.7297,1387.5825 679.0449,1388.6492 Q678.3601,1389.7158 678.3601,1391.8159 Q678.3601,1393.9077 679.0449,1394.9744 Q679.7297,1396.041 681.0744,1396.041 Q681.7053,1396.041 682.2988,1395.7712 Q682.8923,1395.5015 683.5231,1394.9204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="106" x="696.95" y="1396.791">ProcedureInput</text><line style="stroke:#181818;stroke-width:0.5;" x1="658.5" x2="813.5" y1="1407.5" y2="1407.5"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="61" x="663.5" y="1425.0352">args: List</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="145" x="663.5" y="1441.5234">kwargs: Dict[str, Any]</text><line style="stroke:#181818;stroke-width:0.5;" x1="658.5" x2="813.5" y1="1448.4766" y2="1448.4766"/></g><!--MD5=[21e0a38580498e330e866f309f232236]
+class ProcedureState--><g id="elem_ProcedureState"><rect codeLine="111" fill="#F1F1F1" height="196.3945" id="ProcedureState" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="136" x="486" y="1318"/><ellipse cx="501" cy="1334" fill="#EB937F" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M504.6143,1340.5 L496.8945,1340.5 L496.8945,1328.1069 L504.6143,1328.1069 L504.6143,1330.2651 L499.3433,1330.2651 L499.3433,1332.938 L504.1162,1332.938 L504.1162,1335.0962 L499.3433,1335.0962 L499.3433,1338.3418 L504.6143,1338.3418 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="104" x="515" y="1339.291">ProcedureState</text><line style="stroke:#181818;stroke-width:0.5;" x1="487" x2="621" y1="1350" y2="1350"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="72" x="492" y="1367.5352">UNKNOWN</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="70" x="492" y="1384.0234">CREATING</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="29" x="492" y="1400.5117">IDLE</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="62" x="492" y="1417">LOADING</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="46" x="492" y="1433.4883">READY</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="63" x="492" y="1449.9766">RUNNING</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="73" x="492" y="1466.4648">COMPLETE</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="62" x="492" y="1482.9531">STOPPED</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="47" x="492" y="1499.4414">FAILED</text><line style="stroke:#181818;stroke-width:0.5;" x1="487" x2="621" y1="1506.3945" y2="1506.3945"/></g><!--MD5=[56dc9bd079fa0794426dfac01e4747ad]
+class Flask--><g id="elem_Flask"><rect codeLine="135" fill="#F1F1F1" height="48" id="Flask" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="67" x="1273.5" y="789"/><ellipse cx="1288.5" cy="805" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M1290.9731,811.1431 Q1290.3921,811.4419 1289.7529,811.5913 Q1289.1138,811.7407 1288.4082,811.7407 Q1285.9014,811.7407 1284.5815,810.0889 Q1283.2617,808.437 1283.2617,805.3159 Q1283.2617,802.1865 1284.5815,800.5347 Q1285.9014,798.8828 1288.4082,798.8828 Q1289.1138,798.8828 1289.7612,799.0322 Q1290.4087,799.1816 1290.9731,799.4805 L1290.9731,802.2031 Q1290.3423,801.6221 1289.7488,801.3523 Q1289.1553,801.0825 1288.5244,801.0825 Q1287.1797,801.0825 1286.4949,802.1492 Q1285.8101,803.2158 1285.8101,805.3159 Q1285.8101,807.4077 1286.4949,808.4744 Q1287.1797,809.541 1288.5244,809.541 Q1289.1553,809.541 1289.7488,809.2712 Q1290.3423,809.0015 1290.9731,808.4204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="35" x="1302.5" y="810.291">Flask</text><line style="stroke:#181818;stroke-width:0.5;" x1="1274.5" x2="1339.5" y1="821" y2="821"/><line style="stroke:#181818;stroke-width:0.5;" x1="1274.5" x2="1339.5" y1="829" y2="829"/></g><!--MD5=[687b898a26107f91307f914974ba425d]
+class Blueprint--><g id="elem_Blueprint"><rect codeLine="136" fill="#F1F1F1" height="48" id="Blueprint" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="94" x="1267" y="955.5"/><ellipse cx="1282" cy="971.5" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1.0;"/><path d="M1284.4731,977.6431 Q1283.8921,977.9419 1283.2529,978.0913 Q1282.6138,978.2407 1281.9082,978.2407 Q1279.4014,978.2407 1278.0815,976.5889 Q1276.7617,974.937 1276.7617,971.8159 Q1276.7617,968.6865 1278.0815,967.0347 Q1279.4014,965.3828 1281.9082,965.3828 Q1282.6138,965.3828 1283.2612,965.5322 Q1283.9087,965.6816 1284.4731,965.9805 L1284.4731,968.7031 Q1283.8423,968.1221 1283.2488,967.8523 Q1282.6553,967.5825 1282.0244,967.5825 Q1280.6797,967.5825 1279.9949,968.6492 Q1279.3101,969.7158 1279.3101,971.8159 Q1279.3101,973.9077 1279.9949,974.9744 Q1280.6797,976.041 1282.0244,976.041 Q1282.6553,976.041 1283.2488,975.7712 Q1283.8423,975.5015 1284.4731,974.9204 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="62" x="1296" y="976.791">Blueprint</text><line style="stroke:#181818;stroke-width:0.5;" x1="1268" x2="1360" y1="987.5" y2="987.5"/><line style="stroke:#181818;stroke-width:0.5;" x1="1268" x2="1360" y1="995.5" y2="995.5"/></g><path d="M1229.5,426 L1298.5,426 A3.75,3.75 0 0 1 1301,428.5 L1308,448.4883 L1312.5,448.4883 A2.5,2.5 0 0 1 1315,450.9883 L1315,476.4766 A2.5,2.5 0 0 1 1312.5,478.9766 L1229.5,478.9766 A2.5,2.5 0 0 1 1227,476.4766 L1227,428.5 A2.5,2.5 0 0 1 1229.5,426 " fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;"/><line style="stroke:#181818;stroke-width:0.5;" x1="1227" x2="1308" y1="448.4883" y2="448.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="68" x="1231" y="441.5352">pypubsub</text><!--MD5=[2dcef3fd26659446edefb67ee5b3bba0]
+link ScriptExecutionServiceWorker to EventBusWorker--><g id="link_ScriptExecutionServiceWorker_EventBusWorker"><path codeLine="39" d="M607.12,241 C612.01,241 616.9,241 621.78,241 " fill="none" id="ScriptExecutionServiceWorker-to-EventBusWorker" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="none" points="621.87,234,641.87,241,621.87,248,621.87,234" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[23aba4bc0d158aad32e01ce5d079dae1]
+reverse link EventBusWorker to FlaskWorker--><g id="link_EventBusWorker_FlaskWorker"><path codeLine="40" d="M804.25,241 C809.15,241 814.04,241 818.94,241 " fill="none" id="EventBusWorker-backto-FlaskWorker" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="none" points="804.11,248,784.11,241,804.11,234,804.11,248" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[0356016a1e2e5ea6770c3cc70902a29d]
+reverse link app to API--><g id="link_app_API"><path codeLine="51" d="M898.86,674.39 C880.01,709.5 853.07,759.71 837.47,788.77 " fill="none" id="app-backto-API" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="none" points="905.16,662.66,898.7996,666.0578,899.4897,673.2358,905.8501,669.838,905.16,662.66" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[71723dd1a6f45f6c1cc9bac83e5a3aed]
+reverse link app to ServerSentEventsBlueprint--><g id="link_app_ServerSentEventsBlueprint"><path codeLine="52" d="M936.43,674.85 C950.91,709.94 971.49,759.83 983.42,788.77 " fill="none" id="app-backto-ServerSentEventsBlueprint" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="none" points="931.41,662.66,930.0009,669.7321,935.987,673.7529,937.3961,666.6808,931.41,662.66" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[670a92a197175b32c692a49afe2e6446]
+link ProcedureSummary to ProcedureHistory--><g id="link_ProcedureSummary_ProcedureHistory"><path codeLine="74" d="M530.56,870.15 C534.09,890.91 538.05,914.15 541.39,933.76 " fill="none" id="ProcedureSummary-to-ProcedureHistory" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="542.27,938.93,544.6957,929.3845,541.4272,934.0015,536.8101,930.7331,542.27,938.93" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[650b803e1eaf2fa6d530be6fd187ebab]
+link PrepareProcessCommand to StartProcessCommand--><!--MD5=[39ddc06e72d877b4e817c92e8dcb1a3f]
+link StartProcessCommand to StopProcessCommand--><!--MD5=[e4f2f32f24c45f71dd786268467d1361]
+reverse link FlaskWorker to app--><g id="link_FlaskWorker_app"><path codeLine="96" d="M881.02,278.56 C889.57,356.3 909.39,536.53 916.97,605.49 " fill="none" id="FlaskWorker-backto-app" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="879.56,265.29,876.2439,271.6934,880.8794,277.2172,884.1954,270.8138,879.56,265.29" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[b27ef9488cbe5fea9ddc8e8bcf6514b7]
+reverse link ScriptExecutionServiceWorker to ScriptExecutionService--><g id="link_ScriptExecutionServiceWorker_ScriptExecutionService"><path codeLine="97" d="M482.98,344.32 C478.61,418.58 472.87,516.25 469.31,576.81 " fill="none" id="ScriptExecutionServiceWorker-backto-ScriptExecutionService" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="483.75,331.21,479.4009,336.962,483.0376,343.1888,487.3867,337.4369,483.75,331.21" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[372912cf6ec7d18640636b9aa66210a3]
+link GitScript to ExecutableScript--><g id="link_GitScript_ExecutableScript"><path codeLine="106" d="M416.93,1440.33 C427.69,1461.46 445.72,1492.48 468,1514 C489.03,1534.32 515.88,1551.79 540.55,1565.46 " fill="none" id="GitScript-to-ExecutableScript" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="none" points="544.04,1559.38,558.44,1574.93,537.49,1571.76,544.04,1559.38" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[6347d232055efdbddcdabcb5e5db919b]
+reverse link ExecutableScript to FilesystemScript--><g id="link_ExecutableScript_FilesystemScript"><path codeLine="107" d="M703.16,1599 C708.05,1599 712.94,1599 717.83,1599 " fill="none" id="ExecutableScript-backto-FilesystemScript" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="none" points="703.07,1606,683.07,1599,703.07,1592,703.07,1606" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[0de5c1a0b63c2d3fc2b14a53bd70ebf0]
+link EmbeddedStringScript to ExecutableScript--><g id="link_EmbeddedStringScript_ExecutableScript"><path codeLine="108" d="M501.65,1599 C506.68,1599 511.71,1599 516.74,1599 " fill="none" id="EmbeddedStringScript-to-ExecutableScript" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="none" points="516.78,1592,536.78,1599,516.78,1606,516.78,1592" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[6bbc213a3f2818d6d6c2b0611306e260]
+link ProcedureInput to ExecutableScript--><!--MD5=[ceb1a7694f2998abcda09fad6019829b]
+link ProcedureHistory to ProcedureState--><g id="link_ProcedureHistory_ProcedureState"><path codeLine="129" d="M549.46,1020.21 C550.21,1085.9 551.75,1219.21 552.82,1312.67 " fill="none" id="ProcedureHistory-to-ProcedureState" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="552.88,1317.93,556.7769,1308.8849,552.8229,1312.9303,548.7774,1308.9763,552.88,1317.93" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[2fdfc5020cc774548334809f7828d98d]
+link ProcedureSummary to ProcedureInput--><g id="link_ProcedureSummary_ProcedureInput"><path codeLine="130" d="M635.23,856.35 C667.87,874.26 699.78,898.65 719,931 C802.98,1072.35 768.58,1280.17 747.65,1370.43 " fill="none" id="ProcedureSummary-to-ProcedureInput" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="#181818" points="746.48,1375.42,752.4299,1367.5715,747.622,1370.5522,744.6414,1365.7443,746.48,1375.42" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[c3c5603495907f3f5099d26354dcad03]
+reverse link ProcedureInput to ProcedureState--><!--MD5=[ba95c7f4237f35f52038bfc61d34fc99]
+link Flask to Blueprint--><!--MD5=[7bc91e66d2a1940da7a755ed03b9f1fc]
+link app to Flask--><g id="link_app_Flask"><path codeLine="141" d="M956.35,662.51 C970.43,672.35 986.99,682.98 1003,691 C1050.13,714.6 1065.85,710.97 1115,730 C1162.89,748.54 1216.58,771.68 1254.98,788.64 " fill="none" id="app-to-Flask" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="none" points="1257.86,782.26,1273.3,796.78,1252.18,795.05,1257.86,782.26" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[a3eba69965b048e9f5b00c0279c27b63]
+link API to Blueprint--><g id="link_API_Blueprint"><path codeLine="142" d="M836.05,837.1 C843.73,850.72 855.23,867.16 870,877 C986.61,954.68 1154.51,973.45 1246.84,977.65 " fill="none" id="API-to-Blueprint" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="none" points="1247.24,970.66,1266.97,978.39,1246.73,984.65,1247.24,970.66" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[ba85647e1184cfa2d18c00395cb919e8]
+link ServerSentEventsBlueprint to Blueprint--><g id="link_ServerSentEventsBlueprint_Blueprint"><path codeLine="143" d="M1037.97,837.05 C1093.52,865.51 1188.36,914.11 1251.11,946.27 " fill="none" id="ServerSentEventsBlueprint-to-Blueprint" style="stroke:#181818;stroke-width:1.0;"/><polygon fill="none" points="1254.47,940.13,1269.07,955.48,1248.08,952.59,1254.47,940.13" style="stroke:#181818;stroke-width:1.0;"/></g><!--MD5=[06a4b4d53303a9e5740e1be151afed20]
+link ska_oso_oet.procedure to pypubsub--><g id="link_ska_oso_oet.procedure_pypubsub"><path d="M1203.0022,264.0539 C1207.54,276.5647 1213.6438,293.3906 1220.34,311.8488 C1233.7325,348.765 1249.495,392.21 1259.84,420.72 " fill="none" id="ska_oso_oet.procedure-to-pypubsub" style="stroke:#181818;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#181818" points="1261.65,425.72,1262.3239,415.8942,1259.9367,421.0227,1254.8082,418.6355,1261.65,425.72" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="29" x="1251" y="392.5684">uses</text></g><!--MD5=[300e9285ec805b9a8d2729f84a85b227]
+link main to application--><!--MD5=[605d9347a921b61a607f7c4a5e0cd06a]
+link restserver to application--><!--MD5=[9e40e20377711443ecd082752ec33bb9]
+link restserver to flask--><!--MD5=[b07931159a4624d0b61c6220108084ac]
+link FlaskWorker to restserver--><!--MD5=[ce8f21cae804bb116fe015a0ab75054a]
+link ScriptExecutionService to ProcedureSummary--><!--MD5=[799f727a92f89361974a63b4ee7bc2b5]
+link ScriptExecutionService to PrepareProcessCommand--><!--MD5=[adba8a5627530cfec0071e7729ee5ecf]
+link PrepareProcessCommand to ProcedureSummary--><!--MD5=[aade97447c48df279bb9731ffa762ea5]
+@startuml
+'https://plantuml.com/class-diagram
+
+package ska_oso_oet.procedure {
+
+package application as application_pkg {
+
+    package restclient <<Rectangle>> {
+        class RestClientUI {
+            create(...)
+            start(...)
+            stop(...)
+            list(...)
+            describe(...)
+            listen(...)
+        }
+    }
+
+    package main <<Rectangle>> {
+        class ScriptExecutionServiceWorker {
+            prepare(...)
+            start(...)
+            stop(...)
+            list(...)
+            on_load(evt: EventMessage)
+            on_run(evt: EventMessage)
+            on_env(evt: EventMessage)
+            on_pubsub(evt: EventMessage)
+        }
+
+        class FlaskWorker {
+        }
+
+        class EventBusWorker {
+            main_loop(...)
+            main_func(...)
+            republish(...)
+        }
+
+        ScriptExecutionServiceWorker -right-|> EventBusWorker
+        FlaskWorker -left-|> EventBusWorker
+    }
+
+    package restserver <<Rectangle>> {
+        class app <<function return value>> {
+        }
+
+        class API
+
+        class ServerSentEventsBlueprint
+
+        app o- - API
+        app o- - ServerSentEventsBlueprint
+    }
+
+    package application <<Rectangle>> {
+        class ScriptExecutionService {
+            prepare(cmd: PrepareProcessCommand) -> ProcedureSummary
+            start(cmd: StartProcessCommand) -> ProcedureSummary
+            stop(cmd: StopProcessCommand) -> List[ProcedureSummary]
+            summarise(pids: List[int]) -> List[[ProcedureSummary]
+        }
+
+        class ProcedureSummary {
+            id: int
+            script: domain.ExecutableScript
+            script_args: ...
+            state: domain.ProcedureState
+        }
+
+        class ProcedureHistory {
+            {field} process_states: List[(ProcedureState, time)]
+            stacktrace: Optional[str]
+        }
+        ProcedureSummary - -> ProcedureHistory
+
+        together {
+        class PrepareProcessCommand {
+            script: domain.ExecutableScript
+            init_args: domain.ProcedureInput
+        }
+
+        class StartProcessCommand {
+            process_uid: int
+            fn_name: str
+            run_args: domain.ProcedureInput
+        }
+
+        class StopProcessCommand {
+            process_uid: int
+            run_abort: bool
+        }
+        }
+        PrepareProcessCommand -[hidden]- StartProcessCommand
+        StartProcessCommand -[hidden]- StopProcessCommand
+    }
+    FlaskWorker *- - app
+    ScriptExecutionServiceWorker *- - ScriptExecutionService
+
+}
+
+    package domain <<Rectangle>> {
+        abstract class ExecutableScript
+        class GitScript
+        class FilesystemScript
+        class EmbeddedStringScript
+        GitScript -down-|> ExecutableScript
+        FilesystemScript -left-|> ExecutableScript
+        EmbeddedStringScript -right-|> ExecutableScript
+        ExecutableScript -up[hidden]- ProcedureInput
+
+        enum ProcedureState {
+            UNKNOWN
+            CREATING
+            IDLE
+            LOADING
+            READY
+            RUNNING
+            COMPLETE
+            STOPPED
+            FAILED
+        }
+
+        class ProcedureInput {
+            args: List
+            kwargs: Dict[str, Any]
+        }
+    }
+
+    ProcedureHistory - - -> ProcedureState
+    ProcedureSummary - - -> ProcedureInput
+    ProcedureState -left[hidden]-> ProcedureInput
+}
+
+package flask {
+    class Flask
+    class Blueprint
+
+    Flask -down[hidden]- Blueprint
+}
+
+app -|> Flask
+API -|> Blueprint
+ServerSentEventsBlueprint - -|> Blueprint
+
+package pypubsub {
+}
+ska_oso_oet.procedure -[dashed]-> pypubsub: uses
+
+main -down[hidden]- -> application
+restserver -left[hidden]- -> application
+restserver -right[hidden]- -> flask
+FlaskWorker -down[hidden]- -> restserver
+ScriptExecutionService -down[hidden]- ProcedureSummary
+ScriptExecutionService -down[hidden]- PrepareProcessCommand
+PrepareProcessCommand -right[hidden]- ProcedureSummary
+
+@enduml
+
+@startuml
+
+package ska_oso_oet.procedure {
+
+package application as application_pkg {
+
+    package restclient <<Rectangle>> {
+        class RestClientUI {
+            create(...)
+            start(...)
+            stop(...)
+            list(...)
+            describe(...)
+            listen(...)
+        }
+    }
+
+    package main <<Rectangle>> {
+        class ScriptExecutionServiceWorker {
+            prepare(...)
+            start(...)
+            stop(...)
+            list(...)
+            on_load(evt: EventMessage)
+            on_run(evt: EventMessage)
+            on_env(evt: EventMessage)
+            on_pubsub(evt: EventMessage)
+        }
+
+        class FlaskWorker {
+        }
+
+        class EventBusWorker {
+            main_loop(...)
+            main_func(...)
+            republish(...)
+        }
+
+        ScriptExecutionServiceWorker -right-|> EventBusWorker
+        FlaskWorker -left-|> EventBusWorker
+    }
+
+    package restserver <<Rectangle>> {
+        class app <<function return value>> {
+        }
+
+        class API
+
+        class ServerSentEventsBlueprint
+
+        app o- - API
+        app o- - ServerSentEventsBlueprint
+    }
+
+    package application <<Rectangle>> {
+        class ScriptExecutionService {
+            prepare(cmd: PrepareProcessCommand) -> ProcedureSummary
+            start(cmd: StartProcessCommand) -> ProcedureSummary
+            stop(cmd: StopProcessCommand) -> List[ProcedureSummary]
+            summarise(pids: List[int]) -> List[[ProcedureSummary]
+        }
+
+        class ProcedureSummary {
+            id: int
+            script: domain.ExecutableScript
+            script_args: ...
+            state: domain.ProcedureState
+        }
+
+        class ProcedureHistory {
+            {field} process_states: List[(ProcedureState, time)]
+            stacktrace: Optional[str]
+        }
+        ProcedureSummary - -> ProcedureHistory
+
+        together {
+        class PrepareProcessCommand {
+            script: domain.ExecutableScript
+            init_args: domain.ProcedureInput
+        }
+
+        class StartProcessCommand {
+            process_uid: int
+            fn_name: str
+            run_args: domain.ProcedureInput
+        }
+
+        class StopProcessCommand {
+            process_uid: int
+            run_abort: bool
+        }
+        }
+        PrepareProcessCommand -[hidden]- StartProcessCommand
+        StartProcessCommand -[hidden]- StopProcessCommand
+    }
+    FlaskWorker *- - app
+    ScriptExecutionServiceWorker *- - ScriptExecutionService
+
+}
+
+    package domain <<Rectangle>> {
+        abstract class ExecutableScript
+        class GitScript
+        class FilesystemScript
+        class EmbeddedStringScript
+        GitScript -down-|> ExecutableScript
+        FilesystemScript -left-|> ExecutableScript
+        EmbeddedStringScript -right-|> ExecutableScript
+        ExecutableScript -up[hidden]- ProcedureInput
+
+        enum ProcedureState {
+            UNKNOWN
+            CREATING
+            IDLE
+            LOADING
+            READY
+            RUNNING
+            COMPLETE
+            STOPPED
+            FAILED
+        }
+
+        class ProcedureInput {
+            args: List
+            kwargs: Dict[str, Any]
+        }
+    }
+
+    ProcedureHistory - - -> ProcedureState
+    ProcedureSummary - - -> ProcedureInput
+    ProcedureState -left[hidden]-> ProcedureInput
+}
+
+package flask {
+    class Flask
+    class Blueprint
+
+    Flask -down[hidden]- Blueprint
+}
+
+app -|> Flask
+API -|> Blueprint
+ServerSentEventsBlueprint - -|> Blueprint
+
+package pypubsub {
+}
+ska_oso_oet.procedure -[dashed]-> pypubsub: uses
+
+main -down[hidden]- -> application
+restserver -left[hidden]- -> application
+restserver -right[hidden]- -> flask
+FlaskWorker -down[hidden]- -> restserver
+ScriptExecutionService -down[hidden]- ProcedureSummary
+ScriptExecutionService -down[hidden]- PrepareProcessCommand
+PrepareProcessCommand -right[hidden]- ProcedureSummary
+
+@enduml
+
+PlantUML version 1.2022.5(Sat Apr 30 11:55:52 BST 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: GB
+--></g></svg>

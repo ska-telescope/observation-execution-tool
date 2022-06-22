@@ -1,0 +1,88 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+
+autonumber
+
+mainframe seq:inter-process pubsub
+
+participant "pubsub A :\npypubsub" as ps1 #lightblue
+participant "Worker A :\nEventBusWorker" as ebw1 #lightblue
+participant "Event Queue :\nmptools.MPQueue" as event_q #lightblue
+participant "main_loop :\nfunction" as main_loop
+participant "Work Queue :\nmptools.MPQueue" as work_q #lightgreen
+participant "Worker B :\nEventBusWorker" as ebw2 #lightgreen
+participant "pubsub B :\npypubsub" as ps2 #lightgreen
+
+[o-> ps1: sendMessage(...)
+note left
+Code running in a worker process
+publishes an event to the local
+pypubsub publish/subscribe bus.
+end note
+
+ps1 -> ebw1: republish(event)
+note right
+""EventBusWorker"" is the common base
+class for OET worker processes. The
+""EventBusWorker.republish"" method
+is subscribed to all pubsub events on
+all topics. As pubsub emits an event,
+the ""republish"" callback is called.
+end note
+
+
+ebw1 ->> event_q: put(event)
+note right
+The ""republish"" callback method adds
+the event to Event Queue, the ""MPQueue""
+monitored by the ""main_loop"" function
+running in the main process.
+end note
+
+
+event_q <- main_loop: safe_get()
+note left
+The ""main_loop"" function running in
+the main process retrieves the event
+from the Event Queue.
+end note
+
+loop each worker process work queue
+
+main_loop -> work_q: put(event)
+note left
+""main_loop"" add the event onto the work
+queue of each worker process managed by
+the main process.
+end note
+
+
+ebw2 -> work_q: safe_get()
+note left
+The ""EventBusWorker.main_loop"" method
+loops over every event received on its work
+queue. It receives the event from the work
+queue.
+end note
+
+ebw2 -> ps2: sendMessage(...)
+note left
+The event from the work queue is
+republished as a local pypubsub event.
+end note
+
+loop each subscriber to event topic
+ps2 ->o]
+note left
+pypubsub relays the event to all subscribers
+of the event topic. This has the effect of
+communicating the event that originated in
+another Python process across Python process
+boundaries.
+end note
+end
+
+end
+
+@enduml

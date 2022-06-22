@@ -1,0 +1,171 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+mainframe seq: ScriptExecutionService
+
+autonumber
+
+participant "ses :\nScriptExecutionService" as ScriptExecutionService
+participant "mgr :\nProcessManager" as ProcessManager
+
+par
+
+    alt
+
+        note over ScriptExecutionService
+        For a REST deployment, the
+        ""ScriptExecutionServiceWorker""
+        is the client making these method calls.
+        end note
+
+'        == Prepare for script execution ==
+
+        ?o-> ScriptExecutionService: prepare(cmd: PrepareProcessCommand)
+        note right
+        The ""prepare"" method is called.
+        end note
+
+        ref over ScriptExecutionService, ProcessManager
+
+        See seq:ScriptExecutionService.prepare
+
+        end
+
+        ScriptExecutionService -> ScriptExecutionService: _prune_old_state()
+        note right
+        The ScriptExecutionService is responsible for
+        keeping a history of script execution for the
+        lifetime of that process.
+
+        When the state history exceeds the maximum
+        allowed size, the state records for the oldest
+        inactive process are removed in order to keep
+        the state history size manageable.
+        end note
+
+        ?o<-- ScriptExecutionService: «ProcedureSummary»
+        note right
+        A ""ProcedureSummary"" summarising
+        the current state of the new ""ScriptWorker""
+        process is returned to the caller.
+        end note
+
+    else
+
+
+        ?o-> ScriptExecutionService: start(cmd: StartProcessCommand)
+        note right
+        The ""prepare"" method of the
+        ""ScriptExecutionService"" instance
+        is called. For a REST deployment, the
+        ""ScriptExecutionServiceWorker""
+        is the client making this method call.
+        end note
+
+        ScriptExecutionService -> ProcessManager: run(...)
+        note right
+        The ScriptExecutionService invokes the appropriate
+        method of the domain object, in this case the
+        ""ProcessManager.run"" method, which arranges for
+        the ""main"" method of the user script to be run.
+        end note
+
+        ?o<-- ScriptExecutionService: «ProcedureSummary»
+        note right
+        A ""ProcedureSummary"" summarising
+        the current state of the ""ScriptWorker""
+        process is returned to the caller.
+        end note
+
+    else
+
+        ?o-> ScriptExecutionService: stop(cmd: StopProcessCommand)
+        note right
+        For a ""stop"" call, a ""StopProcessCommand"" argument
+        is given containing the ""ScriptWorker"" PID and a flag
+        stating whether an 'abort subarray' script should be run
+        after user script termination.
+        end note
+
+        ScriptExecutionService -> ProcessManager : stop(cmd.process_uid)
+        note right
+        The ""ScriptExecutionService"" asks the ""ProcessManager""
+        to stop the child process with the given UID.
+        end note
+
+        alt flag for 'run abort subarray script' is not set
+
+            ?o<-- ScriptExecutionService : []
+            note right
+            With the child process terminated, the ""stop"" call is
+            complete and control returns to the client.
+            end note
+
+        else
+
+            ScriptExecutionService -> ScriptExecutionService: prepare(cmd: PrepareProcessCommand)
+            note right
+            Otherwise, the 'abort subarray' script is
+            prepared, creating a new child process into
+            which the abort script is loaded.
+            end note
+
+            ref over ScriptExecutionService, ProcessManager
+
+            See seq:ScriptExecutionService.prepare
+
+            end
+
+        ScriptExecutionService -> ScriptExecutionService: start(cmd: StartProcessCommand)
+
+        note right
+        With the script successfully loaded and initialised,
+        the main body of the script is run, which in this
+        case calls ""SubArrayNode.abort()"".
+        end note
+
+        ?o<-- ScriptExecutionService: [«ProcedureSummary»]
+        note right
+        A ""ProcedureSummary"" giving the status
+        of the ScriptWorker running the abort script
+        is returned to the client.
+        end note
+
+        end
+
+    end
+
+
+
+else
+
+    loop
+        ?o-> ProcessManager : «EventMessage»
+        note left
+        Events published in the ""ScriptWorker"" processes
+        arrive in the message queue monitored by the
+        ""ProcessManager.message_loop"" thread.
+        end note
+
+        ProcessManager -> ScriptExecutionService: invoke callback
+        note right
+        ""ProcessManager"" calls the ""ScriptExecutionService""
+        callbacks that are subscribers to event messages.
+        end note
+
+        ScriptExecutionService -> ScriptExecutionService: «act on message»
+        note right
+        The ""ScriptExecutionService"" callback acts on the message
+        type and message content. For instance, state change events
+        result in an update to the ""ProcessManager""'s record of
+        ""ScriptWorker"" state, while messages indicating script failure
+        would cause the stacktrace to be appended to the state history
+        for that ""ScriptWorker"". These events can be subsequently
+        seen in the ""ProcessSummary"" history for that ""ScriptWorker"".
+        end note
+
+    end
+
+end
+
+@enduml

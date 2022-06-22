@@ -1,0 +1,180 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+mainframe seq: ScriptExecutionService.prepare
+
+autonumber
+
+participant "ses :\nScriptExecutionService" as ScriptExecutionService
+participant "mgr :\nProcessManager" as ProcessManager
+participant "work_q:\nMPQueue" as work_q
+participant "em :\nEnvironmentManager" as EnvironmentManager
+participant "env :\nEnvironment" as Environment
+participant "ctx :\nMainContext" as MainContext
+
+
+par
+
+[o-> ScriptExecutionService: prepare(cmd: PrepareProcessCommand)
+note right
+The ""prepare"" method of the
+""ScriptExecutionService"" instance
+is called. For a REST deployment, the
+""ScriptExecutionServiceWorker""
+is the client making this method call.
+end note
+
+ScriptExecutionService -> ProcessManager: create(...)
+note right
+The ""ScriptExecutionService"" is responsible
+for orchestrating control of domain objects to
+satisfy the request. The ""ScriptExecutionService""
+invokes the ""create"" method of the ""ProcessManager""
+domain object to satisfy this request, passing the
+script location and initialisation arguments extracted
+from the PrepareProcessCommand object.
+end note
+
+create work_q
+ProcessManager -> work_q: «create»
+note right
+Preparations for the new process begin. A new ""MPQueue""
+is created that will be shared between ""ProcessManager""
+and the ""ScriptWorker"" child process. Messages from
+""ProcessManager"" to ""ScriptWorker"" will be added to this
+queue. Next, ""ProcessManager"" primes the work queue
+with some instructions to be run by the ""ScriptWorker""
+immediately on process creation.
+end note
+
+alt script located in git repository and virtual environment creation requested
+    ProcessManager -> EnvironmentManager: create_env()
+    note right
+    ""EnvironmentManager"" creates a new empty
+    Python virtual environment is created, referenced
+    by the git commit hash.
+    end note
+
+    create Environment
+    EnvironmentManager -> Environment: «create»
+    note left
+    An ""Environment"" object is created holding
+    information on the virtual environment (ID,
+    paths, etc) and som ""multiprocessing.Event""
+    objects which are used to synchronise
+    ""ScriptWorker"" instances, ensuring that
+    concurrent requests do not try to initialise the
+    same virtual environment.
+    end note
+
+    ProcessManager -> work_q: safe_put(«""ENV"" message»)
+    note right
+    A ""ENV"" message is added to the ScriptWorker work
+    queue. The ""ScriptWorker"" will initialise the new Python
+    virtual environment when this message is processed, whose
+    message paylooad includes the ""Environment"" created above.
+    end note
+end
+
+ProcessManager -> work_q: safe_put(«""LOAD"" message»)
+note right
+A ""LOAD"" message to load the user script is added
+to the child process work queue.
+end note
+
+ProcessManager -> work_q: safe_put(«""RUN"" message»)
+note right
+A ""RUN"" message to run the ""init"" method of the user script
+(if present) is added to the child process work queue.
+end note
+
+ProcessManager -> MainContext: Proc(...)
+note left
+Rather than creating a ""Proc"" instance directly, the
+""MainContext.Proc()"" constructor is called to create
+the new ""Proc"" instance within the context of the
+""MainContext"", which allows the ""MainContext"" to
+manage the lifecycle of the child process.
+end note
+
+create Proc
+MainContext -> Proc: «create»
+note left
+The new ""Proc"" instance is created, which is the ""ProcessManager""'s handle and
+reference to the child process. ""Proc"" arguments include:
+
+1. The class the child process should run, in this case the ""ScriptWorker"" class;
+2. The ""work_q"" ""Queue"" primed with the initial messages/instructions to parse;
+3. A set of  ""multiprocessing.Events"" which the ""ScriptWorker"" sets during
+    initialsation and the ""ProcessManager"" monitors to track successful process
+    creation and initialisation.
+end note
+
+create ScriptWorker
+Proc -> ScriptWorker: «create»
+ref over ScriptWorker
+
+See
+  seq: ScriptWorker
+
+end
+
+alt ScriptWorker launch successful within timeout period
+ProcessManager --> ScriptExecutionService: ScriptWorker ID
+note right
+""Proc"" monitors the ""multiprocessing.Event""
+instances to check whether process creation was
+successful. If the events were set within the
+timeout period, signifying that the ""ScriptWorker""
+process creation was successful, the ID of the new
+""ScriptWorker"" is returned.
+end note
+
+[<-- ScriptExecutionService : return ""ProcedureSummary""
+note right
+The ""ScriptExecutionService"" returns a
+""ProcedureSummary"" object summarising the
+current status of the ""ScriptWorker"".
+end note
+
+else
+Proc -> ScriptWorker !!
+note left
+""Proc"" monitors the ""multiprocessing.Event""
+instances to check whether process creation was
+successful. If they are not set within the timeout
+period, ScriptWorker creation is considered a
+failure and the process is terminated.
+end note
+
+[<-- Proc : exception
+note left
+An exception describing the failure
+to create the process is raised.
+end note
+end
+
+else
+
+loop every message received from a ScriptWorker
+?o-> ProcessManager : EventMessage
+ProcessManager -> ProcessManager: «handle event»
+note right
+Every message received from the ""ScriptWorker"" is parsed and
+acted on by the ""ProcessManager"". The action depends on the
+message type. For instance, state change events result
+in an update to the ""ProcessManager""'s record of ""ScriptWorker""
+state.
+end note
+
+ProcessManager ->o?: «EventMessage»
+note right
+The ""ProcessManager"" relays the message to every
+callback function that is registered as an observer.
+end note
+
+end
+
+end
+
+@enduml

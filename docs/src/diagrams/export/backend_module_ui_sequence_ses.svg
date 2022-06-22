@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="1617px" preserveAspectRatio="none" style="width:1047px;height:1617px;background:#FFFFFF;" version="1.1" viewBox="0 0 1047 1617" width="1047px" zoomAndPan="magnify"><defs/><g><rect fill="#FFFFFF" height="1606.1367" style="stroke:#000000;stroke-width:1.5;" width="1032" x="9" y="5"/><path d="M206,5 L206,14.4883 L196,24.4883 L9,24.4883 " fill="none" style="stroke:#000000;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="187" x="12" y="19.5352">seq: ScriptExecutionService</text><rect height="1441.6953" style="stroke:#000000;stroke-width:1.5;fill:none;" width="1019" x="15" y="96.4648"/><rect height="1133.3477" style="stroke:#000000;stroke-width:1.5;fill:none;" width="999" x="25" y="120.7754"/><rect height="340.4355" style="stroke:#000000;stroke-width:1.5;fill:none;" width="808" x="122" y="906.6875"/><rect height="261.0371" style="stroke:#000000;stroke-width:1.5;fill:none;" width="768.5" x="228.5" y="1270.123"/><line style="stroke:#181818;stroke-width:0.5;fill:none;stroke-dasharray:5.0,5.0;" x1="322.5" x2="322.5" y1="79.4648" y2="1555.1602"/><line style="stroke:#181818;stroke-width:0.5;fill:none;stroke-dasharray:5.0,5.0;" x1="607" x2="607" y1="79.4648" y2="1555.1602"/><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="169" x="238.5" y="31.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="30" x="308" y="52.0234">ses :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="155" x="245.5" y="68.5117">ScriptExecutionService</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="169" x="238.5" y="1554.1602"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="30" x="308" y="1574.6953">ses :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="155" x="245.5" y="1591.1836">ScriptExecutionService</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="126" x="544" y="31.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="36" x="589" y="52.0234">mgr :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="112" x="551" y="68.5117">ProcessManager</text><rect fill="#E2E2F0" height="46.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="126" x="544" y="1554.1602"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="36" x="589" y="1574.6953">mgr :</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="112" x="551" y="1591.1836">ProcessManager</text><path d="M15,96.4648 L83,96.4648 L83,103.7754 L73,113.7754 L15,113.7754 L15,96.4648 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="1441.6953" style="stroke:#000000;stroke-width:1.5;" width="1019" x="15" y="96.4648"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="23" x="30" y="110.0332">par</text><path d="M25,120.7754 L87,120.7754 L87,128.0859 L77,138.0859 L25,138.0859 L25,120.7754 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="1133.3477" style="stroke:#000000;stroke-width:1.5;" width="999" x="25" y="120.7754"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="17" x="40" y="134.3438">alt</text><path d="M186,143.0859 L186,198.0859 L459,198.0859 L459,153.0859 L449,143.0859 L186,143.0859 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M449,143.0859 L449,153.0859 L459,153.0859 L449,143.0859 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="171" x="192" y="160.6543">For a REST deployment, the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="224" x="192" y="175.4634">ScriptExecutionServiceWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="252" x="192" y="191.0977">is the client making these method calls.</text><ellipse cx="29.5" cy="227.4004" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="311,224.1504,321,228.1504,311,232.1504,315,228.1504" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="34" x2="317" y1="228.1504" y2="228.1504"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="37" y="223.4082">1</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="248" x="50" y="223.4082">prepare(cmd: PrepareProcessCommand)</text><path d="M328,208.8398 L328,233.8398 L544,233.8398 L544,218.8398 L534,208.8398 L328,208.8398 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M534,208.8398 L534,218.8398 L544,218.8398 L534,208.8398 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="23" x="334" y="226.4082">The</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="56" x="361" y="226.0845">prepare</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="108" x="421" y="226.4082">method is called.</text><rect height="67.709" style="stroke:#000000;stroke-width:1.5;fill:none;" width="437.5" x="235.5" y="239.1504"/><path d="M235.5,239.1504 L299.5,239.1504 L299.5,246.1504 L289.5,256.1504 L235.5,256.1504 L235.5,239.1504 " fill="#EEEEEE" style="stroke:#000000;stroke-width:2.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="19" x="248.5" y="253.7188">ref</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="4" x="452.25" y="271.752"> </text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="227" x="340.75" y="285.8848">See seq:ScriptExecutionService.prepare</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="4" x="452.25" y="300.0176"> </text><line style="stroke:#181818;stroke-width:1.0;" x1="323" x2="365" y1="383.2568" y2="383.2568"/><line style="stroke:#181818;stroke-width:1.0;" x1="365" x2="365" y1="383.2568" y2="396.2568"/><line style="stroke:#181818;stroke-width:1.0;" x1="324" x2="365" y1="396.2568" y2="396.2568"/><polygon fill="#181818" points="334,392.2568,324,396.2568,334,400.2568,330,396.2568" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="330" y="378.5146">2</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="116" x="343" y="378.5146">_prune_old_state()</text><path d="M471,316.8594 L471,448.8594 L779,448.8594 L779,326.8594 L769,316.8594 L471,316.8594 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M769,316.8594 L769,326.8594 L779,326.8594 L769,316.8594 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="283" x="477" y="334.4277">The ScriptExecutionService is responsible for</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="278" x="477" y="349.7383">keeping a history of script execution for the</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="151" x="477" y="365.0488">lifetime of that process.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="4" x="477" y="380.3594"> </text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="287" x="477" y="395.6699">When the state history exceeds the maximum</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="280" x="477" y="410.9805">allowed size, the state records for the oldest</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="287" x="477" y="426.291">inactive process are removed in order to keep</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="215" x="477" y="441.6016">the state history size manageable.</text><polygon fill="#181818" points="155,489.9648,145,493.9648,155,497.9648,151,493.9648" style="stroke:#181818;stroke-width:1.0;"/><ellipse cx="322.5" cy="493.2148" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="149" x2="318" y1="493.9648" y2="493.9648"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="161" y="489.2227">3</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="134" x="174" y="489.2227">«ProcedureSummary»</text><path d="M328,459.3438 L328,514.3438 L623,514.3438 L623,469.3438 L613,459.3438 L328,459.3438 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M613,459.3438 L613,469.3438 L623,469.3438 L613,459.3438 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="9" x="334" y="476.9121">A</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="128" x="347" y="476.5884">ProcedureSummary</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="82" x="479" y="476.9121">summarising</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="174" x="334" y="492.2227">the current state of the new</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="512" y="491.8989">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="204" x="334" y="507.5332">process is returned to the caller.</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="25" x2="1024" y1="521.2754" y2="521.2754"/><ellipse cx="64.5" cy="576.3682" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="311,573.1182,321,577.1182,311,581.1182,315,577.1182" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="69" x2="317" y1="577.1182" y2="577.1182"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="72" y="572.376">4</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="213" x="85" y="572.376">start(cmd: StartProcessCommand)</text><path d="M328,527.2754 L328,613.2754 L584,613.2754 L584,537.2754 L574,527.2754 L328,527.2754 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M574,527.2754 L574,537.2754 L584,537.2754 L574,527.2754 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="23" x="334" y="544.8438">The</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="56" x="361" y="544.52">prepare</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="89" x="421" y="544.8438">method of the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="176" x="334" y="559.8306">ScriptExecutionService</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="53" x="514" y="560.1543">instance</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="231" x="334" y="575.4648">is called. For a REST deployment, the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="224" x="334" y="590.2739">ScriptExecutionServiceWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="235" x="334" y="605.9082">is the client making this method call.</text><polygon fill="#181818" points="595,661.9268,605,665.9268,595,669.9268,599,665.9268" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="323" x2="601" y1="665.9268" y2="665.9268"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="330" y="661.1846">5</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="41" x="343" y="661.1846">run(...)</text><path d="M612,623.6504 L612,694.6504 L955,694.6504 L955,633.6504 L945,623.6504 L612,623.6504 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M945,623.6504 L945,633.6504 L955,633.6504 L945,623.6504 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="322" x="618" y="641.2188">The ScriptExecutionService invokes the appropriate</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="287" x="618" y="656.5293">method of the domain object, in this case the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="144" x="618" y="671.5161">ProcessManager.run</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="173" x="766" y="671.8398">method, which arranges for</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="20" x="618" y="687.1504">the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="32" x="642" y="686.8267">main</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="225" x="678" y="687.1504">method of the user script to be run.</text><polygon fill="#181818" points="155,735.5137,145,739.5137,155,743.5137,151,739.5137" style="stroke:#181818;stroke-width:1.0;"/><ellipse cx="322.5" cy="738.7637" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="149" x2="318" y1="739.5137" y2="739.5137"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="161" y="734.7715">6</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="134" x="174" y="734.7715">«ProcedureSummary»</text><path d="M328,704.8926 L328,759.8926 L594,759.8926 L594,714.8926 L584,704.8926 L328,704.8926 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M584,704.8926 L584,714.8926 L594,714.8926 L584,704.8926 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="9" x="334" y="722.4609">A</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="128" x="347" y="722.1372">ProcedureSummary</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="82" x="479" y="722.4609">summarising</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="145" x="334" y="737.7715">the current state of the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="483" y="737.4478">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="204" x="334" y="753.082">process is returned to the caller.</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="25" x2="1024" y1="766.8242" y2="766.8242"/><ellipse cx="66.5" cy="814.3506" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="311,811.1006,321,815.1006,311,819.1006,315,815.1006" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="71" x2="317" y1="815.1006" y2="815.1006"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="74" y="810.3584">7</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="211" x="87" y="810.3584">stop(cmd: StopProcessCommand)</text><path d="M328,772.8242 L328,843.8242 L698,843.8242 L698,782.8242 L688,772.8242 L328,772.8242 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M688,772.8242 L688,782.8242 L698,782.8242 L688,772.8242 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="31" x="334" y="790.3926">For a</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="32" x="369" y="790.0688">stop</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="37" x="405" y="790.3926">call, a</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="144" x="446" y="790.0688">StopProcessCommand</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="60" x="594" y="790.3926">argument</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="144" x="334" y="805.7031">is given containing the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="482" y="805.3794">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="87" x="582" y="805.7031">PID and a flag</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="349" x="334" y="821.0137">stating whether an 'abort subarray' script should be run</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="181" x="334" y="836.3242">after user script termination.</text><polygon fill="#181818" points="595,877.0322,605,881.0322,595,885.0322,599,881.0322" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="323" x2="601" y1="881.0322" y2="881.0322"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="330" y="876.29">8</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="143" x="343" y="876.29">stop(cmd.process_uid)</text><path d="M612,854.0664 L612,894.0664 L1009,894.0664 L1009,864.0664 L999,854.0664 L612,854.0664 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M999,854.0664 L999,864.0664 L1009,864.0664 L999,854.0664 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="23" x="618" y="871.6348">The</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="176" x="645" y="871.311">ScriptExecutionService</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="53" x="825" y="871.6348">asks the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="112" x="882" y="871.311">ProcessManager</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="281" x="618" y="886.9453">to stop the child process with the given UID.</text><path d="M122,906.6875 L184,906.6875 L184,913.998 L174,923.998 L122,923.998 L122,906.6875 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="340.4355" style="stroke:#000000;stroke-width:1.5;" width="808" x="122" y="906.6875"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="17" x="137" y="920.2559">alt</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="257" x="199" y="919.3223">[flag for 'run abort subarray script' is not set]</text><polygon fill="#181818" points="281,951.9639,271,955.9639,281,959.9639,277,955.9639" style="stroke:#181818;stroke-width:1.0;"/><ellipse cx="322.5" cy="955.2139" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="275" x2="318" y1="955.9639" y2="955.9639"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="9" x="287" y="951.2217">9</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="8" x="300" y="951.2217">[]</text><path d="M328,928.998 L328,968.998 L666,968.998 L666,938.998 L656,928.998 L328,928.998 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M656,928.998 L656,938.998 L666,938.998 L656,928.998 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="240" x="334" y="946.5664">With the child process terminated, the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="32" x="578" y="946.2427">stop</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="37" x="614" y="946.5664">call is</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="267" x="334" y="961.877">complete and control returns to the client.</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="122" x2="930" y1="975.6191" y2="975.6191"/><line style="stroke:#181818;stroke-width:1.0;" x1="323" x2="365" y1="1009.7402" y2="1009.7402"/><line style="stroke:#181818;stroke-width:1.0;" x1="365" x2="365" y1="1009.7402" y2="1022.7402"/><line style="stroke:#181818;stroke-width:1.0;" x1="324" x2="365" y1="1022.7402" y2="1022.7402"/><polygon fill="#181818" points="334,1018.7402,324,1022.7402,334,1026.7402,330,1022.7402" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="330" y="1004.998">10</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="248" x="352" y="1004.998">prepare(cmd: PrepareProcessCommand)</text><path d="M612,981.6191 L612,1036.6191 L904,1036.6191 L904,991.6191 L894,981.6191 L612,981.6191 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M894,981.6191 L894,991.6191 L904,991.6191 L894,981.6191 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="247" x="618" y="999.1875">Otherwise, the 'abort subarray' script is</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="271" x="618" y="1014.498">prepared, creating a new child process into</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="203" x="618" y="1029.8086">which the abort script is loaded.</text><rect height="67.709" style="stroke:#000000;stroke-width:1.5;fill:none;" width="437.5" x="235.5" y="1042.5508"/><path d="M235.5,1042.5508 L299.5,1042.5508 L299.5,1049.5508 L289.5,1059.5508 L235.5,1059.5508 L235.5,1042.5508 " fill="#EEEEEE" style="stroke:#000000;stroke-width:2.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="19" x="248.5" y="1057.1191">ref</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="4" x="452.25" y="1075.1523"> </text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="227" x="340.75" y="1089.2852">See seq:ScriptExecutionService.prepare</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="4" x="452.25" y="1103.418"> </text><line style="stroke:#181818;stroke-width:1.0;" x1="323" x2="365" y1="1148.3809" y2="1148.3809"/><line style="stroke:#181818;stroke-width:1.0;" x1="365" x2="365" y1="1148.3809" y2="1161.3809"/><line style="stroke:#181818;stroke-width:1.0;" x1="324" x2="365" y1="1161.3809" y2="1161.3809"/><polygon fill="#181818" points="334,1157.3809,324,1161.3809,334,1165.3809,330,1161.3809" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="330" y="1143.6387">11</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="213" x="352" y="1143.6387">start(cmd: StartProcessCommand)</text><path d="M577,1120.2598 L577,1175.2598 L915,1175.2598 L915,1130.2598 L905,1120.2598 L577,1120.2598 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M905,1120.2598 L905,1130.2598 L915,1130.2598 L905,1120.2598 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="317" x="583" y="1137.8281">With the script successfully loaded and initialised,</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="300" x="583" y="1153.1387">the main body of the script is run, which in this</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="61" x="583" y="1168.4492">case calls</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="160" x="648" y="1168.1255">SubArrayNode.abort()</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="4" x="808" y="1168.4492">.</text><polygon fill="#181818" points="138,1216.8125,128,1220.8125,138,1224.8125,134,1220.8125" style="stroke:#181818;stroke-width:1.0;"/><ellipse cx="322.5" cy="1220.0625" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="132" x2="318" y1="1220.8125" y2="1220.8125"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="144" y="1216.0703">12</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="142" x="166" y="1216.0703">[«ProcedureSummary»]</text><path d="M328,1186.1914 L328,1241.1914 L624,1241.1914 L624,1196.1914 L614,1186.1914 L328,1186.1914 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M614,1186.1914 L614,1196.1914 L624,1196.1914 L614,1186.1914 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="9" x="334" y="1203.7598">A</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="128" x="347" y="1203.436">ProcedureSummary</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="106" x="479" y="1203.7598">giving the status</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="275" x="334" y="1219.0703">of the ScriptWorker running the abort script</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="152" x="334" y="1234.3809">is returned to the client.</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="15" x2="1034" y1="1262.123" y2="1262.123"/><path d="M228.5,1270.123 L302.5,1270.123 L302.5,1277.4336 L292.5,1287.4336 L228.5,1287.4336 L228.5,1270.123 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="261.0371" style="stroke:#000000;stroke-width:1.5;" width="768.5" x="228.5" y="1270.123"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="29" x="243.5" y="1283.6914">loop</text><ellipse cx="450.5" cy="1326.3047" fill="none" rx="4" ry="4" style="stroke:#181818;stroke-width:1.5;"/><polygon fill="#181818" points="595,1323.0547,605,1327.0547,595,1331.0547,599,1327.0547" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="455" x2="601" y1="1327.0547" y2="1327.0547"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="458" y="1322.3125">13</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="102" x="480" y="1322.3125">«EventMessage»</text><path d="M612,1292.4336 L612,1347.4336 L947,1347.4336 L947,1302.4336 L937,1292.4336 L612,1292.4336 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M937,1292.4336 L937,1302.4336 L947,1302.4336 L937,1292.4336 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="147" x="618" y="1310.002">Events published in the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="769" y="1309.6782">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="869" y="1310.002">processes</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="288" x="618" y="1325.3125">arrive in the message queue monitored by the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="216" x="618" y="1340.2993">ProcessManager.message_loop</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="44" x="838" y="1340.623">thread.</text><polygon fill="#181818" points="334,1381.3311,324,1385.3311,334,1389.3311,330,1385.3311" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="328" x2="606" y1="1385.3311" y2="1385.3311"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="340" y="1380.5889">14</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="98" x="362" y="1380.5889">invoke callback</text><path d="M612,1358.3652 L612,1398.3652 L982,1398.3652 L982,1368.3652 L972,1358.3652 L612,1358.3652 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M972,1358.3652 L972,1368.3652 L982,1368.3652 L972,1358.3652 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="112" x="618" y="1375.6099">ProcessManager</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="53" x="734" y="1375.9336">calls the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="176" x="791" y="1375.6099">ScriptExecutionService</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="313" x="618" y="1391.2441">callbacks that are subscribers to event messages.</text><line style="stroke:#181818;stroke-width:1.0;" x1="323" x2="365" y1="1467.7285" y2="1467.7285"/><line style="stroke:#181818;stroke-width:1.0;" x1="365" x2="365" y1="1467.7285" y2="1480.7285"/><line style="stroke:#181818;stroke-width:1.0;" x1="324" x2="365" y1="1480.7285" y2="1480.7285"/><polygon fill="#181818" points="334,1476.7285,324,1480.7285,334,1484.7285,330,1480.7285" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="18" x="330" y="1462.9863">15</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="112" x="352" y="1462.9863">«act on message»</text><path d="M476,1408.9863 L476,1525.9863 L893,1525.9863 L893,1418.9863 L883,1408.9863 L476,1408.9863 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M883,1408.9863 L883,1418.9863 L893,1418.9863 L883,1408.9863 " fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="23" x="482" y="1426.5547">The</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="176" x="509" y="1426.231">ScriptExecutionService</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="185" x="689" y="1426.5547">callback acts on the message</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="383" x="482" y="1441.8652">type and message content. For instance, state change events</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="159" x="482" y="1457.1758">result in an update to the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="112" x="645" y="1456.8521">ProcessManager</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="71" x="757" y="1457.1758">'s record of</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="482" y="1472.1626">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="289" x="582" y="1472.4863">state, while messages indicating script failure</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="396" x="482" y="1487.7969">would cause the stacktrace to be appended to the state history</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="47" x="482" y="1503.1074">for that</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="533" y="1502.7837">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="223" x="629" y="1503.1074">. These events can be subsequently</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="69" x="482" y="1518.418">seen in the</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="112" x="555" y="1518.0942">ProcessSummary</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="95" x="671" y="1518.418">history for that</text><text fill="#000000" font-family="monospace" font-size="13" lengthAdjust="spacing" textLength="96" x="770" y="1518.0942">ScriptWorker</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="4" x="866" y="1518.418">.</text><!--MD5=[c22daa76922d927b97bab6487852869b]
+@startuml
+'https://plantuml.com/sequence-diagram
+
+mainframe seq: ScriptExecutionService
+
+autonumber
+
+participant "ses :\nScriptExecutionService" as ScriptExecutionService
+participant "mgr :\nProcessManager" as ProcessManager
+
+par
+
+    alt
+
+        note over ScriptExecutionService
+        For a REST deployment, the
+        ""ScriptExecutionServiceWorker""
+        is the client making these method calls.
+        end note
+
+'        == Prepare for script execution ==
+
+        ?o-> ScriptExecutionService: prepare(cmd: PrepareProcessCommand)
+        note right
+        The ""prepare"" method is called.
+        end note
+
+        ref over ScriptExecutionService, ProcessManager
+
+        See seq:ScriptExecutionService.prepare
+
+        end
+
+        ScriptExecutionService -> ScriptExecutionService: _prune_old_state()
+        note right
+        The ScriptExecutionService is responsible for
+        keeping a history of script execution for the
+        lifetime of that process.
+
+        When the state history exceeds the maximum
+        allowed size, the state records for the oldest
+        inactive process are removed in order to keep
+        the state history size manageable.
+        end note
+
+        ?o<- - ScriptExecutionService: «ProcedureSummary»
+        note right
+        A ""ProcedureSummary"" summarising
+        the current state of the new ""ScriptWorker""
+        process is returned to the caller.
+        end note
+
+    else
+
+
+        ?o-> ScriptExecutionService: start(cmd: StartProcessCommand)
+        note right
+        The ""prepare"" method of the
+        ""ScriptExecutionService"" instance
+        is called. For a REST deployment, the
+        ""ScriptExecutionServiceWorker""
+        is the client making this method call.
+        end note
+
+        ScriptExecutionService -> ProcessManager: run(...)
+        note right
+        The ScriptExecutionService invokes the appropriate
+        method of the domain object, in this case the
+        ""ProcessManager.run"" method, which arranges for
+        the ""main"" method of the user script to be run.
+        end note
+
+        ?o<- - ScriptExecutionService: «ProcedureSummary»
+        note right
+        A ""ProcedureSummary"" summarising
+        the current state of the ""ScriptWorker""
+        process is returned to the caller.
+        end note
+
+    else
+
+        ?o-> ScriptExecutionService: stop(cmd: StopProcessCommand)
+        note right
+        For a ""stop"" call, a ""StopProcessCommand"" argument
+        is given containing the ""ScriptWorker"" PID and a flag
+        stating whether an 'abort subarray' script should be run
+        after user script termination.
+        end note
+
+        ScriptExecutionService -> ProcessManager : stop(cmd.process_uid)
+        note right
+        The ""ScriptExecutionService"" asks the ""ProcessManager""
+        to stop the child process with the given UID.
+        end note
+
+        alt flag for 'run abort subarray script' is not set
+
+            ?o<- - ScriptExecutionService : []
+            note right
+            With the child process terminated, the ""stop"" call is
+            complete and control returns to the client.
+            end note
+
+        else
+
+            ScriptExecutionService -> ScriptExecutionService: prepare(cmd: PrepareProcessCommand)
+            note right
+            Otherwise, the 'abort subarray' script is
+            prepared, creating a new child process into
+            which the abort script is loaded.
+            end note
+
+            ref over ScriptExecutionService, ProcessManager
+
+            See seq:ScriptExecutionService.prepare
+
+            end
+
+        ScriptExecutionService -> ScriptExecutionService: start(cmd: StartProcessCommand)
+
+        note right
+        With the script successfully loaded and initialised,
+        the main body of the script is run, which in this
+        case calls ""SubArrayNode.abort()"".
+        end note
+
+        ?o<- - ScriptExecutionService: [«ProcedureSummary»]
+        note right
+        A ""ProcedureSummary"" giving the status
+        of the ScriptWorker running the abort script
+        is returned to the client.
+        end note
+
+        end
+
+    end
+
+
+
+else
+
+    loop
+        ?o-> ProcessManager : «EventMessage»
+        note left
+        Events published in the ""ScriptWorker"" processes
+        arrive in the message queue monitored by the
+        ""ProcessManager.message_loop"" thread.
+        end note
+
+        ProcessManager -> ScriptExecutionService: invoke callback
+        note right
+        ""ProcessManager"" calls the ""ScriptExecutionService""
+        callbacks that are subscribers to event messages.
+        end note
+
+        ScriptExecutionService -> ScriptExecutionService: «act on message»
+        note right
+        The ""ScriptExecutionService"" callback acts on the message
+        type and message content. For instance, state change events
+        result in an update to the ""ProcessManager""'s record of
+        ""ScriptWorker"" state, while messages indicating script failure
+        would cause the stacktrace to be appended to the state history
+        for that ""ScriptWorker"". These events can be subsequently
+        seen in the ""ProcessSummary"" history for that ""ScriptWorker"".
+        end note
+
+    end
+
+end
+
+@enduml
+
+@startuml
+
+mainframe seq: ScriptExecutionService
+
+autonumber
+
+participant "ses :\nScriptExecutionService" as ScriptExecutionService
+participant "mgr :\nProcessManager" as ProcessManager
+
+par
+
+    alt
+
+        note over ScriptExecutionService
+        For a REST deployment, the
+        ""ScriptExecutionServiceWorker""
+        is the client making these method calls.
+        end note
+
+
+        ?o-> ScriptExecutionService: prepare(cmd: PrepareProcessCommand)
+        note right
+        The ""prepare"" method is called.
+        end note
+
+        ref over ScriptExecutionService, ProcessManager
+
+        See seq:ScriptExecutionService.prepare
+
+        end
+
+        ScriptExecutionService -> ScriptExecutionService: _prune_old_state()
+        note right
+        The ScriptExecutionService is responsible for
+        keeping a history of script execution for the
+        lifetime of that process.
+
+        When the state history exceeds the maximum
+        allowed size, the state records for the oldest
+        inactive process are removed in order to keep
+        the state history size manageable.
+        end note
+
+        ?o<- - ScriptExecutionService: «ProcedureSummary»
+        note right
+        A ""ProcedureSummary"" summarising
+        the current state of the new ""ScriptWorker""
+        process is returned to the caller.
+        end note
+
+    else
+
+
+        ?o-> ScriptExecutionService: start(cmd: StartProcessCommand)
+        note right
+        The ""prepare"" method of the
+        ""ScriptExecutionService"" instance
+        is called. For a REST deployment, the
+        ""ScriptExecutionServiceWorker""
+        is the client making this method call.
+        end note
+
+        ScriptExecutionService -> ProcessManager: run(...)
+        note right
+        The ScriptExecutionService invokes the appropriate
+        method of the domain object, in this case the
+        ""ProcessManager.run"" method, which arranges for
+        the ""main"" method of the user script to be run.
+        end note
+
+        ?o<- - ScriptExecutionService: «ProcedureSummary»
+        note right
+        A ""ProcedureSummary"" summarising
+        the current state of the ""ScriptWorker""
+        process is returned to the caller.
+        end note
+
+    else
+
+        ?o-> ScriptExecutionService: stop(cmd: StopProcessCommand)
+        note right
+        For a ""stop"" call, a ""StopProcessCommand"" argument
+        is given containing the ""ScriptWorker"" PID and a flag
+        stating whether an 'abort subarray' script should be run
+        after user script termination.
+        end note
+
+        ScriptExecutionService -> ProcessManager : stop(cmd.process_uid)
+        note right
+        The ""ScriptExecutionService"" asks the ""ProcessManager""
+        to stop the child process with the given UID.
+        end note
+
+        alt flag for 'run abort subarray script' is not set
+
+            ?o<- - ScriptExecutionService : []
+            note right
+            With the child process terminated, the ""stop"" call is
+            complete and control returns to the client.
+            end note
+
+        else
+
+            ScriptExecutionService -> ScriptExecutionService: prepare(cmd: PrepareProcessCommand)
+            note right
+            Otherwise, the 'abort subarray' script is
+            prepared, creating a new child process into
+            which the abort script is loaded.
+            end note
+
+            ref over ScriptExecutionService, ProcessManager
+
+            See seq:ScriptExecutionService.prepare
+
+            end
+
+        ScriptExecutionService -> ScriptExecutionService: start(cmd: StartProcessCommand)
+
+        note right
+        With the script successfully loaded and initialised,
+        the main body of the script is run, which in this
+        case calls ""SubArrayNode.abort()"".
+        end note
+
+        ?o<- - ScriptExecutionService: [«ProcedureSummary»]
+        note right
+        A ""ProcedureSummary"" giving the status
+        of the ScriptWorker running the abort script
+        is returned to the client.
+        end note
+
+        end
+
+    end
+
+
+
+else
+
+    loop
+        ?o-> ProcessManager : «EventMessage»
+        note left
+        Events published in the ""ScriptWorker"" processes
+        arrive in the message queue monitored by the
+        ""ProcessManager.message_loop"" thread.
+        end note
+
+        ProcessManager -> ScriptExecutionService: invoke callback
+        note right
+        ""ProcessManager"" calls the ""ScriptExecutionService""
+        callbacks that are subscribers to event messages.
+        end note
+
+        ScriptExecutionService -> ScriptExecutionService: «act on message»
+        note right
+        The ""ScriptExecutionService"" callback acts on the message
+        type and message content. For instance, state change events
+        result in an update to the ""ProcessManager""'s record of
+        ""ScriptWorker"" state, while messages indicating script failure
+        would cause the stacktrace to be appended to the state history
+        for that ""ScriptWorker"". These events can be subsequently
+        seen in the ""ProcessSummary"" history for that ""ScriptWorker"".
+        end note
+
+    end
+
+end
+
+@enduml
+
+PlantUML version 1.2022.5(Sat Apr 30 11:55:52 BST 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: GB
+--></g></svg>

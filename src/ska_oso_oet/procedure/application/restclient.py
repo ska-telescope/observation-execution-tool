@@ -419,7 +419,7 @@ class RestClientUI:
             (default=http://gitlab.com/ska-telescope/ska-oso-scripting)
         :param git_branch: Branch within the git repository, defaults to master if not provided
         :param git_commit: Git commit hash, defaults to latest commit on the given branch.
-        Branch does not need to be specified if commit hash is provided
+            Branch does not need to be specified if commit hash is provided
         :param create_env: Install dependencies from the procedure source project. Set to False by default.
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.

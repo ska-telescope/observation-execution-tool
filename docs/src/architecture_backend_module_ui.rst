@@ -1,23 +1,31 @@
 .. _architecture_backend_module_ui:
 
-*******************************************************
-OET backend module view: User Interface and service API
-*******************************************************
+*******************************
+Module view: UI and Service API
+*******************************
+
+.. note::
+    Diagrams are embedded as SVG images. If the text is too small, please use your web browser to zoom in to the images,
+    which should be magnified without losing detail.
+
+This view is a module view showing the key components responsible for the OET interface, how they relay requests from
+remote OET clients to the internal OET components responsible for meeting that request, and how the response makes
+its way back to the client.
 
 Primary Presentation
 ====================
 
-.. figure:: diagrams/export/backend_module_ui.svg
+.. figure:: diagrams/export/backend_module_ui_primary.svg
    :align: center
 
-   Major classes involved in the user interface and the interface to the script execution domain.
+   Major classes involved in the user interface and remote control of the script execution API.
 
 
-Elements and their properties
-=============================
+Element Catalogue
+=================
 
-Components
-----------
+Elements and Their Properties
+-----------------------------
 
 .. list-table::
    :widths: 15 85
@@ -25,32 +33,37 @@ Components
 
    * - Component
      - Description
-   * - EmbeddedStringScript
-     - EmbeddedStringScript holds a complete Python script as a string. This class has been identified as possibly being
-       useful as it allows a SchedulingBlock to directly specify and inject the code to be run, but has not been
-       implemented.
-   * - ExecutableScript
-     - ExecutableScript is an abstract class for any class that defines a Python script to be executed.
-   * - FilesystemScript
-     - FilesystemScript captures the information required to run a Python script located within the filesystem of a
-       deployed OET backend. As an example, in a Kubernetes context this could point to a script contained in the
-       default preinstalled scripting environment, or a script made available in a persistent volume mounted by the
-       OET pod.
+   * - app
+     - app is the Flask web application that makes the OET available over HTTP. The web application has the API
+       blueprint and ServerSentEventsBlueprint registered, which makes the OET REST API and the OET event stream
+       available when the web app is run.
+   * - API
+     - API is a Flask blueprint containing the Python functions that implement the OET REST API. HTTP resources in
+       this blueprint are accessed and modified to control script execution. As the resources are accessed, the API
+       implementation publishes an equivalent request event, which triggers the ScriptExecutionServiceWorker to take the
+       appropriate action to satisfy that request. API also converts the response back to a suitable HTML response.
+       |br|
+       |br|
+       The REST API is documented separately in :doc:`architecture_module_rest_api`.
+   * - Blueprint
+     - A Flask Blueprint collects a set of HTTP operations that can be registered on a Flask web application.
+       Registering a Blueprint to a Flask application makes the HTTP operations in that blueprint available when
+       the web application is deployed.
+   * - EventBusWorker
+     - EventBusWorker is a base class that bridges the independent pypubsub publish-subscribe networks so that a
+       pypubsub message seen in one EventBusWorker process is also seen by other EventBusWorker processes.
+       EventBusWorker is intended to be inherited by classes that register their methods as subscribers to pypubsub
+       topics, so that the subclass method is called whenever an event on that topic is received.
+   * - Flask
+     - Flask (https://flask.palletsprojects.com) is a third-party Python framework for developing web applications. It
+       provides an easy way to expose a Python function as a HTTP endpoint. Flask is used to present the functions in
+       the restserver module as HTTP REST resources.
    * - FlaskWorker
-     - FlaskWorker presents the ScriptExecutionService API as a REST service. The API of the REST service can be seen
-       in :doc:`architecture_module_rest_api`. REST resources are accessed and modified to control script execution. As
-       REST resources are accessed, FlaskWorker publishes an equivalent request event to the OET event bus, triggering
-       the system to take the appropriate action to satisfy that request, and converts the response event back into an
-       HTML response.
-       |br|
-       |br|
-       The FlaskWorker component also present a Server-Sent Events (SSE) stream of all events sent over the
-       OET event bus. This provides the mechanism for external visibility of OET actions, significant milestones, and
-       user events emitted by the script such as 'subarray resources allocated', 'scan started', 'scan stopped', etc.
-   * - GitScript
-     - GitScript captures the information required to run a Python script located in a git repository. It collects
-       a set of identifying information that together can conclusively identify the specific script to be run, such
-       as git repository, branch, tag, and commit hash.
+     - FlaskWorker runs the 'app' Flask application. As a subclass of EventBusWorker, FlaskWorker also relays pypubsub
+       messages to and from other Python processes.
+   * - mptools
+     - mptools is a Python framework for creating robust Python applications that run code concurrently in independent
+       Python processes. See :doc:`architecture_backend_module_execution` for details.
    * - PrepareProcessCommand
      - PrepareProcessCommand encapsulates all the information required to prepare a script for execution. It references
        both the script location and arguments that should be passed to the script initialisation function, if such a
@@ -58,29 +71,15 @@ Components
    * - ProcedureHistory
      - ProcedureHistory represents the state history of a script execution process, holding a timeline of state
        transitions and any stacktrace resulting from script execution failure.
-   * - ProcedureInput
-     - ProcedureInput captures the anonymous positional arguments and named keyword arguments for a Python function
-       call. ProcedureInput is used in the presentation model to help describe historic function calls as well as
-       in the PrepareProcessCommand and StartProcessCommand to define the arguments for an upcoming call.
-   * - ProcedureState
-     - ProcedureState is an enumeration defining the states that a Procedure (a child ScriptWorker process running a
-       Python script) can be in. The states are:
-
-        * ``CREATING``: child process is being created but is not yet initialised or ready to process other actions.
-        * ``IDLE``: child process has been successfully created and is ready to process the next instruction.
-        * ``PREP_ENV``: virtual environment for the user script is being prepared and its dependencies installed.
-        * ``LOADING``: user script is being retrieved and loaded.
-        * ``READY``: user script is fully initialised and ready to run.
-        * ``RUNNING``: a function of the user script is being run.
-        * ``COMPLETE``: the user script has completed successfully and the child process exited cleanly.
-        * ``STOPPED``: the user script was forcibly terminated
-        * ``FAILED``: the script process terminated due to an exception.
-        * ``UNKNOWN``: script termination failed, leaving the script in an unknown state and effectively unmanaged
-
    * - ProcedureSummary
      - ProcedureSummary is a presentation model capturing information on a script and its execution history. Through
        the ProcedureSummary, information identifying the script, the process running it, the current and historic
        process state, plus a timeline of all function called on the script and any resulting stacktrace can be resolved.
+   * - pypubsub
+     - pypubsub (https://pypubsub.readthedocs.io) is a third-party Python library that provides an implementation of the
+       Observer pattern. It provides a publish-subscribe API for that clients can use to subscribe to topics. pypubsub
+       notifies each subscriber whenever a message is received on that topic, passing the message to the client.
+       pypubsub offer in-process publish-subscribe; it has no means of communicating messages to other Python processes.
    * - RestClientUI
      - RestClientUI is a command line utility that accesses the OET REST API over the network. The RestClientUI provides
        commands for creating new script execution processes, invoking methods on user scripts, terminating scrip
@@ -88,8 +87,8 @@ Components
        process.
    * - ScriptExecutionService
      - ScriptExecutionService provides the high-level API for the script execution domain, presenting methods that
-       'start script _Y_' or 'run method _Y_ of user script _Z_'. The ScriptExecutionService orchestrates control of the
-       ProcessManager and associated domain objects in order to satisfy an API request.
+       'start script X' or 'run method Y of user script Z'. See :doc:`architecture_backend_module_execution` for details on
+       how this is achieved.
        |br|
        |br|
        In addition to its primary responsibility of triggering actions in response to API calls, ScriptExecutionService
@@ -100,6 +99,12 @@ Components
        ScriptExecutionService provides a presentation model of a script and its
        execution history, which can be formatted for presentation via the REST service and CLI. This presentation model
        is called a ProcedureSummary.
+   * - ServerSentEventsBlueprint
+     - ServerSentEventsBlueprint is a Flask Blueprint contains the functions required to expose the OET event bus
+       as a server-sent events stream (https://en.wikipedia.org/wiki/Server-sent_events). This SSE stream republishes
+       all events sent over the OET event bus as HTTP data. This provides the mechanism for external visibility of OET
+       actions, significant milestones, and user events emitted by the script such as 'subarray resources allocated',
+       'scan started', 'scan stopped', etc.
    * - StartProcessCommand
      - StartProcessCommand encapsulates all the information required to call a method of a user script running on the
        OET backend. It captures information on the script process to target, the script function to call, and any
@@ -109,8 +114,43 @@ Components
        script process should be terminated and whether the 'abort subarray activity' follow-on script should be run.
 
 
-Context
-=======
+Element Interfaces
+------------------
+
+The major interface between the UI and OET backend is the REST API presented by the FlaskWorker, which is documented
+separately in :doc:`architecture_module_rest_api`.
+
+
+Element Behaviour
+-----------------
+
+API invocation via HTTP REST
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The sequence diagram below illustrates how the components above interact to invoke a call on an remote
+ScriptExecutionService instance in response to a request from a client. This diagram shows how the user request is
+received by the FlaskWorker REST backend, how that triggers actions on independent ScriptExecutionServiceWorker process
+hosting the ScriptExecutionService instance, and how the response is returned to the user.
+
+.. figure:: diagrams/export/backend_module_ui_sequence_scripting_api_over_rest.svg
+   :align: center
+
+|br|
+
+Inter-process publish-subscribe
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The sequence diagram below illustrates how in-process pypubsub messages are communicated to other processes, which is
+an essential part of the communication between FlaskWorker and ScriptExecutionServiceWorker and forms the basis for how
+event messages emitted by scripts can be published to the outside world in an HTTP SSE stream.
+
+.. figure:: diagrams/export/backend_module_ui_sequence_interprocess_pubsub.svg
+   :align: center
+
+|br|
+
+Context Diagram
+===============
 
 .. figure:: diagrams/export/backend_candc_context.svg
    :align: center
@@ -123,6 +163,8 @@ N/A
 
 Rationale
 =========
+
+N/A
 
 
 .. |br| raw:: html

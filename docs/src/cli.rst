@@ -1,42 +1,96 @@
-.. _rest-client:
+.. _cli:
 
-***********
-REST Client
-***********
+*********************
+OET command line tool
+*********************
 
-SKA observations will be controlled by ‘Procedures’. Each 'Procedure'
-comprises a Python script and a set of arguments, some of which will be
-set when the script is loaded and some at run-time.
+.. note::
 
-The management of 'Procedures' and the processes which execute them is
-handled by the OET backend, which implements the methods
-described in the :doc:`architecture_module_rest_api`. The OET backend lets the user:
+   The OET currently focuses on generic script execution. That is, the
+   interface focuses on loading, running, and stopping Python scripts, rather
+   than specific commands for controlling the telescope. An interface that
+   focuses more on the goals that a user want to achieve by running the script
+   is part of the design but not yet implemented. Once implemented, it should
+   be possible to say ``oet allocate``, ``oet observe``, or similar.
 
-* Load requested Procedure scripts with initialization arguments and
-  have them ready for execution.
-* When required, pass run-time arguments to a script and start a process
-  executing it.
-* Stop the script mid-execution by terminating the process executing it.
+The ``oet`` command can be used to control a remote OET deployment [#f2]_.
+Using ``oet``, a remote OET deployment can be instructed to:
 
-The REST Client provides a command line interface (CLI) through which
-the user can communicate with the backend remotely.  The
-address of the remote REST server can be specified at the command line
+#. load a Python script using ``oet create``;
+#. run a function contained in the Python script using ``oet start``;
+#. stop a running Python function using ``oet stop``;
+#. observe OET messages and script messages using ``oet listen``.
+
+In addition, the current and historic state of Python processes running on
+the backend can be inspected with
+
+#. ``oet list`` to list all scripts that are prepared to run or are currently
+   running;
+#. ``oet describe`` to inspect the current and historic state of a specific
+   process.
+
+General help and specific help is available at the command line by adding the
+``--help`` argument. For example:
+
+.. code-block:: console
+
+  # get a general overview of the OET CLI
+  $ oet --help
+
+  # get specific help on the oet create command
+  $ oet create -- --help
+
+  # get specific help on the oet describe command
+  $ oet describe -- --help
+
+
+Installation
+************
+
+The OET command line tool is available as the ``oet`` command at the terminal.
+If the ``oet`` command is not available, install it with:
+
+.. code-block:: console
+
+   $ pip install --upgrade ska_oso_oet
+
+At the time of writing, the OET CLI is not packaged separately and hence
+requires OET backend dependencies - including PyTango - to be installed on the
+target machine. As PyTango bindings are not available for MacOS, it is not
+currently possible to install the OET CLI on MacOS.
+
+
+Configuration
+*************
+
+The address of the remote OET backend can be specified at the command line
 via the ``server-url`` argument, or set session-wide by setting the
-``OET_REST_URI`` environment variable, e.g.,::
+``OET_REST_URI`` environment variable, e.g.,
 
-  export OET_REST_URI=http://my-rest-service:5000/api/v1.0/procedures
+.. code-block:: console
+
+  # provide the server URL when running the command, e.g.
+  $ oet --server-url=http://my-oet-deployment.com:5000/api/v1.0/procedures list
+
+  # alternatively, set the server URL for a session by defining an environment variable
+  $ export OET_REST_URI=http://my-oet-deployment.com:5000/api/v1.0/procedures
+  $ oet list
+  $ oet describe
+  $ oet create ...
 
 By default, the client assumes it is operating within a SKAMPI environment
 and attempts to connect to a REST server using the default REST service name
 of http://ska-oso-oet-rest:5000/api/v1.0/procedures. If running the OET
-client within SKAMPI via the oet-ssh or oet-jupyter services, the
-``OET_REST_URI`` variable is automatically set.
+client within a SKAMPI pod, the ``OET_REST_URI`` should automatically be set.
 
-The methods available through the REST Client map closely to the
-:doc:`architecture_module_rest_api` of the server and are described below.
+
+Commands
+********
+
+The commands available via ``oet`` are described below.
 
 +--------------------+---------------+------------------------------------------------------+-------------------------------------+
-| REST Client Method | Parameters    | Default                                              | Description                         |
+| OET CLI action     | Parameters    | Default                                              | Description                         |
 +====================+===============+======================================================+=====================================+
 | create             | server-url    | See note above                                       | **Prepare a new procedure**         |
 |                    +---------------+------------------------------------------------------+                                     |
@@ -101,60 +155,49 @@ The methods available through the REST Client map closely to the
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to
 those specified by name e.g. --myparam=12.
 
-Help Information
-----------------
-General help information can be obtained by typing the command: ::
-
-  $ oet
-
-Detailed help information for specific commands is also available e.g.::
-
-  $ oet create --help
 
 Examples
---------
+********
 
 This section runs through an example session in which we will
-load two new 'Procedures' and then run one of them.
-First we load the procedures: ::
+load two new 'Procedures' [#f1]_ and then run one of them.
+First we load the procedure, and see the backend report that
+it is creating a process with ID=1 to run the script.
+
+.. code-block:: console
 
   $ oet create file://test.py 'hello' --verbose=true
-
-which will generate the output: ::
 
     ID  Script           Creation time        State
   ----  ---------------  -------------------  -------
      1  file://test.py   2020-09-30 10:30:12  CREATING
 
 Note the use of both positional and keyword/value arguments for the
-procedure on the command line.
-Now create a second procedure: ::
+procedure on the command line. Now create a second procedure:
+
+.. code-block:: console
 
   $ oet create file://test2.py 'goodbye'
-
-giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
     2  file://test2.py  2020-09-30 10:35:12  CREATING
 
+Now create a third procedure that will be pulled from git:
 
-Now create a third procedure that will be pulled from git: ::
+.. code-block:: console
 
   $ oet create git://test3.py --git_repo="http://foo.git" --git_branch="test" --create_env=True
-
-giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
     3  git://test3.py    2020-09-30 10:40:12  CREATING
 
+We can check the state of the procedures currently loaded:
 
-We can check the state of the procedures currently loaded by: ::
+.. code-block:: console
 
   $ oet list
-
-giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
@@ -162,33 +205,34 @@ giving: ::
      2  file://test2.py  2020-09-30 10:35:12  READY
      3  git://test3.py   2020-09-30 10:40:12  READY
 
-Alternatively, we could check the state of procedure 2 by typing: ::
+Alternatively, we could check the state of procedure 2 alone:
+
+.. code-block:: console
 
   $ oet list --pid=2
-
-giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
     2   file://test2.py  2020-09-30 10:35:12  READY
 
 Now that we have our procedures loaded we can start one of them running.
-At this point we supply the index number of the procedure to run, and
-some runtime arguments to pass to it if required. ::
+At this point we supply the ID of the procedure to run, and
+some runtime arguments to pass to it if required. The backend responds
+with the new status of the procedure.
+
+.. code-block:: console
 
   $ oet start --pid=2 'bob' --simulate=false
 
-giving: ::
-
     ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
-    2   file://test2.py  2020-09-30 10:35:12  READY
+    2   file://test2.py  2020-09-30 10:35:12  RUNNING
 
-A 'list' command will give the same information: ::
+An ``oet list`` command also shows the updated status of procedure #2:
+
+.. code-block:: console
 
   $ oet list
-
-giving: ::
 
     ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
@@ -196,12 +240,12 @@ giving: ::
      2  file://test2.py  2020-09-30 10:35:12  RUNNING
      3  git://test3.py   2020-09-30 10:40:12  READY
 
-A 'describe' command will give further detail on a procedure, no
-matter its state.::
+An ``oet describe`` command will give further detail on a procedure, no
+matter its state.
+
+.. code-block:: console
 
  $ oet describe --pid=2
-
-giving: ::
 
     ID  Script           URI
   ----  ---------------  -----------------------------------------
@@ -222,12 +266,11 @@ giving: ::
       1      init      ['goodbye']  {'subarray_id': 1}
       2      run       ['bob']      {'simulate': false}
 
+Describing a script from git shows additional information on the repository:
 
-Describing a script from git shows additional information on the repository: ::
+.. code-block:: console
 
  $ oet describe --pid=3
-
-giving: ::
 
     ID  Script           URI
   ----  ---------------  -----------------------------------------
@@ -251,34 +294,35 @@ giving: ::
   ---------------      -------   -------------------
   http://foo.git       test
 
-
 If the procedure failed, then the stack trace will also be displayed.
 
-A 'listen' command will give the real time delivery of oet events published by scripts: ::
+A 'listen' command will give the real time delivery of oet events published by scripts:
+
+.. code-block:: console
 
   $ oet listen
 
-giving: ::
+  event: request.procedure.list
+  data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056049.4846392, 'pids': None}
 
-    event: request.procedure.list
-    data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056049.4846392, 'pids': None}
+  event: procedure.pool.list
+  data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056049.4846392, 'result': []}
 
-    event: procedure.pool.list
-    data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056049.4846392, 'result': []}
+  event: request.procedure.create
+  data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056247.0666442, 'cmd': PrepareProcessCommand(script_uri='file://scripts/eventbus.py', init_args=<ProcedureInput(, subarray_id=1)>)}
 
-    event: request.procedure.create
-    data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056247.0666442, 'cmd': PrepareProcessCommand(script_uri='file://scripts/eventbus.py', init_args=<ProcedureInput(, subarray_id=1)>)}
+  event: procedure.lifecycle.created
+  data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056247.0666442, 'result': ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.READY, 1604056247.713874)], stacktrace=None)>, state=<ProcedureState.READY: 1>)}
 
-    event: procedure.lifecycle.created
-    data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056247.0666442, 'result': ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.READY, 1604056247.713874)], stacktrace=None)>, state=<ProcedureState.READY: 1>)}
-
-
+Press :kbd:`Control-c` to exit from ``oet listen``.
 
 Example session in a SKAMPI environment
 ---------------------------------------
 
 From a shell, you can use the 'oet' command to trigger remote execution of a
-full observation, e.g.,::
+full observation, e.g.,
+
+.. code-block:: console
 
   # create process for telescope start-up and execute it
   oet create file:///scripts/startup.py
@@ -302,3 +346,10 @@ full observation, e.g.,::
   # create process for telescope standby script
   oet create file:///scripts/standby.py
   oet start
+
+
+.. rubric:: Footnotes
+
+.. [#f2] Specifically, the cli tool acts as a REST client that interfaces with
+   the OET REST API described in :doc:`architecture_module_rest_api`.
+.. [#f1] For reference, the OET architecture refers to Python scripts as `Procedures`.

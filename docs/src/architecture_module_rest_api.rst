@@ -1,8 +1,8 @@
 .. _architecture_module_rest_api:
 
-********
-REST API
-********
+*********************
+Module View: REST API
+*********************
 
 1. Interface Identity
 =====================

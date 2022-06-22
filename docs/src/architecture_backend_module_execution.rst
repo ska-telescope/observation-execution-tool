@@ -1,23 +1,31 @@
 .. _architecture_backend_module_execution:
 
-*****************************************
-OET backend module view: Script Execution
-*****************************************
+*****************************
+Module view: Script Execution
+*****************************
+
+.. note::
+    Diagrams are embedded as SVG images. If the text is too small, please use your web browser to zoom in to the images,
+    which should be magnified without losing detail.
+
+This view is a module view depicting the key components involved in script execution; that is, creating new
+Python processes that load a user script and run functions in that user script when requested.
+
 
 Primary Presentation
 ====================
 
-.. figure:: diagrams/export/backend_module_execution.svg
+.. figure:: diagrams/export/backend_module_script_execution_primary.svg
    :align: center
 
    Major classes responsible for the execution and management of user scripts.
 
 
-Elements and their properties
-=============================
+Element Catalogue
+=================
 
-Components
-----------
+Elements and their properties
+-----------------------------
 
 .. list-table::
    :widths: 15 85
@@ -25,6 +33,13 @@ Components
 
    * - Component
      - Description
+   * - EmbeddedStringScript
+     - *NOT IMPLEMENTED YET*
+       |br|
+       |br|
+       EmbeddedStringScript holds a complete Python script as a string. This class has been identified as possibly being
+       useful as it allows a SchedulingBlock to directly specify and inject the code to be run, but has not been
+       implemented.
    * - Environment
      - Environment is a dataclass that holds the information required to identify a Python virtual environment and its
        location on disk. In addition, it holds synchronisation primitives to avoid race conditions between multiple
@@ -42,8 +57,26 @@ Components
        environments to be shared for script execution requests that target the same git repository and commit, as
        uniquely identified by the git commit hash. EnvironmentManager currently has no policy for deleting virtual
        environments, and the number of virtual environments could in principle increase unbounded manner. A policy of
-       maintaining all active environments and maintaining a maximum of _n_ inactive environments is expected to be
+       maintaining all active environments and maintaining a maximum of *n* inactive environments is expected to be
        implemented.
+   * - Event
+     - The Event class manages a flag that can be set and/or inspected by multi Python processes. Events are commonly
+       used to signify to observers of the Event that a condition has occurred. Event is part of the standard Python
+       library.
+   * - EventBusWorker
+     - EventBusWorker is a QueueProcWorker that relays pubsub events seen in one EventBusWorker process to other
+       EventBusWorker processes. See :doc:`architecture_backend_module_ui` for more information.
+   * - ExecutableScript
+     - ExecutableScript is an abstract class for any class that defines a Python script to be executed.
+   * - FilesystemScript
+     - FilesystemScript captures the information required to run a Python script located within the filesystem of a
+       deployed OET backend. As an example, in a Kubernetes context this could point to a script contained in the
+       default preinstalled scripting environment, or a script made available in a persistent volume mounted by the
+       OET pod.
+   * - GitScript
+     - GitScript captures the information required to run a Python script that is located in a git repository. It
+       collects a set of identifying information that together can conclusively identify the specific script to be run,
+       such as git repository, branch, tag, and commit hash.
    * - MainContext
      - MainContext is the parent context for a set of worker processes that communicate via message queues. It defines
        a consistent architecture for event-based communication between Python processes and consistent behaviour for
@@ -78,6 +111,24 @@ Components
        |br|
        Proc does not contain any business logic or application-specific code, which should be contained in the
        ProcWorker - or more likely, a subclass of ProcWorker.
+   * - ProcedureInput
+     - ProcedureInput captures the anonymous positional arguments and named keyword arguments for a Python function
+       call. ProcedureInput is used in the presentation model to help describe historic function calls as well as
+       in the PrepareProcessCommand and StartProcessCommand to define the arguments for an upcoming call.
+   * - ProcedureState
+     - ProcedureState is an enumeration defining the states that a Procedure (a child ScriptWorker process running a
+       Python script) can be in. The states are:
+
+        * ``CREATING``: child process is being created but is not yet initialised or ready to process other actions.
+        * ``IDLE``: child process has been successfully created and is ready to process the next instruction.
+        * ``PREP_ENV``: virtual environment for the user script is being prepared and its dependencies installed.
+        * ``LOADING``: user script is being retrieved and loaded.
+        * ``READY``: user script is fully initialised and ready to run.
+        * ``RUNNING``: a function of the user script is being run.
+        * ``COMPLETE``: the user script has completed successfully and the child process exited cleanly.
+        * ``STOPPED``: the user script was forcibly terminated
+        * ``FAILED``: the script process terminated due to an exception.
+        * ``UNKNOWN``: script termination failed, leaving the script in an unknown state and effectively unmanaged
    * - ProcessManager
      - ProcessManager is the parent for all script execution processes. Specifically, it is the parent of all the
        ScriptWorker instances that run user code in a child Python process. ProcessManager is responsible for launching
@@ -105,8 +156,16 @@ Components
        |br|
        |br|
        ProcWorker contains the boilerplate code required to set up a well-behaved child process. It handles starting
-       the process, connecting signal handlers, signalling the parent that startup completed, etc. ProcWorker does not
-       contain any business logic, which should be defined in a subclass of ProcWorker.
+       the process, connecting signal handlers, signalling the parent that startup completed, and monitoring whether
+       shutdown has been requested. ProcWorker does not contain any business logic, implementing a simple loop that
+       repeatedly runs the abstract `main_func()` function for as long as the shutdown event is not set.
+   * - Queue
+     - Queue is a class that implements a multi-consumer, multi-producer FIFO queue that can be shared between Python
+       processes. Queue is part of the standard Python library.
+   * - QueueProcWorker
+     - QueueProcWorker is a ProcWorker that loops over items received on a message queue, calling the abstract
+       `main_func()` function for every item received. Together with the ProcWorker base class functionality,
+       QueueProcWorker will call `main_func()` for every event received for as long as the shutdown event is not set.
    * - ScriptExecutionService
      - ScriptExecutionService provides the high-level API for the script execution domain, presenting methods that
        'start script _Y_' or 'run method _Y_ of user script _Z_'. The ScriptExecutionService orchestrates control of the
@@ -114,13 +173,8 @@ Components
        |br|
        |br|
        In addition to its primary responsibility of triggering actions in response to API calls, ScriptExecutionService
-       is also responsible for recording script execution history, which it achieves by monitoring for and recording script
-       lifecycle change events. ScriptExecutionService manages the history state so that the number of records does not
-       increase in an unbounded manner (currently, history is maintained for all active scripts and a maximum of 10
-       inactive scripts (=any script that is complete).
-       ScriptExecutionService provides a presentation model of a script and its
-       execution history, which can be formatted for presentation via the REST service and CLI. This presentation model
-       is called a ProcedureSummary.
+       is also responsible for recording script execution history and providing a summary of process state.
+       See :doc:`architecture_backend_module_ui` for more information.
    * - ScriptWorker
      - ScriptWorker is a class that can loads a user script in a child process, running functions of that user script on
        request.
@@ -135,12 +189,67 @@ Components
         #. publish a message emitted by another OET component within this process
 
 
-Context
-=======
+Element Interfaces
+------------------
 
-.. figure:: diagrams/export/backend_candc_context.svg
+The major public interface in these interactions is the ScriptExecutionService API. For more information on this
+interface, please reference the the API documentation for
+``ska_oso_oet.procedure.application.application.ScriptExecutionService``.
+
+Element Behaviour
+-----------------
+
+ScriptExecutionService
+~~~~~~~~~~~~~~~~~~~~~~
+
+The sequence diagram below gives a high-level overview of how the ``ScriptExecutionService`` controls objects in the
+domain module to meet requests to prepare, start, and stop user script execution.
+
+.. figure:: diagrams/export/backend_module_ui_sequence_ses.svg
    :align: center
 
+|br|
+
+ScriptExecutionService.prepare
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The diagram below gives more detail on how the domain layer handles a request to prepare a script for execution.
+
+.. figure:: diagrams/export/backend_module_ui_sequence_ses_prepare.svg
+   :align: center
+
+|br|
+
+ScriptWorker
+~~~~~~~~~~~~
+
+The diagram below illustrates how a ``ScriptWorker`` is created and how it communicates startup success with the parent
+process.
+
+.. figure:: diagrams/export/backend_module_ui_sequence_scriptworker.svg
+   :align: center
+
+|br|
+
+ScriptWorker.main_loop
+~~~~~~~~~~~~~~~~~~~~~~
+
+The diagram below depicts the main ``ScriptWorker`` message loop, illustrating how the various messages
+from the parent ``ProcessManager`` are handled by child ``ScriptWorker``.
+
+.. figure:: diagrams/export/backend_module_ui_sequence_scriptworker_main_loop.svg
+   :align: center
+
+|br|
+
+Context Diagram
+===============
+
+.. figure:: diagrams/export/backend_module_execution_context.svg
+   :align: center
+
+
+|br|
 
 Variability Guide
 =================
@@ -149,6 +258,8 @@ N/A
 
 Rationale
 =========
+
+N/A
 
 
 .. |br| raw:: html

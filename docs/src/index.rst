@@ -13,8 +13,7 @@
   :caption: Home
   :hidden:
 
-  rest_client
-
+  cli
 
 .. toctree::
   :maxdepth: 1
@@ -22,8 +21,8 @@
   :hidden:
 
   architecture_backend_candc
-  architecture_backend_module_execution
   architecture_backend_module_ui
+  architecture_backend_module_execution
   architecture_module_rest_api
 
 
@@ -36,9 +35,19 @@
   :caption: Public API Documentation
   :hidden:
 
-  package/oet/command
-  package/oet/features
+  package/ska_oso_oet/command_public
+  package/ska_oso_oet/features
 
+.. toctree::
+  :maxdepth: 1
+  :caption: Private API Documentation
+  :hidden:
+
+  package/ska_oso_oet/command
+  package/ska_oso_oet/event/topics
+  package/ska_oso_oet/mptools
+  package/ska_oso_oet/procedure
+  package/ska_oso_oet/procedure/application
 
 ==========================
 Observation Execution Tool
@@ -68,7 +77,7 @@ remote script execution functionality:
 - The OET REST server maintains a list of the scripts that have been
   loaded and their current state. The server implements the interface specified
   by the OET :doc:`architecture_module_rest_api`.
-- The OET :doc:`rest_client` provides a Command Line Interface (CLI) to the
+- The OET :doc:`cli` provides a Command Line Interface (CLI) to the
   OET backend.
 
 More details on the OET architecture can be found in :doc:`architecture_backend_candc`.
@@ -118,7 +127,7 @@ targets that can be useful for developers. These targets are:
 Local development with k8s
 ==========================
 OET REST server can be deployed locally using Helm and Kubernetes and OET CLI
-:doc:`rest_client` can be used to communicate with the server. OET CLI is
+:doc:`cli` can be used to communicate with the server. OET CLI is
 installed as part of the Poetry virtual environment (see README) or can be
 used inside a running OET container/pod.
 
