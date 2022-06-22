@@ -1,8 +1,11 @@
 .. _architecture_backend_candc:
 
-********************
-OET backend C&C view
-********************
+************************************
+C&C view: OET client and OET backend
+************************************
+
+This view is a component and connector (C&C) view of the OET that depicts the primary OET clients and their connection
+to the OET backend, and how the components of the backend are connected.
 
 Primary Presentation
 ====================
@@ -57,11 +60,6 @@ Components
        |br|
        The SKA Online Scheduling Tool (OST) instructs the OET which SB should be executed next, taking into account
        aspects such as telescope resource availability, observing conditions, source visibility, science priority, etc.
-   * - ProcessManager
-     - ProcessManager is the parent of all ScriptWorker instances. ProcessManager is responsible for launching each
-       ScriptWorker processes and is a proxy for all ScriptWorker communication, relaying requests such as 'run function
-       X' to the ScriptWorker and relaying events emitted by the ScriptWorker or the running user script to the rest of
-       the system.
    * - RestClientUI
      - RestClientUI provides a command-line interface for invoke actions on the OET backend. The CLI is a general interface
        whose operations (currently) focus on the script execution perspective (load script, abort script, etc.) rather
@@ -70,11 +68,15 @@ Components
        |br|
        In addition to controlling script execution, the CLI can be used to inspect the status of scripts that have run
        or are running.
+   * - ScriptExecutionServiceWorker
+     - ScriptExecutionServiceWorker responds to requests received by the FlaskWorker, relaying the request to the
+       ScriptExecutionService and publishing the response as an event that can be received by the FlaskWorker and
+       returned to the user in the appropriate format.
    * - ScriptExecutionService
      - ScriptExecutionService present the high-level API for script execution. The ScriptExecutionService orchestrates
-       control to satisfy an API request. ScriptExecutionService is also responsible for recording script execution
-       history. ScriptExecutionService can return a presentation model of a script, its current statem and its execution
-       history. See ProcedureSummary in the backend module view.
+       control of internal OET objects to satisfy an API request. ScriptExecutionService is also responsible for
+       recording script execution history. ScriptExecutionService can return a presentation model of a script, its
+       current state, and its execution history. See ProcedureSummary in the backend module view.
    * - ScriptWorker
      - ScriptWorker represents the child Python process running the requested user script. For SKA operations, most
        scripts executed by the OET, and hence scripts that will run in a Script Process, will be 'observing scripts'
