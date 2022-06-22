@@ -1,0 +1,36 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+package ska_oso_oet.procedure.application {
+
+    package restclient <<Rectangle>> {
+        class RestClientUI {
+        }
+    }
+
+    package main <<Rectangle>> {
+        class ScriptExecutionServiceWorker {
+            prepare(...)
+            start(...)
+            stop(...)
+            list(...)
+        }
+
+        class FlaskWorker {
+        }
+    }
+
+    package application <<Rectangle>> {
+        class ScriptExecutionService {
+        }
+
+    }
+
+
+    RestClientUI - FlaskWorker : Sends user request\n >
+    FlaskWorker -- ScriptExecutionServiceWorker : relays\nrequest\n >
+    ScriptExecutionServiceWorker -- ScriptExecutionService : invokes\ncommands\n >
+}
+
+
+@enduml

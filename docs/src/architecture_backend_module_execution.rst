@@ -242,7 +242,7 @@ from the parent ``ProcessManager`` are handled by child ``ScriptWorker``.
 Context Diagram
 ===============
 
-.. figure:: diagrams/export/backend_candc_context.svg
+.. figure:: diagrams/export/backend_module_execution_context.svg
    :align: center
 
 
