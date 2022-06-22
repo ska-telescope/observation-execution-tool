@@ -272,7 +272,7 @@ class TestScriptExecutionService:
         )
         summary = ses.prepare(prepare_cmd)
 
-        helper.wait_for_message_on_topic(topics.procedure.lifecycle.created)
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.created, timeout=3.0)
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 0
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.complete)) == 0
@@ -284,7 +284,7 @@ class TestScriptExecutionService:
         )
         _ = ses.start(run_cmd)
 
-        helper.wait_for_message_on_topic(topics.procedure.lifecycle.stacktrace)
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.stacktrace, timeout=3.0)
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.complete)) == 0
