@@ -284,7 +284,7 @@ class TestScriptExecutionService:
         )
         _ = ses.start(run_cmd)
 
-        helper.wait_for_message_on_topic(topics.procedure.lifecycle.failed)
+        helper.wait_for_message_on_topic(topics.procedure.lifecycle.stacktrace)
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.created)) == 1
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.started)) == 1
         assert len(helper.messages_on_topic(topics.procedure.lifecycle.complete)) == 0
