@@ -32,7 +32,7 @@ the backend can be inspected with
 General help and specific help is available at the command line by adding the
 ``--help`` argument. For example:
 
-.. code-block:: bash
+.. code-block:: console
 
   # get a general overview of the OET CLI
   $ oet --help
@@ -50,7 +50,7 @@ Installation
 The OET command line tool is available as the ``oet`` command at the terminal.
 If the ``oet`` command is not available, install it with:
 
-.. code-block:: bash
+.. code-block:: console
 
    $ pip install --upgrade ska_oso_oet
 
@@ -67,7 +67,7 @@ The address of the remote OET backend can be specified at the command line
 via the ``server-url`` argument, or set session-wide by setting the
 ``OET_REST_URI`` environment variable, e.g.,
 
-.. code-block:: bash
+.. code-block:: console
 
   # provide the server URL when running the command, e.g.
   $ oet --server-url=http://my-oet-deployment.com:5000/api/v1.0/procedures list
@@ -161,45 +161,43 @@ Examples
 
 This section runs through an example session in which we will
 load two new 'Procedures' [#f1]_ and then run one of them.
-First we load the procedures: ::
+First we load the procedure, and see the backend report that
+it is creating a process with ID=1 to run the script.
+
+.. code-block:: console
 
   $ oet create file://test.py 'hello' --verbose=true
-
-which will generate the output: ::
 
     ID  Script           Creation time        State
   ----  ---------------  -------------------  -------
      1  file://test.py   2020-09-30 10:30:12  CREATING
 
 Note the use of both positional and keyword/value arguments for the
-procedure on the command line.
-Now create a second procedure: ::
+procedure on the command line. Now create a second procedure:
+
+.. code-block:: console
 
   $ oet create file://test2.py 'goodbye'
-
-giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
     2  file://test2.py  2020-09-30 10:35:12  CREATING
 
+Now create a third procedure that will be pulled from git:
 
-Now create a third procedure that will be pulled from git: ::
+.. code-block:: console
 
   $ oet create git://test3.py --git_repo="http://foo.git" --git_branch="test" --create_env=True
-
-giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
     3  git://test3.py    2020-09-30 10:40:12  CREATING
 
+We can check the state of the procedures currently loaded:
 
-We can check the state of the procedures currently loaded by: ::
+.. code-block:: console
 
   $ oet list
-
-giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
@@ -207,33 +205,34 @@ giving: ::
      2  file://test2.py  2020-09-30 10:35:12  READY
      3  git://test3.py   2020-09-30 10:40:12  READY
 
-Alternatively, we could check the state of procedure 2 by typing: ::
+Alternatively, we could check the state of procedure 2 alone:
+
+.. code-block:: console
 
   $ oet list --pid=2
-
-giving: ::
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
     2   file://test2.py  2020-09-30 10:35:12  READY
 
 Now that we have our procedures loaded we can start one of them running.
-At this point we supply the index number of the procedure to run, and
-some runtime arguments to pass to it if required. ::
+At this point we supply the ID of the procedure to run, and
+some runtime arguments to pass to it if required. The backend responds
+with the new status of the procedure.
+
+.. code-block:: console
 
   $ oet start --pid=2 'bob' --simulate=false
 
-giving: ::
-
     ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
-    2   file://test2.py  2020-09-30 10:35:12  READY
+    2   file://test2.py  2020-09-30 10:35:12  RUNNING
 
-A 'list' command will give the same information: ::
+An ``oet list`` command also shows the updated status of procedure #2:
+
+.. code-block:: console
 
   $ oet list
-
-giving: ::
 
     ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
@@ -241,12 +240,12 @@ giving: ::
      2  file://test2.py  2020-09-30 10:35:12  RUNNING
      3  git://test3.py   2020-09-30 10:40:12  READY
 
-A 'describe' command will give further detail on a procedure, no
-matter its state.::
+An ``oet describe`` command will give further detail on a procedure, no
+matter its state.
+
+.. code-block:: console
 
  $ oet describe --pid=2
-
-giving: ::
 
     ID  Script           URI
   ----  ---------------  -----------------------------------------
@@ -267,12 +266,11 @@ giving: ::
       1      init      ['goodbye']  {'subarray_id': 1}
       2      run       ['bob']      {'simulate': false}
 
+Describing a script from git shows additional information on the repository:
 
-Describing a script from git shows additional information on the repository: ::
+.. code-block:: console
 
  $ oet describe --pid=3
-
-giving: ::
 
     ID  Script           URI
   ----  ---------------  -----------------------------------------
@@ -296,34 +294,35 @@ giving: ::
   ---------------      -------   -------------------
   http://foo.git       test
 
-
 If the procedure failed, then the stack trace will also be displayed.
 
-A 'listen' command will give the real time delivery of oet events published by scripts: ::
+A 'listen' command will give the real time delivery of oet events published by scripts:
+
+.. code-block:: console
 
   $ oet listen
 
-giving: ::
+  event: request.procedure.list
+  data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056049.4846392, 'pids': None}
 
-    event: request.procedure.list
-    data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056049.4846392, 'pids': None}
+  event: procedure.pool.list
+  data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056049.4846392, 'result': []}
 
-    event: procedure.pool.list
-    data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056049.4846392, 'result': []}
+  event: request.procedure.create
+  data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056247.0666442, 'cmd': PrepareProcessCommand(script_uri='file://scripts/eventbus.py', init_args=<ProcedureInput(, subarray_id=1)>)}
 
-    event: request.procedure.create
-    data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056247.0666442, 'cmd': PrepareProcessCommand(script_uri='file://scripts/eventbus.py', init_args=<ProcedureInput(, subarray_id=1)>)}
+  event: procedure.lifecycle.created
+  data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056247.0666442, 'result': ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.READY, 1604056247.713874)], stacktrace=None)>, state=<ProcedureState.READY: 1>)}
 
-    event: procedure.lifecycle.created
-    data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056247.0666442, 'result': ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.READY, 1604056247.713874)], stacktrace=None)>, state=<ProcedureState.READY: 1>)}
-
-
+Press :kbd:`Control-c` to exit from ``oet listen``.
 
 Example session in a SKAMPI environment
 ---------------------------------------
 
 From a shell, you can use the 'oet' command to trigger remote execution of a
-full observation, e.g.,::
+full observation, e.g.,
+
+.. code-block:: console
 
   # create process for telescope start-up and execute it
   oet create file:///scripts/startup.py
