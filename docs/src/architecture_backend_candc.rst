@@ -26,7 +26,7 @@ Components
 
    * - Component
      - Description
-   * - FlaskWorker
+   * - :class:`~ska_oso_oet.procedure.application.main.FlaskWorker`
      - FlaskWorker is a Flask application that presents a RESTful OET API, functioning as a REST adapter for the
        ScriptExecutionService. Scripts can be created, controlled, and terminated via the REST API. The FlaskWorker
        presents a REST resource for each script process created and managed by the ProcessManager.
@@ -35,7 +35,7 @@ Components
        FlaskWorker also presents a Server-Sent Event (SSE) data stream, republishing each event seen on the OET event
        bus as an SSE event. This SSE stream gives remote clients visibility of actions taken by the OET backend and
        events announced by scripting libraries and user scripts.
-   * - main
+   * - :func:`~ska_oso_oet.procedure.application.main.main`
      - The main component is the first component to be started when the OET backend is launched. It has two major
        responsibilities: first, it launches and thereafter manages the lifecycle of all components comprising the OET
        backend apart from the 'script process', whose lifecycle is managed separately by the script
@@ -60,7 +60,7 @@ Components
        |br|
        The SKA Online Scheduling Tool (OST) instructs the OET which SB should be executed next, taking into account
        aspects such as telescope resource availability, observing conditions, source visibility, science priority, etc.
-   * - RestClientUI
+   * - :class:`~ska_oso_oet.procedure.application.restclient.RestClientUI`
      - RestClientUI provides a command-line interface for invoke actions on the OET backend. The CLI is a general interface
        whose operations (currently) focus on the script execution perspective (load script, abort script, etc.) rather
        than the telescope-domain use cases (assign resources to subarray, execute SB, etc.).
@@ -68,16 +68,16 @@ Components
        |br|
        In addition to controlling script execution, the CLI can be used to inspect the status of scripts that have run
        or are running.
-   * - ScriptExecutionServiceWorker
+   * - :class:`~ska_oso_oet.procedure.application.main.ScriptExecutionServiceWorker`
      - ScriptExecutionServiceWorker responds to requests received by the FlaskWorker, relaying the request to the
        ScriptExecutionService and publishing the response as an event that can be received by the FlaskWorker and
        returned to the user in the appropriate format.
-   * - ScriptExecutionService
+   * - :class:`~ska_oso_oet.procedure.application.application.ScriptExecutionService`
      - ScriptExecutionService present the high-level API for script execution. The ScriptExecutionService orchestrates
        control of internal OET objects to satisfy an API request. ScriptExecutionService is also responsible for
        recording script execution history. ScriptExecutionService can return a presentation model of a script, its
        current state, and its execution history. See ProcedureSummary in the backend module view.
-   * - ScriptWorker
+   * - :class:`~ska_oso_oet.procedure.domain.ScriptWorker`
      - ScriptWorker represents the child Python process running the requested user script. For SKA operations, most
        scripts executed by the OET, and hence scripts that will run in a Script Process, will be 'observing scripts'
        that control an SKA subarray. The content and purpose of these 'observing scripts' is contained and defined in

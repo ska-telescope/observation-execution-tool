@@ -40,12 +40,12 @@ Elements and their properties
        EmbeddedStringScript holds a complete Python script as a string. This class has been identified as possibly being
        useful as it allows a SchedulingBlock to directly specify and inject the code to be run, but has not been
        implemented.
-   * - Environment
+   * - :class:`~ska_oso_oet.procedure.environment.Environment`
      - Environment is a dataclass that holds the information required to identify a Python virtual environment and its
        location on disk. In addition, it holds synchronisation primitives to avoid race conditions between multiple
        requests to create the same environment, as would be the case for multiple requests to create virtual
        environments for the same git project and git commit hash.
-   * - EnvironmentManager
+   * - :class:`~ska_oso_oet.procedure.environment.EnvironmentManager`
      - EnvironmentManager is responsible for creating and managing Environments, the custom Python virtual environments
        in which a user script that requiring a non-default environment runs. Typically, this is the case for a request
        to run a script located in a git repository, where the request requires a more recent version of the
@@ -63,21 +63,21 @@ Elements and their properties
      - The Event class manages a flag that can be set and/or inspected by multi Python processes. Events are commonly
        used to signify to observers of the Event that a condition has occurred. Event is part of the standard Python
        library.
-   * - EventBusWorker
+   * - :class:`~ska_oso_oet.procedure.application.main.EventBusWorker`
      - EventBusWorker is a QueueProcWorker that relays pubsub events seen in one EventBusWorker process to other
        EventBusWorker processes. See :doc:`architecture_backend_module_ui` for more information.
-   * - ExecutableScript
+   * - :class:`~ska_oso_oet.procedure.domain.ExecutableScript`
      - ExecutableScript is an abstract class for any class that defines a Python script to be executed.
-   * - FilesystemScript
+   * - :class:`~ska_oso_oet.procedure.domain.FilesystemScript`
      - FilesystemScript captures the information required to run a Python script located within the filesystem of a
        deployed OET backend. As an example, in a Kubernetes context this could point to a script contained in the
        default preinstalled scripting environment, or a script made available in a persistent volume mounted by the
        OET pod.
-   * - GitScript
+   * - :class:`~ska_oso_oet.procedure.domain.GitScript`
      - GitScript captures the information required to run a Python script that is located in a git repository. It
        collects a set of identifying information that together can conclusively identify the specific script to be run,
        such as git repository, branch, tag, and commit hash.
-   * - MainContext
+   * - :class:`~ska_oso_oet.mptools.MainContext`
      - MainContext is the parent context for a set of worker processes that communicate via message queues. It defines
        a consistent architecture for event-based communication between Python processes and consistent behaviour for
        POSIX signal handling and process management.
@@ -89,7 +89,11 @@ Elements and their properties
        forceful means to terminate unresponsive processes (e.g., SIGINT, then SIGHUP). Lastly, MainContext is responsible
        for the correct management of the Python multiprocessing primitives created within the scope of the MainContext
        that are used for inter-process communication and synchronisation.
-   * - Proc
+   * - :class:`~ska_oso_oet.mptools.MPQueue`
+     - MPQueue is an extension of the standard library multiprocessing.Queue that adds get/set methods that return
+       booleans when the operation fails rather than raising exceptions, which makes the class easier to use in some
+       contexts.
+   * - :class:`~ska_oso_oet.mptools.Proc`
      - Proc represents a child Python process of a MainContext.
        |br|
        |br|
@@ -111,11 +115,11 @@ Elements and their properties
        |br|
        Proc does not contain any business logic or application-specific code, which should be contained in the
        ProcWorker - or more likely, a subclass of ProcWorker.
-   * - ProcedureInput
+   * - :class:`~ska_oso_oet.procedure.domain.ProcedureInput`
      - ProcedureInput captures the anonymous positional arguments and named keyword arguments for a Python function
        call. ProcedureInput is used in the presentation model to help describe historic function calls as well as
        in the PrepareProcessCommand and StartProcessCommand to define the arguments for an upcoming call.
-   * - ProcedureState
+   * - :class:`~ska_oso_oet.procedure.domain.ProcedureState`
      - ProcedureState is an enumeration defining the states that a Procedure (a child ScriptWorker process running a
        Python script) can be in. The states are:
 
@@ -129,7 +133,7 @@ Elements and their properties
         * ``STOPPED``: the user script was forcibly terminated
         * ``FAILED``: the script process terminated due to an exception.
         * ``UNKNOWN``: script termination failed, leaving the script in an unknown state and effectively unmanaged
-   * - ProcessManager
+   * - :class:`~ska_oso_oet.procedure.domain.ProcessManager`
      - ProcessManager is the parent for all script execution processes. Specifically, it is the parent of all the
        ScriptWorker instances that run user code in a child Python process. ProcessManager is responsible for launching
        ScriptWorker processes and communicating relaying requests such as 'load user script *X* from git repository
@@ -151,7 +155,7 @@ Elements and their properties
        |br|
        ProcessManager is aware of the current state of ScriptWorkers it owns but does not maintain a state history,
        which as a property spanning multiple transactions is the responsibility of the ScriptExecutionService.
-   * - ProcWorker
+   * - :class:`~ska_oso_oet.mptools.ProcWorker`
      - ProcWorker is a template class for code that should execute in a child Python interpreter process.
        |br|
        |br|
@@ -162,11 +166,11 @@ Elements and their properties
    * - Queue
      - Queue is a class that implements a multi-consumer, multi-producer FIFO queue that can be shared between Python
        processes. Queue is part of the standard Python library.
-   * - QueueProcWorker
+   * - :class:`~ska_oso_oet.mptools.QueueProcWorker`
      - QueueProcWorker is a ProcWorker that loops over items received on a message queue, calling the abstract
        `main_func()` function for every item received. Together with the ProcWorker base class functionality,
        QueueProcWorker will call `main_func()` for every event received for as long as the shutdown event is not set.
-   * - ScriptExecutionService
+   * - :class:`~ska_oso_oet.procedure.application.application.ScriptExecutionService`
      - ScriptExecutionService provides the high-level API for the script execution domain, presenting methods that
        'start script _Y_' or 'run method _Y_ of user script _Z_'. The ScriptExecutionService orchestrates control of the
        ProcessManager and associated domain objects in order to satisfy an API request.
@@ -175,7 +179,7 @@ Elements and their properties
        In addition to its primary responsibility of triggering actions in response to API calls, ScriptExecutionService
        is also responsible for recording script execution history and providing a summary of process state.
        See :doc:`architecture_backend_module_ui` for more information.
-   * - ScriptWorker
+   * - :class:`~ska_oso_oet.procedure.domain.ScriptWorker`
      - ScriptWorker is a class that can loads a user script in a child process, running functions of that user script on
        request.
        |br|
@@ -193,8 +197,8 @@ Element Interfaces
 ------------------
 
 The major public interface in these interactions is the ScriptExecutionService API. For more information on this
-interface, please reference the the API documentation for
-``ska_oso_oet.procedure.application.application.ScriptExecutionService``.
+interface, please see the API documentation for
+:py:class:`~ska_oso_oet.procedure.application.application.ScriptExecutionService`.
 
 Element Behaviour
 -----------------
@@ -202,8 +206,9 @@ Element Behaviour
 ScriptExecutionService
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The sequence diagram below gives a high-level overview of how the ``ScriptExecutionService`` controls objects in the
-domain module to meet requests to prepare, start, and stop user script execution.
+The sequence diagram below gives a high-level overview of how the
+:class:`~ska_oso_oet.procedure.application.application.ScriptExecutionService` controls objects in the domain module to
+meet requests to prepare, start, and stop user script execution.
 
 .. figure:: diagrams/export/backend_module_ui_sequence_ses.svg
    :align: center
@@ -223,8 +228,8 @@ The diagram below gives more detail on how the domain layer handles a request to
 ScriptWorker
 ~~~~~~~~~~~~
 
-The diagram below illustrates how a ``ScriptWorker`` is created and how it communicates startup success with the parent
-process.
+The diagram below illustrates how a :class:`~ska_oso_oet.procedure.domain.ScriptWorker` is created and how it
+communicates startup success with the parent process.
 
 .. figure:: diagrams/export/backend_module_ui_sequence_scriptworker.svg
    :align: center
@@ -234,8 +239,9 @@ process.
 ScriptWorker.main_loop
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The diagram below depicts the main ``ScriptWorker`` message loop, illustrating how the various messages
-from the parent ``ProcessManager`` are handled by child ``ScriptWorker``.
+The diagram below depicts the main :class:`~ska_oso_oet.procedure.domain.ScriptWorker` message loop, illustrating how
+the various messages from the parent :class:`~ska_oso_oet.procedure.domain.ProcessManager` are handled by child
+:class:`~ska_oso_oet.procedure.domain.ScriptWorker`.
 
 .. figure:: diagrams/export/backend_module_ui_sequence_scriptworker_main_loop.svg
    :align: center
