@@ -113,6 +113,7 @@ package ska_oso_oet.procedure {
             UNKNOWN
             CREATING
             IDLE
+            PREP_ENV
             LOADING
             READY
             RUNNING
