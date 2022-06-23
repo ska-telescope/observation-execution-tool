@@ -35,6 +35,7 @@ autodoc_mock_imports = [
     'astropy',
     'fire',
     'flask',
+    'git',
     'jsonpickle',
     'marshmallow',
     'pubsub',
