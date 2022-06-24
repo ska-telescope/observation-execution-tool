@@ -1,3 +1,4 @@
+# BTN-1394
 # Relax pylint in the face of some pypubsub requirements. Pypubsub topics use
 # msg_src rather than self, and they define a topic hierarchy rather than a
 # class hierarchy where implementation is required.
