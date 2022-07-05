@@ -89,68 +89,68 @@ Commands
 
 The commands available via ``oet`` are described below.
 
-+--------------------+---------------+------------------------------------------------------+-------------------------------------+
-| OET CLI action     | Parameters    | Default                                              | Description                         |
-+====================+===============+======================================================+=====================================+
-| create             | server-url    | See note above                                       | **Prepare a new procedure**         |
-|                    +---------------+------------------------------------------------------+                                     |
-|                    | script-uri    | None                                                 | Load the requested script and       |
-|                    +---------------+------------------------------------------------------+ prepare it for execution.           |
-|                    | args          | None                                                 |                                     |
-|                    +---------------+------------------------------------------------------+ Arguments provided here are passed  |
-|                    | kwargs        | --subarray_id=1                                      | to the script init function, if     |
-|                    |               | --git_repo=                                          | defined                             |
-|                    |               | "http://gitlab.com/ska-telescope/ska-oso-scripting"  |                                     |
-|                    |               | --git_branch="master"                                | OET maintains record of 10 newest   |
-|                    |               | --git_commit=None                                    | scripts which means creating 11th   |
-|                    |               | --create_env=False                                   | script will remove the oldest       |
-|                    |               |                                                      | script from the record.             |
-+--------------------+---------------+------------------------------------------------------+-------------------------------------+
-| list               | server-url    | See note above                                       | **List procedures**                 |
-|                    +---------------+------------------------------------------------------+-------------------------------------+
-|                    | pid           | None                                                 | Return info on the collection of 10 |
-|                    |               |                                                      | newest procedures, or info on the   |
-|                    |               |                                                      | one specified by process ID (pid)   |
-+--------------------+---------------+------------------------------------------------------+-------------------------------------+
-| start              | server-url    | See note above                                       | **Start a Procedure Executing**     |
-|                    +---------------+------------------------------------------------------+                                     |
-|                    | pid           | None                                                 | Start a process executing           |
-|                    +---------------+------------------------------------------------------+ the procedure specified by process  |
-|                    | args          | None                                                 | ID (pid) or, if none is specified   |
-|                    +---------------+------------------------------------------------------+ start the last one loaded.          |
-|                    | kwargs        | None                                                 |                                     |
-|                    |               |                                                      | Only one procedure can be executing |
-|                    |               |                                                      | at any time                         |
-+--------------------+---------------+------------------------------------------------------+-------------------------------------+
-| stop               | server-url    | See note above                                       | **Stop Procedure Execution**        |
-|                    +---------------+------------------------------------------------------+                                     |
-|                    | pid           | None                                                 | Stop a running process executing    |
-|                    +---------------+------------------------------------------------------+ the procedure specified by process  |
-|                    | run_abort     | True                                                 | ID (pid) or, if none is specified,  |
-|                    |               |                                                      | stop the currently running process. |
-|                    |               |                                                      |                                     |
-|                    |               |                                                      | If run_abort flag is True, OET will |
-|                    |               |                                                      | send Abort command to the SubArray  |
-|                    |               |                                                      | as part of script termination.      |
-+--------------------+---------------+------------------------------------------------------+-------------------------------------+
-| describe           | server-url    | See note above                                       | **Investigate a procedure**         |
-|                    +---------------+------------------------------------------------------+                                     |
-|                    | pid           | None                                                 | Displays the call arguments, state  |
-|                    |               |                                                      | history and, if the procedure       |
-|                    |               |                                                      | failed, the stack trace of a        |
-|                    |               |                                                      | specified process ID (pid). If no   |
-|                    |               |                                                      | pid is specified describe the last  |
-|                    |               |                                                      | process created.                    |
-+--------------------+---------------+------------------------------------------------------+-------------------------------------+
-| Listen             | server-url    | http://ska-oso-oet-rest:5000/api/v1.0/stream         | **Get real times scripts events**   |
-|                    +---------------+------------------------------------------------------+                                     |
-|                    |               |                                                      | Get a real time delivery of events  |
-|                    |               |                                                      | published by oet scripts            |
-|                    |               |                                                      |                                     |
-|                    |               |                                                      |                                     |
-|                    |               |                                                      |                                     |
-|                    |               |                                                      |                                     |
-+--------------------+---------------+------------------------------------------------------+-------------------------------------+
++----------------+------------+---------------------------------------------------------+-------------------------------------+
+| OET CLI action | Parameters | Default                                                 | Description                         |
++================+============+=========================================================+=====================================+
+| create         | server-url | See note above                                          | **Prepare a new procedure**         |
+|                +------------+---------------------------------------------------------+                                     |
+|                | script-uri | None                                                    | Load the requested script and       |
+|                +------------+---------------------------------------------------------+ prepare it for execution.           |
+|                | args       | None                                                    |                                     |
+|                +------------+---------------------------------------------------------+ Arguments provided here are passed  |
+|                | kwargs     | --subarray_id=1                                         | to the script init function, if     |
+|                |            | --git_repo=                                             | defined                             |
+|                |            | "http://gitlab.com/ska-telescope/oso/ska-oso-scripting" |                                     |
+|                |            | --git_branch="master"                                   | OET maintains record of 10 newest   |
+|                |            | --git_commit=None                                       | scripts which means creating 11th   |
+|                |            | --create_env=False                                      | script will remove the oldest       |
+|                |            |                                                         | script from the record.             |
++----------------+------------+---------------------------------------------------------+-------------------------------------+
+| list           | server-url | See note above                                          | **List procedures**                 |
+|                +------------+---------------------------------------------------------+-------------------------------------+
+|                | pid        | None                                                    | Return info on the collection of 10 |
+|                |            |                                                         | newest procedures, or info on the   |
+|                |            |                                                         | one specified by process ID (pid)   |
++----------------+------------+---------------------------------------------------------+-------------------------------------+
+| start          | server-url | See note above                                          | **Start a Procedure Executing**     |
+|                +------------+---------------------------------------------------------+                                     |
+|                | pid        | None                                                    | Start a process executing           |
+|                +------------+---------------------------------------------------------+ the procedure specified by process  |
+|                | args       | None                                                    | ID (pid) or, if none is specified   |
+|                +------------+---------------------------------------------------------+ start the last one loaded.          |
+|                | kwargs     | None                                                    |                                     |
+|                |            |                                                         | Only one procedure can be executing |
+|                |            |                                                         | at any time                         |
++----------------+------------+---------------------------------------------------------+-------------------------------------+
+| stop           | server-url | See note above                                          | **Stop Procedure Execution**        |
+|                +------------+---------------------------------------------------------+                                     |
+|                | pid        | None                                                    | Stop a running process executing    |
+|                +------------+---------------------------------------------------------+ the procedure specified by process  |
+|                | run_abort  | True                                                    | ID (pid) or, if none is specified,  |
+|                |            |                                                         | stop the currently running process. |
+|                |            |                                                         |                                     |
+|                |            |                                                         | If run_abort flag is True, OET will |
+|                |            |                                                         | send Abort command to the SubArray  |
+|                |            |                                                         | as part of script termination.      |
++----------------+------------+---------------------------------------------------------+-------------------------------------+
+| describe       | server-url | See note above                                          | **Investigate a procedure**         |
+|                +------------+---------------------------------------------------------+                                     |
+|                | pid        | None                                                    | Displays the call arguments, state  |
+|                |            |                                                         | history and, if the procedure       |
+|                |            |                                                         | failed, the stack trace of a        |
+|                |            |                                                         | specified process ID (pid). If no   |
+|                |            |                                                         | pid is specified describe the last  |
+|                |            |                                                         | process created.                    |
++----------------+------------+---------------------------------------------------------+-------------------------------------+
+| Listen         | server-url | http://ska-oso-oet-rest:5000/api/v1.0/stream            | **Get real times scripts events**   |
+|                +------------+---------------------------------------------------------+                                     |
+|                |            |                                                         | Get a real time delivery of events  |
+|                |            |                                                         | published by oet scripts            |
+|                |            |                                                         |                                     |
+|                |            |                                                         |                                     |
+|                |            |                                                         |                                     |
+|                |            |                                                         |                                     |
++----------------+------------+---------------------------------------------------------+-------------------------------------+
 
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to
 those specified by name e.g. --myparam=12.

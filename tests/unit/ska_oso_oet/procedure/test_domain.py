@@ -313,7 +313,7 @@ class TestGitArgs:
         git_args = GitArgs()
         assert (
             git_args.git_repo
-            == "https://gitlab.com/ska-telescope/ska-oso-scripting.git"
+            == "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git"
         )
         assert git_args.git_branch == "master"
         assert git_args.git_commit is None

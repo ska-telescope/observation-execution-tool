@@ -8,7 +8,7 @@ scripting UI for the SKA.
 To clone this repository, run
 
 ```
-git clone --recurse-submodules git@gitlab.com:ska-telescope/ska-oso-oet.git
+git clone --recurse-submodules git@gitlab.com:ska-telescope/oso/ska-oso-oet.git
 ```
 
 To refresh the GitLab Submodule, execute below commands:
