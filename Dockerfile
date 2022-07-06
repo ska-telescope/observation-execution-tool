@@ -24,7 +24,7 @@ COPY pyproject.toml poetry.lock* ./
 RUN poetry install --no-dev
 
 # clone the ska-oso-scripting library
-RUN git clone -b master https://gitlab.com/ska-telescope/ska-oso-scripting.git /repos/scripting/
+RUN git clone -b master https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git /repos/scripting/
 
 # install ska-oso-scripting library to provide a default environment and set of
 # default control scripts. This is done as root so that the default environment

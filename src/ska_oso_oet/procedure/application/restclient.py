@@ -416,7 +416,7 @@ class RestClientUI:
         :param args: script positional arguments
         :param subarray_id: Sub-array controlled by this OET instance
         :param git_repo: Path to git repository
-            (default=http://gitlab.com/ska-telescope/ska-oso-scripting)
+            (default=http://gitlab.com/ska-telescope/oso/ska-oso-scripting)
         :param git_branch: Branch within the git repository, defaults to master if not provided
         :param git_commit: Git commit hash, defaults to latest commit on the given branch.
             Branch does not need to be specified if commit hash is provided

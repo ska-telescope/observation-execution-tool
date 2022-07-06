@@ -21,10 +21,10 @@ def base_dir():
 
 
 def test_get_project_name():
-    git_repo_with_git = "https://gitlab.com/ska-telescope/ska-oso-scripting.git"
-    git_repo_no_git = "https://gitlab.com/ska-telescope/ska-oso-scripting"
+    git_repo_with_git = "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git"
+    git_repo_no_git = "https://gitlab.com/ska-telescope/oso/ska-oso-scripting"
 
-    expected = "ska-telescope-ska-oso-scripting"
+    expected = "ska-telescope-oso-ska-oso-scripting"
 
     name_with_git = GitManager.get_project_name(git_repo_with_git)
     name_no_git = GitManager.get_project_name(git_repo_no_git)
@@ -56,10 +56,10 @@ def test_repo_is_shallow_cloned_from_main_when_defaults_given(
     mock_clone_fn.side_effect = mock_clone_repo
     GitManager.clone_repo(GitArgs())
 
-    expected_path = base_dir + "ska-telescope-ska-oso-scripting/" + commit
+    expected_path = base_dir + "ska-telescope-oso-ska-oso-scripting/" + commit
 
     mock_clone_fn.assert_called_once_with(
-        "https://gitlab.com/ska-telescope/ska-oso-scripting.git",
+        "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git",
         expected_path,
         depth=1,
         single_branch=True,
@@ -80,10 +80,10 @@ def test_repo_is_shallow_cloned_from_branch(
     GitManager.clone_repo(
         GitArgs(git_branch="feature-branch"),
     )
-    expected_path = base_dir + "ska-telescope-ska-oso-scripting/" + commit
+    expected_path = base_dir + "ska-telescope-oso-ska-oso-scripting/" + commit
 
     mock_clone_fn.assert_called_once_with(
-        "https://gitlab.com/ska-telescope/ska-oso-scripting.git",
+        "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git",
         expected_path,
         depth=1,
         single_branch=True,
