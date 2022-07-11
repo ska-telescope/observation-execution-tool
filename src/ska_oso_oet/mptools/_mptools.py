@@ -104,27 +104,6 @@ class MPQueue(mpq.Queue):
             ctx = multiprocessing.get_context()
         super().__init__(maxsize, ctx=ctx)
 
-    #     self.size = SharedCounter(0, ctx=ctx)
-    #
-    # def put(self, *args, **kwargs):
-    #     super().put(*args, **kwargs)
-    #     # size will not be incremented if Full is raised
-    #     self.size.increment(1)
-    #
-    # def get(self, *args, **kwargs):
-    #     item = super().get(*args, **kwargs)
-    #     # size will not be decremented if Empty is raised
-    #     self.size.increment(-1)
-    #     return item
-    #
-    # def qsize(self):
-    #     """Reliable implementation of multiprocessing.Queue.qsize()"""
-    #     return self.size.value
-    #
-    # def empty(self):
-    #     """Reliable implementation of multiprocessing.Queue.empty()"""
-    #     return not self.qsize()
-
     def safe_get(self, timeout: Union[float, None] = MPQUEUE_TIMEOUT):
         """
         Remove and return an item from this MPQueue.
