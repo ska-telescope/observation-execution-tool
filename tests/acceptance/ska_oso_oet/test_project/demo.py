@@ -39,4 +39,4 @@ def main(msg=None):
         if msg:
             announce(msg)
 
-    announce(f":desktop_computer: script complete")
+    announce(":desktop_computer: script complete")

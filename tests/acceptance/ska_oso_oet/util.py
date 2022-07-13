@@ -27,7 +27,7 @@ class ScriptExecutionEnvironment:
 
     def _set_script_id(self, script_id):
         if self.script_id:
-            raise ScriptExecutionError(f"Script already defined for test run")
+            raise ScriptExecutionError("Script already defined for test run")
         LOGGER.debug("New script ID: %s", script_id)
         self.script_id = script_id
 

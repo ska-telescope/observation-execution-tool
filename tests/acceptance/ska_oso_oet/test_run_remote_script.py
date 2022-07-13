@@ -41,7 +41,7 @@ def test_remote_script_run():
         "git repository {repo} and script {script} within the repository exist"
     )
 )
-def git_repo_and_script_exist(repo, script):
+def git_repo_and_script_exist():
     # Confirming that the given git repository and the script within that repository exist
     # requires connecting to the OET kubernetes pod and so has been left as future work for
     # now until an efficient way to achieve this is figured out.
@@ -55,7 +55,7 @@ def execute_run_command(args, exec_env):
 
 
 @then(parsers.parse("the script should be in state READY after execution is finished"))
-def execution_ends_in_expected_state(exec_env):
+def execution_completes_in_ready_state(exec_env):
     final_state = exec_env.wait_for_state("READY", timeout=300)
     assert final_state == "READY"
 
@@ -67,6 +67,6 @@ def execution_ends_in_expected_state(state, exec_env):
 
 
 @then(parsers.parse("oet describe should show stacktrace with {error}"))
-def execution_ends_in_expected_state(error, exec_env):
+def stacktrace_contains_error(error, exec_env):
     response = exec_env.run_oet_command("describe")
     assert error in response
