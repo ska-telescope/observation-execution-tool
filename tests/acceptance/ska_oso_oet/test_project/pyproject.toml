@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "oetexample"
+version = "0.1.0"
+description = "OET example"
+authors = ["Your Name <you@example.com>"]
+license = "GPL"
+packages = [
+    { include = "demo", from = "src" }
+]
+
+[[tool.poetry.source]]
+name = 'ska-nexus'
+url = 'https://artefact.skao.int/repository/pypi-internal/simple'
+
+[tool.poetry.dependencies]
+python = "^3.7"
+ska-oso-oet = "*"
+emoji = "^1.7.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -25,8 +25,8 @@ IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 # built image in the GitLab registry
 ifneq ($(CI_REGISTRY),)
 K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
-	--set ska-oso-oet.rest.image.registry=$(CI_REGISTRY)/ska-telescope/ska-oso-oet
-K8S_TEST_IMAGE_TO_TEST=$(CI_REGISTRY)/ska-telescope/ska-oso-oet/ska-oso-oet:$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA)
+	--set ska-oso-oet.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-oet
+K8S_TEST_IMAGE_TO_TEST=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-oet/ska-oso-oet:$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA)
 endif
 
 # Set the k8s test command run inside the testing pod to only run the acceptance
@@ -73,11 +73,17 @@ helm-post-set-release:
 	sed -i"" -e "s/^\([[:blank:]]*\)tag: .*/\1tag: $(VERSION)/" charts/ska-oso-oet/values.yaml
 	sed -i"" -e "13s/^\([[:blank:]]*\)version: .*/\1version: $(VERSION)/" charts/ska-oso-oet-umbrella/Chart.yaml
 
+TEST_REPO_SETUP_CMD = "cd /tmp/test_repo; git init; git add .; git -c user.name='Test' -c user.email='test@email.org' commit -am."
+
+# Copy scripts and set up a test git project in the OET container before tests are executed
 k8s-pre-test:
 	kubectl cp tests/acceptance/ska_oso_oet/scripts/ $(KUBE_NAMESPACE)/ska-oso-oet-rest-$(HELM_RELEASE)-0:/tmp/scripts
+	kubectl cp tests/acceptance/ska_oso_oet/test_project/ $(KUBE_NAMESPACE)/ska-oso-oet-rest-$(HELM_RELEASE)-0:/tmp/test_repo
+	kubectl -n $(KUBE_NAMESPACE) exec ska-oso-oet-rest-$(HELM_RELEASE)-0 -- bash -c $(TEST_REPO_SETUP_CMD)
 
 k8s-post-test:
 	kubectl -n $(KUBE_NAMESPACE) exec ska-oso-oet-rest-$(HELM_RELEASE)-0 -- rm -r /tmp/scripts
+	kubectl -n $(KUBE_NAMESPACE) exec ska-oso-oet-rest-$(HELM_RELEASE)-0 -- rm -r /tmp/test_repo
 
 # install helm plugin from https://github.com/quintush/helm-unittest
 k8s-chart-test:
