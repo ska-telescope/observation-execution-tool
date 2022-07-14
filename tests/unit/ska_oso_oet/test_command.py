@@ -176,6 +176,7 @@ class TestTangoExecutor:
         # Tango calls the supplied callback on a new thread, supplying an
         # EventData as argument
         def fake_subscribe(_, __, cb):
+            cb._first_event_discarded = True
             t = threading.Thread(target=cb, args=(expected_evt,))
             t.start()
             t.join()
@@ -186,10 +187,8 @@ class TestTangoExecutor:
             mock_proxy.subscribe_event.side_effect = fake_subscribe
             executor = TangoExecutor(proxy_factory=TangoDeviceProxyFactory())
 
-            with patch("ska_oso_oet.command.FEATURES") as mock_features:
-                mock_features.discard_first_event = False
-                _ = executor.subscribe_event(attr)
-                received_evt = executor.read_event(attr)
+            _ = executor.subscribe_event(attr)
+            received_evt = executor.read_event(attr)
 
         assert received_evt == expected_evt
 
@@ -426,14 +425,13 @@ class TestCallback:
             cb.register_observer(o)
 
         mock_event = Mock(spec=tango.EventData)
-        with patch("ska_oso_oet.command.FEATURES") as mock_features:
-            mock_features.discard_first_event = False
-            cb(mock_event)
+        cb(mock_event)  # First event will be discarded
+        cb(mock_event)
 
         for o in observers:
             o.notify.assert_called_once_with(mock_event)
 
-    def test_first_event_is_discarded_when_toggled(self):
+    def test_first_event_is_discarded(self):
         cb = Callback()
 
         observer = Mock()
@@ -441,9 +439,7 @@ class TestCallback:
 
         evt_1 = Mock(spec=tango.EventData)
         evt_2 = Mock(spec=tango.EventData)
-        with patch("ska_oso_oet.command.FEATURES") as mock_features:
-            mock_features.discard_first_event = True
-            cb(evt_1)
-            cb(evt_2)
+        cb(evt_1)
+        cb(evt_2)
 
         observer.notify.assert_called_once_with(evt_2)
