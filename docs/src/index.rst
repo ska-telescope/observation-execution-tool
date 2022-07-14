@@ -119,7 +119,12 @@ targets that can be useful for developers. These targets are:
 +-----------------+------------------------------------------------+
 | rest            | start the OET backend in a Docker container    |
 +-----------------+------------------------------------------------+
+| diagrams        | recreate PlantUML diagrams whose source has    |
+|                 | been modified                                  |
++-----------------+------------------------------------------------+
 | k8s-chart-test  | run helm chart unit tests                      |
+|                 | (note: requires helm unittest plugin:          |
+|                 | https://github.com/quintush/helm-unittest )    |
 +-----------------+------------------------------------------------+
 | help            | show a summary of the makefile targets above   |
 +-----------------+------------------------------------------------+
