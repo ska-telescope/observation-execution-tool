@@ -32,6 +32,14 @@ def test_remote_script_fail():
     "features/run_remote_script.feature",
     "User creates a script with non-default dependencies from git using OET",
 )
+def test_remote_script_create():
+    pass
+
+
+@scenario(
+    "features/run_remote_script.feature",
+    "User runs a script with non-default dependencies from git using OET",
+)
 def test_remote_script_run():
     pass
 
@@ -48,21 +56,29 @@ def git_repo_and_script_exist():
     pass
 
 
-@when(parsers.parse("the user runs oet create with arguments {args}"))
-def execute_run_command(args, exec_env):
+@given(parsers.parse("script {script} has been created with arguments {args}"))
+def create_script_with_args(script, args, exec_env):
     args = args.split()
+    args.insert(0, script)
     exec_env.run_oet_command("create", *args)
-
-
-@then(parsers.parse("the script should be in state READY after execution is finished"))
-def execution_completes_in_ready_state(exec_env):
     final_state = exec_env.wait_for_state("READY", timeout=300)
     assert final_state == "READY"
 
 
-@then(parsers.parse("the script should go to state {state}"))
-def execution_ends_in_expected_state(state, exec_env):
-    final_state = exec_env.wait_for_state(state)
+@when(parsers.parse("the user runs oet create with arguments {args}"))
+def execute_create_command(args, exec_env):
+    args = args.split()
+    exec_env.run_oet_command("create", *args)
+
+
+@when(parsers.parse("the user runs oet start command to execute the script"))
+def execute_run_command(exec_env):
+    exec_env.run_oet_command("start")
+
+
+@then(parsers.parse("the script should be in {state} after execution is finished"))
+def execution_completes_in_ready_state(state, exec_env):
+    final_state = exec_env.wait_for_state(state, timeout=300)
     assert final_state == state
 
 
