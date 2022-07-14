@@ -22,8 +22,6 @@ from typing import Dict, Tuple
 import tango
 from ska_ser_skuid.client import SkuidClient
 
-from . import FEATURES
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -422,7 +420,7 @@ class Callback:
         # take a snapshot of observers to give stable state to iterate over.
         # We iterate over a copy rather than notifying while holding the lock
         # as we do not know how observer event processing will take.
-        if FEATURES.discard_first_event and not self._first_event_discarded:
+        if not self._first_event_discarded:
             self._first_event_discarded = True
             LOGGER.debug("Discarding first event: %s", evt)
             return
