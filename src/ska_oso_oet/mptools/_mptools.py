@@ -495,7 +495,6 @@ class QueueProcWorker(ProcWorker):
         # while loop terminates, thus ending main_loop and starting shutdown
         # of this ProcWorker.
         while not self.shutdown_event.is_set():
-
             # Get next work item. This call returns after the default safe_get
             # timeout unless an item is in the queue.
             item = self.work_q.safe_get()

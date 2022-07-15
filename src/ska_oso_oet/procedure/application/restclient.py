@@ -271,7 +271,6 @@ class RestClientUI:
 
     @staticmethod
     def _tabulate_for_describe(procedure: List[ProcedureSummary]) -> str:
-
         table_row_title = [
             (procedure[0].id, procedure[0].script["script_uri"], procedure[0].uri)
         ]
