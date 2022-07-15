@@ -22,8 +22,8 @@ def setup():
         raise Exception(f"Invalid response from OET REST service at {oet_rest_uri}")
 
 
-@pytest.fixture()
-def exec_env():
+@pytest.fixture(name="exec_env")
+def fixture_exec_env():
     """
     A fixture to make sure that the same script is tracked throughout the test.
     Keeps track of the script ID and makes sure all commands are run on the

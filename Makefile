@@ -42,9 +42,11 @@ K8S_CHART = ska-oso-oet-umbrella
 PYTHON_SWITCHES_FOR_BLACK =
 PYTHON_SWITCHES_FOR_ISORT =
 
-# Disable warning, convention, and refactoring messages
-# Disable errors:
-PYTHON_SWITCHES_FOR_PYLINT = --disable=C,R
+# Pylint tweaks:
+# - C = disable msgs about Python conventions
+# - R = disable msgs about refactoring
+# - W0511(fixme) - these are TODO messages for future improvements
+PYTHON_SWITCHES_FOR_PYLINT = --disable=C,R,fixme
 
 
 up: namespace install-chart wait

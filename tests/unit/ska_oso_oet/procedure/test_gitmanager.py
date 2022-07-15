@@ -10,8 +10,8 @@ from git import Git, Repo
 from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 
 
-@pytest.fixture(scope="module")
-def base_dir():
+@pytest.fixture(name="base_dir", scope="module")
+def fixture_base_dir():
     """
     Pytest fixture to return a base directory to clone repositories into during
     test execution. Anything cloned there will be cleaned up when module tests are
@@ -192,8 +192,8 @@ def mock_clone_repo(
     return first.hexsha
 
 
-@pytest.fixture(scope="module")
-def test_repo(base_dir):
+@pytest.fixture(name="test_repo", scope="module")
+def fixture_test_repo(base_dir):
     """Creates a git repository, test-repo with two commits on main branch and one
     commit on a feature branch, feature_a."""
     # Remove any existing repo and initialise a new one

@@ -35,16 +35,16 @@ from ska_oso_oet.procedure.domain import (
 from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
 from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
 from tests.unit.ska_oso_oet.procedure.test_domain import (
-    abort_script,
-    fail_script,
-    init_hang_script,
-    main_hang_script,
-    script,
+    fixture_abort_script,
+    fixture_fail_script,
+    fixture_init_hang_script,
+    fixture_main_hang_script,
+    fixture_script,
 )
 
 
-@pytest.fixture
-def sleep_script(tmpdir):
+@pytest.fixture(name="sleep_script")
+def fixture_sleep_script(tmpdir):
     """
     Pytest fixture to return a path to a script that sleeps a user-defined
     amount of time.
@@ -64,8 +64,8 @@ def main(secs):
     return FileSystemScript(f"file://{str(script_path)}")
 
 
-@pytest.fixture
-def ses():
+@pytest.fixture(name="ses")
+def fixture_ses():
     """
     Pytest fixture to return a ScriptExecutionService with automatic cleanup.
     """

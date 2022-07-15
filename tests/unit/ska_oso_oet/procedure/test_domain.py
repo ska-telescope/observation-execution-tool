@@ -38,8 +38,8 @@ multiprocessing_contexts = [
 ]
 
 
-@pytest.fixture
-def script(tmpdir):
+@pytest.fixture(name="script")
+def fixture_script(tmpdir):
     """
     Pytest fixture to return a path to a script file
     """
@@ -48,8 +48,8 @@ def script(tmpdir):
     return FileSystemScript(f"file://{str(script_path)}")
 
 
-@pytest.fixture
-def pubsub_script(tmpdir):
+@pytest.fixture(name="pubsub_script")
+def fixture_pubsub_script(tmpdir):
     """
     Pytest fixture to return a path to a script that emits OET events
     """
@@ -71,8 +71,8 @@ def main(msg):
     return FileSystemScript(f"file://{str(script_path)}")
 
 
-@pytest.fixture
-def git_script(tmpdir):
+@pytest.fixture(name="git_script")
+def fixture_git_script(tmpdir):
     """
     Pytest fixture to return a path to a git script file
     """
@@ -81,8 +81,8 @@ def git_script(tmpdir):
     return GitScript(f"git://{str(script_path)}", git_args=GitArgs(), create_env=True)
 
 
-@pytest.fixture
-def git_script_branch(tmpdir):
+@pytest.fixture(name="git_script_branch")
+def fixture_git_script_branch(tmpdir):
     """
     Pytest fixture to return a path to a script file
     """
@@ -95,8 +95,8 @@ def git_script_branch(tmpdir):
     )
 
 
-@pytest.fixture
-def git_sys_path_script(tmpdir):
+@pytest.fixture(name="git_sys_path_script")
+def fixture_git_sys_path_script(tmpdir):
     """
     Pytest fixture to return a path to a script file
     """
@@ -113,8 +113,8 @@ def main(site_package):
     return GitScript(f"git://{str(script_path)}", git_args=GitArgs(), create_env=True)
 
 
-@pytest.fixture
-def barrier_script(tmpdir):
+@pytest.fixture(name="barrier_script")
+def fixture_barrier_script(tmpdir):
     """
     Pytest fixture to return a path to a script that sets an event
     """
@@ -140,8 +140,8 @@ def main():
     return FileSystemScript(f"file://{str(script_path)}")
 
 
-@pytest.fixture
-def init_hang_script(tmpdir):
+@pytest.fixture(name="init_hang_script")
+def fixture_init_hang_script(tmpdir):
     """
     Pytest fixture to return a path to a script that sets an event
     """
@@ -157,8 +157,8 @@ def init(init_running):
     return FileSystemScript(f"file://{str(script_path)}")
 
 
-@pytest.fixture
-def main_hang_script(tmpdir):
+@pytest.fixture(name="main_hang_script")
+def fixture_main_hang_script(tmpdir):
     """
     Pytest fixture to return a path to a script that sets an event
     """
@@ -180,8 +180,8 @@ def main():
     return FileSystemScript(f"file://{str(script_path)}")
 
 
-@pytest.fixture
-def fail_script(tmpdir):
+@pytest.fixture(name="fail_script")
+def fixture_fail_script(tmpdir):
     """
     Pytest fixture to return a path to a script file
     """
@@ -195,8 +195,8 @@ def main(msg):
     return FileSystemScript(f"file://{str(script_path)}")
 
 
-@pytest.fixture
-def abort_script(tmpdir):
+@pytest.fixture(name="abort_script")
+def fixture_abort_script(tmpdir):
     """
     Pytest fixture to return a path to a script file
     """
@@ -221,8 +221,8 @@ def main():
     return FileSystemScript(f"file://{str(script_path)}")
 
 
-@pytest.fixture
-def script_that_increments_and_returns_scan_id(tmpdir):
+@pytest.fixture(name="script_that_increments_and_returns_scan_id")
+def fixture_script_that_increments_and_returns_scan_id(tmpdir):
     """
     Pytest fixture to return a path to a script with main() that increments
     the scan ID and adds the value to a queue.
@@ -246,8 +246,8 @@ def main():
     return FileSystemScript(f"file://{str(path)}")
 
 
-@pytest.fixture
-def manager():
+@pytest.fixture(name="manager")
+def fixture_manager():
     """
     Pytest fixture to return a prepared ProcessManager
     """

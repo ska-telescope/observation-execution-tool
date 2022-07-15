@@ -80,21 +80,21 @@ class ProcedureSummary:
     state: str
 
     @staticmethod
-    def from_json(json: dict):
+    def from_json(procedure_json: dict):
         """
         Convert a Procedure JSON payload to a ProcedureSummary object
 
-        :param json: payload to convert
+        :param procedure_json: payload to convert
         :return: equivalent ProcedureSummary instance
         """
-        uid = json["uri"].split("/")[-1]
+        uid = procedure_json["uri"].split("/")[-1]
         return ProcedureSummary(
             id=uid,
-            uri=json["uri"],
-            script_args=json["script_args"],
-            script=json["script"],
-            history=json["history"],
-            state=json["state"],
+            uri=procedure_json["uri"],
+            script_args=procedure_json["script_args"],
+            script=procedure_json["script"],
+            history=procedure_json["history"],
+            state=procedure_json["state"],
         )
 
 

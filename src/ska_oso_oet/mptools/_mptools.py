@@ -404,7 +404,7 @@ class ProcWorker:
             self.event_q.safe_put(EventMessage(self.name, "SHUTDOWN", "Normal"))
             return 0
 
-        except BaseException as exc:
+        except BaseException as exc:  # pylint: disable=broad-except
             # We get here if an exception was raised in the main_loop, even
             # TerminateInterrupt and KeyboardInterrupt
             self.log(logging.ERROR, f"Exception Shutdown: {exc}", exc_info=True)

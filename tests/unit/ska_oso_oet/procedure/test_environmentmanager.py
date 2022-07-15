@@ -15,8 +15,8 @@ COMMIT_HASH = "69e93d57916f837ee93ca125f2785f0f6e21974d"
 VENV_SITE_PKGS = "/venv/lib/python3.7/site-packages"
 
 
-@pytest.fixture(scope="module")
-def env_manager():
+@pytest.fixture(name="env_manager", scope="module")
+def fixture_env_manager():
     """
     Pytest fixture to return EnvironmentManager object. The fixture sets base directory on
     the manager object for the duration of the tests and cleans up any files in the directory
@@ -26,8 +26,8 @@ def env_manager():
         yield EnvironmentManager(base_dir=tempdir)
 
 
-@pytest.fixture()
-def env_object(env_manager):
+@pytest.fixture(name="env_object")
+def fixture_env_object(env_manager):
     """
     Pytest fixture to return EnvironmentManager object. The fixture sets base directory on
     the manager object for the duration of the tests and cleans up any files in the directory
