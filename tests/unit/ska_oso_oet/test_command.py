@@ -176,7 +176,13 @@ class TestTangoExecutor:
         # Tango calls the supplied callback on a new thread, supplying an
         # EventData as argument
         def fake_subscribe(_, __, cb):
-            cb._first_event_discarded = True
+            # first event is current value sent on first subscription
+            # this event should be ignored
+            first_evt = Mock(spec=tango.EventData)
+            t = threading.Thread(target=cb, args=(first_evt,))
+            t.start()
+            t.join()
+
             t = threading.Thread(target=cb, args=(expected_evt,))
             t.start()
             t.join()
@@ -424,12 +430,14 @@ class TestCallback:
         for o in observers:
             cb.register_observer(o)
 
-        mock_event = Mock(spec=tango.EventData)
-        cb(mock_event)  # First event will be discarded
-        cb(mock_event)
+        discarded_event = Mock(spec=tango.EventData)
+        second_event = Mock(spec=tango.EventData)
+        # first event should be discarded
+        cb(discarded_event)
+        cb(second_event)
 
         for o in observers:
-            o.notify.assert_called_once_with(mock_event)
+            o.notify.assert_called_once_with(second_event)
 
     def test_first_event_is_discarded(self):
         cb = Callback()
