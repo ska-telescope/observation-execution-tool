@@ -1,4 +1,3 @@
-# BTN-1394
 """
 The ska_oso_oet.procedure.application module holds classes and functionality that
 belong in the application layer of the OET. This layer holds the application

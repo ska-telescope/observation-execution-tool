@@ -1,4 +1,3 @@
-# BTN-1394
 import json
 import multiprocessing
 import time

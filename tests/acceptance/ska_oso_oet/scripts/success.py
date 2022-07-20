@@ -1,4 +1,3 @@
-# BTN-1394
 """
 Acceptance test script: Script runs successfully
 """

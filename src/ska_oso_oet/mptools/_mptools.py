@@ -1,4 +1,3 @@
-# BTN-1394
 # -*- coding: utf-8 -*-
 
 """Main module for MPTools.

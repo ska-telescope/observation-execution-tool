@@ -1,4 +1,3 @@
-# BTN-1394
 # pylint: disable=protected-access, unused-import
 # - protected-access - tests need to access protected props
 # - unused-import - test fixtures imported from test_domain

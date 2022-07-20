@@ -1,4 +1,3 @@
-# BTN-1394
 import logging.config
 import logging.handlers
 import multiprocessing

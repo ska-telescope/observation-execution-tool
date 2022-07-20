@@ -1,4 +1,3 @@
-# BTN-1394
 # Relax pylint. We deliberately catch all exceptions in the CLI in order to
 # return a user-friendly message.
 #

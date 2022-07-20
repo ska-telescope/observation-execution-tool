@@ -1,4 +1,3 @@
-# BTN-1394
 """
 The ska_oso_oet.procedure.domain module holds domain entities from the script
 execution domain. Entities in this domain are things like scripts,

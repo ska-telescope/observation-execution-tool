@@ -1,4 +1,3 @@
-# BTN-1394
 import os
 import shutil
 import tempfile

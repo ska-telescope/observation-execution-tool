@@ -1,4 +1,3 @@
-# BTN-1394
 # pylint: disable=W0212
 # - W0212(protected-access) - tests need access to protected members to prove
 #   correctness

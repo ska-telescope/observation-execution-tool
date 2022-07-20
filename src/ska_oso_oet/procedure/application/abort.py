@@ -1,4 +1,3 @@
-# BTN-1394
 """
 Example script for abort sub-array activity
 """

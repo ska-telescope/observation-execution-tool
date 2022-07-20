@@ -1,4 +1,3 @@
-# BTN-1394
 import functools
 import logging
 import os

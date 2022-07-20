@@ -1,4 +1,3 @@
-# BTN-1394
 """
 Static helper functions for cloning and working with a Git repository
 """

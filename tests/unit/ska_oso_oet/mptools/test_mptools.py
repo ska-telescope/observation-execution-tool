@@ -1,4 +1,3 @@
-# BTN-1394
 # pylint: disable=W0221,W0613,W0212
 # - W0221(arguments-differ) - ignore complaints about test ProcWorkers
 #   removing variadic args from API. These test workers don't use them anyway.
