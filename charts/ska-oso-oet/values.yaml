@@ -18,8 +18,6 @@ rest:
   component: rest
   function: script-execution
   domain: operations
-  featureFlags:
-    discardFirstEvent: true
   ingress:
     enabled: false
   image:

@@ -271,8 +271,8 @@ def assert_json_equal_to_procedure_summary(
         assert isinstance(summary_json["history"]["process_states"][i][1], float)
 
 
-@pytest.fixture
-def client():
+@pytest.fixture(name="client")
+def fixture_client():
     """
     Test fixture that returns a Flask application instance
     """
@@ -283,8 +283,8 @@ def client():
         yield client
 
 
-@pytest.fixture
-def short_timeout():
+@pytest.fixture(name="short_timeout")
+def fixture_short_timeout():
     """
     Fixture to shorten grace period before timeout
     """

@@ -103,27 +103,6 @@ class MPQueue(mpq.Queue):
             ctx = multiprocessing.get_context()
         super().__init__(maxsize, ctx=ctx)
 
-    #     self.size = SharedCounter(0, ctx=ctx)
-    #
-    # def put(self, *args, **kwargs):
-    #     super().put(*args, **kwargs)
-    #     # size will not be incremented if Full is raised
-    #     self.size.increment(1)
-    #
-    # def get(self, *args, **kwargs):
-    #     item = super().get(*args, **kwargs)
-    #     # size will not be decremented if Empty is raised
-    #     self.size.increment(-1)
-    #     return item
-    #
-    # def qsize(self):
-    #     """Reliable implementation of multiprocessing.Queue.qsize()"""
-    #     return self.size.value
-    #
-    # def empty(self):
-    #     """Reliable implementation of multiprocessing.Queue.empty()"""
-    #     return not self.qsize()
-
     def safe_get(self, timeout: Union[float, None] = MPQUEUE_TIMEOUT):
         """
         Remove and return an item from this MPQueue.
@@ -424,7 +403,7 @@ class ProcWorker:
             self.event_q.safe_put(EventMessage(self.name, "SHUTDOWN", "Normal"))
             return 0
 
-        except BaseException as exc:
+        except BaseException as exc:  # pylint: disable=broad-except
             # We get here if an exception was raised in the main_loop, even
             # TerminateInterrupt and KeyboardInterrupt
             self.log(logging.ERROR, f"Exception Shutdown: {exc}", exc_info=True)
@@ -515,7 +494,6 @@ class QueueProcWorker(ProcWorker):
         # while loop terminates, thus ending main_loop and starting shutdown
         # of this ProcWorker.
         while not self.shutdown_event.is_set():
-
             # Get next work item. This call returns after the default safe_get
             # timeout unless an item is in the queue.
             item = self.work_q.safe_get()

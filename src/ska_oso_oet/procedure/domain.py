@@ -28,7 +28,15 @@ from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 
 LOGGER = logging.getLogger(__name__)
 
-ENV_CREATION_TIMEOUT = 600.0
+# Maximum time allowed for environment creation. Note that environment
+# creation must succeed within this period or creation will be considered as
+# failed, regardless of the current status of that installation process.
+# Experience shows that the default timeout of 600 secs (10 minutes) is more
+# than sufficient for any standard Python project. Installing a project that
+# required compilation, such as a project that depends on a new version of
+# Tango, could in principle exceed this timeout. However, as the Docker image
+# does not include compiler tools, compilation is not possible anyway.
+ENV_CREATION_TIMEOUT_SECS = 600.0
 
 DEFAULT_SIGTERM_HANDLER = signal.getsignal(signal.SIGTERM)
 
@@ -378,7 +386,7 @@ class ScriptWorker(mptools.ProcWorker):
                 # other process to finish environment installation before proceeding.
                 # Throw a timeout error if env creation takes too long, likely means that
                 # the environment installation has failed
-                self._environment.created.wait(timeout=ENV_CREATION_TIMEOUT)
+                self._environment.created.wait(timeout=ENV_CREATION_TIMEOUT_SECS)
 
         sys.path.insert(0, self._environment.site_packages)
         self.publish_lifecycle(ProcedureState.IDLE)
@@ -438,7 +446,6 @@ class ScriptWorker(mptools.ProcWorker):
 
         try:
             while not self.shutdown_event.is_set():
-
                 # Get next work item. This call returns after the default safe_get
                 # timeout unless an item is in the queue.
                 item = self.work_q.safe_get()

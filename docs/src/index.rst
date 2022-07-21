@@ -14,6 +14,7 @@
   :hidden:
 
   cli
+  environment_variables
 
 .. toctree::
   :maxdepth: 1
@@ -103,6 +104,42 @@ Execute the test suite and lint the project with:
   make python-test
   make python-lint
 
+Format and lint on commit
+-------------------------
+
+We recommend you use `pre-commit <https://pre-commit.com>`_ to automatically
+format and lint your commits. The commands below should be enough to get you
+up and running. Reference the official `documentation <https://pre-commit.com/#install>`_
+for full installation details.
+
+*Pre-commit installation on Linux*
+
+.. code-block:: shell
+
+    # install pre-commit
+    sudo pip3 install pre-commit
+
+    # install git hook scripts
+    pre-commit install
+
+    # uninstall git hook scripts
+    pre-commit uninstall
+
+
+*Pre-commit installation on MacOS*
+
+The commands below were tested on MacOS 10.15.
+
+.. code-block:: shell
+
+    # install pre-commit
+    pip3 install --user pre-commit
+
+    # install git hook scripts
+    ~/Library/Python/3.8/bin/pre-commit install
+
+    # uninstall git hook scripts
+    ~/Library/Python/3.8/bin/pre-commit uninstall
 
 Makefile targets
 ================
@@ -119,7 +156,12 @@ targets that can be useful for developers. These targets are:
 +-----------------+------------------------------------------------+
 | rest            | start the OET backend in a Docker container    |
 +-----------------+------------------------------------------------+
+| diagrams        | recreate PlantUML diagrams whose source has    |
+|                 | been modified                                  |
++-----------------+------------------------------------------------+
 | k8s-chart-test  | run helm chart unit tests                      |
+|                 | (note: requires helm unittest plugin:          |
+|                 | https://github.com/quintush/helm-unittest )    |
 +-----------------+------------------------------------------------+
 | help            | show a summary of the makefile targets above   |
 +-----------------+------------------------------------------------+

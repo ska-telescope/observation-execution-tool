@@ -9,8 +9,6 @@ Feature flag values are set from, in order:
   2. an .ini file
   3. default values set in code
 """
-import distutils.util
-import os
 from configparser import ConfigParser
 
 
@@ -24,22 +22,7 @@ class Features:
         # the ini file, else from code default. The requirement to convert
         # environment variable strings to booleans makes this uglier than
         # ideal.
-        discard_env = "OET_DISCARD_FIRST_EVENT"
-        if discard_env in os.environ:
-            env_value = os.environ.get(discard_env)
-            self._discard_first_event = bool(distutils.util.strtobool(env_value))
-        else:
-            self._discard_first_event = config_parser.getboolean(
-                "tango", "discard_first_event", fallback=True
-            )
-
-    @property
-    def discard_first_event(self) -> bool:
-        """
-        True if the SubscriptionManager should discard the first event
-        received from a new Tango subscription.
-        """
-        return self._discard_first_event
+        pass
 
     @staticmethod
     def create_from_config_files(*paths) -> "Features":
