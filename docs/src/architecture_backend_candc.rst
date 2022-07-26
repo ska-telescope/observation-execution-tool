@@ -150,6 +150,27 @@ standardised as part of HTML5. SSE has growing language support, including Pytho
 which helps keep the OET implementation simple. As it operates over HTTP, it can be delivered via the same Kubernetes
 ingress as the OET REST API.
 
+No dedicated message broker
+---------------------------
+Systems that use a message-oriented architecture often use an dedicated message broker component such as RabbitMQ or
+Kafka whose sole responsibility is the delivery of messages to subscribers. Using a dedicated message broker can
+increase scalability by allowing multiple distributed brokers, increase reliability by allowing guaranteed message
+delivery, and promote system modifiability and composability by allowing routing of messages to inhomogeneous, loosely
+coupled, and potentially distributed subscribers via the network.
+
+The OET does not currently use an external message broker as simplicity of deployment and reduced system complexity are
+currently prioritised over the advantages that an external message broker brings. Routing messages via a network broker
+would introduce complexity, overhead, and failure modes that are unnecessary in a homogeneous system with message
+publishers and message subscribers running in the same process space on the same host. We assume that message
+delivery through Python multiprocessing queues - essentially, communication via UNIX pipes - is robust
+and does not require message delivery guarantees. Additionally, telescope control scripts are not designed to be
+resumed in the event of failure, hence there is no value in resending any message lost to a failed ScriptWorker to a new
+replacement ScriptWorker. There is also a desire to keep the OET deployment footprint small and with minimal
+dependencies so that the OET can be easily incorporated and/or deployed in a simulator context for other OSO use.
+
+That said, the OET architecture does allow the introduction of a dedicated message broker if the OET requirements
+change.
+
 .. |br| raw:: html
 
       <br>
