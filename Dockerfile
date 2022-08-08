@@ -27,7 +27,7 @@ RUN git clone -b master https://gitlab.com/ska-telescope/oso/ska-oso-scripting.g
 # default control scripts. This is done as root so that the default environment
 # is installed to system dist-packages.
 RUN python3 -m pip install \
-    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==4.4.0
+    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==4.5.0
 
 # link default script location to a shorter path to make CLI interactions easier
 RUN ln -s /usr/local/lib/python3.7/dist-packages/scripts /scripts
