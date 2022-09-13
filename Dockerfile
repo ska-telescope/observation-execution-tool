@@ -10,15 +10,20 @@ ENV PIP_INDEX_URL ${CAR_PYPI_REPOSITORY_URL}/simple
 
 USER root
 
-RUN apt-get update && apt-get -y install git python3-venv
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+    apt-get -y install --no-install-recommends git python3-venv && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy poetry.lock* in case it doesn't exist in the repo
 COPY pyproject.toml poetry.lock* ./
 
 # Install runtime dependencies. Add --dev to export for images usable in an IDE
+# Note that the 'pip install .' MUST be present otherwise a potentially stale version
+# of ska-oso-oet could be installed system-wide as a dependency of ska-oso-scripting
 RUN poetry export --format requirements.txt --output poetry-requirements.txt --without-hashes && \
     pip install -r poetry-requirements.txt && \
-    rm poetry-requirements.txt
+    rm poetry-requirements.txt && \
+    pip install .
 
 # clone the ska-oso-scripting library
 RUN git clone -b master https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git /repos/scripting/
