@@ -17,7 +17,7 @@ repos:
           .drawio$
       - id: check-json
   - repo: https://github.com/ambv/black
-    rev: 22.3.0
+    rev: 22.8.0
     hooks:
       - id: black
         files: ^(src/|tests/)
