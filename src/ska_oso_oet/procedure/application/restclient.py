@@ -78,17 +78,17 @@ sseclient.SSEClient.iter_content = iter_content
 # https://github.com/google/python-fire/issues/258
 def _SeparateFlagArgs(args):
     # Original functionality in case user does pass `--`
-    if '--' in args:
-        separator_index = len(args) - 1 - args[::-1].index('--')  # index of last --
-        flag_args = args[separator_index + 1:]
+    if "--" in args:
+        separator_index = len(args) - 1 - args[::-1].index("--")  # index of last --
+        flag_args = args[separator_index + 1 :]
         args = args[:separator_index]
         return args, flag_args
 
     # If not, treat --help as special case
     try:
-        index = args.index('--help')
+        index = args.index("--help")
         args = args[:index]
-        return args, ['--help']
+        return args, ["--help"]
     except ValueError:
         return args, []
 
