@@ -42,6 +42,7 @@ sseclient = "^0.0.27"
 tabulate = "^0.8.9"
 tblib = "^1.7.0"
 GitPython = "^3.1.27"
+waitress = "^2.1.2"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
