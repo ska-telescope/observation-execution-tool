@@ -64,6 +64,38 @@ def iter_content(self):
 sseclient.SSEClient.iter_content = iter_content
 
 
+#
+# Monkey patch the Fire flag handling: Fire uses flags for arguments which should be
+# passed to the underlying function, and 'Fire flags' that are used by Fire internally (eg --help) which
+# are expected after `--` in the CLI call.
+# For functions without kwargs this doesn't seem to cause an issue, but if kwargs are present in the function
+# signature then --help is converted to a boolean and passed to the function.
+# For example, `oet start --help` would pass `help=True` to the function, but `oet start -- --help`
+# would show the docstring help.
+# The latter is not intuitive for the user, so this monkey patch will always treat --help as a Fire flag
+#
+# Taken from issue:
+# https://github.com/google/python-fire/issues/258
+def _SeparateFlagArgs(args):
+    # Original functionality in case user does pass `--`
+    if '--' in args:
+        separator_index = len(args) - 1 - args[::-1].index('--')  # index of last --
+        flag_args = args[separator_index + 1:]
+        args = args[:separator_index]
+        return args, flag_args
+
+    # If not, treat --help as special case
+    try:
+        index = args.index('--help')
+        args = args[:index]
+        return args, ['--help']
+    except ValueError:
+        return args, []
+
+
+fire.core.parser.SeparateFlagArgs = _SeparateFlagArgs
+
+
 @dataclasses.dataclass
 class ProcedureSummary:
     """
@@ -423,7 +455,8 @@ class RestClientUI:
         :param kwargs: script keyword arguments
         :return: Table entry for created procedure.
         """
-
+        LOGGER.info(f"args: {args}")
+        LOGGER.info(f"kwargs: {kwargs}")
         # Iterating over the Python kwargs dictionary
         git_args = dict()
         init_kwargs = dict()
@@ -473,23 +506,14 @@ class RestClientUI:
         target script. Arguments provided on the command line will be passed
         as positional and keyword arguments to the main() function.
 
-        Examples:
-
-            # calls main() of the last created script, passing the SBI ID to
-            # the function. Equivalent to main('sbi-mvp01-20200325-00001')
-            oet start sbi-mvp01-20200325-00001
-
-            # calls main() of the script PID #3, passing the positional argument
-            # and keyword arguments to the script. Equivalent to calling
-            # main('hello', foo='bar')
-            oet start --pid=3 'hello' --foo=bar
-
         :param pid: ID of the procedure to start
         :param listen: display events (default=True)
         :param args: late-binding position arguments for script
         :param kwargs: late-binding kwargs for script
         :return: Table entry for running procedure
         """
+        LOGGER.info(f"args: {args}")
+        LOGGER.info(f"kargs: {kwargs}")
         if pid is None:
             procedures = self._client.list()
             if not procedures:
