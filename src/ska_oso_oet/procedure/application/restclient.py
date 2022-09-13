@@ -64,6 +64,38 @@ def iter_content(self):
 sseclient.SSEClient.iter_content = iter_content
 
 
+#
+# Monkey patch the Fire flag handling: Fire uses flags for arguments which should be
+# passed to the underlying function, and 'Fire flags' that are used by Fire internally (eg --help) which
+# are expected after `--` in the CLI call.
+# For functions without kwargs this doesn't seem to cause an issue, but if kwargs are present in the function
+# signature then --help is converted to a boolean and passed to the function.
+# For example, `oet start --help` would pass `help=True` to the function, but `oet start -- --help`
+# would show the docstring help.
+# The latter is not intuitive for the user, so this monkey patch will always treat --help as a Fire flag
+#
+# Taken from issue:
+# https://github.com/google/python-fire/issues/258
+def _SeparateFlagArgs(args):
+    # Original functionality in case user does pass `--`
+    if "--" in args:
+        separator_index = len(args) - 1 - args[::-1].index("--")  # index of last --
+        flag_args = args[separator_index + 1 :]
+        args = args[:separator_index]
+        return args, flag_args
+
+    # If not, treat --help as special case
+    try:
+        index = args.index("--help")
+        args = args[:index]
+        return args, ["--help"]
+    except ValueError:
+        return args, []
+
+
+fire.core.parser.SeparateFlagArgs = _SeparateFlagArgs
+
+
 @dataclasses.dataclass
 class ProcedureSummary:
     """
