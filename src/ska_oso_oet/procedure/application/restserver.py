@@ -110,7 +110,8 @@ class ServerSentEventsBlueprint(Blueprint):
 
         pub.subscribe(add_to_q, pub.ALL_TOPICS)
 
-        while True:
+        shutdown_event = current_app.config["shutdown_event"]
+        while not shutdown_event.is_set():
             msg = q.safe_get(timeout=0.1)
             if msg is not None:
                 yield msg

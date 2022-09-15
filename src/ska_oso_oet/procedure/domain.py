@@ -745,6 +745,12 @@ class ProcessManager:
                 self.ctx.log(logging.INFO, f"Fatal Event received: {event.msg}")
                 self._on_fatal(event)
 
+            # normal / safely-handled shutdown by ScriptWorker
+            elif event.msg_type == "SHUTDOWN":
+                self.ctx.log(
+                    logging.INFO, f"Process complete (ProcessManager): {event.msg_src}"
+                )
+
             elif event.msg_type == "END":
                 self.ctx.log(logging.INFO, f"Shutdown Event received: {event.msg}")
                 break

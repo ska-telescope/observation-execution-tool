@@ -3,6 +3,7 @@ import logging.handlers
 import multiprocessing
 import os
 import threading
+import time
 from typing import List
 
 import waitress
@@ -141,6 +142,9 @@ class FlaskWorker(EventBusWorker):
         # override default msg_src with our real process name
         app.config.update(msg_src=self.name)
 
+        shutdown_event = threading.Event()
+        app.config.update(shutdown_event=shutdown_event)
+
         # start Flask in a thread as app.run is a blocking call
         # self.flask can't be created in __init__ as we want this thread to belong to
         # the child process, not the spawning process
@@ -155,6 +159,10 @@ class FlaskWorker(EventBusWorker):
         self.server_thread.start()
 
     def shutdown(self) -> None:
+        self.server.application.config["shutdown_event"].set()
+        # sleep to give the SSE blueprint chance to cooperatively shutdown
+        # 0.2 secs = 2x SSE MPQueue blocking period
+        time.sleep(0.2)
         self.server.close()
         self.server_thread.join(timeout=3)
 
@@ -383,6 +391,8 @@ def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
         elif event.msg_type == "PUBSUB":
             for q in event_bus_queues:
                 q.put(event)
+        elif event.msg_type == "SHUTDOWN":
+            main_ctx.log(logging.INFO, f"Process complete (main loop): {event.msg_src}")
         elif event.msg_type == "FATAL":
             main_ctx.log(logging.INFO, f"Fatal Event received: {event.msg}")
             break
@@ -390,7 +400,7 @@ def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
             main_ctx.log(logging.INFO, f"Shutdown Event received: {event.msg}")
             break
         else:
-            main_ctx.log(logging.ERROR, f"Unknown Event: {event}")
+            main_ctx.log(logging.ERROR, f"Unhandled Event: {event}")
 
 
 if __name__ == "__main__":

@@ -397,7 +397,7 @@ def test_main_loop_ignores_and_logs_events_of_unknown_types(mp_fixture):
 
     event_q.safe_close()
     mock_ctx.log.assert_called_once()
-    assert "Unknown Event" in mock_ctx.log.call_args[0][1]
+    assert "Unhandled Event" in mock_ctx.log.call_args[0][1]
 
 
 @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)

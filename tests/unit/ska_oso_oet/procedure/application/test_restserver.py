@@ -277,10 +277,13 @@ def fixture_client():
     Test fixture that returns a Flask application instance
     """
     app = restserver.create_app()
-    app.config["TESTING"] = True
-    app.config["msg_src"] = "unit tests"
-    with app.test_client() as client:
-        yield client
+    app.config.update(TESTING=True)
+    app.config.update(msg_src="unit tests")
+    app.config.update(shutdown_event=threading.Event())
+    # must create app_context for current_app to resolve correctly in SSE blueprint
+    with app.app_context():
+        with app.test_client() as client:
+            yield client
 
 
 @pytest.fixture(name="short_timeout")
