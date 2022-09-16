@@ -3,10 +3,10 @@ import logging.handlers
 import multiprocessing
 import os
 import threading
+import time
 from typing import List
 
-import requests
-from flask import request
+import waitress
 from pubsub import pub
 
 from ska_oso_oet.event import topics
@@ -138,41 +138,36 @@ class FlaskWorker(EventBusWorker):
         super().startup()
 
         app = restserver.create_app()
-        # add route to run shutdown_flask() when /shutdown is accessed
-        app.add_url_rule("/shutdown", "shutdown", self.shutdown_flask, methods=["POST"])
 
         # override default msg_src with our real process name
         app.config.update(msg_src=self.name)
 
+        shutdown_event = threading.Event()
+        app.config.update(shutdown_event=shutdown_event)
+
         # start Flask in a thread as app.run is a blocking call
         # self.flask can't be created in __init__ as we want this thread to belong to
         # the child process, not the spawning process
-        self.flask = threading.Thread(  # pylint: disable=attribute-defined-outside-init
-            target=app.run,
-            kwargs=dict(
-                host="0.0.0.0", use_reloader=False, use_debugger=False, debug=True
-            ),
+        # pylint: disable=attribute-defined-outside-init
+        self.server = waitress.create_server(app, host="0.0.0.0", port=5000)
+
+        self.server_thread = (  # pylint: disable=attribute-defined-outside-init
+            threading.Thread(
+                target=self.server.run,
+            )
         )
-        self.flask.start()
+        self.server_thread.start()
 
     def shutdown(self) -> None:
+        self.server.application.config["shutdown_event"].set()
+        # sleep to give the SSE blueprint chance to cooperatively shutdown
+        # 0.2 secs = 2x SSE MPQueue blocking period
+        time.sleep(0.2)
+        self.server.close()
+        self.server_thread.join(timeout=3)
+
         # Call super.shutdown to disconnect from pypubsub
         super().shutdown()
-
-        # flask can only be shut down by accessing a special Werkzeug function
-        # that is accessible from a request. Hence, we send a request to a
-        # special URL that will access and call that function.
-        requests.post("http://127.0.0.1:5000/shutdown")
-        self.flask.join(timeout=3)
-        super().shutdown()
-
-    @staticmethod
-    def shutdown_flask():
-        func = request.environ.get("werkzeug.server.shutdown")
-        if func is None:
-            raise RuntimeError("Not running with the Werkzeug Server")
-        func()
-        return "Stopping Flask"
 
 
 class ScriptExecutionServiceWorker(EventBusWorker):
@@ -396,6 +391,8 @@ def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
         elif event.msg_type == "PUBSUB":
             for q in event_bus_queues:
                 q.put(event)
+        elif event.msg_type == "SHUTDOWN":
+            main_ctx.log(logging.INFO, f"Process complete (main loop): {event.msg_src}")
         elif event.msg_type == "FATAL":
             main_ctx.log(logging.INFO, f"Fatal Event received: {event.msg}")
             break
@@ -403,7 +400,7 @@ def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
             main_ctx.log(logging.INFO, f"Shutdown Event received: {event.msg}")
             break
         else:
-            main_ctx.log(logging.ERROR, f"Unknown Event: {event}")
+            main_ctx.log(logging.ERROR, f"Unhandled Event: {event}")
 
 
 if __name__ == "__main__":

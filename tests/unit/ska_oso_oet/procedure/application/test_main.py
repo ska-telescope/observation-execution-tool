@@ -285,24 +285,24 @@ def set_event(event, *args, **kwargs):
     event.set()
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
-def test_flask_worker_starts_flask(mp_fixture, caplog):
+@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts[0:1])
+def test_flaskworker_server_lifecycle(mp_fixture, caplog, mocker):
     """
-    Verify that the FlaskWorker starts Flask.
+    Verify that the FlaskWorker starts and shuts down the Waitress server.
     """
-    with mock.patch("flask.Flask") as mock_flask:
-        # mock Flask causes connection error in shutdown as shutdown URL is accessed
-        with mock.patch("requests.post"):
-            _proc_worker_wrapper_helper(
-                mp_fixture,
-                caplog,
-                FlaskWorker,
-                args=(MPQueue(ctx=mp_fixture),),
-                expect_shutdown_evt=True,
-            )
 
-        mock_app_instance = mock_flask.return_value
+    with mock.patch("waitress.create_server") as m_server:
+        _proc_worker_wrapper_helper(
+            mp_fixture,
+            caplog,
+            FlaskWorker,
+            args=(MPQueue(ctx=mp_fixture),),
+            expect_shutdown_evt=True,
+        )
+
+        mock_app_instance = m_server.return_value
         mock_app_instance.run.assert_called_once()
+        mock_app_instance.close.assert_called_once()
 
 
 @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
@@ -397,7 +397,7 @@ def test_main_loop_ignores_and_logs_events_of_unknown_types(mp_fixture):
 
     event_q.safe_close()
     mock_ctx.log.assert_called_once()
-    assert "Unknown Event" in mock_ctx.log.call_args[0][1]
+    assert "Unhandled Event" in mock_ctx.log.call_args[0][1]
 
 
 @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
