@@ -48,17 +48,16 @@ Installation
 ************
 
 The OET command line tool is available as the ``oet`` command at the terminal.
-If the ``oet`` command is not available, install it with:
+The OET CLI is packaged separately so it can be installed without OET backend
+dependencies, such as PyTango. It can be installed into a Python environment,
+and configured to access a remote OET deployment as detailed below:
 
 .. code-block:: console
 
-   $ pip install --upgrade ska_oso_oet
+   $ pip install --upgrade ska_oso_oet_client
 
-At the time of writing, the OET CLI is not packaged separately and hence
-requires OET backend dependencies - including PyTango - to be installed on the
-target machine. As PyTango bindings are not available for MacOS, it is not
-currently possible to install the OET CLI on MacOS.
-
+By default, the OET image has the CLI installed, meaning the CLI is accessible
+from inside the running OET pod.
 
 Configuration
 *************

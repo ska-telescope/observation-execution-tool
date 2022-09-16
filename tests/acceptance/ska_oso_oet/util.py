@@ -4,7 +4,7 @@ import subprocess
 import time
 import typing
 
-from ska_oso_oet.procedure.application.restclient import RestAdapter
+from ska_oso_oet_client.restclient import RestAdapter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ REST_ADAPTER = RestAdapter(os.getenv("OET_REST_URI"))
 
 
 if typing.TYPE_CHECKING:
-    from ska_oso_oet.procedure.application.restclient import ProcedureSummary
+    from ska_oso_oet_client.restclient import ProcedureSummary
 
 
 class ScriptExecutionError(Exception):

@@ -33,7 +33,6 @@ sys.path.insert(0, os.path.abspath('../../src'))
 
 autodoc_mock_imports = [
     'astropy',
-    'fire',
     'flask',
     'git',
     'jsonpickle',
@@ -41,8 +40,6 @@ autodoc_mock_imports = [
     'pubsub',
     'ska_ser_skuid',
     'ska_ser_logging',
-    'sseclient',
-    'tabulate',
     'tango',
     'tblib'
 ]
