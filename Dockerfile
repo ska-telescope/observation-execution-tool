@@ -20,7 +20,7 @@ COPY pyproject.toml poetry.lock* ./
 # Install runtime dependencies. Add --dev to export for images usable in an IDE
 # Note that the 'pip install .' MUST be present otherwise a potentially stale version
 # of ska-oso-oet could be installed system-wide as a dependency of ska-oso-scripting
-RUN poetry export --format requirements.txt --output poetry-requirements.txt --without-hashes --with dev && \
+RUN poetry export --format requirements.txt --output poetry-requirements.txt --without-hashes && \
     pip install -r poetry-requirements.txt && \
     rm poetry-requirements.txt && \
     pip install .
@@ -31,8 +31,8 @@ RUN git clone -b master https://gitlab.com/ska-telescope/oso/ska-oso-scripting.g
 # install ska-oso-scripting library to provide a default environment and set of
 # default control scripts. This is done as root so that the default environment
 # is installed to system dist-packages.
-#RUN python3 -m pip install \
-#    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==4.5.0
+RUN python3 -m pip install \
+    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==4.5.1
 
 # install the client into the image so it can be used in the default k8s installation
 RUN pip install ska-oso-oet-client==0.1.0
