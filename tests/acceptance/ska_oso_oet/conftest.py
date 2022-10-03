@@ -14,7 +14,7 @@ def setup():
     """
     oet_rest_uri = os.getenv("OET_REST_URI")
     try:
-        resp = requests.get(oet_rest_uri)
+        resp = requests.get(oet_rest_uri, timeout=1.0)
     except requests.exceptions.ConnectionError:
         raise Exception(f"OET REST service not available at {oet_rest_uri}") from None
     if resp.status_code != 200:

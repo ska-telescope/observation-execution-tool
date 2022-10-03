@@ -1,4 +1,4 @@
-Scenario: User runs a script using OET
+Scenario Outline: User runs a script using OET
     Given script <script> has been created
     When the user runs oet start command
     Then the script should be in state <state> after execution is finished
