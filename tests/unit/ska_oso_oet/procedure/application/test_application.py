@@ -15,7 +15,7 @@ import pubsub.pub
 import pytest
 
 from ska_oso_oet.event import topics
-from ska_oso_oet.mptools import EventMessage, MPQueue
+from ska_oso_oet.mptools import EventMessage
 from ska_oso_oet.procedure.application.application import (
     ArgCapture,
     PrepareProcessCommand,
@@ -31,9 +31,10 @@ from ska_oso_oet.procedure.domain import (
     ProcedureState,
     ProcessManager,
 )
-from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
 from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
-from tests.unit.ska_oso_oet.procedure.test_domain import (
+
+# disable F401 to stop flake8 complaining about unused fixture imports
+from tests.unit.ska_oso_oet.procedure.test_domain import (  # noqa: F401
     fixture_abort_script,
     fixture_fail_script,
     fixture_init_hang_script,
