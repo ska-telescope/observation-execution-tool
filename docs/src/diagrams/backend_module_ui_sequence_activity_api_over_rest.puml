@@ -1,0 +1,56 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+
+mainframe **Activity API over REST**
+
+autonumber
+
+participant cli as "CLI :\nRestClientUI" #lightgreen
+participant FlaskWorker as "REST backend :\nFlaskWorker" #lightblue
+participant SBActivityWorker as "SBAWorker: \nScheduingBlockAcitivityWorker"
+participant SBActivityService as "SBActivityService: \nScheduingBlockAcitivityService"
+participant ODA as "ODA :\nObservation Data Archive" #lightblue
+participant ScriptExecutionServiceWorker as "SESWorker :\nScriptExecutionServiceWorker"
+participant ScriptExecutionService as "Script Execution API :\nScriptExecutionService"
+
+cli -> FlaskWorker: HTTP POST to /api/v1/activities
+
+FlaskWorker -> SBActivityWorker: send message request.activity.run
+
+SBActivityWorker -> SBActivityService: run(cmd: ActivityCommand)
+
+SBActivityService -> ODA: get_sbd(sbd_id)
+ODA -> SBActivityService: pdm.SchedulingBlock
+opt arg_override provided
+SBActivityService -> SBActivityService: update SB args
+end
+
+SBActivityService -> ScriptExecutionServiceWorker: message request.procedure.prepare
+
+ScriptExecutionServiceWorker -> ScriptExecutionService: prepare(cmd: PrepareProcessCommand)
+
+ScriptExecutionService -> ScriptExecutionServiceWorker: ProcedureSummary
+
+ScriptExecutionServiceWorker -> SBActivityService: message procedure.lifecycle.preparing
+
+SBActivityService -> SBActivityWorker: ProcedureSummary
+
+SBActivityWorker -> FlaskWorker: message activity.lifecycle.running
+
+cli <- FlaskWorker: HTTP OK + ProcedureSummary JSON
+
+opt prepare_only not set
+SBActivityService -> ScriptExecutionServiceWorker: message request.procedure.start (force=true)
+
+ScriptExecutionServiceWorker -> ScriptExecutionService: start(cmd: StartProcessCommand)
+
+ScriptExecutionService -> ScriptExecutionServiceWorker: ProcedureSummary
+
+ScriptExecutionServiceWorker -> SBActivityService: message procedure.lifecycle.started
+
+SBActivityService -> SBActivityWorker: ProcedureSummary
+
+end
+
+@enduml

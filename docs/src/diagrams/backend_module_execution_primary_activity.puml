@@ -1,0 +1,100 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+package ska_oso_oet.procedure {
+
+package application as application_pkg {
+
+    package main <<Rectangle>> {
+
+        class ActivityWorker {
+            run(...)
+        }
+
+        class FlaskWorker {
+        }
+
+        class EventBusWorker {
+            main_loop(...)
+            main_func(...)
+            republish(...)
+        }
+
+        ActivityWorker -up-|> EventBusWorker
+        FlaskWorker -up-|> EventBusWorker
+    }
+
+    package restserver <<Rectangle>> {
+        class app <<function return value>> {
+        }
+
+        class ProcedureAPIBlueprint
+        class ActivityAPIBlueprint
+        class ServerSentEventsBlueprint
+
+        app o-- ProcedureAPIBlueprint
+        app o-- ActivityAPIBlueprint
+        app o-- ServerSentEventsBlueprint
+    }
+
+    package application <<Rectangle>> {
+
+        class ActivityService {
+            history: List[ActivitySummary]
+
+            run(cmd: ActivityCommand) -> ProcedureSummary
+        }
+
+        class ActivitySummary {
+            id: int
+            pid: int
+            sbd_id: str
+            activity_name: str
+            prepare_only: bool
+            arg_override: Dict
+            activity_states: List[(ActivityState, timestamp)]
+        }
+
+        class ActivityCommand {
+            sbd_id: str
+            activity_name: str
+            prepare_only: bool
+            arg_override: Dict
+        }
+
+        enum ActivityState {
+            REQUESTED
+        }
+
+        class ProcedureSummary {
+            id: int
+            script: domain.ExecutableScript
+            script_args: ...
+            state: domain.ProcedureState
+        }
+    }
+}
+
+FlaskWorker *-- app
+ActivityWorker *-- ActivityService
+
+package flask {
+    class Flask
+    class Blueprint
+
+    Flask -down[hidden]- Blueprint
+}
+
+app -|> Flask
+ProcedureAPIBlueprint -|> Blueprint
+ActivityAPIBlueprint -|> Blueprint
+ServerSentEventsBlueprint --|> Blueprint
+
+main -down[hidden]--> application
+restserver -left[hidden]--> application
+restserver -right[hidden]--> flask
+FlaskWorker -down[hidden]--> restserver
+ActivityService -down[hidden]- ActivitySummary
+ActivitySummary -left[hidden]- ActivityCommand
+
+@enduml
