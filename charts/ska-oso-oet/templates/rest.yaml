@@ -19,7 +19,7 @@ spec:
   rules:
     - http:
         paths:
-          - path: /{{ .Release.Namespace }}/(api.*)
+          - path: /{{ .Release.Namespace }}/ska-oso-oet/(api.*)
             pathType: Prefix
             backend:
               service:
