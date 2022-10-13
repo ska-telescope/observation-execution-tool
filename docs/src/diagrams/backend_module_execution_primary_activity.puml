@@ -28,13 +28,9 @@ package application as application_pkg {
         class app <<function return value>> {
         }
 
-        class ProcedureAPIBlueprint
         class ActivityAPIBlueprint
-        class ServerSentEventsBlueprint
 
-        app o-- ProcedureAPIBlueprint
         app o-- ActivityAPIBlueprint
-        app o-- ServerSentEventsBlueprint
     }
 
     package application <<Rectangle>> {
@@ -42,12 +38,12 @@ package application as application_pkg {
         class ActivityService {
             history: List[ActivitySummary]
 
-            run(cmd: ActivityCommand) -> ProcedureSummary
+            run(cmd: ActivityCommand) -> ActivitySummary
         }
 
         class ActivitySummary {
-            id: int
-            pid: int
+            activity_id: int
+            procedure_id: int
             sbd_id: str
             activity_name: str
             prepare_only: bool
@@ -65,13 +61,6 @@ package application as application_pkg {
         enum ActivityState {
             REQUESTED
         }
-
-        class ProcedureSummary {
-            id: int
-            script: domain.ExecutableScript
-            script_args: ...
-            state: domain.ProcedureState
-        }
     }
 }
 
@@ -86,9 +75,7 @@ package flask {
 }
 
 app -|> Flask
-ProcedureAPIBlueprint -|> Blueprint
 ActivityAPIBlueprint -|> Blueprint
-ServerSentEventsBlueprint --|> Blueprint
 
 main -down[hidden]--> application
 restserver -left[hidden]--> application

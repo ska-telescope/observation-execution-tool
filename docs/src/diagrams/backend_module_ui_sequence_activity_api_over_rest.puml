@@ -34,11 +34,11 @@ ScriptExecutionService -> ScriptExecutionServiceWorker: ProcedureSummary
 
 ScriptExecutionServiceWorker -> SBActivityService: message procedure.lifecycle.preparing
 
-SBActivityService -> SBActivityWorker: ProcedureSummary
+SBActivityService -> SBActivityWorker: ActivitySummary
 
 SBActivityWorker -> FlaskWorker: message activity.lifecycle.running
 
-cli <- FlaskWorker: HTTP OK + ProcedureSummary JSON
+cli <- FlaskWorker: HTTP OK + ActivitySummary JSON
 
 opt prepare_only not set
 SBActivityService -> ScriptExecutionServiceWorker: message request.procedure.start (force=true)
@@ -49,7 +49,7 @@ ScriptExecutionService -> ScriptExecutionServiceWorker: ProcedureSummary
 
 ScriptExecutionServiceWorker -> SBActivityService: message procedure.lifecycle.started
 
-SBActivityService -> SBActivityWorker: ProcedureSummary
+SBActivityService -> SBActivityWorker: ActivitySummary
 
 end
 
