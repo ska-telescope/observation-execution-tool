@@ -19,6 +19,7 @@ from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.application import restserver
 from ska_oso_oet.procedure.application.application import (
+    ActivitySummary,
     ArgCapture,
     PrepareProcessCommand,
     ProcedureHistory,
@@ -35,7 +36,8 @@ from ska_oso_oet.procedure.domain import (
 )
 
 # Endpoint for the REST API
-ENDPOINT = "api/v1.0/procedures"
+PROCEDURES_ENDPOINT = "api/v1.0/procedures"
+ACTIVITIES_ENDPOINT = "api/v1.0/activities"
 
 # Valid JSON struct for creating a new procedure
 CREATE_JSON = dict(
@@ -136,8 +138,24 @@ RUN_SUMMARY = ProcedureSummary(
     state=ProcedureState.RUNNING,
 )
 
+ACTIVITY_REQUEST = {
+    "sbd_id": "sbi-001",
+    "activity_name": "allocate",
+    "arg_override": None,
+    "prepare_only": False,
+}
+
+ACTIVITY_SUMMARY = ActivitySummary(
+    id=1,
+    pid=123,
+    sbd_id="sbd-mvp01-20220923-00001",
+    activity_name="allocate",
+    prepare_only=False,
+    arg_override={},
+)
+
 # resource partial URL for testing procedure execution with above JSON
-RUN_ENDPOINT = f"{ENDPOINT}/{RUN_SUMMARY.id}"
+RUN_ENDPOINT = f"{PROCEDURES_ENDPOINT}/{RUN_SUMMARY.id}"
 
 
 class PubSubHelper:
@@ -241,7 +259,7 @@ def assert_json_equal_to_procedure_summary(
     :param summary: reference ProcedureSummary instance
     :param summary_json: JSON for the ProcedureSummary
     """
-    assert summary_json["uri"] == f"http://localhost/{ENDPOINT}/{summary.id}"
+    assert summary_json["uri"] == f"http://localhost/{PROCEDURES_ENDPOINT}/{summary.id}"
     assert summary_json["script"]["script_type"] == summary.script.get_type()
     assert summary_json["script"]["script_uri"] == summary.script.script_uri
     if summary_json["script"].get("git_args"):
@@ -269,6 +287,21 @@ def assert_json_equal_to_procedure_summary(
         assert state[0].name == summary_json["history"]["process_states"][i][0]
         assert state[1] == summary_json["history"]["process_states"][i][1]
         assert isinstance(summary_json["history"]["process_states"][i][1], float)
+
+
+def assert_json_equal_to_activity_summary(summary: ActivitySummary, summary_json: dict):
+    """
+    Helper function to compare JSON against a reference ActivitySummary
+    instance. An assertion error will be raised if the JSON does not match.
+
+    :param summary: reference ActivitySummary instance
+    :param summary_json: JSON for the ProcedureSummary
+    """
+    assert summary_json["id"] == summary.id
+    assert summary_json["pid"] == summary.pid
+    assert summary_json["sbd_id"] == summary.sbd_id
+    assert summary_json["activity_name"] == summary.activity_name
+    assert summary_json["prepare_only"] == summary.prepare_only
 
 
 @pytest.fixture(name="client")
@@ -300,6 +333,9 @@ def fixture_short_timeout():
         restserver.TIMEOUT = timeout
 
 
+# Tests for ProcedureAPI
+
+
 def test_get_procedures_with_no_procedures_present_returns_empty_list(client):
     """
     Verify that listing resources returns an empty response when no procedures
@@ -312,7 +348,7 @@ def test_get_procedures_with_no_procedures_present_returns_empty_list(client):
     }
     _ = PubSubHelper(spec)
 
-    response = client.get(ENDPOINT)
+    response = client.get(PROCEDURES_ENDPOINT)
     response_json = response.get_json()
     assert "procedures" in response_json
     assert response_json["procedures"] == []
@@ -329,7 +365,7 @@ def test_get_procedures_returns_expected_summaries(client):
     }
     _ = PubSubHelper(spec)
 
-    response = client.get(ENDPOINT)
+    response = client.get(PROCEDURES_ENDPOINT)
     assert response.status_code == 200
     response_json = response.get_json()
     assert "procedures" in response_json
@@ -349,7 +385,7 @@ def test_get_procedure_by_id(client):
     }
     _ = PubSubHelper(spec)
 
-    response = client.get(f"{ENDPOINT}/{CREATE_SUMMARY.id}")
+    response = client.get(f"{PROCEDURES_ENDPOINT}/{CREATE_SUMMARY.id}")
     assert response.status_code == HTTPStatus.OK
 
     response_json = response.get_json()
@@ -371,7 +407,7 @@ def test_get_procedure_gives_404_for_invalid_id(client):
     }
     _ = PubSubHelper(spec)
 
-    response = client.get(f"{ENDPOINT}/1")
+    response = client.get(f"{PROCEDURES_ENDPOINT}/1")
     assert response.status_code == HTTPStatus.NOT_FOUND
 
     response_json = response.get_json()
@@ -382,7 +418,7 @@ def test_get_procedure_gives_404_for_invalid_id(client):
     }
 
 
-def test_successful_post_to_endpoint_returns_created_http_status(client):
+def test_successful_post_to_procedures_endpoint_returns_created_http_status(client):
     """
     Verify that creating a new Procedure returns the CREATED HTTP status code
     """
@@ -393,11 +429,11 @@ def test_successful_post_to_endpoint_returns_created_http_status(client):
     }
     _ = PubSubHelper(spec)
 
-    response = client.post(ENDPOINT, json=CREATE_JSON)
+    response = client.post(PROCEDURES_ENDPOINT, json=CREATE_JSON)
     assert response.status_code == HTTPStatus.CREATED
 
 
-def test_successful_post_to_endpoint_returns_summary_in_response(client):
+def test_successful_post_to_procedures_endpoint_returns_summary_in_response(client):
     """
     Verify that creating a new Procedure returns the expected JSON payload:
     a summary of the created Procedure.
@@ -409,7 +445,7 @@ def test_successful_post_to_endpoint_returns_summary_in_response(client):
     }
     _ = PubSubHelper(spec)
 
-    response = client.post(ENDPOINT, json=CREATE_JSON)
+    response = client.post(PROCEDURES_ENDPOINT, json=CREATE_JSON)
     response_json = response.get_json()
 
     assert "procedure" in response_json
@@ -417,7 +453,7 @@ def test_successful_post_to_endpoint_returns_summary_in_response(client):
     assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedure_json)
 
 
-def test_successful_post_to_endpoint_returns_git_summary_in_response(client):
+def test_successful_post_to_procedures_endpoint_returns_git_summary_in_response(client):
     """
     Verify that creating a new Procedure returns the expected JSON payload:
     a summary of the created Procedure with git arguments.
@@ -429,7 +465,7 @@ def test_successful_post_to_endpoint_returns_git_summary_in_response(client):
     }
     _ = PubSubHelper(spec)
 
-    response = client.post(ENDPOINT, json=CREATE_GIT_JSON)
+    response = client.post(PROCEDURES_ENDPOINT, json=CREATE_GIT_JSON)
     response_json = response.get_json()
 
     assert "procedure" in response_json
@@ -437,7 +473,7 @@ def test_successful_post_to_endpoint_returns_git_summary_in_response(client):
     assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, procedure_json)
 
 
-def test_successful_post_to_endpoint_returns_git_summary_in_response_with_default_git_args(
+def test_successful_post_to_procedures_endpoint_returns_git_summary_in_response_with_default_git_args(
     client,
 ):
     """
@@ -453,7 +489,7 @@ def test_successful_post_to_endpoint_returns_git_summary_in_response_with_defaul
     }
     _ = PubSubHelper(spec)
 
-    response = client.post(ENDPOINT, json=request_json)
+    response = client.post(PROCEDURES_ENDPOINT, json=request_json)
     response_json = response.get_json()
 
     assert "procedure" in response_json
@@ -461,14 +497,14 @@ def test_successful_post_to_endpoint_returns_git_summary_in_response_with_defaul
     assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, procedure_json)
 
 
-def test_post_to_endpoint_requires_script_uri_json_parameter(client):
+def test_post_to_procedures_endpoint_requires_script_uri_json_parameter(client):
     """
     Verify that the script_uri must be present in the 'create procedure' JSON
     request.
     """
     malformed = copy.deepcopy(CREATE_JSON)
     del malformed["script"]["script_uri"]
-    response = client.post(ENDPOINT, json=malformed)
+    response = client.post(PROCEDURES_ENDPOINT, json=malformed)
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
@@ -479,14 +515,14 @@ def test_post_to_endpoint_requires_script_uri_json_parameter(client):
     }
 
 
-def test_post_to_endpoint_unknown_script_type(client):
+def test_post_to_procedures_endpoint_unknown_script_type(client):
     """
     Verify that the script_uri must be present in the 'create procedure' JSON
     request.
     """
     malformed = copy.deepcopy(CREATE_JSON)
     malformed["script"]["script_type"] = "foo"
-    response = client.post(ENDPOINT, json=malformed)
+    response = client.post(PROCEDURES_ENDPOINT, json=malformed)
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
@@ -497,13 +533,13 @@ def test_post_to_endpoint_unknown_script_type(client):
     }
 
 
-def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
+def test_post_to_procedures_endpoint_requires_script_arg_be_a_dict(client):
     """
     Verify that the API checks the script_arg parameter is of the correct type
     """
     malformed = copy.deepcopy(CREATE_JSON)
     malformed["script_args"] = "junk"
-    response = client.post(ENDPOINT, json=malformed)
+    response = client.post(PROCEDURES_ENDPOINT, json=malformed)
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
@@ -514,7 +550,7 @@ def test_post_to_endpoint_requires_script_arg_be_a_dict(client):
     }
 
 
-def test_post_to_endpoint_sends_init_arguments(client):
+def test_post_to_procedures_endpoint_sends_init_arguments(client):
     """
     Verify that constructor arguments are relayed correctly when creating a
     new Procedure.
@@ -526,7 +562,7 @@ def test_post_to_endpoint_sends_init_arguments(client):
     }
     helper = PubSubHelper(spec)
 
-    client.post(ENDPOINT, json=CREATE_JSON)
+    client.post(PROCEDURES_ENDPOINT, json=CREATE_JSON)
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -542,7 +578,7 @@ def test_post_to_endpoint_sends_init_arguments(client):
     assert helper.messages[0][1]["cmd"] == expected_cmd
 
 
-def test_post_to_endpoint_sends_git_arguments(client):
+def test_post_to_procedures_endpoint_sends_git_arguments(client):
     """
     Verify that git arguments are relayed correctly when creating a
     new Procedure.
@@ -554,7 +590,7 @@ def test_post_to_endpoint_sends_git_arguments(client):
     }
     helper = PubSubHelper(spec)
 
-    client.post(ENDPOINT, json=CREATE_GIT_JSON)
+    client.post(PROCEDURES_ENDPOINT, json=CREATE_GIT_JSON)
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -570,7 +606,7 @@ def test_post_to_endpoint_sends_git_arguments(client):
     assert helper.messages[0][1]["cmd"] == expected_cmd
 
 
-def test_post_to_endpoint_sends_default_git_arguments(client):
+def test_post_to_procedures_endpoint_sends_default_git_arguments(client):
     """
     Verify that git arguments are relayed correctly when creating a
     new Procedure.
@@ -587,7 +623,7 @@ def test_post_to_endpoint_sends_default_git_arguments(client):
     summary_json = copy.deepcopy(CREATE_GIT_JSON)
     del summary_json["script"]["git_args"]
 
-    client.post(ENDPOINT, json=summary_json)
+    client.post(PROCEDURES_ENDPOINT, json=summary_json)
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -620,7 +656,7 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
     }
     helper = PubSubHelper(spec)
 
-    response = client.put(f"{ENDPOINT}/123")
+    response = client.put(f"{PROCEDURES_ENDPOINT}/123")
     assert response.status_code == HTTPStatus.NOT_FOUND
 
     response_json = response.get_json()
@@ -912,7 +948,7 @@ def test_call_and_respond_aborts_with_timeout_when_no_response_received(
     time exceeds timeout
     """
     # do not prime pubsub, so request will timeout
-    response = client.get(ENDPOINT)
+    response = client.get(PROCEDURES_ENDPOINT)
     # 504 and timeout error message
     assert response.status_code == 504
 
@@ -1092,7 +1128,7 @@ def test_make_public_summary():
         mock_url_fn.return_value = (
             f"http://localhost/api/v1.0/procedures/{CREATE_SUMMARY.id}"
         )
-        summary_json = restserver.make_public_summary(CREATE_SUMMARY)
+        summary_json = restserver.make_public_procedure_summary(CREATE_SUMMARY)
         assert_json_equal_to_procedure_summary(CREATE_SUMMARY, summary_json)
 
 
@@ -1101,5 +1137,79 @@ def test_make_public_summary_git_args():
         mock_url_fn.return_value = (
             f"http://localhost/api/v1.0/procedures/{CREATE_GIT_SUMMARY.id}"
         )
-        summary_json = restserver.make_public_summary(CREATE_GIT_SUMMARY)
+        summary_json = restserver.make_public_procedure_summary(CREATE_GIT_SUMMARY)
         assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, summary_json)
+
+
+# Tests for ActivityAPI
+
+
+def test_get_activities_with_no_activities_present_returns_empty_list(client):
+    """
+    Verify that listing resources returns an empty response when no activities
+    have been registered
+    """
+    spec = {
+        topics.request.activity.list: [([topics.activity.pool.list], dict(result=[]))],
+    }
+    _ = PubSubHelper(spec)
+
+    response = client.get(ACTIVITIES_ENDPOINT)
+    response_json = response.get_json()
+    assert "activities" in response_json
+    assert response_json["activities"] == []
+
+
+def test_get_activities_returns_expected_summaries(client):
+    """
+    Test that listing activities resources returns the expected JSON payload
+    """
+    spec = {
+        topics.request.activity.list: [
+            ([topics.activity.pool.list], dict(result=[ACTIVITY_SUMMARY]))
+        ],
+    }
+    _ = PubSubHelper(spec)
+
+    response = client.get(ACTIVITIES_ENDPOINT)
+    assert response.status_code == 200
+    response_json = response.get_json()
+    assert "activities" in response_json
+    activities_json = response_json["activities"]
+    assert len(activities_json) == 1
+    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, activities_json[0])
+
+
+def test_successful_post_to_activities_endpoint_returns_ok_http_status(client):
+    """
+    Verify that creating a new Activity returns the OK HTTP status code
+    """
+    spec = {
+        topics.request.activity.run: [
+            ([topics.activity.lifecycle.running], dict(result=CREATE_SUMMARY))
+        ],
+    }
+    _ = PubSubHelper(spec)
+
+    response = client.post(ACTIVITIES_ENDPOINT, json=ACTIVITY_REQUEST)
+    assert response.status_code == HTTPStatus.OK
+
+
+def test_successful_post_to_activities_endpoint_returns_summary_in_response(client):
+    """
+    Verify that posting a new Activity returns the expected JSON payload:
+    a summary of the created Procedure.
+    """
+    spec = {
+        topics.request.activity.run: [
+            ([topics.activity.lifecycle.running], dict(result=CREATE_SUMMARY))
+        ],
+    }
+    _ = PubSubHelper(spec)
+
+    response = client.post(ACTIVITIES_ENDPOINT, json=ACTIVITY_REQUEST)
+    response_json = response.get_json()
+
+    assert "procedure" in response_json
+    procedure_json = response_json["procedure"]
+    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedure_json)

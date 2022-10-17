@@ -140,6 +140,16 @@ class ProcedureSummary:
     state: domain.ProcedureState
 
 
+@dataclasses.dataclass
+class ActivitySummary:
+    id: int  # pylint: disable=invalid-name
+    pid: int
+    sbd_id: str
+    activity_name: str
+    prepare_only: bool
+    arg_override: Dict[str, str]
+
+
 class ScriptExecutionService:
     """
     ScriptExecutionService provides the high-level interface and facade for
