@@ -55,6 +55,14 @@ make k8s-test
 make k8s-uninstall-chart
 ```
 
+The umbrella Helm chart also deploys the ska-db-oda service and related Postgres instance by default. This is
+used in the BDD tests to test the full integration from the OET to Postgres. For a lightweight deployment of the OET,
+which uses the filesystem implementation of the ODA, run
+
+```
+make dev-up
+```
+
 To rebuild the PlantUML and drawio diagrams after modification, from a
 non-interactive session run
 
