@@ -47,9 +47,16 @@ package application as application_pkg {
             sbd_id: str
             activity_name: str
             prepare_only: bool
-            arg_override: Dict
+            arg_override: List[ArgCapture]
             activity_states: List[(ActivityState, timestamp)]
         }
+
+        class ArgCapture {
+            fn: str
+            fn_args: domain.ProcedureInput
+            time: float
+        }
+        ActivitySummary -right-|> ArgCapture
 
         class ActivityCommand {
             sbd_id: str

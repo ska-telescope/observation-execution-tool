@@ -37,20 +37,17 @@ package application as application_pkg {
             republish(...)
         }
 
-        ScriptExecutionServiceWorker -right-|> EventBusWorker
-        FlaskWorker -left-|> EventBusWorker
+        ScriptExecutionServiceWorker --> EventBusWorker
+        FlaskWorker --> EventBusWorker
     }
 
     package restserver <<Rectangle>> {
         class app <<function return value>> {
         }
 
-        class API
+        class ProcedureAPI
 
-        class ServerSentEventsBlueprint
-
-        app o-- API
-        app o-- ServerSentEventsBlueprint
+        app o-- ProcedureAPI
     }
 
     package application <<Rectangle>> {
@@ -64,9 +61,16 @@ package application as application_pkg {
         class ProcedureSummary {
             id: int
             script: domain.ExecutableScript
-            script_args: ...
+            script_args: List[ArgCapture]
             state: domain.ProcedureState
         }
+
+        class ArgCapture {
+            fn: str
+            fn_args: domain.ProcedureInput
+            time: float
+        }
+        ProcedureSummary -right-|> ArgCapture
 
         class ProcedureHistory {
             {field} process_states: List[(ProcedureState, time)]
@@ -74,7 +78,6 @@ package application as application_pkg {
         }
         ProcedureSummary --> ProcedureHistory
 
-        together {
         class PrepareProcessCommand {
             script: domain.ExecutableScript
             init_args: domain.ProcedureInput
@@ -90,9 +93,8 @@ package application as application_pkg {
             process_uid: int
             run_abort: bool
         }
-        }
-        PrepareProcessCommand -[hidden]- StartProcessCommand
-        StartProcessCommand -[hidden]- StopProcessCommand
+        PrepareProcessCommand -up[hidden]- StartProcessCommand
+        StartProcessCommand -up[hidden]- StopProcessCommand
     }
     FlaskWorker *-- app
     ScriptExecutionServiceWorker *-- ScriptExecutionService
@@ -104,10 +106,9 @@ package application as application_pkg {
         class GitScript
         class FilesystemScript
         class EmbeddedStringScript
-        GitScript -down-|> ExecutableScript
-        FilesystemScript -left-|> ExecutableScript
-        EmbeddedStringScript -right-|> ExecutableScript
-        ExecutableScript -up[hidden]- ProcedureInput
+        GitScript --> ExecutableScript
+        FilesystemScript --> ExecutableScript
+        EmbeddedStringScript --> ExecutableScript
 
         enum ProcedureState {
             UNKNOWN
@@ -129,30 +130,20 @@ package application as application_pkg {
 
     ProcedureHistory ---> ProcedureState
     ProcedureSummary ---> ProcedureInput
-    ProcedureState -left[hidden]-> ProcedureInput
 }
 
 package flask {
     class Flask
     class Blueprint
-
-    Flask -down[hidden]- Blueprint
 }
 
 app -|> Flask
-API -|> Blueprint
-ServerSentEventsBlueprint --|> Blueprint
-
-package pypubsub {
-}
-ska_oso_oet.procedure -[dashed]-> pypubsub: uses
+ProcedureAPI -|> Blueprint
 
 main -down[hidden]--> application
 restserver -left[hidden]--> application
 restserver -right[hidden]--> flask
 FlaskWorker -down[hidden]--> restserver
 ScriptExecutionService -down[hidden]- ProcedureSummary
-ScriptExecutionService -down[hidden]- PrepareProcessCommand
-PrepareProcessCommand -right[hidden]- ProcedureSummary
 
 @enduml
