@@ -336,10 +336,12 @@ def update_procedure(procedure_id: int):
 
 @ActivityAPI.route("/activities", methods=["GET"])
 def get_activities():
-    summary = call_and_respond(topics.request.activity.list, topics.activity.pool.list)
+    summaries = call_and_respond(
+        topics.request.activity.list, topics.activity.pool.list
+    )
 
     # TODO: do we need to format the ActivitySummary, similar to make_public_procedure_summary?
-    return flask.jsonify({"activities": summary}), 200
+    return flask.jsonify({"activities": summaries}), 200
 
 
 @ActivityAPI.route("/activities", methods=["POST"])
@@ -348,13 +350,18 @@ def run_activity():
         topics.request.activity.run, topics.activity.lifecycle.running, cmd=None
     )
 
-    return flask.jsonify({"procedure": make_public_procedure_summary(summary)}), 200
+    # TODO: do we need to format the ActivitySummary, similar to make_public_procedure_summary?
+    return flask.jsonify({"activity": summary}), 200
 
 
 @ProcedureAPI.errorhandler(400)
 @ProcedureAPI.errorhandler(404)
 @ProcedureAPI.errorhandler(500)
 @ProcedureAPI.errorhandler(504)
+@ActivityAPI.errorhandler(400)
+@ActivityAPI.errorhandler(404)
+@ActivityAPI.errorhandler(500)
+@ActivityAPI.errorhandler(504)
 def server_error_response(cause):
     """
     Custom error handler for Procedure API.

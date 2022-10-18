@@ -147,7 +147,7 @@ class ActivitySummary:
     sbd_id: str
     activity_name: str
     prepare_only: bool
-    arg_override: Dict[str, str]
+    arg_override: List[ArgCapture]
 
 
 class ScriptExecutionService:

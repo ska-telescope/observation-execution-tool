@@ -226,7 +226,7 @@ class activity:
                 """
                 - msg_src: component from which the request originated
                 - request_id: unique identifier for this request
-                - result: ProcedureSummary characterising the running activity
+                - result: ActivitySummary characterising the running activity
                 """
 
     class pool:

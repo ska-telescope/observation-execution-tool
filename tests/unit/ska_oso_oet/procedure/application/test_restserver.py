@@ -1186,7 +1186,7 @@ def test_successful_post_to_activities_endpoint_returns_ok_http_status(client):
     """
     spec = {
         topics.request.activity.run: [
-            ([topics.activity.lifecycle.running], dict(result=CREATE_SUMMARY))
+            ([topics.activity.lifecycle.running], dict(result=ACTIVITY_SUMMARY))
         ],
     }
     _ = PubSubHelper(spec)
@@ -1202,7 +1202,7 @@ def test_successful_post_to_activities_endpoint_returns_summary_in_response(clie
     """
     spec = {
         topics.request.activity.run: [
-            ([topics.activity.lifecycle.running], dict(result=CREATE_SUMMARY))
+            ([topics.activity.lifecycle.running], dict(result=ACTIVITY_SUMMARY))
         ],
     }
     _ = PubSubHelper(spec)
@@ -1210,6 +1210,6 @@ def test_successful_post_to_activities_endpoint_returns_summary_in_response(clie
     response = client.post(ACTIVITIES_ENDPOINT, json=ACTIVITY_REQUEST)
     response_json = response.get_json()
 
-    assert "procedure" in response_json
-    procedure_json = response_json["procedure"]
-    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedure_json)
+    assert "activity" in response_json
+    procedure_json = response_json["activity"]
+    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, procedure_json)

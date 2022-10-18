@@ -82,7 +82,7 @@ An ‘Activity’ represents an action which a user will command the telescope t
      - **Prepare a new activity**
        |br|
        |br|
-       Loads the script from the SBDefinition for the given activity and prepares it for execution.
+       Loads the script from the SBDefinition for the given activity and prepares it for execution. Response is an ActivitySummary
 
 
 3. Data Types and Constants
