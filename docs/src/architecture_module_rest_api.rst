@@ -77,6 +77,12 @@ An ‘Activity’ represents an action which a user will command the telescope t
        |br|
        |br|
        Return the collection of all activities.
+   * - GET
+     - ``/api/v1/activities/<activity_id>``
+     - **Get activity**
+       |br|
+       |br|
+       Return the a summary of the activity with given id.
    * - POST
      - ``/api/v1/activities``
      - **Prepare a new activity**

@@ -334,14 +334,40 @@ def update_procedure(procedure_id: int):
     return flask.jsonify({"procedure": make_public_procedure_summary(summary)})
 
 
+@ActivityAPI.route("/activities/<int:activity_id>", methods=["GET"])
+def get_activity(activity_id):
+    summaries = call_and_respond(
+        topics.request.activity.list,
+        topics.activity.pool.list,
+        activity_id=[activity_id],
+    )
+
+    if not summaries:
+        description = {
+            "type": "ResourceNotFound",
+            "Message": f"No information available for ID={activity_id}",
+        }
+
+        flask.abort(404, description=description)
+    else:
+        return (
+            flask.jsonify({"activity": make_public_activity_summary(summaries[0])}),
+            200,
+        )
+
+
 @ActivityAPI.route("/activities", methods=["GET"])
 def get_activities():
     summaries = call_and_respond(
         topics.request.activity.list, topics.activity.pool.list
     )
 
-    # TODO: do we need to format the ActivitySummary, similar to make_public_procedure_summary?
-    return flask.jsonify({"activities": summaries}), 200
+    return (
+        flask.jsonify(
+            {"activities": [make_public_activity_summary(s) for s in summaries]}
+        ),
+        200,
+    )
 
 
 @ActivityAPI.route("/activities", methods=["POST"])
@@ -350,8 +376,7 @@ def run_activity():
         topics.request.activity.run, topics.activity.lifecycle.running, cmd=None
     )
 
-    # TODO: do we need to format the ActivitySummary, similar to make_public_procedure_summary?
-    return flask.jsonify({"activity": summary}), 200
+    return flask.jsonify({"activity": make_public_activity_summary(summary)}), 200
 
 
 @ProcedureAPI.errorhandler(400)
@@ -478,6 +503,27 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
         "script_args": script_args,
         "history": procedure_history,
         "state": procedure.state.name,
+    }
+
+
+def make_public_activity_summary(activity: application.ActivitySummary):
+    """
+    Convert an ActivitySummary into JSON ready for client consumption.
+
+    The main use of this function is to replace the internal Activity ID with
+    the resource URI, e.g., 1 -> http://localhost:5000/api/v1.0/procedures/1
+
+    :param activity: ActivitySummary to convert
+    :return: safe JSON representation
+    """
+    return {
+        "uri": flask.url_for(
+            "activities.get_activity", activity_id=activity.id, _external=True
+        ),
+        "activity_name": activity.activity_name,
+        "sbd_id": activity.sbd_id,
+        "pid": activity.pid,
+        "prepare_only": activity.prepare_only,
     }
 
 

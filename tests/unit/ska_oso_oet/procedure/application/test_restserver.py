@@ -297,7 +297,7 @@ def assert_json_equal_to_activity_summary(summary: ActivitySummary, summary_json
     :param summary: reference ActivitySummary instance
     :param summary_json: JSON for the ProcedureSummary
     """
-    assert summary_json["id"] == summary.id
+    assert summary_json["uri"] == f"http://localhost/{ACTIVITIES_ENDPOINT}/{summary.id}"
     assert summary_json["pid"] == summary.pid
     assert summary_json["sbd_id"] == summary.sbd_id
     assert summary_json["activity_name"] == summary.activity_name
@@ -1178,6 +1178,48 @@ def test_get_activities_returns_expected_summaries(client):
     activities_json = response_json["activities"]
     assert len(activities_json) == 1
     assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, activities_json[0])
+
+
+def test_get_activity_by_id(client):
+    """
+    Verify that getting a resource by ID returns the expected JSON payload
+    """
+    spec = {
+        topics.request.activity.list: [
+            ([topics.activity.pool.list], dict(result=[ACTIVITY_SUMMARY]))
+        ],
+    }
+    _ = PubSubHelper(spec)
+
+    response = client.get(f"{ACTIVITIES_ENDPOINT}/{ACTIVITY_SUMMARY.id}")
+    assert response.status_code == HTTPStatus.OK
+
+    response_json = response.get_json()
+    assert "activity" in response_json
+    activity_json = response_json["activity"]
+    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, activity_json)
+
+
+def test_get_activity_gives_404_for_invalid_id(client):
+    """
+    Verify that requesting an invalid resource returns an error.
+    """
+    # empty list as response shows that ID not found when trying to retrieve
+    # activity
+    spec = {
+        topics.request.activity.list: [([topics.activity.pool.list], dict(result=[]))],
+    }
+    _ = PubSubHelper(spec)
+
+    response = client.get(f"{ACTIVITIES_ENDPOINT}/1")
+    assert response.status_code == HTTPStatus.NOT_FOUND
+
+    response_json = response.get_json()
+    assert response_json == {
+        "error": "404 Not Found",
+        "type": "ResourceNotFound",
+        "Message": "No information available for ID=1",
+    }
 
 
 def test_successful_post_to_activities_endpoint_returns_ok_http_status(client):
