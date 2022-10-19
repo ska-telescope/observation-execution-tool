@@ -26,7 +26,7 @@ The current status of a script execution can be inspected at any time by reading
 
 This workflow has been mapped to the following REST resources:
 
-.. list-table:: REST resources
+.. list-table:: Procedure REST resources
    :widths: 5 15 80
    :header-rows: 1
 
@@ -62,6 +62,33 @@ This workflow has been mapped to the following REST resources:
        This can be used to start execution by setting the Procedure ``state`` attribute to ``RUNNING`` or stop execution
        by setting ``state`` to ``STOPPED``.
 
+An ‘Activity’ represents an action which a user will command the telescope to perform, eg 'allocate'
+
+.. list-table:: Activity REST resources
+   :widths: 5 15 80
+   :header-rows: 1
+
+   * - HTTP Method
+     - Resource URL
+     - Description
+   * - GET
+     - ``/api/v1/activities``
+     - **List activities**
+       |br|
+       |br|
+       Return the collection of all activities.
+   * - GET
+     - ``/api/v1/activities/<activity_id>``
+     - **Get activity**
+       |br|
+       |br|
+       Return the a summary of the activity with given id.
+   * - POST
+     - ``/api/v1/activities``
+     - **Prepare a new activity**
+       |br|
+       |br|
+       Loads the script from the SBDefinition for the given activity and prepares it for execution. Response is an ActivitySummary
 
 
 3. Data Types and Constants
