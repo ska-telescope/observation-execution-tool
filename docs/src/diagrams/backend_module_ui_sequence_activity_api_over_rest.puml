@@ -8,48 +8,48 @@ autonumber
 
 participant cli as "CLI :\nRestClientUI" #lightgreen
 participant FlaskWorker as "REST backend :\nFlaskWorker" #lightblue
-participant SBActivityWorker as "SBAWorker: \nScheduingBlockAcitivityWorker"
-participant SBActivityService as "SBActivityService: \nScheduingBlockAcitivityService"
+participant ActivityWorker
+participant ActivityService
 participant ODA as "ODA :\nObservation Data Archive" #lightblue
 participant ScriptExecutionServiceWorker as "SESWorker :\nScriptExecutionServiceWorker"
 participant ScriptExecutionService as "Script Execution API :\nScriptExecutionService"
 
 cli -> FlaskWorker: HTTP POST to /api/v1/activities
 
-FlaskWorker -> SBActivityWorker: send message request.activity.run
+FlaskWorker -> ActivityWorker: send message request.activity.run
 
-SBActivityWorker -> SBActivityService: run(cmd: ActivityCommand)
+ActivityWorker -> ActivityService: run(cmd: ActivityCommand)
 
-SBActivityService -> ODA: get_sbd(sbd_id)
-ODA -> SBActivityService: pdm.SchedulingBlock
+ActivityService -> ODA: get_sbd(sbd_id)
+ODA -> ActivityService: pdm.SchedulingBlock
 opt arg_override provided
-SBActivityService -> SBActivityService: update SB args
+ActivityService -> ActivityService: update SB args
 end
 
-SBActivityService -> ScriptExecutionServiceWorker: message request.procedure.prepare
+ActivityService -> ScriptExecutionServiceWorker: message request.procedure.prepare
 
 ScriptExecutionServiceWorker -> ScriptExecutionService: prepare(cmd: PrepareProcessCommand)
 
 ScriptExecutionService -> ScriptExecutionServiceWorker: ProcedureSummary
 
-ScriptExecutionServiceWorker -> SBActivityService: message procedure.lifecycle.preparing
+ScriptExecutionServiceWorker -> ActivityService: message procedure.lifecycle.preparing
 
-SBActivityService -> SBActivityWorker: ActivitySummary
+ActivityService -> ActivityWorker: ActivitySummary
 
-SBActivityWorker -> FlaskWorker: message activity.lifecycle.running
+ActivityWorker -> FlaskWorker: message activity.lifecycle.running
 
 cli <- FlaskWorker: HTTP OK + ActivitySummary JSON
 
 opt prepare_only not set
-SBActivityService -> ScriptExecutionServiceWorker: message request.procedure.start (force=true)
+ActivityService -> ScriptExecutionServiceWorker: message request.procedure.start (force=true)
 
 ScriptExecutionServiceWorker -> ScriptExecutionService: start(cmd: StartProcessCommand)
 
 ScriptExecutionService -> ScriptExecutionServiceWorker: ProcedureSummary
 
-ScriptExecutionServiceWorker -> SBActivityService: message procedure.lifecycle.started
+ScriptExecutionServiceWorker -> ActivityService: message procedure.lifecycle.started
 
-SBActivityService -> SBActivityWorker: ActivitySummary
+ActivityService -> ActivityWorker: ActivitySummary
 
 end
 
