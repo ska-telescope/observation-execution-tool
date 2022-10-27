@@ -64,6 +64,35 @@ class request:
                 - cmd: StartProcessCommand containing request parameters
                 """
 
+    class activity:
+        """
+        Topic for user requests related to activities.
+        """
+
+        class run:
+            """
+            Emitted when a request to run an activity is received.
+            """
+
+            def msgDataSpec(msg_src, request_id, cmd):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - cmd: ActivityCommand containing request parameters
+                """
+
+        class list:
+            """
+            Emitted when a request to enumerate all activities is received.
+            """
+
+            def msgDataSpec(msg_src, request_id, activity_id=None):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - activity_id: Activity ID to list.
+                """
+
 
 class procedure:
     """
@@ -176,6 +205,47 @@ class procedure:
                 - request_id: unique identifier for this request
                 - result: list of ProcedureSummary instances characterising
                           procedures and their states.
+                """
+
+
+class activity:
+    """
+    Root topic for events related to activities.
+    """
+
+    class lifecycle:
+        """
+        Topic for events related to activity lifecycle.
+        """
+
+        class running:
+            """
+            Emitted when an activity starts running.
+            """
+
+            def msgDataSpec(msg_src, request_id, result):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - result: ActivitySummary characterising the running activity
+                """
+
+    class pool:
+        """
+        Topic for events on characterisation of the activity pool.
+        """
+
+        class list:
+            """
+            Emitted when current activities and their status is enumerated.
+            """
+
+            def msgDataSpec(msg_src, request_id, result):
+                """
+                - msg_src: component from which the request originated
+                - request_id: unique identifier for this request
+                - result: list of ActivitySummary instances characterising
+                          activites and their states.
                 """
 
 

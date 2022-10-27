@@ -43,3 +43,6 @@ ska-tango-base:
 #        cpu: 1000m     # 200m = 0.2 CPU
 #        memory: 256Mi  # 256Mi = 0.25 GB mem
 #        ephemeral-storage: 1Gi
+
+ska-db-oda:
+  enabled: true

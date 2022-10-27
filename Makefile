@@ -8,6 +8,7 @@
 CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-oet
+RELEASE_NAME ?= test
 
 # include makefile to pick up the standard Make targets from the submodule
 -include .make/base.mk
@@ -21,17 +22,29 @@ PROJECT_NAME = ska-oso-oet
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
+# The default ODA_SBD_URL points to the umbrella chart ODA deployment where data is
+# lost on chart teardown. For longer-term data persistence, override ODA_SBD_URL to
+# point to the persistent ODA deployment.
+ODA_SBD_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/api/v1/sbds
+
+POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
+
+K8S_CHART_PARAMS = \
+  --set ska-oso-oet.rest.oda.url=$(ODA_SBD_URL) \
+  --set ska-db-oda.rest.postgres.host=$(POSTGRES_HOST) \
+  --set ska-db-oda.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST)
+
 # If running in the CI pipeline, set the variables to point to the freshly
 # built image in the GitLab registry
 ifneq ($(CI_REGISTRY),)
-K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
+K8S_CHART_PARAMS += --set ska-oso-oet.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
 	--set ska-oso-oet.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-oet
 K8S_TEST_IMAGE_TO_TEST=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-oet/ska-oso-oet:$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA)
 endif
 
 # Set the k8s test command run inside the testing pod to only run the acceptance
 # tests (no k8s pod deployment required for unit tests)
-K8S_TEST_TEST_COMMAND = pytest ./tests/acceptance | tee pytest.stdout
+K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/acceptance | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the integration tests
 PYTHON_TEST_FILE = tests/unit/
@@ -51,7 +64,11 @@ PYTHON_SWITCHES_FOR_PYLINT = --disable=C,R,fixme
 
 up: namespace install-chart wait
 
-dev-up: K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION) --set ska-oso-oet.rest.ingress.enabled=true
+dev-up: K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION) \
+	--set ska-oso-oet.rest.ingress.enabled=true \
+	--set ska-oso-oet.rest.oda.backendType=filesystem \
+	--set ska-db-oda.enabled=false
+
 dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deployment
 
 dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deployment

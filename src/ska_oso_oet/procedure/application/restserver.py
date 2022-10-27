@@ -17,8 +17,9 @@ from ska_oso_oet.procedure.application import application
 # from werkzeug.serving import WSGIRequestHandler
 # WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
-# Blueprint for the REST API
-API = Blueprint("api", __name__)
+# Blueprints for the REST API
+ProcedureAPI = Blueprint("procedures", __name__)
+ActivityAPI = Blueprint("activities", __name__)
 
 # time allowed for Flask <-> other ProcWorker communication before timeout
 TIMEOUT = 10
@@ -150,7 +151,7 @@ def _get_summary_or_404(pid):
         return summaries[0]
 
 
-@API.route("/procedures", methods=["GET"])
+@ProcedureAPI.route("/procedures", methods=["GET"])
 def get_procedures():
     """
     List all Procedures.
@@ -164,10 +165,12 @@ def get_procedures():
     summaries = call_and_respond(
         topics.request.procedure.list, topics.procedure.pool.list, pids=None
     )
-    return flask.jsonify({"procedures": [make_public_summary(s) for s in summaries]})
+    return flask.jsonify(
+        {"procedures": [make_public_procedure_summary(s) for s in summaries]}
+    )
 
 
-@API.route("/procedures/<int:procedure_id>", methods=["GET"])
+@ProcedureAPI.route("/procedures/<int:procedure_id>", methods=["GET"])
 def get_procedure(procedure_id: int):
     """
     Get a Procedure.
@@ -179,10 +182,10 @@ def get_procedure(procedure_id: int):
     :return: Procedure JSON
     """
     summary = _get_summary_or_404(procedure_id)
-    return flask.jsonify({"procedure": make_public_summary(summary)})
+    return flask.jsonify({"procedure": make_public_procedure_summary(summary)})
 
 
-@API.route("/procedures", methods=["POST"])
+@ProcedureAPI.route("/procedures", methods=["POST"])
 def create_procedure():
     """
     Create a new Procedure.
@@ -255,56 +258,10 @@ def create_procedure():
         cmd=prepare_cmd,
     )
 
-    return flask.jsonify({"procedure": make_public_summary(summary)}), 201
+    return flask.jsonify({"procedure": make_public_procedure_summary(summary)}), 201
 
 
-def call_and_respond(request_topic, response_topic, *args, **kwargs):
-    q = Queue(1)
-    my_request_id = time.time()
-
-    # msg_src MUST be part of method signature for pypubsub to function
-    def callback(msg_src, request_id, result):  # pylint: disable=unused-argument
-        if my_request_id == request_id:
-            q.put(result)
-
-    pub.subscribe(callback, response_topic)
-
-    msg_src = flask.current_app.config["msg_src"]
-
-    # With the callback now setup, publish an event to mark the user request event
-    pub.sendMessage(
-        request_topic, msg_src=msg_src, request_id=my_request_id, *args, **kwargs
-    )
-
-    try:
-        result = q.get(timeout=TIMEOUT)
-
-        if isinstance(result, Exception):
-            if isinstance(result, OSError):
-                description = {
-                    "type": result.__class__.__name__,
-                    "Message": f"{result.strerror}: {result.filename}",
-                }
-            else:
-                description = {
-                    "type": result.__class__.__name__,
-                    "Message": str(result),
-                }
-            flask.abort(500, description=description)
-
-        return result
-
-    except Empty:
-        description = {
-            "Message": (
-                f"Timeout waiting for msg #{my_request_id} on topic {response_topic}"
-            ),
-            "type": "Timeout Error",
-        }
-        flask.abort(504, description=description)
-
-
-@API.route("/procedures/<int:procedure_id>", methods=["PUT"])
+@ProcedureAPI.route("/procedures/<int:procedure_id>", methods=["PUT"])
 def update_procedure(procedure_id: int):
     """
     Update a Procedure resource using the desired Procedure state described in
@@ -374,10 +331,136 @@ def update_procedure(procedure_id: int):
             topics.request.procedure.start, topics.procedure.lifecycle.started, cmd=cmd
         )
 
-    return flask.jsonify({"procedure": make_public_summary(summary)})
+    return flask.jsonify({"procedure": make_public_procedure_summary(summary)})
 
 
-def make_public_summary(procedure: application.ProcedureSummary):
+@ActivityAPI.route("/activities/<int:activity_id>", methods=["GET"])
+def get_activity(activity_id):
+    summaries = call_and_respond(
+        topics.request.activity.list,
+        topics.activity.pool.list,
+        activity_id=[activity_id],
+    )
+
+    if not summaries:
+        description = {
+            "type": "ResourceNotFound",
+            "Message": f"No information available for ID={activity_id}",
+        }
+
+        flask.abort(404, description=description)
+    else:
+        return (
+            flask.jsonify({"activity": make_public_activity_summary(summaries[0])}),
+            200,
+        )
+
+
+@ActivityAPI.route("/activities", methods=["GET"])
+def get_activities():
+    summaries = call_and_respond(
+        topics.request.activity.list, topics.activity.pool.list
+    )
+
+    return (
+        flask.jsonify(
+            {"activities": [make_public_activity_summary(s) for s in summaries]}
+        ),
+        200,
+    )
+
+
+@ActivityAPI.route("/activities", methods=["POST"])
+def run_activity():
+    summary = call_and_respond(
+        topics.request.activity.run, topics.activity.lifecycle.running, cmd=None
+    )
+
+    return flask.jsonify({"activity": make_public_activity_summary(summary)}), 200
+
+
+@ProcedureAPI.errorhandler(400)
+@ProcedureAPI.errorhandler(404)
+@ProcedureAPI.errorhandler(500)
+@ProcedureAPI.errorhandler(504)
+@ActivityAPI.errorhandler(400)
+@ActivityAPI.errorhandler(404)
+@ActivityAPI.errorhandler(500)
+@ActivityAPI.errorhandler(504)
+def server_error_response(cause):
+    """
+    Custom error handler for Procedure API.
+    This is overloaded for 400, 404, 500 and 504 and could conceivably be
+    extended for other errors by adding the appropriate errorhander decorator.
+
+    :param cause: root exception for failure (e.g., KeyError)
+    :return: HTTP Response
+    """
+    response = cause.get_response()
+    if isinstance(cause.description, dict):
+        response_data = {
+            "error": f"{cause.code} {cause.name}",
+            "type": cause.description["type"],
+            "Message": cause.description["Message"],
+        }
+    else:
+        response_data = {
+            "error": f"{cause.code} {cause.name}",
+            "type": cause.name,
+            "Message": cause.description,
+        }
+    response.content_type = "application/json"
+    response.data = json.dumps(response_data)
+    return response
+
+
+def call_and_respond(request_topic, response_topic, *args, **kwargs):
+    q = Queue(1)
+    my_request_id = time.time()
+
+    # msg_src MUST be part of method signature for pypubsub to function
+    def callback(msg_src, request_id, result):  # pylint: disable=unused-argument
+        if my_request_id == request_id:
+            q.put(result)
+
+    pub.subscribe(callback, response_topic)
+
+    msg_src = flask.current_app.config["msg_src"]
+
+    # With the callback now setup, publish an event to mark the user request event
+    pub.sendMessage(
+        request_topic, msg_src=msg_src, request_id=my_request_id, *args, **kwargs
+    )
+
+    try:
+        result = q.get(timeout=TIMEOUT)
+
+        if isinstance(result, Exception):
+            if isinstance(result, OSError):
+                description = {
+                    "type": result.__class__.__name__,
+                    "Message": f"{result.strerror}: {result.filename}",
+                }
+            else:
+                description = {
+                    "type": result.__class__.__name__,
+                    "Message": str(result),
+                }
+            flask.abort(500, description=description)
+
+        return result
+
+    except Empty:
+        description = {
+            "Message": (
+                f"Timeout waiting for msg #{my_request_id} on topic {response_topic}"
+            ),
+            "type": "Timeout Error",
+        }
+        flask.abort(504, description=description)
+
+
+def make_public_procedure_summary(procedure: application.ProcedureSummary):
     """
     Convert a ProcedureSummary into JSON ready for client consumption.
 
@@ -414,7 +497,7 @@ def make_public_summary(procedure: application.ProcedureSummary):
 
     return {
         "uri": flask.url_for(
-            "api.get_procedure", procedure_id=procedure.id, _external=True
+            "procedures.get_procedure", procedure_id=procedure.id, _external=True
         ),
         "script": script,
         "script_args": script_args,
@@ -423,35 +506,25 @@ def make_public_summary(procedure: application.ProcedureSummary):
     }
 
 
-@API.errorhandler(400)
-@API.errorhandler(404)
-@API.errorhandler(500)
-@API.errorhandler(504)
-def server_error_response(cause):
+def make_public_activity_summary(activity: application.ActivitySummary):
     """
-    Custom error handler for Procedure API.
-    This is overloaded for 400, 404, 500 and 504 and could conceivably be
-    extended for other errors by adding the appropriate errorhander decorator.
+    Convert an ActivitySummary into JSON ready for client consumption.
 
-    :param cause: root exception for failure (e.g., KeyError)
-    :return: HTTP Response
+    The main use of this function is to replace the internal Activity ID with
+    the resource URI, e.g., 1 -> http://localhost:5000/api/v1.0/procedures/1
+
+    :param activity: ActivitySummary to convert
+    :return: safe JSON representation
     """
-    response = cause.get_response()
-    if isinstance(cause.description, dict):
-        response_data = {
-            "error": f"{cause.code} {cause.name}",
-            "type": cause.description["type"],
-            "Message": cause.description["Message"],
-        }
-    else:
-        response_data = {
-            "error": f"{cause.code} {cause.name}",
-            "type": cause.name,
-            "Message": cause.description,
-        }
-    response.content_type = "application/json"
-    response.data = json.dumps(response_data)
-    return response
+    return {
+        "uri": flask.url_for(
+            "activities.get_activity", activity_id=activity.id, _external=True
+        ),
+        "activity_name": activity.activity_name,
+        "sbd_id": activity.sbd_id,
+        "pid": activity.pid,
+        "prepare_only": activity.prepare_only,
+    }
 
 
 # def create_app(config_filename):
@@ -463,7 +536,8 @@ def create_app():
     # TODO get application config working
     # app.config.from_pyfile(config_filename)
 
-    app.register_blueprint(API, url_prefix="/api/v1.0")
+    app.register_blueprint(ProcedureAPI, url_prefix="/api/v1.0", name="procedures")
+    app.register_blueprint(ActivityAPI, url_prefix="/api/v1.0", name="activities")
 
     sse = ServerSentEventsBlueprint("sse", __name__)
     sse.add_url_rule(rule="", endpoint="stream", view_func=sse.stream)
