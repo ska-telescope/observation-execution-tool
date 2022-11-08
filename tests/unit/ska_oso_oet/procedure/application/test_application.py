@@ -4,7 +4,7 @@
 """
 Unit tests for the ska_oso_oet.procedure.application module.
 """
-
+import copy
 import multiprocessing
 import time
 import unittest.mock as mock
@@ -13,10 +13,17 @@ from unittest.mock import MagicMock, call, patch
 
 import pubsub.pub
 import pytest
+from ska_oso_pdm.entities.common.procedures import FilesystemScript
+from ska_oso_pdm.entities.common.sb_definition import SBDefinition
 
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import EventMessage
 from ska_oso_oet.procedure.application.application import (
+    Activity,
+    ActivityCommand,
+    ActivityService,
+    ActivityState,
+    ActivitySummary,
     ArgCapture,
     PrepareProcessCommand,
     ProcedureHistory,
@@ -636,3 +643,126 @@ class TestSESHistory:
         assert oldest_pid not in ses.script_args
         assert oldest_pid not in ses.states
         assert oldest_pid not in ses.scripts
+
+
+class TestActivityService:
+    @mock.patch.object(time, "time")
+    def test_activityservice_run(self, mock_time_fn):
+        from .test_restserver import CREATE_SUMMARY
+
+        allocate_script = FilesystemScript(path="file:///script/path.py")
+        create_resp = copy.deepcopy(CREATE_SUMMARY)
+        create_resp.script = allocate_script
+
+        spec = {
+            topics.request.procedure.create: [
+                ([topics.procedure.lifecycle.created], dict(result=create_resp))
+            ],
+        }
+        _ = PubSubHelper(spec)
+
+        mock_prep_time = time.time()
+        mock_start_time = mock_prep_time + 1
+        # time.time() should be called twice, once for prepare and once for start
+        mock_time_fn.side_effect = [mock_prep_time, mock_start_time]
+
+        expected_summary = ActivitySummary(
+            id=1,
+            activity_name="allocate",
+            pid=create_resp.id,
+            sbd_id="sbd-123",
+            prepare_only=False,
+            activity_states=[(ActivityState.REQUESTED, mock_prep_time)],
+            script_args={"init": ProcedureInput()},
+        )
+
+        activity_service = ActivityService()
+        activity_service._oda = MagicMock()
+        activity_service._oda.get.return_value = SBDefinition(
+            sbd_id="sbd-123", activities={"allocate": allocate_script}
+        )
+        cmd = ActivityCommand("allocate", "sbd-123", False, {"init": ProcedureInput()})
+        summary = activity_service.run(cmd)
+        assert summary == expected_summary
+
+        expected_activity = Activity(
+            activity_id=1,
+            procedure_id=create_resp.id,
+            activity_name="allocate",
+            sbd_id="sbd-123",
+            prepare_only=False,
+        )
+        assert activity_service.activities[1] == expected_activity
+        assert activity_service.script_args[1]["init"] == ProcedureInput()
+        assert len(activity_service.states[1]) == 1
+        assert activity_service.states[1][0] == (
+            ActivityState.REQUESTED,
+            mock_prep_time,
+        )
+
+    def test_activityservice_summarise(self):
+        sbd_id = "sbd-123"
+        activity_service = ActivityService()
+        activity1 = Activity(
+            activity_id=1,
+            procedure_id=1,
+            activity_name="allocate",
+            sbd_id=sbd_id,
+            prepare_only=False,
+        )
+        a1_args = {
+            "init": ProcedureInput(
+                args=[1, "foo", False], kwargs={"foo": "bar", 1: 123}
+            ),
+            "main": ProcedureInput(args=[], kwargs={"subarray_id": 1}),
+        }
+        a1_states = [(ActivityState.REQUESTED, time.time())]
+
+        activity2 = Activity(
+            activity_id=2,
+            procedure_id=2,
+            activity_name="observe",
+            sbd_id=sbd_id,
+            prepare_only=True,
+        )
+        a2_args = {
+            "init": ProcedureInput(
+                args=[2, "bar", True], kwargs={"foo": "foo", 2: 456}
+            ),
+            "main": ProcedureInput(args=[], kwargs={"subarray_id": 1}),
+        }
+        a2_states = [(ActivityState.REQUESTED, time.time() + 1)]
+
+        # Create summary objects we expect from the service
+        expected_a1_summary = ActivitySummary(
+            id=1,
+            pid=1,
+            sbd_id=sbd_id,
+            activity_name="allocate",
+            activity_states=a1_states,
+            prepare_only=False,
+            script_args=a1_args,
+        )
+        expected_a2_summary = ActivitySummary(
+            id=2,
+            pid=2,
+            sbd_id=sbd_id,
+            activity_name="observe",
+            activity_states=a2_states,
+            prepare_only=True,
+            script_args=a2_args,
+        )
+
+        # Add activities to the service's list of activities, states and arguments
+        activity_service.activities = {1: activity1, 2: activity2}
+        activity_service.states = {1: a1_states, 2: a2_states}
+        activity_service.script_args = {1: a1_args, 2: a2_args}
+
+        summaries = activity_service.summarise([1])
+        assert len(summaries) == 1
+        assert summaries[0] == expected_a1_summary
+
+        summaries = activity_service.summarise()
+        assert len(summaries) == 2
+        assert summaries[0] == expected_a1_summary
+        assert summaries[1] == expected_a2_summary

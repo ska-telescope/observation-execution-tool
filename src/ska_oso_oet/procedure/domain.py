@@ -154,6 +154,14 @@ class ProcedureInput:
         self.args: tuple = args
         self.kwargs: dict = kwargs
 
+    def __add__(self, other):
+        combined_args = self.args + other.args
+
+        combined_kwargs = self.kwargs.copy()
+        combined_kwargs.update(other.kwargs)
+
+        return ProcedureInput(*combined_args, **combined_kwargs)
+
     def __eq__(self, other):
         if not isinstance(other, ProcedureInput):
             return False
