@@ -66,16 +66,17 @@
       "scan_definition_id": "calibrator scan",
       "scan_duration": 60000,
       "field_configuration": "calibrator field",
-      "dish_configuration": "dish config 123",
+      "dish_configuration": "dci_mvp01-20220329-00001",
       "scan_type": "calibration_B",
       "csp_configuration": "csp-mvp01-20220329-00001"
     },
     {
       "scan_duration": 60000,
       "field_configuration": "science field",
-      "dish_configuration": "dish config 123",
+      "dish_configuration": "dci_mvp01-20220329-00001",
       "scan_type": "science_A",
-      "scan_definition_id": "science scan"
+      "scan_definition_id": "science scan",
+      "csp_configuration": "csp-mvp01-20220329-00001"
     }
   ],
   "scan_sequence": [
