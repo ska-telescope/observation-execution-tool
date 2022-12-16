@@ -15,18 +15,59 @@ participant ScriptExecutionServiceWorker as "SESWorker :\nScriptExecutionService
 participant ScriptExecutionService as "Script Execution API :\nScriptExecutionService"
 
 cli -> FlaskWorker: HTTP POST to /api/v1/activities
+note right
+The User executes an OET CLI command at
+the terminal. The OET CLI uses HTTP POST
+to send a JSON object encapsulating the
+request (activity name, scheduling block ID,
+etc.) to the REST backend.
+end note
 
 FlaskWorker -> ActivityWorker: send message request.activity.run
+note right
+""FlaskWorker"" creates a ""ActivityCommand""
+encapsulating the request details and announces
+the event on the //Run Activity requested// request
+topic. It will then wait for a response on the //Activity//
+//running// response topic.
+end note
 
 ActivityWorker -> ActivityService: run(cmd: ActivityCommand)
 
-ActivityService -> ODA: get_sbd(sbd_id)
-ODA -> ActivityService: pdm.SchedulingBlock
-opt arg_override provided
+ActivityService -> ODA: oda.sbds.get(sbd_id)
+note right
+Retrieve the Scheduling Block Definition from ODA.
+The ODA client will return a SBDefinition PDM object.
+end note
+ODA -> ActivityService: pdm.SBDefinition
+
+opt script_args provided
 ActivityService -> ActivityService: update SB args
 end
+note right
+If user has provided additional arguments for the script,
+the retrieved SB is updated to include any additional
+arguments and overwrite any existing keyword arguments
+end note
+
+ActivityService -> ActivityService: write SB to file
+note right
+ActivityService will write SB JSON to file with a unique
+name consisting of SB ID, SB version and timestamp. SBs
+are stored in folder /tmp/sbs/ and path to the SB is passed
+as an argument in the PrepareProcessCommand
+end note
+
 
 ActivityService -> ScriptExecutionServiceWorker: message request.procedure.prepare
+
+note right
+ActivityService creates a PrepareProcessCommand and
+announces it on the Create Procedure topic. It then
+waits for the response topic Procedure Created and
+creates an ActivitySummary based on  the response that
+is passed on to the REST backend and client.
+end note
 
 ScriptExecutionServiceWorker -> ScriptExecutionService: prepare(cmd: PrepareProcessCommand)
 
@@ -42,6 +83,15 @@ cli <- FlaskWorker: HTTP OK + ActivitySummary JSON
 
 opt prepare_only not set
 ActivityService -> ScriptExecutionServiceWorker: message request.procedure.start (force=true)
+note right
+By default the ScriptExecutionServiceWorker
+does not allow a StartProcessCommand to be
+queued if the process is not yet ready to start.
+Instead of the ActivityService waiting for the
+process to be ready, set a flag to tell the
+SESWorker to ignore the current process state
+and queue the start command anyway.
+end note
 
 ScriptExecutionServiceWorker -> ScriptExecutionService: start(cmd: StartProcessCommand)
 
@@ -50,7 +100,23 @@ ScriptExecutionService -> ScriptExecutionServiceWorker: ProcedureSummary
 ScriptExecutionServiceWorker -> ActivityService: message procedure.lifecycle.started
 
 ActivityService -> ActivityWorker: ActivitySummary
+note right
+ActivityService returns the ActivitySummary
+object to ActivityWorker. This is to allow
+the ActivityWorker in the future to publish
+events on the activity lifecycle but these
+events have not yet been implemented
+end note
 
 end
+note right
+If prepare_only flag is not set, the
+ActivityService creates and announces
+a StartProcessCommand and waits for a
+response on  procedure.lifecycle.started
+topic. Once it gets the response, it
+creates an ActivitySummary object that
+is returned to the ActivityWorker.
+end note
 
 @enduml
