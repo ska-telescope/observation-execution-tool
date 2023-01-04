@@ -65,7 +65,7 @@ Elements and their properties
        library.
    * - :class:`~ska_oso_oet.procedure.application.main.EventBusWorker`
      - EventBusWorker is a QueueProcWorker that relays pubsub events seen in one EventBusWorker process to other
-       EventBusWorker processes. See :doc:`architecture_backend_module_ui` for more information.
+       EventBusWorker processes. See :doc:`architecture_backend_module_script_exec_ui` for more information.
    * - :class:`~ska_oso_oet.procedure.domain.ExecutableScript`
      - ExecutableScript is an abstract class for any class that defines a Python script to be executed.
    * - :class:`~ska_oso_oet.procedure.domain.FilesystemScript`
@@ -178,9 +178,9 @@ Elements and their properties
        |br|
        In addition to its primary responsibility of triggering actions in response to API calls, ScriptExecutionService
        is also responsible for recording script execution history and providing a summary of process state.
-       See :doc:`architecture_backend_module_ui` for more information.
+       See :doc:`architecture_backend_module_script_exec_ui` for more information.
    * - :class:`~ska_oso_oet.procedure.domain.ScriptWorker`
-     - ScriptWorker is a class that can loads a user script in a child process, running functions of that user script on
+     - ScriptWorker is a class that can load a user script in a child process, running functions of that user script on
        request.
        |br|
        |br|
