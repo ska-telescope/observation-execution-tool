@@ -676,33 +676,37 @@ class TestActivityService:
             script_args={"init": ProcedureInput()},
         )
 
-        activity_service = ActivityService()
-        activity_service._oda = MagicMock()
-        activity_service._oda.get.return_value = SBDefinition(
-            sbd_id="sbd-123", activities={"allocate": allocate_script}
-        )
-        cmd = ActivityCommand("allocate", "sbd-123", False, {"init": ProcedureInput()})
-        summary = activity_service.run(cmd)
-        assert summary == expected_summary
+        with mock.patch(
+            "ska_oso_oet.procedure.application.application.RESTUnitOfWork",
+            return_value=MagicMock(),
+        ):
+            activity_service = ActivityService()
+            activity_service._oda.sbds.get.return_value = SBDefinition(
+                sbd_id="sbd-123", activities={"allocate": allocate_script}
+            )
+            cmd = ActivityCommand(
+                "allocate", "sbd-123", False, {"init": ProcedureInput()}
+            )
+            summary = activity_service.run(cmd)
+            assert summary == expected_summary
 
-        expected_activity = Activity(
-            activity_id=1,
-            procedure_id=create_resp.id,
-            activity_name="allocate",
-            sbd_id="sbd-123",
-            prepare_only=False,
-        )
-        assert activity_service.activities[1] == expected_activity
-        assert activity_service.script_args[1]["init"] == ProcedureInput()
-        assert len(activity_service.states[1]) == 1
-        assert activity_service.states[1][0] == (
-            ActivityState.REQUESTED,
-            mock_prep_time,
-        )
+            expected_activity = Activity(
+                activity_id=1,
+                procedure_id=create_resp.id,
+                activity_name="allocate",
+                sbd_id="sbd-123",
+                prepare_only=False,
+            )
+            assert activity_service.activities[1] == expected_activity
+            assert activity_service.script_args[1]["init"] == ProcedureInput()
+            assert len(activity_service.states[1]) == 1
+            assert activity_service.states[1][0] == (
+                ActivityState.REQUESTED,
+                mock_prep_time,
+            )
 
     def test_activityservice_summarise(self):
         sbd_id = "sbd-123"
-        activity_service = ActivityService()
         activity1 = Activity(
             activity_id=1,
             procedure_id=1,
@@ -753,16 +757,22 @@ class TestActivityService:
             script_args=a2_args,
         )
 
-        # Add activities to the service's list of activities, states and arguments
-        activity_service.activities = {1: activity1, 2: activity2}
-        activity_service.states = {1: a1_states, 2: a2_states}
-        activity_service.script_args = {1: a1_args, 2: a2_args}
+        with mock.patch(
+            "ska_oso_oet.procedure.application.application.RESTUnitOfWork",
+            return_value=MagicMock(),
+        ):
+            activity_service = ActivityService()
 
-        summaries = activity_service.summarise([1])
-        assert len(summaries) == 1
-        assert summaries[0] == expected_a1_summary
+            # Add activities to the service's list of activities, states and arguments
+            activity_service.activities = {1: activity1, 2: activity2}
+            activity_service.states = {1: a1_states, 2: a2_states}
+            activity_service.script_args = {1: a1_args, 2: a2_args}
 
-        summaries = activity_service.summarise()
-        assert len(summaries) == 2
-        assert summaries[0] == expected_a1_summary
-        assert summaries[1] == expected_a2_summary
+            summaries = activity_service.summarise([1])
+            assert len(summaries) == 1
+            assert summaries[0] == expected_a1_summary
+
+            summaries = activity_service.summarise()
+            assert len(summaries) == 2
+            assert summaries[0] == expected_a1_summary
+            assert summaries[1] == expected_a2_summary

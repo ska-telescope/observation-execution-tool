@@ -16,7 +16,7 @@ from queue import Empty, Queue
 from typing import Callable, Dict, List, Optional, Tuple
 
 from pubsub import pub
-from ska_db_oda.client.repository import SBDefinitionRESTRepository
+from ska_db_oda.unit_of_work.restunitofwork import RESTUnitOfWork
 from ska_oso_pdm.entities.common import procedures as pdm_procedures
 from ska_oso_pdm.entities.common.sb_definition import SBDefinition
 
@@ -490,7 +490,7 @@ class ActivityService:
         # counter used to generate activity ID for new activities
         self._aid_counter = itertools.count(1)
 
-        self._oda = SBDefinitionRESTRepository()
+        self._oda = RESTUnitOfWork()
 
     def run(self, cmd: ActivityCommand) -> ActivitySummary:
         """
@@ -501,7 +501,8 @@ class ActivityService:
         :return:
         """
         aid = next(self._aid_counter)
-        sbd: SBDefinition = self._oda.get(cmd.sbd_id)
+        with self._oda:
+            sbd: SBDefinition = self._oda.sbds.get(cmd.sbd_id)
 
         # create activity, add script as a field of activity so that it only needs to be extracted once
         pdm_script = sbd.activities.get(cmd.activity_name)
