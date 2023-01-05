@@ -80,6 +80,16 @@ ActivityService -> ActivityWorker: ActivitySummary
 ActivityWorker -> FlaskWorker: message activity.lifecycle.running
 
 cli <- FlaskWorker: HTTP OK + ActivitySummary JSON
+note right
+The FlaskWorker will block the client side until it
+receives a message on activity.lifecycle.running
+topic from the ActivityWorker indicating that the
+preparation on the activity has been started.
+Afterwards the user can stay updated on the activity
+status by querying the procedure CLI with the script
+ID given by the ActivitySummary or by listening to
+the lifecycle events.
+end note
 
 opt prepare_only not set
 ActivityService -> ScriptExecutionServiceWorker: message request.procedure.start (force=true)
