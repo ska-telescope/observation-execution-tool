@@ -4,45 +4,17 @@
 OET command line tool
 *********************
 
-.. note::
-
-   The OET currently focuses on generic script execution. That is, the
-   interface focuses on loading, running, and stopping Python scripts, rather
-   than specific commands for controlling the telescope. An interface that
-   focuses more on the goals that a user want to achieve by running the script
-   is part of the design but not yet implemented. Once implemented, it should
-   be possible to say ``oet allocate``, ``oet observe``, or similar.
-
 The ``oet`` command can be used to control a remote OET deployment [#f2]_.
-Using ``oet``, a remote OET deployment can be instructed to:
+The ``oet`` command has two sub-commands, ``procedure`` and ``activity``.
 
-#. load a Python script using ``oet create``;
-#. run a function contained in the Python script using ``oet start``;
-#. stop a running Python function using ``oet stop``;
-#. observe OET messages and script messages using ``oet listen``.
+``oet procedure`` commands are used to control individual observing scripts,
+which includes loading and starting and stopping script execution.
 
-In addition, the current and historic state of Python processes running on
-the backend can be inspected with
+``oet activity`` commands are used to execute more general activities on the
+telescope, for example running the allocate activity on SB with ID xxx.
 
-#. ``oet list`` to list all scripts that are prepared to run or are currently
-   running;
-#. ``oet describe`` to inspect the current and historic state of a specific
-   process.
-
-General help and specific help is available at the command line by adding the
-``--help`` argument. For example:
-
-.. code-block:: console
-
-  # get a general overview of the OET CLI
-  $ oet --help
-
-  # get specific help on the oet create command
-  $ oet create -- --help
-
-  # get specific help on the oet describe command
-  $ oet describe -- --help
-
+See `Procedure`_ and `Activity`_ sections for further details on commands available
+for each of the approaches.
 
 Installation
 ************
@@ -69,22 +41,60 @@ via the ``server-url`` argument, or set session-wide by setting the
 .. code-block:: console
 
   # provide the server URL when running the command, e.g.
-  $ oet --server-url=http://my-oet-deployment.com:5000/api/v1.0/procedures list
+  $ oet --server-url=http://my-oet-deployment.com:5000/api/v1.0 list
 
   # alternatively, set the server URL for a session by defining an environment variable
-  $ export OET_REST_URI=http://my-oet-deployment.com:5000/api/v1.0/procedures
+  $ export OET_REST_URI=http://my-oet-deployment.com:5000/api/v1.0
   $ oet list
   $ oet describe
   $ oet create ...
 
 By default, the client assumes it is operating within a SKAMPI environment
 and attempts to connect to a REST server using the default REST service name
-of http://ska-oso-oet-rest:5000/api/v1.0/procedures. If running the OET
+of http://ska-oso-oet-rest:5000/api/v1.0. If running the OET
 client within a SKAMPI pod, the ``OET_REST_URI`` should automatically be set.
 
 
 Commands
 ********
+
+
+
+Procedure
+*********
+
+Using ``oet procedure``, a remote OET deployment can be instructed to:
+
+#. load a Python script using ``oet procedure create``;
+#. run a function contained in the Python script using ``oet procedure start``;
+#. stop a running Python function using ``oet procedure stop``;
+#. observe OET messages and script messages using ``oet procedure listen``.
+
+In addition, the current and historic state of Python processes running on
+the backend can be inspected with
+
+#. ``oet list`` to list all scripts that are prepared to run or are currently
+   running;
+#. ``oet describe`` to inspect the current and historic state of a specific
+   process.
+
+General help and specific help is available at the command line by adding the
+``--help`` argument. For example:
+
+.. code-block:: console
+
+  # get a general overview of the OET CLI
+  $ oet --help
+
+  # get specific help on the oet create command
+  $ oet create -- --help
+
+  # get specific help on the oet describe command
+  $ oet describe -- --help
+
+
+Commands
+--------
 
 The commands available via ``oet`` are described below.
 
@@ -156,7 +166,7 @@ those specified by name e.g. --myparam=12.
 
 
 Examples
-********
+--------
 
 This section runs through an example session in which we will
 load two new 'Procedures' [#f1]_ and then run one of them.
@@ -165,7 +175,7 @@ it is creating a process with ID=1 to run the script.
 
 .. code-block:: console
 
-  $ oet create file://test.py 'hello' --verbose=true
+  $ oet procedure create file://test.py 'hello' --verbose=true
 
     ID  Script           Creation time        State
   ----  ---------------  -------------------  -------
@@ -176,7 +186,7 @@ procedure on the command line. Now create a second procedure:
 
 .. code-block:: console
 
-  $ oet create file://test2.py 'goodbye'
+  $ oet procedure create file://test2.py 'goodbye'
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
@@ -186,7 +196,7 @@ Now create a third procedure that will be pulled from git:
 
 .. code-block:: console
 
-  $ oet create git://test3.py --git_repo="http://foo.git" --git_branch="test" --create_env=True
+  $ oet procedure create git://test3.py --git_repo="http://foo.git" --git_branch="test" --create_env=True
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
@@ -196,7 +206,7 @@ We can check the state of the procedures currently loaded:
 
 .. code-block:: console
 
-  $ oet list
+  $ oet procedure list
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
@@ -208,7 +218,7 @@ Alternatively, we could check the state of procedure 2 alone:
 
 .. code-block:: console
 
-  $ oet list --pid=2
+  $ oet procedure list --pid=2
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
@@ -221,17 +231,17 @@ with the new status of the procedure.
 
 .. code-block:: console
 
-  $ oet start --pid=2 'bob' --simulate=false
+  $ oet procedure start --pid=2 'bob' --simulate=false
 
     ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
     2   file://test2.py  2020-09-30 10:35:12  RUNNING
 
-An ``oet list`` command also shows the updated status of procedure #2:
+An ``oet procedure list`` command also shows the updated status of procedure #2:
 
 .. code-block:: console
 
-  $ oet list
+  $ oet procedure list
 
     ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
@@ -239,12 +249,12 @@ An ``oet list`` command also shows the updated status of procedure #2:
      2  file://test2.py  2020-09-30 10:35:12  RUNNING
      3  git://test3.py   2020-09-30 10:40:12  READY
 
-An ``oet describe`` command will give further detail on a procedure, no
+An ``oet procedure describe`` command will give further detail on a procedure, no
 matter its state.
 
 .. code-block:: console
 
- $ oet describe --pid=2
+ $ oet procedure describe --pid=2
 
     ID  Script           URI
   ----  ---------------  -----------------------------------------
@@ -269,7 +279,7 @@ Describing a script from git shows additional information on the repository:
 
 .. code-block:: console
 
- $ oet describe --pid=3
+ $ oet procedure describe --pid=3
 
     ID  Script           URI
   ----  ---------------  -----------------------------------------
