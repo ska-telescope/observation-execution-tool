@@ -16,8 +16,23 @@ telescope, for example running the allocate activity on SB with ID xxx.
 See `Procedure`_ and `Activity`_ sections for further details on commands available
 for each of the approaches.
 
+General help and specific help is available at the command line by adding the
+``--help`` argument. For example:
+
+.. code-block:: console
+
+  # get a general overview of the OET CLI
+  $ oet procedure --help
+  $ oet activity --help
+
+  # get specific help on the oet create command
+  $ oet procedure create --help
+
+  # get specific help on the oet describe command
+  $ oet activity describe --help
+
 Installation
-************
+============
 
 The OET command line tool is available as the ``oet`` command at the terminal.
 The OET CLI is packaged separately so it can be installed without OET backend
@@ -32,7 +47,7 @@ By default, the OET image has the CLI installed, meaning the CLI is accessible
 from inside the running OET pod.
 
 Configuration
-*************
+=============
 
 The address of the remote OET backend can be specified at the command line
 via the ``server-url`` argument, or set session-wide by setting the
@@ -41,13 +56,13 @@ via the ``server-url`` argument, or set session-wide by setting the
 .. code-block:: console
 
   # provide the server URL when running the command, e.g.
-  $ oet --server-url=http://my-oet-deployment.com:5000/api/v1.0 list
+  $ oet --server-url=http://my-oet-deployment.com:5000/api/v1.0 procedure list
 
   # alternatively, set the server URL for a session by defining an environment variable
   $ export OET_REST_URI=http://my-oet-deployment.com:5000/api/v1.0
-  $ oet list
-  $ oet describe
-  $ oet create ...
+  $ oet procedure list
+  $ oet activity describe
+  $ oet procedure create ...
 
 By default, the client assumes it is operating within a SKAMPI environment
 and attempts to connect to a REST server using the default REST service name
@@ -56,52 +71,76 @@ client within a SKAMPI pod, the ``OET_REST_URI`` should automatically be set.
 
 
 Commands
-********
+========
 
+
+Common
+------
+
+The ``oet`` CLI tool has ``listen`` command which is neither activity or procedure specific.
+It is used to observe OET messages and script messages from, procedure, activity and several
+other topics.
+
++----------------+------------+---------------------------------------------------------+-------------------------------------+
+| OET CLI action | Parameters | Default                                                 | Description                         |
++================+============+=========================================================+=====================================+
+| Listen         | server-url | See `Configuration`_ section                            | **Get real times scripts events**   |
+|                +------------+---------------------------------------------------------+                                     |
+|                |            |                                                         | Get a real time delivery of events  |
+|                |            |                                                         | published by oet server/scripts     |
++----------------+------------+---------------------------------------------------------+-------------------------------------+
+
+
+Examples
+~~~~~~~~
+
+A 'listen' command will give the real time delivery of oet events published by scripts:
+
+.. code-block:: console
+
+  $ oet listen
+
+  event: request.procedure.list
+  data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056049.4846392, 'pids': None}
+
+  event: procedure.pool.list
+  data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056049.4846392, 'result': []}
+
+  event: activity.pool.list
+  data: args=() kwargs={'msg_src': 'ActivityWorker', 'request_id': 1604056078.4847652, 'result': []}
+
+  event: request.procedure.create
+  data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056247.0666442, 'cmd': PrepareProcessCommand(script_uri='file://scripts/eventbus.py', init_args=<ProcedureInput(, subarray_id=1)>)}
+
+  event: procedure.lifecycle.created
+  data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056247.0666442, 'result': ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.READY, 1604056247.713874)], stacktrace=None)>, state=<ProcedureState.READY: 1>)}
+
+Press :kbd:`Control-c` to exit from ``oet listen``.
 
 
 Procedure
-*********
+---------
 
 Using ``oet procedure``, a remote OET deployment can be instructed to:
 
 #. load a Python script using ``oet procedure create``;
 #. run a function contained in the Python script using ``oet procedure start``;
 #. stop a running Python function using ``oet procedure stop``;
-#. observe OET messages and script messages using ``oet procedure listen``.
 
 In addition, the current and historic state of Python processes running on
 the backend can be inspected with
 
-#. ``oet list`` to list all scripts that are prepared to run or are currently
-   running;
-#. ``oet describe`` to inspect the current and historic state of a specific
-   process.
+#. ``oet procedure list`` to list all scripts that are prepared to run or are
+   currently running;
+#. ``oet procedure describe`` to inspect the current and historic state of a
+   specific process.
 
-General help and specific help is available at the command line by adding the
-``--help`` argument. For example:
-
-.. code-block:: console
-
-  # get a general overview of the OET CLI
-  $ oet --help
-
-  # get specific help on the oet create command
-  $ oet create -- --help
-
-  # get specific help on the oet describe command
-  $ oet describe -- --help
-
-
-Commands
---------
-
-The commands available via ``oet`` are described below.
+The commands available via ``oet procedure`` are described below.
 
 +----------------+------------+---------------------------------------------------------+-------------------------------------+
 | OET CLI action | Parameters | Default                                                 | Description                         |
 +================+============+=========================================================+=====================================+
-| create         | server-url | See note above                                          | **Prepare a new procedure**         |
+| create         | server-url | See `Configuration`_ section                            | **Prepare a new procedure**         |
 |                +------------+---------------------------------------------------------+                                     |
 |                | script-uri | None                                                    | Load the requested script and       |
 |                +------------+---------------------------------------------------------+ prepare it for execution.           |
@@ -115,13 +154,13 @@ The commands available via ``oet`` are described below.
 |                |            | --create_env=False                                      | script will remove the oldest       |
 |                |            |                                                         | script from the record.             |
 +----------------+------------+---------------------------------------------------------+-------------------------------------+
-| list           | server-url | See note above                                          | **List procedures**                 |
-|                +------------+---------------------------------------------------------+-------------------------------------+
+| list           | server-url | See `Configuration`_ section                            | **List procedures**                 |
+|                +------------+---------------------------------------------------------+                                     |
 |                | pid        | None                                                    | Return info on the collection of 10 |
 |                |            |                                                         | newest procedures, or info on the   |
 |                |            |                                                         | one specified by process ID (pid)   |
 +----------------+------------+---------------------------------------------------------+-------------------------------------+
-| start          | server-url | See note above                                          | **Start a Procedure Executing**     |
+| start          | server-url | See `Configuration`_ section                            | **Start a Procedure Executing**     |
 |                +------------+---------------------------------------------------------+                                     |
 |                | pid        | None                                                    | Start a process executing           |
 |                +------------+---------------------------------------------------------+ the procedure specified by process  |
@@ -129,9 +168,14 @@ The commands available via ``oet`` are described below.
 |                +------------+---------------------------------------------------------+ start the last one loaded.          |
 |                | kwargs     | None                                                    |                                     |
 |                |            |                                                         | Only one procedure can be executing |
-|                |            |                                                         | at any time                         |
+|                |            |                                                         | at any time.                        |
+|                +------------+---------------------------------------------------------+                                     |
+|                | listen     | True                                                    | listen flag is set to True by       |
+|                |            |                                                         | default which means that events are |
+|                |            |                                                         | shown on the command line unless    |
+|                |            |                                                         | is is explicitly set to False.      |
 +----------------+------------+---------------------------------------------------------+-------------------------------------+
-| stop           | server-url | See note above                                          | **Stop Procedure Execution**        |
+| stop           | server-url | See `Configuration`_ section                            | **Stop Procedure Execution**        |
 |                +------------+---------------------------------------------------------+                                     |
 |                | pid        | None                                                    | Stop a running process executing    |
 |                +------------+---------------------------------------------------------+ the procedure specified by process  |
@@ -142,7 +186,7 @@ The commands available via ``oet`` are described below.
 |                |            |                                                         | send Abort command to the SubArray  |
 |                |            |                                                         | as part of script termination.      |
 +----------------+------------+---------------------------------------------------------+-------------------------------------+
-| describe       | server-url | See note above                                          | **Investigate a procedure**         |
+| describe       | server-url | See `Configuration`_ section                            | **Investigate a procedure**         |
 |                +------------+---------------------------------------------------------+                                     |
 |                | pid        | None                                                    | Displays the call arguments, state  |
 |                |            |                                                         | history and, if the procedure       |
@@ -151,22 +195,13 @@ The commands available via ``oet`` are described below.
 |                |            |                                                         | pid is specified describe the last  |
 |                |            |                                                         | process created.                    |
 +----------------+------------+---------------------------------------------------------+-------------------------------------+
-| Listen         | server-url | http://ska-oso-oet-rest:5000/api/v1.0/stream            | **Get real times scripts events**   |
-|                +------------+---------------------------------------------------------+                                     |
-|                |            |                                                         | Get a real time delivery of events  |
-|                |            |                                                         | published by oet scripts            |
-|                |            |                                                         |                                     |
-|                |            |                                                         |                                     |
-|                |            |                                                         |                                     |
-|                |            |                                                         |                                     |
-+----------------+------------+---------------------------------------------------------+-------------------------------------+
 
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to
 those specified by name e.g. --myparam=12.
 
 
 Examples
---------
+~~~~~~~~
 
 This section runs through an example session in which we will
 load two new 'Procedures' [#f1]_ and then run one of them.
@@ -305,56 +340,205 @@ Describing a script from git shows additional information on the repository:
 
 If the procedure failed, then the stack trace will also be displayed.
 
-A 'listen' command will give the real time delivery of oet events published by scripts:
-
-.. code-block:: console
-
-  $ oet listen
-
-  event: request.procedure.list
-  data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056049.4846392, 'pids': None}
-
-  event: procedure.pool.list
-  data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056049.4846392, 'result': []}
-
-  event: request.procedure.create
-  data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056247.0666442, 'cmd': PrepareProcessCommand(script_uri='file://scripts/eventbus.py', init_args=<ProcedureInput(, subarray_id=1)>)}
-
-  event: procedure.lifecycle.created
-  data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056247.0666442, 'result': ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.READY, 1604056247.713874)], stacktrace=None)>, state=<ProcedureState.READY: 1>)}
-
-Press :kbd:`Control-c` to exit from ``oet listen``.
 
 Example session in a SKAMPI environment
----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-From a shell, you can use the 'oet' command to trigger remote execution of a
-full observation, e.g.,
+From a shell, you can use the 'oet procedure' command to trigger remote execution
+of a full observation, e.g.,
 
 .. code-block:: console
 
   # create process for telescope start-up and execute it
-  oet create file:///scripts/startup.py
-  oet start
+  oet procedure create file:///scripts/startup.py
+  oet procedure start
 
   # create process for resource allocation script
-  oet create file:///scripts/allocate_from_file_sb.py --subarray_id=3
-  oet start scripts/example_sb.json
+  oet procedure create file:///scripts/allocate_from_file_sb.py --subarray_id=3
+  oet procedure start scripts/example_sb.json
 
   # create process for configure/scan script
-  oet create file:///scripts/observe_sb.py --subarray_id=3
+  oet procedure create file:///scripts/observe_sb.py --subarray_id=3
   # run the script, specifying scheduling block JSON which defines
   # the configurations, and the order and number of scans
-  oet start scripts/example_sb.json
+  oet procedure start scripts/example_sb.json
 
   # create process for resource deallocation script
-  oet create file:///scripts/deallocate.py --subarray_id=3
+  oet procedure create file:///scripts/deallocate.py --subarray_id=3
   # run with no arguments, which requests deallocation of all resources
-  oet start
+  oet procedure start
 
   # create process for telescope standby script
-  oet create file:///scripts/standby.py
-  oet start
+  oet procedure create file:///scripts/standby.py
+  oet procedure start
+
+Activity
+--------
+
+Using ``oet activity``, a remote OET deployment can be instructed to:
+
+#. execute a observing activity of a Scheduling Block with ``oet activity run``
+
+In addition, the current and historic state of Activities can be inspected with
+
+#. ``oet activity list`` to list all activities that have been started;
+#. ``oet activity describe`` to inspect the current and historic state of a
+   specific activity.
+
+The commands available via ``oet activity`` are described below.
+
++----------------+---------------+---------------------------------------------------------+-------------------------------------+
+| OET CLI action | Parameters    | Default                                                 | Description                         |
++================+===============+=========================================================+=====================================+
+| run            | server-url    | See `Configuration`_ section                            | **Run an activity of an SB**        |
+|                +---------------+---------------------------------------------------------+                                     |
+|                | activity-name | None                                                    | Create and run a script referenced  |
+|                +---------------+---------------------------------------------------------+ by an activity defined in an SB.    |
+|                | sbd-id        | None                                                    | The activity-name and sbd-id are    |
+|                +---------------+---------------------------------------------------------+ mandatory arguments. script-args is |
+|                | script-args   | None                                                    | a dictionary defining function name |
++                +---------------+---------------------------------------------------------+ as a key (e.g. 'init') and any args |
+|                | prepare-only  | False                                                   | and kwargs to be passed for the     |
++                +---------------+---------------------------------------------------------+ function on top of arguments present|
+|                | create-env    | False                                                   | in the SB.                          |
+|                +---------------+---------------------------------------------------------+                                     |
+|                | listen        | True                                                    | preparep-only should be set to False|
+|                |               |                                                         | if the script referred to by SB and |
+|                |               |                                                         | activity is not to be run yet. To   |
+|                |               |                                                         | start a prepared script, use the    |
+|                |               |                                                         | `oet procedure` commands.           |
+|                |               |                                                         |                                     |
+|                |               |                                                         | create-env flag should be set to    |
+|                |               |                                                         | True if script referred to by SB is |
+|                |               |                                                         | a Git script and requires a non-    |
+|                |               |                                                         | default environment to run.         |
++----------------+---------------+---------------------------------------------------------+-------------------------------------+
+| list           | server-url    | See `Configuration`_ section                            | **List activities**                 |
+|                +---------------+---------------------------------------------------------+                                     |
+|                | aid           | None                                                    | Return info on the collection of 10 |
+|                |               |                                                         | newest activities, or info on the   |
+|                |               |                                                         | one specified by activity ID (aid)  |
++----------------+---------------+---------------------------------------------------------+-------------------------------------+
+| describe       | server-url    | See note above                                          | **Investigate an activity**         |
+|                +---------------+---------------------------------------------------------+                                     |
+|                | aid           | None                                                    | Displays the script arguments, and  |
+|                |               |                                                         | the state history of a specified    |
+|                |               |                                                         | activity ID (aid). If no aid is     |
+|                |               |                                                         | specified describe the last activity|
+|                |               |                                                         | created.                            |
++----------------+---------------+---------------------------------------------------------+-------------------------------------+
+
+
+Examples
+~~~~~~~~
+
+This section runs through an example session in which we will
+run an activity with arguments to the script. Then we will prepare
+an activity without executing it and use the ``oet procedure``
+commands to run the prepared activity.
+
+.. code-block:: console
+
+  $ oet activity run allocate sbd-123 --script-args={"init": {"args": [1, "foo"], "kwargs": {"foo": "bar"}}}
+
+    ID  Activity    SB ID    Creation Time          Procedure ID  State
+  ----  ----------  -------  -------------------  --------------  ---------
+     1  allocate    sbd-123  2023-01-06 13:56:47               1  REQUESTED
+
+Note the use of both positional and keyword/value arguments for the
+script arguments that will be passed as arguments when each function
+in the script is run. Now run a second activity but set the ``prepare-only``
+flag to True:
+
+.. code-block:: console
+
+  $ oet activity run observe sbd-123 --prepare-only=False
+
+    ID  Activity    SB ID    Creation Time          Procedure ID  State
+  ----  ----------  -------  -------------------  --------------  ---------
+     2  observe     sbd-123  2023-01-06 13:56:56               2  REQUESTED
+
+We can check the state of the activities currently present:
+
+.. code-block:: console
+
+  $ oet activity list
+
+    ID  Activity    SB ID    Creation Time          Procedure ID  State
+  ----  ----------  -------  -------------------  --------------  ---------
+     1  allocate    sbd-123  2023-01-06 13:56:47               1  COMPLETE
+     2  observe     sbd-123  2023-01-06 13:56:56               2  PREPARED
+
+
+Note that the first activity prepares and runs the script automatically but
+the second one only prepares the script but does not run it. To run the script
+of the second activity we need to note the ``Procedure ID`` for the activity
+and use ``oet procedure`` commands to run the script:
+
+.. code-block:: console
+
+  $ oet procedure start --pid=2
+
+    ID   Script             Creation time        State
+  ----  ---------------    -------------------  -------
+    2   file://observe.py  2023-01-06 13:57:25  RUNNING
+
+An ``oet activity describe`` command will give further detail on an activity.
+
+.. code-block:: console
+
+ $ oet activity describe --aid=1
+
+    ID  Activity    SB ID      Procedure ID  State
+  ----  ----------  -------  --------------  ---------
+     1  allocate    sbd-123               1  REQUESTED
+
+  URI                                        Prepare Only
+  -----------------------------------------  --------------
+  http://0.0.0.0:5000/api/v1.0/activities/1  False
+
+  Time                        State
+  --------------------------  ---------
+  2023-01-06 13:56:47.655175  REQUESTED
+  2023-01-06 13:56:47.934723  PREPARED
+  2023-01-06 13:56:48.004753  RUNNING
+  2023-01-06 13:56:50.382756  COMPLETE
+
+
+  Script Arguments
+  ----------------
+
+  Method    Arguments    Keyword Arguments
+  --------  -----------  -------------------
+  init      [1, 'foo']   {'foo': 'bar'}
+
+
+You can also view the details of the script that was run by the activity:
+
+.. code-block:: console
+
+ $ oet procedure describe --pid=1
+
+    ID  Script                URI
+  ----  ---------------       -----------------------------------------
+     1  file://allocate.py    http://0.0.0.0:5000/api/v1.0/procedures/1
+
+  Time                        State
+  --------------------------  -------
+  2023-01-06 13:56:47.655175  CREATING
+  2023-01-06 13:56:47.663742  IDLE
+  2023-01-06 13:56:47.665741  LOADING
+  2023-01-06 13:56:47.730696  IDLE
+  2023-01-06 13:56:47.731965  RUNNING 1
+  2023-01-06 13:56:47.934723  READY
+  2023-01-06 13:56:48.004753  RUNNING 2
+  2023-01-06 13:56:50.382756  READY
+
+ Index       Method    Arguments     Keyword Arguments
+ --------   --------   ----------   -------------------
+   1          init      [1, 'foo']    {'foo': 'bar'}
+   2          run       []            {}
+
 
 
 .. rubric:: Footnotes

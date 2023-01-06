@@ -35,3 +35,7 @@ PrivateRules.mak
 MANIFEST.skao.int%
 
 **/pytest-logs.txt
+
+# compiled Helm charts
+charts/ska-oso-oet-umbrella/charts
+charts/ska-oso-oet-umbrella/Chart.lock
