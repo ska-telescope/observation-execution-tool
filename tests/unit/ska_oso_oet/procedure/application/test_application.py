@@ -4,7 +4,6 @@
 """
 Unit tests for the ska_oso_oet.procedure.application module.
 """
-import copy
 import multiprocessing
 import time
 import unittest.mock as mock
@@ -13,7 +12,9 @@ from unittest.mock import MagicMock, call, patch
 
 import pubsub.pub
 import pytest
-from ska_oso_pdm.entities.common.procedures import FilesystemScript
+from ska_oso_pdm.entities.common.procedures import (
+    FilesystemScript as pdm_FilesystemScript,
+)
 from ska_oso_pdm.entities.common.sb_definition import SBDefinition
 
 from ska_oso_oet.event import topics
@@ -648,15 +649,11 @@ class TestSESHistory:
 class TestActivityService:
     @mock.patch.object(time, "time")
     def test_activityservice_run(self, mock_time_fn):
-        from .test_restserver import CREATE_SUMMARY
-
-        allocate_script = FilesystemScript(path="file:///script/path.py")
-        create_resp = copy.deepcopy(CREATE_SUMMARY)
-        create_resp.script = allocate_script
-
+        mock_pid = 2
+        mock_summary = mock.MagicMock(id=mock_pid)
         spec = {
             topics.request.procedure.create: [
-                ([topics.procedure.lifecycle.created], dict(result=create_resp))
+                ([topics.procedure.lifecycle.created], dict(result=mock_summary))
             ],
         }
         _ = PubSubHelper(spec)
@@ -669,41 +666,155 @@ class TestActivityService:
         expected_summary = ActivitySummary(
             id=1,
             activity_name="allocate",
-            pid=create_resp.id,
+            pid=mock_pid,
             sbd_id="sbd-123",
             prepare_only=False,
             activity_states=[(ActivityState.REQUESTED, mock_prep_time)],
-            script_args={"init": ProcedureInput()},
+            script_args={},
         )
 
         with mock.patch(
             "ska_oso_oet.procedure.application.application.RESTUnitOfWork",
             return_value=MagicMock(),
         ):
+            pdm_script = pdm_FilesystemScript(path="file:///script/path.py")
             activity_service = ActivityService()
             activity_service._oda.sbds.get.return_value = SBDefinition(
-                sbd_id="sbd-123", activities={"allocate": allocate_script}
+                sbd_id="sbd-123", activities={"allocate": pdm_script}
             )
             cmd = ActivityCommand(
-                "allocate", "sbd-123", False, {"init": ProcedureInput()}
+                activity_name="allocate",
+                sbd_id="sbd-123",
+                prepare_only=False,
+                create_env=False,
+                script_args={},
             )
             summary = activity_service.run(cmd)
+            # Check that the activity summary returned to user is as expected
             assert summary == expected_summary
 
             expected_activity = Activity(
                 activity_id=1,
-                procedure_id=create_resp.id,
+                procedure_id=mock_pid,
                 activity_name="allocate",
                 sbd_id="sbd-123",
                 prepare_only=False,
             )
+            # Check that the activity is recorded within the ActivityService
+            # as expected
             assert activity_service.activities[1] == expected_activity
-            assert activity_service.script_args[1]["init"] == ProcedureInput()
+            assert activity_service.script_args[1] == {}
             assert len(activity_service.states[1]) == 1
             assert activity_service.states[1][0] == (
                 ActivityState.REQUESTED,
                 mock_prep_time,
             )
+
+    def test_activityservice_run_adds_function_args(self):
+        mock_pid = 1
+        mock_summary = mock.MagicMock(id=mock_pid)
+        spec = {
+            topics.request.procedure.create: [
+                ([topics.procedure.lifecycle.created], dict(result=mock_summary))
+            ],
+        }
+        helper = PubSubHelper(spec)
+
+        with mock.patch(
+            "ska_oso_oet.procedure.application.application.RESTUnitOfWork",
+            return_value=MagicMock(),
+        ):
+            pdm_script = pdm_FilesystemScript(path="file:///script/path.py")
+            activity_service = ActivityService()
+            activity_service._oda.sbds.get.return_value = SBDefinition(
+                sbd_id="sbd-123", activities={"allocate": pdm_script}
+            )
+            init_args = ProcedureInput("1", a="b")
+            main_args = ProcedureInput("2", c="d")
+            cmd = ActivityCommand(
+                activity_name="allocate",
+                sbd_id="sbd-123",
+                prepare_only=False,
+                create_env=False,
+                script_args={"init": init_args, "main": main_args},
+            )
+            _ = activity_service.run(cmd)
+
+            expected_prep_cmd = PrepareProcessCommand(
+                script=FileSystemScript(script_uri=pdm_script.path),
+                init_args=init_args,
+            )
+            # Check that a message requesting procedure creation has been sent
+            assert len(helper.messages_on_topic(topics.request.procedure.create)) == 1
+
+            # Check that the prepare command contains what we expect it to contain
+            prep_cmd = helper.messages_on_topic(topics.request.procedure.create)[0][
+                "cmd"
+            ]
+            assert prep_cmd == expected_prep_cmd
+
+            expected_start_cmd = StartProcessCommand(
+                process_uid=mock_pid, fn_name="main", run_args=main_args
+            )
+            # Check that a message requesting to start the procedure has been sent
+            assert len(helper.messages_on_topic(topics.request.procedure.start)) == 1
+
+            # Check that the start command contains what we expect it to contain
+            start_cmd = helper.messages_on_topic(topics.request.procedure.start)[0][
+                "cmd"
+            ]
+            assert start_cmd == expected_start_cmd
+
+    def test_activityservice_run_prepare_only(self):
+        mock_pid = 1
+        mock_summary = mock.MagicMock(id=mock_pid)
+        spec = {
+            topics.request.procedure.create: [
+                ([topics.procedure.lifecycle.created], dict(result=mock_summary))
+            ],
+        }
+
+        helper = PubSubHelper(spec)
+
+        with mock.patch(
+            "ska_oso_oet.procedure.application.application.RESTUnitOfWork",
+            return_value=MagicMock(),
+        ):
+            pdm_script = pdm_FilesystemScript(path="file:///script/path.py")
+            activity_service = ActivityService()
+            activity_service._oda.sbds.get.return_value = SBDefinition(
+                sbd_id="sbd-123", activities={"allocate": pdm_script}
+            )
+            cmd = ActivityCommand(
+                activity_name="allocate",
+                sbd_id="sbd-123",
+                prepare_only=True,
+                create_env=False,
+                script_args={},
+            )
+            _ = activity_service.run(cmd)
+
+            # verify ActivityService has sent messages on correct topics
+            assert helper.topic_list == [
+                topics.request.procedure.create,  # procedure creation requested
+                topics.procedure.lifecycle.created,  # CREATED ProcedureSummary returned
+            ]
+
+            expected_prep_cmd = PrepareProcessCommand(
+                script=FileSystemScript(script_uri=pdm_script.path),
+                init_args=ProcedureInput(),
+            )
+            # Check that a message requesting procedure creation has been sent
+            assert len(helper.messages_on_topic(topics.request.procedure.create)) == 1
+
+            # Check that the prepare command contains what we expect it to contain
+            prep_cmd = helper.messages_on_topic(topics.request.procedure.create)[0][
+                "cmd"
+            ]
+            assert prep_cmd == expected_prep_cmd
+
+            # Check that the message to start procedure was not sent
+            assert len(helper.messages_on_topic(topics.request.procedure.start)) == 0
 
     def test_activityservice_summarise(self):
         sbd_id = "sbd-123"

@@ -138,6 +138,7 @@ class ActivityCommand:
     activity_name: str
     sbd_id: str
     prepare_only: bool
+    create_env: bool
     script_args: Dict[str, domain.ProcedureInput]
 
 
@@ -513,7 +514,7 @@ class ActivityService:
                 git_repo=pdm_script.repo, git_branch=pdm_script.branch
             )
             script = domain.GitScript(
-                script_uri=pdm_script.path, git_args=git_args, create_env=False
+                script_uri=pdm_script.path, git_args=git_args, create_env=cmd.create_env
             )
         else:
             raise RuntimeError(
@@ -531,7 +532,7 @@ class ActivityService:
 
         prepare_cmd = PrepareProcessCommand(
             script=script,
-            init_args=script_args.pop("init", dict(args=dict(), kwargs=dict())),
+            init_args=script_args.pop("init", domain.ProcedureInput()),
         )
 
         q = Queue(1)
