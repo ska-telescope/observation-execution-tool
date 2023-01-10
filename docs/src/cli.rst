@@ -491,7 +491,7 @@ An ``oet activity describe`` command will give further detail on an activity.
 
     ID  Activity    SB ID      Procedure ID  State
   ----  ----------  -------  --------------  ---------
-     1  allocate    sbd-123               1  REQUESTED
+     1  allocate    sbd-123               1  COMPLETE
 
   URI                                        Prepare Only
   -----------------------------------------  --------------
