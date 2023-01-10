@@ -476,12 +476,19 @@ class ScriptExecutionService:
 
 
 class ActivityService:
-    """ """
+    """
+    ActivityService provides the high-level interface and facade for
+    the activity domain.
+
+    The interface is used to run activities referenced by Scheduling Blocks.
+    Each activity will run a script (or `procedure`) but ActivityService
+    will create the necessary commands for Procedure domain to create
+    and execute the scripts.
+    """
 
     def __init__(
         self,
     ):
-        """ """
         # ActivityService does not have state history updates implemented yet so we store a list of
         # states for each activity where the latest state in the list is the current state
         self.states: Dict[int, List[Tuple[ActivityState, float]]] = {}
@@ -495,11 +502,15 @@ class ActivityService:
 
     def run(self, cmd: ActivityCommand) -> ActivitySummary:
         """
+        Run an activity of a Scheduling Block. This includes retrieving the script
+        from the scheduling block and sending the request messages to the
+        ScriptExecutionService to prepare and run the script.
 
+        If the prepare_only flag is set within the ActivityCommand, only a prepare
+        command will be sent to the ScriptExecutionService.
 
-        :param cmd: dataclass argument capturing the script identity and load
-            arguments
-        :return:
+        :param cmd: dataclass argument capturing the activity name and SB ID
+        :return: A summary of the activity
         """
         aid = next(self._aid_counter)
         with self._oda:
