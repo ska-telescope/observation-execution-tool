@@ -38,7 +38,7 @@ RUN python3 -m pip install \
 RUN pip install ska-oso-oet-client==0.1.0
 
 # link default script location to a shorter path to make CLI interactions easier
-RUN ln -s /usr/local/lib/python3.7/dist-packages/scripts /scripts
+RUN ln -s /usr/local/lib/python3.10/dist-packages/scripts /scripts
 
 USER tango
 
