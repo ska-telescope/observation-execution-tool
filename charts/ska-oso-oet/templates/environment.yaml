@@ -18,5 +18,5 @@ data:
   SKA_TELESCOPE: {{.Values.telescope}}
   ODA_BACKEND_TYPE: {{ .Values.rest.oda.backendType }}
   {{- if .Values.rest.oda.url }}
-  ODA_SBDS_URI: {{ .Values.rest.oda.url }}
+  ODA_URI: {{ .Values.rest.oda.url }}
   {{ end }}

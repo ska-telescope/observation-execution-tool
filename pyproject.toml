@@ -40,7 +40,12 @@ ska-ser-skuid = "^3.3.3"
 tblib = "^1.7.0"
 GitPython = "^3.1.27"
 waitress = "^2.1.2"
-ska-db-oda = "^1.3.0"
+ska-db-oda = "^1.5.1"
+ska-oso-pdm = "^9.0.0"
+# Numpy version has to be pinned since 1.24 version
+# does not seem to be compatible with pytango 9.3.3
+# (no dependency conflict but throws error when tango is imported)
+numpy = "1.23"
 
 [tool.poetry.dev-dependencies]
 black = "^22.8.0"
@@ -57,7 +62,7 @@ pytest-env = "^0.6.2"
 pytest-json-report = "^1.5.0"
 pytest-mock = "^3.9.0"
 requests-mock = "^1.10.0"
-ska-oso-oet-client = "^0.1.0"
+ska-oso-oet-client = "^1.0.0"
 
 [tool.poetry.extras]
 docs = ["Sphinx", "docutils", "recommonmark", "sphinx-rtd-theme"]
