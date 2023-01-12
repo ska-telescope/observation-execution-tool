@@ -155,12 +155,13 @@ class ProcedureInput:
         self.kwargs: dict = kwargs
 
     def __add__(self, other):
-        combined_args = self.args + other.args
+        if other.args:
+            raise NotImplementedError("Combining positional arguments not supported")
 
         combined_kwargs = self.kwargs.copy()
         combined_kwargs.update(other.kwargs)
 
-        return ProcedureInput(*combined_args, **combined_kwargs)
+        return ProcedureInput(*self.args, **combined_kwargs)
 
     def __eq__(self, other):
         if not isinstance(other, ProcedureInput):

@@ -342,21 +342,28 @@ class TestProcedureInput:
 
     def test_procedure_input_addition(self):
         pi1 = ProcedureInput(1, 2, 3, a=1, b=2)
-        pi2 = ProcedureInput(4, c=3)
+        pi2 = ProcedureInput(c=3)
 
         pi3 = pi1 + pi2
 
-        assert pi3.args == (1, 2, 3, 4)
+        assert pi3.args == (1, 2, 3)
         assert pi3.kwargs == dict(a=1, b=2, c=3)
 
     def test_procedure_input_addition_overwrite(self):
         pi1 = ProcedureInput(1, 2, 3, a=1, b=2)
-        pi2 = ProcedureInput(4, a=2, c=3)
+        pi2 = ProcedureInput(a=2, c=3)
 
         pi3 = pi1 + pi2
 
-        assert pi3.args == (1, 2, 3, 4)
+        assert pi3.args == (1, 2, 3)
         assert pi3.kwargs == dict(a=2, b=2, c=3)
+
+    def test_procedure_input_addition_arg_error(self):
+        pi1 = ProcedureInput(1, 2, 3, a=1, b=2)
+        pi2 = ProcedureInput(4, a=2, c=3)
+
+        with pytest.raises(NotImplementedError):
+            _ = pi1 + pi2
 
 
 def wait_for_empty_message_queue(
