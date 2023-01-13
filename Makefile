@@ -22,15 +22,15 @@ RELEASE_NAME ?= test
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
-# The default ODA_SBD_URL points to the umbrella chart ODA deployment where data is
-# lost on chart teardown. For longer-term data persistence, override ODA_SBD_URL to
+# The default ODA_URI points to the umbrella chart ODA deployment where data is
+# lost on chart teardown. For longer-term data persistence, override ODA_URI to
 # point to the persistent ODA deployment.
-ODA_SBD_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/api/v1/sbds
+ODA_URI ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/api/v1
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 
 K8S_CHART_PARAMS = \
-  --set ska-oso-oet.rest.oda.url=$(ODA_SBD_URL) \
+  --set ska-oso-oet.rest.oda.url=$(ODA_URI) \
   --set ska-db-oda.rest.postgres.host=$(POSTGRES_HOST) \
   --set ska-db-oda.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST)
 

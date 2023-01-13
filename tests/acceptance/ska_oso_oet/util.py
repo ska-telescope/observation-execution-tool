@@ -4,11 +4,11 @@ import subprocess
 import time
 import typing
 
-from ska_oso_oet_client.restclient import RestAdapter
+from ska_oso_oet_client.procedureclient import ProcedureAdapter
 
 LOGGER = logging.getLogger(__name__)
 
-REST_ADAPTER = RestAdapter(os.getenv("OET_REST_URI"))
+PROCEDURE_ADAPTER = ProcedureAdapter(os.getenv("OET_REST_URI"))
 
 
 if typing.TYPE_CHECKING:
@@ -37,7 +37,7 @@ class ScriptExecutionEnvironment:
 
     def create(self, script_uri: str):
         LOGGER.debug("Setting script ID for script: %s", script_uri)
-        summary: "ProcedureSummary" = REST_ADAPTER.create(
+        summary: "ProcedureSummary" = PROCEDURE_ADAPTER.create(
             script_uri=script_uri, init_args={"kwargs": {"subarray_id": 1}}
         )
         self.script_uri = summary.script["script_uri"]
@@ -89,7 +89,7 @@ class ScriptExecutionEnvironment:
         return task.state
 
     def _update_script(self):
-        task = REST_ADAPTER.list(self.script_id)
+        task = PROCEDURE_ADAPTER.list(self.script_id)
         if task:
             return task[0]
         return None
