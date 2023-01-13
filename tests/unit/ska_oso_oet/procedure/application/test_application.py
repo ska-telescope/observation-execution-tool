@@ -170,7 +170,10 @@ class TestScriptExecutionService:
         )
         _ = ses.start(run_cmd)
         mgr.run.assert_called_once_with(
-            run_cmd.process_uid, call=run_cmd.fn_name, run_args=run_cmd.run_args
+            run_cmd.process_uid,
+            call=run_cmd.fn_name,
+            run_args=run_cmd.run_args,
+            force_start=False,
         )
 
         ses._wait_for_state(pid, ProcedureState.RUNNING)
@@ -225,7 +228,7 @@ class TestScriptExecutionService:
                 script, init_args=ProcedureInput(subarray_id=subarray_id)
             )
             mgr.run.assert_called_once_with(
-                pid + 1, call="main", run_args=ProcedureInput()
+                pid + 1, call="main", run_args=ProcedureInput(), force_start=False
             )
 
         finally:
@@ -754,7 +757,10 @@ class TestActivityService:
             assert prep_cmd == expected_prep_cmd
 
             expected_start_cmd = StartProcessCommand(
-                process_uid=mock_pid, fn_name="main", run_args=main_args
+                process_uid=mock_pid,
+                fn_name="main",
+                run_args=main_args,
+                force_start=True,
             )
             # Check that a message requesting to start the procedure has been sent
             assert len(helper.messages_on_topic(topics.request.procedure.start)) == 1

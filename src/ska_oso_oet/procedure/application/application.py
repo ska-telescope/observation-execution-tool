@@ -63,6 +63,7 @@ class StartProcessCommand:
     process_uid: int
     fn_name: str
     run_args: domain.ProcedureInput
+    force_start: bool = False
 
 
 @dataclasses.dataclass
@@ -272,7 +273,10 @@ class ScriptExecutionService:
         :return:
         """
         self._process_manager.run(
-            cmd.process_uid, call=cmd.fn_name, run_args=cmd.run_args
+            cmd.process_uid,
+            call=cmd.fn_name,
+            run_args=cmd.run_args,
+            force_start=cmd.force_start,
         )
         self.script_args[cmd.process_uid].append(
             ArgCapture(fn=cmd.fn_name, fn_args=cmd.run_args, time=time.time())
@@ -585,7 +589,10 @@ class ActivityService:
             #  TODO: should we allow here for multiple functions or limit to just main as is assumed by PM?
             for fn in script_args.keys():
                 start_cmd = StartProcessCommand(
-                    prepared_summary.id, fn_name=fn, run_args=script_args[fn]
+                    prepared_summary.id,
+                    fn_name=fn,
+                    run_args=script_args[fn],
+                    force_start=True,
                 )
                 # With the callback now setup, publish an event to mark the user request event
                 pub.sendMessage(
