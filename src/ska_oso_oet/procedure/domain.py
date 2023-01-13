@@ -767,7 +767,14 @@ class ProcessManager:
             else:
                 self.ctx.log(logging.ERROR, f"Unhandled event: {event}")
 
-    def run(self, process_id: int, *, call: str, run_args: ProcedureInput) -> None:
+    def run(
+        self,
+        process_id: int,
+        *,
+        call: str,
+        run_args: ProcedureInput,
+        force_start: bool = False,
+    ) -> None:
         """
         Run a prepared Procedure.
 
@@ -777,15 +784,26 @@ class ProcessManager:
         :param process_id: ID of Procedure to execute
         :param call: name of function to call
         :param run_args: late-binding arguments to provide to the script
+        :param force_start: Add run command to queue even if the script is not yet ready to run.
+            Does not add command to queue if ProcedureState is FAILED, STOPPED, COMPLETE or UNKNOWN
         :return:
         """
         if process_id not in self.states:
             raise ValueError(f"PID #{process_id} not found")
 
         if self.states[process_id] != ProcedureState.READY:
-            raise ValueError(
-                f"PID #{process_id} unrunnable in state {self.states[process_id]}"
-            )
+            # These are states where the Procedure state cannot change from
+            # and so any further commands should not be queued even if forced
+            final_states = [
+                ProcedureState.COMPLETE,
+                ProcedureState.FAILED,
+                ProcedureState.STOPPED,
+                ProcedureState.UNKNOWN,
+            ]
+            if not force_start or self.states[process_id] in final_states:
+                raise ValueError(
+                    f"PID #{process_id} unrunnable in state {self.states[process_id]}"
+                )
 
         running_pid = [
             (pid, state)

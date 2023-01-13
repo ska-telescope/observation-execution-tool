@@ -969,6 +969,33 @@ class TestProcessManager:
             with pytest.raises(ValueError):
                 manager.run(pid, call="main", run_args=ProcedureInput())
 
+    def test_run_with_force_start(self, manager, script):
+        """
+        Verify that the run command is queued for a script even if the loading
+        is not yet complete when force_start flag is set.
+        """
+        q = manager.ctx.MPQueue()
+        manager.procedures[1] = MagicMock()
+        manager.states[1] = ProcedureState.LOADING
+        manager.script_queues[1] = q
+
+        manager.run(1, call="main", run_args=ProcedureInput(), force_start=True)
+        msg = q.safe_get(timeout=0.1)
+        assert msg.msg_type == "RUN"
+
+    def test_run_with_force_start_fails(self, manager, script):
+        """
+        Verify that the run command is not queued for a script even if forced
+        if script is in a final state (STOPPED, COMPLETE, FAILED, UNKNOWN)
+        """
+        q = manager.ctx.MPQueue()
+        manager.procedures[1] = MagicMock()
+        manager.states[1] = ProcedureState.COMPLETE
+        manager.script_queues[1] = q
+
+        with pytest.raises(ValueError):
+            manager.run(1, call="main", run_args=ProcedureInput(), force_start=True)
+
     def test_run_fails_for_running_process(self, manager, barrier_script):
         """
         Verify that an exception is raised when requesting run() for a procedure
