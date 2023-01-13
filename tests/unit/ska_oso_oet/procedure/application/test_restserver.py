@@ -141,7 +141,7 @@ RUN_SUMMARY = ProcedureSummary(
 ACTIVITY_REQUEST = {
     "sbd_id": "sbi-001",
     "activity_name": "allocate",
-    "arg_override": None,
+    "script_args": None,
     "prepare_only": False,
 }
 
@@ -151,7 +151,8 @@ ACTIVITY_SUMMARY = ActivitySummary(
     sbd_id="sbd-mvp01-20220923-00001",
     activity_name="allocate",
     prepare_only=False,
-    arg_override={},
+    script_args={},
+    activity_states=[],
 )
 
 # resource partial URL for testing procedure execution with above JSON

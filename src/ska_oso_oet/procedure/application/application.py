@@ -6,13 +6,19 @@ actions.
 """
 import collections
 import dataclasses
+import enum
+import itertools
 import multiprocessing.context
 import os
 import threading
 import time
+from queue import Empty, Queue
 from typing import Callable, Dict, List, Optional, Tuple
 
 from pubsub import pub
+from ska_db_oda.unit_of_work.restunitofwork import RESTUnitOfWork
+from ska_oso_pdm.entities.common import procedures as pdm_procedures
+from ska_oso_pdm.entities.common.sb_definition import SBDefinition
 
 from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
@@ -122,7 +128,22 @@ class ArgCapture:
 
     fn: str
     fn_args: domain.ProcedureInput
-    time: float
+    time: float = None
+
+
+@dataclasses.dataclass
+class ActivityCommand:
+    """ """
+
+    activity_name: str
+    sbd_id: str
+    prepare_only: bool
+    create_env: bool
+    script_args: Dict[str, domain.ProcedureInput]
+
+
+class ActivityState(enum.Enum):
+    REQUESTED = enum.auto()
 
 
 @dataclasses.dataclass
@@ -147,7 +168,17 @@ class ActivitySummary:
     sbd_id: str
     activity_name: str
     prepare_only: bool
-    arg_override: List[ArgCapture]
+    script_args: Dict[str, domain.ProcedureInput]
+    activity_states: List[Tuple[ActivityState, float]]
+
+
+@dataclasses.dataclass
+class Activity:
+    activity_id: int
+    procedure_id: int
+    sbd_id: str
+    activity_name: str
+    prepare_only: bool
 
 
 class ScriptExecutionService:
@@ -442,3 +473,169 @@ class ScriptExecutionService:
             sleep_secs = mptools._sleep_secs(  # pylint: disable=protected-access
                 tick, deadline
             )
+
+
+class ActivityService:
+    """
+    ActivityService provides the high-level interface and facade for
+    the activity domain.
+
+    The interface is used to run activities referenced by Scheduling Blocks.
+    Each activity will run a script (or `procedure`) but ActivityService
+    will create the necessary commands for Procedure domain to create
+    and execute the scripts.
+    """
+
+    def __init__(
+        self,
+    ):
+        # ActivityService does not have state history updates implemented yet so we store a list of
+        # states for each activity where the latest state in the list is the current state
+        self.states: Dict[int, List[Tuple[ActivityState, float]]] = {}
+        self.script_args: Dict[int, Dict[str, domain.ProcedureInput]] = {}
+        self.activities: Dict[int, Activity] = {}
+
+        # counter used to generate activity ID for new activities
+        self._aid_counter = itertools.count(1)
+
+        self._oda = RESTUnitOfWork()
+
+    def run(self, cmd: ActivityCommand) -> ActivitySummary:
+        """
+        Run an activity of a Scheduling Block. This includes retrieving the script
+        from the scheduling block and sending the request messages to the
+        ScriptExecutionService to prepare and run the script.
+
+        If the prepare_only flag is set within the ActivityCommand, only a prepare
+        command will be sent to the ScriptExecutionService.
+
+        :param cmd: dataclass argument capturing the activity name and SB ID
+        :return: A summary of the activity
+        """
+        aid = next(self._aid_counter)
+        with self._oda:
+            sbd: SBDefinition = self._oda.sbds.get(cmd.sbd_id)
+
+        # create activity, add script as a field of activity so that it only needs to be extracted once
+        pdm_script = sbd.activities.get(cmd.activity_name)
+        if isinstance(pdm_script, pdm_procedures.FilesystemScript):
+            script = domain.FileSystemScript(script_uri=pdm_script.path)
+        elif isinstance(pdm_script, pdm_procedures.GitScript):
+            git_args = domain.GitArgs(
+                git_repo=pdm_script.repo, git_branch=pdm_script.branch
+            )
+            script = domain.GitScript(
+                script_uri=pdm_script.path, git_args=git_args, create_env=cmd.create_env
+            )
+        else:
+            raise RuntimeError(
+                f"Cannot run script with type {pdm_script.__class__.__name__}"
+            )
+
+        script_args = {}
+        for fn in pdm_script.function_args:
+            script_args[fn] = domain.ProcedureInput(
+                *pdm_script.function_args[fn].args,
+                **pdm_script.function_args[fn].kwargs,
+            )
+
+        script_args.update(cmd.script_args)
+
+        prepare_cmd = PrepareProcessCommand(
+            script=script,
+            init_args=script_args.pop("init", domain.ProcedureInput()),
+        )
+
+        q = Queue(1)
+        request_time = time.time()
+
+        # msg_src MUST be part of method signature for pypubsub to function
+        def callback(msg_src, request_id, result):  # pylint: disable=unused-argument
+            if request_time == request_id:
+                q.put(result)
+
+        pub.subscribe(callback, topics.procedure.lifecycle.created)
+
+        # With the callback now setup, publish an event to mark the user request event
+        pub.sendMessage(
+            topics.request.procedure.create,
+            msg_src=self.__class__.__name__,
+            request_id=request_time,
+            cmd=prepare_cmd,
+        )
+
+        # This should be the first state to be added so create a new list
+        self.states[aid] = [(ActivityState.REQUESTED, request_time)]
+
+        try:
+            prepared_summary = q.get(timeout=1000.0)
+        except Empty as e:
+            raise e
+
+        self.activities[aid] = Activity(
+            activity_id=aid,
+            procedure_id=prepared_summary.id,
+            activity_name=cmd.activity_name,
+            sbd_id=cmd.sbd_id,
+            prepare_only=cmd.prepare_only,
+        )
+        self.script_args[aid] = cmd.script_args
+
+        if not cmd.prepare_only:
+            #  TODO: should we allow here for multiple functions or limit to just main as is assumed by PM?
+            for fn in script_args.keys():
+                start_cmd = StartProcessCommand(
+                    prepared_summary.id, fn_name=fn, run_args=script_args[fn]
+                )
+                # With the callback now setup, publish an event to mark the user request event
+                pub.sendMessage(
+                    topics.request.procedure.start,
+                    msg_src=self.__class__.__name__,
+                    request_id=time.time(),
+                    cmd=start_cmd,
+                )
+
+        return self._summarise(aid)
+
+    def summarise(
+        self, activity_ids: Optional[List[int]] = None
+    ) -> List[ActivitySummary]:
+        """
+        Return ActivitySummary objects for Activities with the requested IDs.
+
+        This method accepts an optional list of integers, representing the
+        Activity IDs to summarise. If the IDs are left undefined,
+        ActivitySummary objects for all current Activities will be returned.
+
+        :param activity_ids: optional list of Activity IDs to summarise.
+        :return: list of ActivitySummary objects
+        """
+        all_activity_ids = self.states.keys()
+        if activity_ids is None:
+            activity_ids = all_activity_ids
+
+        missing_pids = {p for p in activity_ids if p not in all_activity_ids}
+        if missing_pids:
+            raise ValueError(f"Activity IDs not found: {missing_pids}")
+
+        return [self._summarise(activity_id) for activity_id in activity_ids]
+
+    def _summarise(self, aid: int) -> ActivitySummary:
+        """
+        Return a ActivitySummary for the Activity with the given ID.
+
+        :param aid: Activity ID to summarise
+        :return: ActivitySummary
+        """
+        states = self.states[aid]
+        activity = self.activities[aid]
+        script_args = self.script_args[aid]
+        return ActivitySummary(
+            id=aid,
+            pid=activity.procedure_id,
+            activity_name=activity.activity_name,
+            sbd_id=activity.sbd_id,
+            script_args=script_args,
+            activity_states=states,
+            prepare_only=activity.prepare_only,
+        )
