@@ -339,7 +339,7 @@ def get_activity(activity_id):
     summaries = call_and_respond(
         topics.request.activity.list,
         topics.activity.pool.list,
-        activity_id=[activity_id],
+        activity_ids=[activity_id],
     )
 
     if not summaries:
@@ -372,8 +372,30 @@ def get_activities():
 
 @ActivityAPI.route("/activities", methods=["POST"])
 def run_activity():
+    try:
+        prepare_only = flask.request.json["prepare_only"]
+    except KeyError:
+        prepare_only = False
+
+    try:
+        create_env = flask.request.json["create_env"]
+    except KeyError:
+        create_env = False
+
+    try:
+        script_args = flask.request.json["script_args"]
+    except KeyError:
+        script_args = {}
+
+    cmd = application.ActivityCommand(
+        flask.request.json["activity_name"],
+        flask.request.json["sbd_id"],
+        prepare_only,
+        create_env,
+        script_args,
+    )
     summary = call_and_respond(
-        topics.request.activity.run, topics.activity.lifecycle.running, cmd=None
+        topics.request.activity.run, topics.activity.lifecycle.running, cmd=cmd
     )
 
     return flask.jsonify({"activity": make_public_activity_summary(summary)}), 200
