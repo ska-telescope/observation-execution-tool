@@ -15,6 +15,7 @@ from ska_oso_oet.mptools import EventMessage, MPQueue
 from ska_oso_oet.procedure import domain
 from ska_oso_oet.procedure.application import application
 from ska_oso_oet.procedure.application.main import (
+    ActivityServiceWorker,
     EventBusWorker,
     FlaskWorker,
     ScriptExecutionServiceWorker,
@@ -198,6 +199,7 @@ class TestScriptExecutionWorker:
             assert_command_request_and_response(
                 mp_fixture,
                 caplog,
+                ScriptExecutionServiceWorker,
                 mock_method,
                 topics.request.procedure.start,
                 topics.procedure.lifecycle.started,
@@ -219,6 +221,7 @@ class TestScriptExecutionWorker:
             assert_command_request_and_response(
                 mp_fixture,
                 caplog,
+                ScriptExecutionServiceWorker,
                 mock_method,
                 topics.request.procedure.create,
                 topics.procedure.lifecycle.created,
@@ -237,6 +240,7 @@ class TestScriptExecutionWorker:
             assert_command_request_and_response(
                 mp_fixture,
                 caplog,
+                ScriptExecutionServiceWorker,
                 mock_method,
                 topics.request.procedure.stop,
                 topics.procedure.lifecycle.stopped,
@@ -244,8 +248,165 @@ class TestScriptExecutionWorker:
             )
 
 
+class TestActivityWorker:
+    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
+    def test_list_method_called(self, mp_fixture, caplog):
+        """
+        ActivityService.summarise should be called when 'topics.request.activity.list' message is received.
+        """
+        pubsub.pub.unsubAll()
+        helper = PubSubHelper()
+
+        work_q = MPQueue(ctx=mp_fixture)
+        msg = EventMessage(
+            "TEST_SUMMARISE",
+            "PUBSUB",
+            dict(
+                topic=topics.request.activity.list,
+                kwargs={"request_id": "678", "activity_ids": ["0987"]},
+            ),
+        )
+        work_q.put(msg)
+        event = mp_fixture.Event()
+
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ActivityService.summarise"
+        ) as mock_method:
+            with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+                mock_method.side_effect = partial(set_event, event)
+                _proc_worker_wrapper_helper(
+                    mp_fixture,
+                    caplog,
+                    ActivityServiceWorker,
+                    args=(work_q, mp_fixture),
+                    expect_shutdown_evt=True,
+                )
+
+        assert event.is_set() is True
+        mock_method.assert_called_once_with(["0987"])
+
+        assert helper.topic_list == [
+            topics.request.activity.list,  # list requested
+            topics.activity.pool.list,  # response published
+        ]
+
+        work_q.safe_close()
+
+    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
+    def tests_handles_request_to_list_handles_invalid_id(self, mp_fixture, caplog):
+        """
+        A ValueError raised by ActivityService.summarise should be handled by the worker
+        and an empty list returned.
+        """
+
+        pubsub.pub.unsubAll()
+        helper = PubSubHelper()
+
+        work_q = MPQueue(ctx=mp_fixture)
+        msg = EventMessage(
+            "TEST_SUMMARY",
+            "PUBSUB",
+            dict(topic=topics.request.activity.list, kwargs={"request_id": "678"}),
+        )
+        work_q.put(msg)
+
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ActivityService.summarise"
+        ) as mock_method:
+            with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+                mock_method.side_effect = ValueError
+                _proc_worker_wrapper_helper(
+                    mp_fixture,
+                    caplog,
+                    ActivityServiceWorker,
+                    args=(work_q, mp_fixture),
+                    expect_shutdown_evt=True,
+                )
+
+        mock_method.assert_called_once()
+
+        assert helper.topic_list == [
+            topics.request.activity.list,  # list requested
+            topics.activity.pool.list,  # response published
+        ]
+
+        assert helper.messages[1][1] == dict(
+            msg_src="TEST", request_id="678", result=[]
+        )
+
+        work_q.safe_close()
+
+    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
+    def test_run_method_called(self, mp_fixture, caplog):
+        """
+        ActivityService.run should be called when 'topics.request.activity.run' message is received.
+        """
+        cmd = application.ActivityCommand("test_activity", "sbd-123", False, False, {})
+
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ActivityService.run"
+        ) as mock_method:
+            assert_command_request_and_response(
+                mp_fixture,
+                caplog,
+                ActivityServiceWorker,
+                mock_method,
+                topics.request.activity.run,
+                topics.activity.lifecycle.running,
+                cmd,
+            )
+
+    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
+    def test_run_handles_error(self, mp_fixture, caplog):
+        """
+        An exception raised by ActivityService.run should be handled by the worker by sending
+        the a message to a topic with the error.
+        """
+        pubsub.pub.unsubAll()
+        helper = PubSubHelper()
+
+        work_q = MPQueue(ctx=mp_fixture)
+        cmd = application.ActivityCommand("test_activity", "sbd-123", False, False, {})
+        msg = EventMessage(
+            "TEST_SUMMARY",
+            "PUBSUB",
+            dict(
+                topic=topics.request.activity.run,
+                kwargs={"request_id": "678", "cmd": cmd},
+            ),
+        )
+        work_q.put(msg)
+        expected_error = RuntimeError("test error")
+
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ActivityService.run"
+        ) as mock_method:
+            with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+                mock_method.side_effect = expected_error
+                _proc_worker_wrapper_helper(
+                    mp_fixture,
+                    caplog,
+                    ActivityServiceWorker,
+                    args=(work_q, mp_fixture),
+                    expect_shutdown_evt=True,
+                )
+
+        mock_method.assert_called_once()
+
+        assert helper.topic_list == [
+            topics.request.activity.run,  # list requested
+            topics.activity.lifecycle.running,  # response published
+        ]
+
+        assert helper.messages[1][1] == dict(
+            msg_src="TEST", request_id="678", result=expected_error
+        )
+
+        work_q.safe_close()
+
+
 def assert_command_request_and_response(
-    mp_fixture, caplog, mock_method, request_topic, response_topic, cmd
+    mp_fixture, caplog, worker_cls, mock_method, request_topic, response_topic, cmd
 ):
     pubsub.pub.unsubAll()
     helper = PubSubHelper()
@@ -264,7 +425,7 @@ def assert_command_request_and_response(
         _proc_worker_wrapper_helper(
             mp_fixture,
             caplog,
-            ScriptExecutionServiceWorker,
+            worker_cls,
             args=(work_q, mp_fixture),
             expect_shutdown_evt=True,
         )
