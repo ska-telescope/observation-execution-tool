@@ -24,6 +24,7 @@ from ska_oso_oet.procedure.application.application import (
     ActivityCommand,
     ActivityService,
     PrepareProcessCommand,
+    ProcedureSummary,
     ScriptExecutionService,
     StartProcessCommand,
     StopProcessCommand,
@@ -371,7 +372,8 @@ class ActivityServiceWorker(EventBusWorker):
 
         # wire up topics to the corresponding ActivityService methods
         pub.subscribe(self.list, topics.request.activity.list)
-        pub.subscribe(self.run_activity, topics.request.activity.run)
+        pub.subscribe(self.prepare, topics.request.activity.run)
+        pub.subscribe(self.complete, topics.procedure.lifecycle.created)
 
     def shutdown(self) -> None:
         pub.unsubscribe(self.list, pub.ALL_TOPICS)
@@ -383,11 +385,10 @@ class ActivityServiceWorker(EventBusWorker):
         self,
         # msg_src MUST be part of method signature for pypubsub to function
         msg_src,  # pylint: disable=unused-argument
-        request_id: str,
+        request_id: int,
         activity_ids=None,
     ):
         self.log(logging.DEBUG, "List activities for request %s", request_id)
-        print("hello world")
         try:
             summaries = self.activity_service.summarise(activity_ids)
         except ValueError:
@@ -399,24 +400,60 @@ class ActivityServiceWorker(EventBusWorker):
             topics.activity.pool.list, request_id=request_id, result=summaries
         )
 
-    def run_activity(
+    def prepare(
         self,
         # msg_src MUST be part of method signature for pypubsub to function
         msg_src,  # pylint: disable=unused-argument
-        request_id: str,
+        request_id: int,
         cmd: ActivityCommand,
     ):
         try:
-            self.log(logging.DEBUG, "Run activity request %s: %s", request_id, cmd)
-            summary = self.activity_service.run(cmd)
+            self.log(
+                logging.DEBUG, "Preparing activity for request %s: %s", request_id, cmd
+            )
+            self.activity_service.prepare_run_activity(cmd, request_id)
         except Exception as e:  # pylint: disable=broad-except
-            self.log(logging.ERROR, "Run activity %s failed: %s", request_id, e)
+            self.log(
+                logging.ERROR,
+                "Preparing activity for request %s failed: %s",
+                request_id,
+                e,
+            )
+            # TODO create failure topic for failures in activity domain
+            self.send_message(
+                topics.activity.lifecycle.running, request_id=request_id, result=e
+            )
+
+    def complete(
+        self,
+        # msg_src MUST be part of method signature for pypubsub to function
+        msg_src,  # pylint: disable=unused-argument
+        request_id: int,
+        result: ProcedureSummary,
+    ):
+        try:
+            self.log(
+                logging.DEBUG,
+                "Starting activity for request %s: %s",
+                request_id,
+                result,
+            )
+            summary = self.activity_service.complete_run_activity(result, request_id)
+        except Exception as e:  # pylint: disable=broad-except
+            self.log(
+                logging.ERROR,
+                "Starting activity for request %s failed: %s",
+                request_id,
+                e,
+            )
             # TODO create failure topic for failures in activity domain
             self.send_message(
                 topics.activity.lifecycle.running, request_id=request_id, result=e
             )
         else:
-            self.log(logging.DEBUG, "Run activity %s result: %s", request_id, summary)
+            self.log(
+                logging.DEBUG, "Activity request %s result: %s", request_id, summary
+            )
             self.send_message(
                 topics.activity.lifecycle.running, request_id=request_id, result=summary
             )

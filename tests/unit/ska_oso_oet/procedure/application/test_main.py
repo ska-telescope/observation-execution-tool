@@ -337,30 +337,53 @@ class TestActivityWorker:
         work_q.safe_close()
 
     @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
-    def test_run_method_called(self, mp_fixture, caplog):
+    def test_prepare_method_called(self, mp_fixture, caplog):
         """
-        ActivityService.run should be called when 'topics.request.activity.run' message is received.
+        ActivityService.prepare_run_activity should be called when 'topics.request.activity.run' message is received.
+        For the happy path, a response message shouldn't be sent.
         """
+        pubsub.pub.unsubAll()
+        helper = PubSubHelper()
         cmd = application.ActivityCommand("test_activity", "sbd-123", False, False, {})
 
+        work_q = MPQueue(ctx=mp_fixture)
+        msg = EventMessage(
+            "UNITTEST",
+            "PUBSUB",
+            dict(
+                topic=topics.request.activity.run,
+                kwargs={"request_id": "123", "cmd": cmd},
+            ),
+        )
+        work_q.put(msg)
+        event = mp_fixture.Event()
+
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.run"
+            "ska_oso_oet.procedure.application.main.ActivityService.prepare_run_activity"
         ) as mock_method:
-            assert_command_request_and_response(
-                mp_fixture,
-                caplog,
-                ActivityServiceWorker,
-                mock_method,
-                topics.request.activity.run,
-                topics.activity.lifecycle.running,
-                cmd,
-            )
+            with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+                mock_method.side_effect = partial(set_event, event)
+                _proc_worker_wrapper_helper(
+                    mp_fixture,
+                    caplog,
+                    ActivityServiceWorker,
+                    args=(work_q, mp_fixture),
+                    expect_shutdown_evt=True,
+                )
+
+            assert event.is_set()
+            mock_method.assert_called_once()
+            assert mock_method.call_args[0][0] == cmd
+
+            assert helper.topic_list == [topics.request.activity.run]
+
+            work_q.safe_close()
 
     @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
-    def test_run_handles_error(self, mp_fixture, caplog):
+    def test_prepare_handles_error(self, mp_fixture, caplog):
         """
-        An exception raised by ActivityService.run should be handled by the worker by sending
-        the a message to a topic with the error.
+        An exception raised by ActivityService.prepare_run_activity should be handled by the worker by sending
+        a message to the response topic with the error.
         """
         pubsub.pub.unsubAll()
         helper = PubSubHelper()
@@ -379,7 +402,7 @@ class TestActivityWorker:
         expected_error = RuntimeError("test error")
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.run"
+            "ska_oso_oet.procedure.application.main.ActivityService.prepare_run_activity"
         ) as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.side_effect = expected_error
@@ -400,6 +423,107 @@ class TestActivityWorker:
 
         assert helper.messages[1][1] == dict(
             msg_src="TEST", request_id="678", result=expected_error
+        )
+
+        work_q.safe_close()
+
+    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
+    def test_complete_method_called(self, mp_fixture, caplog):
+        """
+        ActivityService.complete_run_activity should be called when 'topics.procedure.lifecycle.created' message is received,
+        and a response message sent to 'topics.activity.lifecycle.running' with the ActivitySummary
+        """
+        pubsub.pub.unsubAll()
+        helper = PubSubHelper()
+
+        procedure_summary = application.ProcedureSummary(1, None, None, None, None)
+
+        work_q = MPQueue(ctx=mp_fixture)
+        msg = EventMessage(
+            "UNITTEST",
+            "PUBSUB",
+            dict(
+                topic=topics.procedure.lifecycle.created,
+                kwargs={"request_id": "123", "result": procedure_summary},
+            ),
+        )
+        work_q.put(msg)
+        expected_activity_summary = application.ActivitySummary(
+            1, 2, "sbd-123", "allocate", True, {}, []
+        )
+
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ActivityService.complete_run_activity"
+        ) as mock_method:
+            with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+                mock_method.return_value = expected_activity_summary
+                _proc_worker_wrapper_helper(
+                    mp_fixture,
+                    caplog,
+                    ActivityServiceWorker,
+                    args=(work_q, mp_fixture),
+                    expect_shutdown_evt=True,
+                )
+
+            mock_method.assert_called_once()
+            assert mock_method.call_args[0][0] == procedure_summary
+
+            assert helper.topic_list == [
+                topics.procedure.lifecycle.created,
+                topics.activity.lifecycle.running,
+            ]
+
+            activity_summary = helper.messages_on_topic(
+                topics.activity.lifecycle.running
+            )[0]["result"]
+
+            assert activity_summary == expected_activity_summary
+            work_q.safe_close()
+
+    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
+    def test_complete_handles_error(self, mp_fixture, caplog):
+        """
+        An exception raised by ActivityService.complete_run_activity should be handled by the worker by sending
+        a message to the response topic with the error.
+        """
+        pubsub.pub.unsubAll()
+        helper = PubSubHelper()
+
+        work_q = MPQueue(ctx=mp_fixture)
+        procedure_summary = application.ProcedureSummary(1, None, None, None, None)
+        msg = EventMessage(
+            "UNITTEST",
+            "PUBSUB",
+            dict(
+                topic=topics.procedure.lifecycle.created,
+                kwargs={"request_id": "123", "result": procedure_summary},
+            ),
+        )
+        work_q.put(msg)
+        expected_error = RuntimeError("test error")
+
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ActivityService.complete_run_activity"
+        ) as mock_method:
+            with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+                mock_method.side_effect = expected_error
+                _proc_worker_wrapper_helper(
+                    mp_fixture,
+                    caplog,
+                    ActivityServiceWorker,
+                    args=(work_q, mp_fixture),
+                    expect_shutdown_evt=True,
+                )
+
+        mock_method.assert_called_once()
+
+        assert helper.topic_list == [
+            topics.procedure.lifecycle.created,
+            topics.activity.lifecycle.running,
+        ]
+
+        assert helper.messages[1][1] == dict(
+            msg_src="TEST", request_id="123", result=expected_error
         )
 
         work_q.safe_close()

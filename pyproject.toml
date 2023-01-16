@@ -79,6 +79,7 @@ log_file_format = "%(asctime)s.%(msecs)03dZ|%(levelname)s|%(threadName)s|%(funcN
 log_file_level = "DEBUG"
 env = [
     "OET_REST_URI = http://ska-oso-oet-rest-test:5000/api/v1.0",
+    "ODA_URI = http://ska-db-oda-rest-test:5000/ska-oso-oet/api/v1"
 ]
 
 [tool.coverage.run]

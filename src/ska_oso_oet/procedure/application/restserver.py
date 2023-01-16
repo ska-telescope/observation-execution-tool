@@ -22,7 +22,7 @@ ProcedureAPI = Blueprint("procedures", __name__)
 ActivityAPI = Blueprint("activities", __name__)
 
 # time allowed for Flask <-> other ProcWorker communication before timeout
-TIMEOUT = 10
+TIMEOUT = 30
 
 
 class Message:
@@ -372,33 +372,19 @@ def get_activities():
 
 @ActivityAPI.route("/activities", methods=["POST"])
 def run_activity():
-    try:
-        prepare_only = flask.request.json["prepare_only"]
-    except KeyError:
-        prepare_only = False
-
-    try:
-        create_env = flask.request.json["create_env"]
-    except KeyError:
-        create_env = False
-
-    try:
-        script_args = flask.request.json["script_args"]
-    except KeyError:
-        script_args = {}
-
+    request_body = flask.request.json
     cmd = application.ActivityCommand(
-        flask.request.json["activity_name"],
-        flask.request.json["sbd_id"],
-        prepare_only,
-        create_env,
-        script_args,
+        request_body["activity_name"],
+        request_body["sbd_id"],
+        request_body.get("prepare_only", False),
+        request_body.get("create_env", False),
+        request_body.get("script_args", {}),
     )
     summary = call_and_respond(
         topics.request.activity.run, topics.activity.lifecycle.running, cmd=cmd
     )
 
-    return flask.jsonify({"activity": make_public_activity_summary(summary)}), 200
+    return flask.jsonify({"activity": make_public_activity_summary(summary)}), 201
 
 
 @ProcedureAPI.errorhandler(400)
@@ -438,7 +424,7 @@ def server_error_response(cause):
 
 def call_and_respond(request_topic, response_topic, *args, **kwargs):
     q = Queue(1)
-    my_request_id = time.time()
+    my_request_id = int(time.time())
 
     # msg_src MUST be part of method signature for pypubsub to function
     def callback(msg_src, request_id, result):  # pylint: disable=unused-argument
@@ -544,8 +530,16 @@ def make_public_activity_summary(activity: application.ActivitySummary):
         ),
         "activity_name": activity.activity_name,
         "sbd_id": activity.sbd_id,
-        "pid": activity.pid,
+        "procedure_id": activity.pid,
         "prepare_only": activity.prepare_only,
+        "script_args": activity.script_args,
+        "activity_states": [
+            (state_enum.name, timestamp)
+            for (state_enum, timestamp) in activity.activity_states
+        ],
+        "state": max(
+            states_to_time := dict(activity.activity_states), key=states_to_time.get
+        ).name,
     }
 
 
