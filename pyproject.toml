@@ -68,7 +68,7 @@ ska-oso-oet-client = "^1.0.0"
 docs = ["Sphinx", "docutils", "recommonmark", "sphinx-rtd-theme"]
 
 [tool.poetry.scripts]
-oet = "ska_oso_oet_client.restclient:main"
+oet = "ska_oso_oet_client.main:main"
 
 [tool.pytest.ini_options]
 log_cli_level = "DEBUG"
@@ -78,8 +78,7 @@ log_file = "pytest-logs.txt"
 log_file_format = "%(asctime)s.%(msecs)03dZ|%(levelname)s|%(threadName)s|%(funcName)s|%(filename)s#%(lineno)d||%(message)s"
 log_file_level = "DEBUG"
 env = [
-    "OET_REST_URI = http://ska-oso-oet-rest-test:5000/api/v1.0",
-    "ODA_URI = http://ska-db-oda-rest-test:5000/ska-oso-oet/api/v1"
+    "OET_REST_URI = http://ska-oso-oet-rest-test:5000/api/v1.0"
 ]
 
 [tool.coverage.run]

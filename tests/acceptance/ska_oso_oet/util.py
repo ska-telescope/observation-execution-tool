@@ -5,10 +5,12 @@ import time
 import typing
 
 from ska_oso_oet_client.procedureclient import ProcedureAdapter
+from ska_oso_pdm.entities.common.sb_definition import SBDefinition
+from ska_oso_pdm.schemas import CODEC
 
 LOGGER = logging.getLogger(__name__)
 
-PROCEDURE_ADAPTER = ProcedureAdapter(os.getenv("OET_REST_URI"))
+PROCEDURE_ADAPTER = ProcedureAdapter(f"{os.getenv('OET_REST_URI')}/procedures")
 
 
 if typing.TYPE_CHECKING:
@@ -54,7 +56,7 @@ class ScriptExecutionEnvironment:
             args.append(f"--pid={self.script_id}")
         LOGGER.debug("Executing OET command '%s' with args %s", cmd, args)
         result = subprocess.run(
-            ["oet", cmd, *args],
+            ["oet", "procedure", cmd, *args],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             check=False,
@@ -85,11 +87,30 @@ class ScriptExecutionEnvironment:
         raise ScriptExecutionError(msg)
 
     def get_script_state(self):
-        task = self._update_script()
-        return task.state
+        """
+        :return: the state of the latest script, eg COMPLETE
+        :raises: ScriptExecutionError if there are no scripts in any state
+        """
+        tasks = PROCEDURE_ADAPTER.list(self.script_id)
+        if tasks:
+            return tasks[0].state
 
-    def _update_script(self):
-        task = PROCEDURE_ADAPTER.list(self.script_id)
-        if task:
-            return task[0]
-        return None
+        raise ScriptExecutionError("No scripts currently known to the OET")
+
+
+def load_string_from_file(filename):
+    """
+    Return a file from the current directory as a string
+    """
+    cwd, _ = os.path.split(__file__)
+    path = os.path.join(cwd, filename)
+    with open(path, "r", encoding="utf-8") as json_file:
+        json_data = json_file.read()
+        return json_data
+
+
+VALID_MID_SBDEFINITION_JSON = load_string_from_file(
+    "scripts/testfile_sample_mid_sb.json"
+)
+
+test_sbd = CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)

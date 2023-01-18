@@ -12,13 +12,17 @@ def setup():
     A setup fixture to check that OET REST server is running and available at
     address defined by OET_REST_URI environment variable.
     """
-    oet_rest_uri = os.getenv("OET_REST_URI")
+    oet_procedures_rest_uri = f"{os.getenv('OET_REST_URI')}/procedures"
     try:
-        resp = requests.get(oet_rest_uri, timeout=1.0)
+        resp = requests.get(oet_procedures_rest_uri, timeout=1.0)
     except requests.exceptions.ConnectionError:
-        raise Exception(f"OET REST service not available at {oet_rest_uri}") from None
+        raise Exception(
+            f"OET REST service not available at {oet_procedures_rest_uri}"
+        ) from None
     if resp.status_code != 200:
-        raise Exception(f"Invalid response from OET REST service at {oet_rest_uri}")
+        raise Exception(
+            f"Invalid response from OET REST service at {oet_procedures_rest_uri}"
+        )
 
 
 @pytest.fixture(name="exec_env")
