@@ -9,6 +9,7 @@ from typing import List
 
 import waitress
 from pubsub import pub
+from ska_ser_logging import configure_logging
 
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import (
@@ -536,8 +537,6 @@ def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
 
 
 if __name__ == "__main__":
-    logging.basicConfig()
-    # TODO make this configurable via env variable/Helm chart
-    logging.getLogger().setLevel(logging.DEBUG)
+    configure_logging(os.getenv("LOG_LEVEL", "INFO"))
     mp = multiprocessing.get_context("fork")
     main(mp)

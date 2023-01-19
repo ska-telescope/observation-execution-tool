@@ -15,7 +15,7 @@ adapter = ActivityAdapter(f"{getenv('OET_REST_URI')}/activities")
 
 
 @scenario(
-    "features/oda_connection.feature",
+    "features/activity.feature",
     "Activity driven execution of the OET, with SB retrieval from the ODA",
 )
 def test_activity():

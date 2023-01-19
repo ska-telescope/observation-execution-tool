@@ -570,7 +570,6 @@ class ActivityService:
         :param request_id: The original request_id from the REST layer
         :returns: an ActivitySummary describing the state of the Activity that the Procedure is linked to,
                     or None if the Procedure was not created from an Activity
-
         """
         try:
             aid = self.request_ids_to_aid[request_id]
