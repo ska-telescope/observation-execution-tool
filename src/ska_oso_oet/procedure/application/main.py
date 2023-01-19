@@ -392,7 +392,7 @@ class ActivityServiceWorker(EventBusWorker):
         try:
             summaries = self.activity_service.summarise(activity_ids)
         except ValueError:
-            # ValueError raised when PID not found.
+            # ValueError raised when Activity ID not found.
             summaries = []
 
         self.log(logging.DEBUG, "Activity List result: %s", summaries)
@@ -451,12 +451,15 @@ class ActivityServiceWorker(EventBusWorker):
                 topics.activity.lifecycle.running, request_id=request_id, result=e
             )
         else:
-            self.log(
-                logging.DEBUG, "Activity request %s result: %s", request_id, summary
-            )
-            self.send_message(
-                topics.activity.lifecycle.running, request_id=request_id, result=summary
-            )
+            if summary is not None:
+                self.log(
+                    logging.DEBUG, "Activity request %s result: %s", request_id, summary
+                )
+                self.send_message(
+                    topics.activity.lifecycle.running,
+                    request_id=request_id,
+                    result=summary,
+                )
 
 
 def main(mp_ctx: multiprocessing.context.BaseContext):

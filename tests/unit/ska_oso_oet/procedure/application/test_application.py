@@ -808,8 +808,27 @@ class TestActivityService:
         activity_service = ActivityService()
         _ = activity_service.complete_run_activity(mock_summary, 123)
 
-        # verify ActivityService has sent messages on correct topics
-        assert helper.topic_list == []
+        # Check that the message to start procedure was not sent
+        assert len(helper.messages_on_topic(topics.request.procedure.start)) == 0
+
+    def test_activityservice_complete_run_returns_none_for_procedure_without_activity(
+        self,
+    ):
+        """
+        If ActivityService.request_ids_to_aid does not contain the request_id, then the Procedure
+        is not created from an Activity so the function should return None
+        """
+        mock_pid = 2
+        mock_summary = mock.MagicMock(id=mock_pid)
+        helper = PubSubHelper()
+
+        mock_request_time = int(time.time())
+
+        activity_service = ActivityService()
+
+        result = activity_service.complete_run_activity(mock_summary, mock_request_time)
+
+        assert result is None
 
         # Check that the message to start procedure was not sent
         assert len(helper.messages_on_topic(topics.request.procedure.start)) == 0

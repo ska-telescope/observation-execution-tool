@@ -568,6 +568,8 @@ class ActivityService:
 
         :param prepared_summary: the ProcedureSummary for the Procedure related to the requested Activity
         :param request_id: The original request_id from the REST layer
+        :returns: an ActivitySummary describing the state of the Activity that the Procedure is linked to,
+                    or None if the Procedure was not created from an Activity
 
         """
         try:

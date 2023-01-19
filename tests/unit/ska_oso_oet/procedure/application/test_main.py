@@ -528,6 +528,51 @@ class TestActivityWorker:
 
         work_q.safe_close()
 
+    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
+    def test_complete_handle_none_activity_procedure(self, mp_fixture, caplog):
+        """
+        When ActivityService.complete_run_activity returns None this means the Procedure was not created from an Activity request
+        so no response message should be sent.
+        """
+        pubsub.pub.unsubAll()
+        helper = PubSubHelper()
+
+        procedure_summary = application.ProcedureSummary(1, None, None, None, None)
+
+        work_q = MPQueue(ctx=mp_fixture)
+        msg = EventMessage(
+            "UNITTEST",
+            "PUBSUB",
+            dict(
+                topic=topics.procedure.lifecycle.created,
+                kwargs={"request_id": "123", "result": procedure_summary},
+            ),
+        )
+        work_q.put(msg)
+
+        with mock.patch(
+            "ska_oso_oet.procedure.application.main.ActivityService.complete_run_activity"
+        ) as mock_method:
+            with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
+                mock_method.return_value = None
+                _proc_worker_wrapper_helper(
+                    mp_fixture,
+                    caplog,
+                    ActivityServiceWorker,
+                    args=(work_q, mp_fixture),
+                    expect_shutdown_evt=True,
+                )
+
+            mock_method.assert_called_once()
+            assert mock_method.call_args[0][0] == procedure_summary
+
+            assert helper.topic_list == [
+                topics.procedure.lifecycle.created,
+            ]
+
+            assert helper.messages_on_topic(topics.activity.lifecycle.running) == []
+            work_q.safe_close()
+
 
 def assert_command_request_and_response(
     mp_fixture, caplog, worker_cls, mock_method, request_topic, response_topic, cmd
