@@ -79,8 +79,8 @@ rest:  ## start OET REST server
 diagrams:  ## recreate PlantUML diagrams whose source has been modified
 	@for i in $$(git diff --name-only -- '*.puml'); \
 	do \
-		echo "Recreating $${i%%.*}.svg"; \
-		cat $$i | docker run --rm -i think/plantuml -tsvg - > $${i%%.*}.svg; \
+		echo "Recreating `dirname $$i`/export/`basename $${i%%.*}.svg`"; \
+		cat $$i | docker run --rm -i think/plantuml -tsvg - > `dirname $$i`/export/`basename $${i%%.*}.svg`; \
 	done
 	docker run -v $(CURDIR):/data rlespinasse/drawio-export --format=svg --on-changes --remove-page-suffix docs/src/diagrams
 
