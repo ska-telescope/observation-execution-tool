@@ -424,7 +424,7 @@ def server_error_response(cause):
 
 def call_and_respond(request_topic, response_topic, *args, **kwargs):
     q = Queue(1)
-    my_request_id = int(time.time())
+    my_request_id = time.time_ns()
 
     # msg_src MUST be part of method signature for pypubsub to function
     def callback(msg_src, request_id, result):  # pylint: disable=unused-argument

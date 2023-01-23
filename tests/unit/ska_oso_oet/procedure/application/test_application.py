@@ -660,7 +660,7 @@ class TestActivityService:
         }
         helper = PubSubHelper(spec)
 
-        mock_request_time = int(time.time())
+        mock_request_time = time.time_ns()
 
         with mock.patch(
             "ska_oso_oet.procedure.application.application.RESTUnitOfWork",
@@ -754,7 +754,7 @@ class TestActivityService:
         mock_summary = mock.MagicMock(id=mock_pid)
         helper = PubSubHelper()
 
-        mock_request_time = int(time.time())
+        mock_request_time = time.time_ns()
 
         expected_summary = ActivitySummary(
             id=mock_aid,
@@ -822,7 +822,7 @@ class TestActivityService:
         mock_summary = mock.MagicMock(id=mock_pid)
         helper = PubSubHelper()
 
-        mock_request_time = int(time.time())
+        mock_request_time = time.time_ns()
 
         activity_service = ActivityService()
 

@@ -987,7 +987,7 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
         app.config = dict(msg_src="mock")
 
         # this sets the request ID to match to 'bar'
-        with mock.patch("time.time") as mock_time:
+        with mock.patch("time.time_ns") as mock_time:
             mock_time.return_value = 456
 
             t.start()
