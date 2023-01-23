@@ -23,22 +23,29 @@ def test_activity():
 
 
 @given(
-    "an SBDefinition exists in the ODA with a filesystem success.py script in the test"
-    " activity"
+    parsers.parse(
+        "an SBDefinition {sbd_id} exists in the ODA with a filesystem success.py script"
+        " in the allocate activity"
+    )
 )
-def create_sbd():
+def create_sbd(sbd_id):
     oda = RESTUnitOfWork()
-    test_sbd.sbd_id = "sbi-mvp01-20200325-00002211"
+    test_sbd.sbd_id = sbd_id
     with oda:
         oda.sbds.add(test_sbd)
         oda.commit()
 
 
-@when("the OET CLI is used to run the allocate activity on the SBDefinition")
-def run_activity():
+@when(
+    parsers.parse(
+        "the OET CLI is used to run the {activity_name} activity on the SBDefinition"
+        " {sbd_id}"
+    )
+)
+def run_activity(activity_name, sbd_id):
     adapter.run(
-        "allocate",
-        "sbi-mvp01-20200325-00002211",
+        activity_name,
+        sbd_id,
     )
 
 

@@ -536,9 +536,9 @@ class ActivityService:
         )
         pub.sendMessage(
             topics.request.procedure.create,
-            # The message needs to appear to come from the worker layer in order for the republish logic
-            # to send it out to the main queue
-            msg_src="ActivityServiceWorker",
+            # Setting the msg_src as None means the republish logic will recognise the
+            # message has originated from its local pypubsub and should be republished
+            msg_src=None,
             request_id=request_id,
             cmd=prepare_cmd,
         )
@@ -593,7 +593,9 @@ class ActivityService:
                 )
                 pub.sendMessage(
                     topics.request.procedure.start,
-                    msg_src="ActivityServiceWorker",
+                    # Setting the msg_src as None means the republish logic will recognise the
+                    # message has originated from its local pypubsub and should be republished
+                    msg_src=None,
                     request_id=request_id,
                     cmd=start_cmd,
                 )

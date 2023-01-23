@@ -53,14 +53,12 @@ class EventBusWorker(QueueProcWorker):
         :param kwargs: any metadata associated with pypubsub message
         :return:
         """
-        # avoid infinite loop - do not republish external events
-        try:
-            msg_src = kwargs.pop("msg_src")
-        except KeyError:
-            # No message source = virgin event published on pypubsub
+        # No message source = virgin event published on pypubsub
+        if (msg_src := kwargs.pop("msg_src", self.name)) is None:
             msg_src = self.name
 
-        # ... but if this is a local message (message source = us), send it
+        # To avoid an infinite loop, do not republish external events.
+        # Only local messages (message source = this process), are sent
         # out to the main queue and hence on to other EventBusWorkers
         if msg_src == self.name:
             # Convert pypubsub event to the equivalent mptools EventMessage
