@@ -650,7 +650,8 @@ class TestSESHistory:
 
 
 class TestActivityService:
-    def test_activityservice_prepare_run(self):
+    @mock.patch.object(time, "time")
+    def test_activityservice_prepare_run(self, mock_time_fn):
         mock_pid = 2
         mock_summary = mock.MagicMock(id=mock_pid)
         spec = {
@@ -659,8 +660,10 @@ class TestActivityService:
             ],
         }
         helper = PubSubHelper(spec)
+        mock_state_time = time.time()
+        mock_time_fn.return_value = mock_state_time
 
-        mock_request_time = time.time_ns()
+        mock_request_id = time.time_ns()
 
         with mock.patch(
             "ska_oso_oet.procedure.application.application.RESTUnitOfWork",
@@ -678,7 +681,7 @@ class TestActivityService:
                 create_env=False,
                 script_args={},
             )
-            activity_service.prepare_run_activity(cmd, mock_request_time)
+            activity_service.prepare_run_activity(cmd, mock_request_id)
 
             expected_activity = Activity(
                 activity_id=1,
@@ -694,7 +697,7 @@ class TestActivityService:
             assert len(activity_service.states[1]) == 1
             assert activity_service.states[1][0] == (
                 ActivityState.REQUESTED,
-                mock_request_time,
+                mock_state_time,
             )
 
             # Check that a message requesting procedure creation has been sent

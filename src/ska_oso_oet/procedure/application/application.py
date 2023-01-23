@@ -497,7 +497,7 @@ class ActivityService:
     ):
         # ActivityService does not have state history updates implemented yet so we store a list of
         # states for each activity where the latest state in the list is the current state
-        self.states: Dict[int, List[Tuple[ActivityState, int]]] = {}
+        self.states: Dict[int, List[Tuple[ActivityState, float]]] = {}
         self.script_args: Dict[int, Dict[str, domain.ProcedureInput]] = {}
         self.activities: Dict[int, Activity] = {}
         # We need to store this state as the service needs to check if a procedure that has been created
@@ -544,7 +544,7 @@ class ActivityService:
         )
 
         # This should be the first state to be added so create a new list
-        self.states[aid] = [(ActivityState.REQUESTED, request_id)]
+        self.states[aid] = [(ActivityState.REQUESTED, time.time())]
 
         # The Activity dataclass is an internal representation of the Activity. The procedure_id will be populated
         # once the procedure created event has been received
