@@ -3,6 +3,15 @@
 
 package ska_oso_oet {
 
+    skinparam noteFontSize<<not_implemented_note>> 50
+
+    note as not_implemented_note
+    **Note**
+    This diagram represents a proposed refactoring
+    of the current ska_oso_oet project structure and
+    has not yet been implemented.
+    end note
+
     package mptools <<Rectangle>> {
         note as mptools_note
         See the ScriptExecutionService
