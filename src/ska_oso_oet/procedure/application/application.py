@@ -651,15 +651,15 @@ class ActivityService:
         """
         Converts the PDM representation of the script retrieved from the SB into the OET representation.
         """
-        if isinstance(pdm_script, pdm_procedures.FilesystemScript):
-            return domain.FileSystemScript(script_uri=pdm_script.path)
-        elif isinstance(pdm_script, pdm_procedures.GitScript):
+        if isinstance(pdm_script, pdm_procedures.GitScript):
             git_args = domain.GitArgs(
                 git_repo=pdm_script.repo, git_branch=pdm_script.branch
             )
             return domain.GitScript(
                 script_uri=pdm_script.path, git_args=git_args, create_env=create_env
             )
+        elif isinstance(pdm_script, pdm_procedures.FilesystemScript):
+            return domain.FileSystemScript(script_uri=pdm_script.path)
         else:
             raise RuntimeError(
                 f"Cannot run script with type {pdm_script.__class__.__name__}"
