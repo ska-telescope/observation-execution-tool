@@ -8,11 +8,11 @@ import collections
 import dataclasses
 import enum
 import itertools
+import logging
 import multiprocessing.context
 import os
 import threading
 import time
-from queue import Empty, Queue
 from typing import Callable, Dict, List, Optional, Tuple
 
 from pubsub import pub
@@ -37,6 +37,8 @@ DELETEABLE_STATES = [
     domain.ProcedureState.STOPPED,
     domain.ProcedureState.UNKNOWN,
 ]
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -176,7 +178,7 @@ class ActivitySummary:
 @dataclasses.dataclass
 class Activity:
     activity_id: int
-    procedure_id: int
+    procedure_id: Optional[int]
     sbd_id: str
     activity_name: str
     prepare_only: bool
@@ -498,107 +500,103 @@ class ActivityService:
         self.states: Dict[int, List[Tuple[ActivityState, float]]] = {}
         self.script_args: Dict[int, Dict[str, domain.ProcedureInput]] = {}
         self.activities: Dict[int, Activity] = {}
+        # We need to store this state as the service needs to check if a procedure that has been created
+        # is the result of an activity request
+        self.request_ids_to_aid: Dict[int, int] = {}
 
         # counter used to generate activity ID for new activities
         self._aid_counter = itertools.count(1)
 
         self._oda = RESTUnitOfWork()
 
-    def run(self, cmd: ActivityCommand) -> ActivitySummary:
+    def prepare_run_activity(self, cmd: ActivityCommand, request_id: int) -> None:
         """
-        Run an activity of a Scheduling Block. This includes retrieving the script
+        Prepare to run the activity of a Scheduling Block. This includes retrieving the script
         from the scheduling block and sending the request messages to the
-        ScriptExecutionService to prepare and run the script.
+        ScriptExecutionService to prepare the script.
 
-        If the prepare_only flag is set within the ActivityCommand, only a prepare
-        command will be sent to the ScriptExecutionService.
+        The request_id is required to be propagated through the messages sent to the Procedure layer,
+        so the REST layer can wait for the correct response event.
 
         :param cmd: dataclass argument capturing the activity name and SB ID
-        :return: A summary of the activity
+        :param request_id: The original request_id from the REST layer
         """
+
         aid = next(self._aid_counter)
         with self._oda:
             sbd: SBDefinition = self._oda.sbds.get(cmd.sbd_id)
 
-        # create activity, add script as a field of activity so that it only needs to be extracted once
         pdm_script = sbd.activities.get(cmd.activity_name)
-        if isinstance(pdm_script, pdm_procedures.FilesystemScript):
-            script = domain.FileSystemScript(script_uri=pdm_script.path)
-        elif isinstance(pdm_script, pdm_procedures.GitScript):
-            git_args = domain.GitArgs(
-                git_repo=pdm_script.repo, git_branch=pdm_script.branch
-            )
-            script = domain.GitScript(
-                script_uri=pdm_script.path, git_args=git_args, create_env=cmd.create_env
-            )
-        else:
-            raise RuntimeError(
-                f"Cannot run script with type {pdm_script.__class__.__name__}"
-            )
 
-        script_args = {}
-        for fn in pdm_script.function_args:
-            script_args[fn] = domain.ProcedureInput(
-                *pdm_script.function_args[fn].args,
-                **pdm_script.function_args[fn].kwargs,
-            )
-
-        script_args.update(cmd.script_args)
-
+        script = self._get_oet_script(pdm_script, cmd.create_env)
+        script_args = self._get_script_args(pdm_script, cmd)
         prepare_cmd = PrepareProcessCommand(
             script=script,
-            init_args=script_args.pop("init", domain.ProcedureInput()),
+            init_args=script_args.get("init", domain.ProcedureInput()),
         )
-
-        q = Queue(1)
-        request_time = time.time()
-
-        # msg_src MUST be part of method signature for pypubsub to function
-        def callback(msg_src, request_id, result):  # pylint: disable=unused-argument
-            if request_time == request_id:
-                q.put(result)
-
-        pub.subscribe(callback, topics.procedure.lifecycle.created)
-
-        # With the callback now setup, publish an event to mark the user request event
         pub.sendMessage(
             topics.request.procedure.create,
-            msg_src=self.__class__.__name__,
-            request_id=request_time,
+            # Setting the msg_src as None means the republish logic will recognise the
+            # message has originated from its local pypubsub and should be republished
+            msg_src=None,
+            request_id=request_id,
             cmd=prepare_cmd,
         )
 
         # This should be the first state to be added so create a new list
-        self.states[aid] = [(ActivityState.REQUESTED, request_time)]
+        self.states[aid] = [(ActivityState.REQUESTED, time.time())]
 
-        try:
-            prepared_summary = q.get(timeout=1000.0)
-        except Empty as e:
-            raise e
-
+        # The Activity dataclass is an internal representation of the Activity. The procedure_id will be populated
+        # once the procedure created event has been received
         self.activities[aid] = Activity(
             activity_id=aid,
-            procedure_id=prepared_summary.id,
+            procedure_id=None,
             activity_name=cmd.activity_name,
             sbd_id=cmd.sbd_id,
             prepare_only=cmd.prepare_only,
         )
-        self.script_args[aid] = cmd.script_args
+        self.script_args[aid] = script_args
+        self.request_ids_to_aid[request_id] = aid
 
-        if not cmd.prepare_only:
+    def complete_run_activity(
+        self, prepared_summary: ProcedureSummary, request_id: int
+    ) -> Optional[ActivitySummary]:
+        """
+        Complete the request to run the Activity, using the ProcedureSummary that is now available.
+        This includes updating the Activity with the procedure_id, sending the request to start the procedure if prepare_only is not set to True,
+        and returning the ActivitySummary.
+
+        :param prepared_summary: the ProcedureSummary for the Procedure related to the requested Activity
+        :param request_id: The original request_id from the REST layer
+        :returns: an ActivitySummary describing the state of the Activity that the Procedure is linked to,
+                    or None if the Procedure was not created from an Activity
+        """
+        try:
+            aid = self.request_ids_to_aid[request_id]
+        except KeyError:
+            # The request_id does not match a request sent to the activity domain, so the procedure is not linked to an activity
+            return None
+
+        activity = self.activities[aid]
+        # Now the ProcedureSummary is available, update the Activity with the procedure_id
+        activity.procedure_id = prepared_summary.id
+
+        if not activity.prepare_only:
             #  TODO: should we allow here for multiple functions or limit to just main as is assumed by PM?
-            for fn in script_args.keys():
+            fns_to_start = [fn for fn in self.script_args[aid].keys() if fn != "init"]
+            for fn in fns_to_start:
                 start_cmd = StartProcessCommand(
                     prepared_summary.id,
                     fn_name=fn,
-                    run_args=script_args[fn],
+                    run_args=self.script_args[aid][fn],
                     force_start=True,
                 )
-                # With the callback now setup, publish an event to mark the user request event
                 pub.sendMessage(
                     topics.request.procedure.start,
-                    msg_src=self.__class__.__name__,
-                    request_id=time.time(),
+                    # Setting the msg_src as None means the republish logic will recognise the
+                    # message has originated from its local pypubsub and should be republished
+                    msg_src=None,
+                    request_id=request_id,
                     cmd=start_cmd,
                 )
 
@@ -634,7 +632,7 @@ class ActivityService:
         :param aid: Activity ID to summarise
         :return: ActivitySummary
         """
-        states = self.states[aid]
+        state = self.states[aid]
         activity = self.activities[aid]
         script_args = self.script_args[aid]
         return ActivitySummary(
@@ -643,6 +641,43 @@ class ActivityService:
             activity_name=activity.activity_name,
             sbd_id=activity.sbd_id,
             script_args=script_args,
-            activity_states=states,
+            activity_states=state,
             prepare_only=activity.prepare_only,
         )
+
+    def _get_oet_script(
+        self, pdm_script: pdm_procedures.PythonProcedure, create_env: bool
+    ) -> domain.ExecutableScript:
+        """
+        Converts the PDM representation of the script retrieved from the SB into the OET representation.
+        """
+        if isinstance(pdm_script, pdm_procedures.GitScript):
+            git_args = domain.GitArgs(
+                git_repo=pdm_script.repo, git_branch=pdm_script.branch
+            )
+            return domain.GitScript(
+                script_uri=pdm_script.path, git_args=git_args, create_env=create_env
+            )
+        elif isinstance(pdm_script, pdm_procedures.FilesystemScript):
+            return domain.FileSystemScript(script_uri=pdm_script.path)
+        else:
+            raise RuntimeError(
+                f"Cannot run script with type {pdm_script.__class__.__name__}"
+            )
+
+    def _get_script_args(
+        self, pdm_script: pdm_procedures.PythonProcedure, cmd: ActivityCommand
+    ) -> dict[str, domain.ProcedureInput]:
+        """
+        Combines the function args from the SB with any overwrites sent in the command,
+        returning a dict of the OET representation of the args for each function.
+        """
+        script_args = {}
+        for fn in pdm_script.function_args:
+            script_args[fn] = domain.ProcedureInput(
+                *pdm_script.function_args[fn].args,
+                **pdm_script.function_args[fn].kwargs,
+            )
+
+        script_args.update(cmd.script_args)
+        return script_args

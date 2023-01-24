@@ -35,7 +35,7 @@ RUN python3 -m pip install \
     --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==6.0.1
 
 # install the client into the image so it can be used in the default k8s installation
-RUN pip install ska-oso-oet-client==0.1.0
+RUN pip install ska-oso-oet-client==1.0.0
 
 # link default script location to a shorter path to make CLI interactions easier
 RUN ln -s /usr/local/lib/python3.10/dist-packages/scripts /scripts

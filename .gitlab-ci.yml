@@ -18,10 +18,10 @@ variables:
 # It is also specified that only the master branch will be subject of this job.
 
 stages:
-  - lint
   - build
   - test
   - cleanup
+  - lint
   - publish
   - pages
   - scan
