@@ -1,0 +1,113 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+package ska_oso_oet {
+
+    package mptools <<Rectangle>> {
+        note as mptools_note
+        See the ScriptExecutionService
+        view for more information on
+        the ""mptools"" module and its
+        contents.
+        end note
+    }
+
+    package main <<Rectangle>> {
+
+        class ScriptExecutionServiceWorker {
+            prepare(...)
+            start(...)
+            stop(...)
+            list(...)
+        }
+
+        class ActivityWorker {
+            run(...)
+            list(...)
+        }
+
+        class FlaskWorker {
+        }
+
+        class EventBusWorker {
+            republish(...)
+        }
+
+        class main_func <<function>>
+
+        ScriptExecutionServiceWorker -up-|> EventBusWorker
+        FlaskWorker -up-|> EventBusWorker
+        ActivityWorker -up-|> EventBusWorker
+    }
+
+    package app <<Rectangle>> {
+        class create_app <<function>>
+        class ServerSentEventsAPI
+
+        note as app_note
+        create_app function will
+        create a Flask application
+        using ProcedureAPI, ActivityAPI
+        and ServerSentEventsAPI
+        blueprints.
+        end note
+
+        app_note -left- create_app
+    }
+
+    FlaskWorker *-- create_app
+
+    package procedure {
+
+        package procedure.application <<Rectangle>> {
+
+            package procedure.application.api <<Rectangle>> {
+                class ProcedureAPI
+            }
+
+            package procedure.application.service <<Rectangle>> {
+                class ScriptExecutionService
+            }
+        }
+
+        package procedure.domain <<Rectangle>> {
+        }
+        ScriptExecutionServiceWorker --> ScriptExecutionService
+
+    }
+
+    package activity {
+        package activity.application <<Rectangle>> {
+            package activity.application.api {
+                class ActivityAPI
+            }
+
+            package activity.application.service {
+                class ActivityService
+            }
+        }
+
+        package activity.domain <<Rectangle>> {
+
+        }
+        ActivityWorker --> ActivityService
+    }
+}
+
+package flask {
+    class Flask
+    class Blueprint
+}
+
+create_app -|> Flask
+ServerSentEventsAPI --|> Blueprint
+ActivityAPI --|> Blueprint
+ProcedureAPI --|> Blueprint
+
+EventBusWorker -[dotted]- mptools: uses
+
+procedure.application.service -down[hidden]- procedure.application.api
+activity.application.service -down[hidden]- activity.application.api
+create_app -down[hidden]- ServerSentEventsAPI
+
+@enduml
