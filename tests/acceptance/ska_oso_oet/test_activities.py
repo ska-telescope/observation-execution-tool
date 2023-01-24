@@ -16,21 +16,22 @@ adapter = ActivityAdapter(f"{getenv('OET_REST_URI')}/activities")
 
 @scenario(
     "features/activity.feature",
-    "Activity driven execution of the OET, with SB retrieval from the ODA",
+    "Run an Activity, with SB retrieval from the ODA",
 )
-def test_activity():
+def test_activity_with_script_requiring_sb():
     pass
 
 
 @given(
     parsers.parse(
-        "an SBDefinition {sbd_id} exists in the ODA with a filesystem success.py script"
-        " in the allocate activity"
+        "an SBDefinition {sbd_id} exists in the ODA with script {script} in the"
+        " {activity_name} activity"
     )
 )
-def create_sbd(sbd_id):
+def create_sbd(sbd_id, script, activity_name):
     oda = RESTUnitOfWork()
     test_sbd.sbd_id = sbd_id
+    test_sbd.activities[activity_name].path = script
     with oda:
         oda.sbds.add(test_sbd)
         oda.commit()

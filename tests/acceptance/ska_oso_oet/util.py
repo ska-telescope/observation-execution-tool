@@ -113,4 +113,4 @@ VALID_MID_SBDEFINITION_JSON = load_string_from_file(
     "scripts/testfile_sample_mid_sb.json"
 )
 
-test_sbd = CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)
+test_sbd: SBDefinition = CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)
