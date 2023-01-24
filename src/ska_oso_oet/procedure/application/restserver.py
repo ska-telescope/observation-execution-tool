@@ -525,7 +525,10 @@ def make_public_activity_summary(activity: application.ActivitySummary):
     :return: safe JSON representation
     """
     script_args = {
-        fn: {"args": activity.script_args[fn].args, "kwargs": activity.script_args[fn].kwargs}
+        fn: {
+            "args": activity.script_args[fn].args,
+            "kwargs": activity.script_args[fn].kwargs,
+        }
         for fn in activity.script_args.keys()
     }
     return {
