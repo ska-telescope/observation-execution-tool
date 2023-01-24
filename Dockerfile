@@ -40,6 +40,9 @@ RUN pip install ska-oso-oet-client==1.0.0
 # link default script location to a shorter path to make CLI interactions easier
 RUN ln -s /usr/local/lib/python3.10/dist-packages/scripts /scripts
 
+# Create the location for the Activity domain to store SBs
+RUN mkdir -p /tmp/sbs && chown -R tango /tmp/sbs
+
 USER tango
 
 # give developers access to Pytango in site-packages for when updating poetry.locl

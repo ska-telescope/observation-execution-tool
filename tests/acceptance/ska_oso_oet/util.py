@@ -93,7 +93,7 @@ class ScriptExecutionEnvironment:
         """
         tasks = PROCEDURE_ADAPTER.list(self.script_id)
         if tasks:
-            return tasks[0].state
+            return tasks[-1].state
 
         raise ScriptExecutionError("No scripts currently known to the OET")
 
@@ -113,4 +113,4 @@ VALID_MID_SBDEFINITION_JSON = load_string_from_file(
     "scripts/testfile_sample_mid_sb.json"
 )
 
-test_sbd = CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)
+test_sbd: SBDefinition = CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)
