@@ -6,7 +6,8 @@ Module view: Script Execution
 
 .. note::
     Diagrams are embedded as SVG images. If the text is too small, please use your web browser to zoom in to the images,
-    which should be magnified without losing detail.
+    which should be magnified without losing detail. Alternatively open image in a new tab with right click + Open in
+    a new tab.
 
 This view is a module view depicting the key components involved in script execution; that is, creating new
 Python processes that load a user script and run functions in that user script when requested.

@@ -6,7 +6,8 @@ Module view: Script Execution UI and Service API
 
 .. note::
     Diagrams are embedded as SVG images. If the text is too small, please use your web browser to zoom in to the images,
-    which should be magnified without losing detail.
+    which should be magnified without losing detail. Alternatively open image in a new tab with right click + Open in
+    a new tab.
 
 This view is a module view showing the key components responsible for the OET interface, how they relay requests from
 remote OET clients to the internal OET components responsible for meeting that request, and how the response makes

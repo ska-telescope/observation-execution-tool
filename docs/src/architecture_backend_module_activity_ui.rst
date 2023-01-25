@@ -6,7 +6,8 @@ Module view: Activity UI and Service API
 
 .. note::
     Diagrams are embedded as SVG images. If the text is too small, please use your web browser to zoom in to the images,
-    which should be magnified without losing detail.
+    which should be magnified without losing detail. Alternatively open image in a new tab with right click + Open in
+    a new tab.
 
 This view is a module view depicting the key components involved in SB activity execution; that is, requesting
 an activity described by a Scheduling Block to be run.
