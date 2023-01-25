@@ -32,7 +32,15 @@ topic. It will then wait for a response on the //Activity//
 //running// response topic.
 end note
 
-ActivityWorker -> ActivityService: run(cmd: ActivityCommand)
+ActivityWorker -> ActivityService: prepare_run_activity(cmd: ActivityCommand, request_id: int)
+note right
+Pass the request_id to ActivityService where it
+keeps a record of request IDs mapped to activity
+IDs. This is so that the service can use the
+request ID in messages sent to the procedure
+domain and any events published from procedure
+domain are linked to the correct activity.
+end note
 
 ActivityService -> ODA: oda.sbds.get(sbd_id)
 note right
@@ -58,6 +66,13 @@ are stored in folder /tmp/sbs/ and path to the SB is passed
 as an argument in the PrepareProcessCommand
 end note
 
+ActivityService -> ActivityService: add SB path to kwargs
+note right
+The SB JSON filepath string is appended to the list of
+script keyword arguments for //main// function under
+the key //sb_json//.
+end note
+
 
 ActivityService -> ScriptExecutionServiceWorker: message request.procedure.prepare
 
@@ -73,7 +88,44 @@ ScriptExecutionServiceWorker -> ScriptExecutionService: prepare(cmd: PrepareProc
 
 ScriptExecutionService -> ScriptExecutionServiceWorker: ProcedureSummary
 
-ScriptExecutionServiceWorker -> ActivityService: message procedure.lifecycle.preparing
+ScriptExecutionServiceWorker -> ActivityWorker: message procedure.lifecycle.created
+
+ActivityWorker -> ActivityService: complete_run_activity(result: ProcedureSummary, request_id: int)
+
+note right
+ActivityService inspects each procedure.lifecycle.created
+message and checks if the request ID maps to any activity.
+This check is done to make sure that the message has
+originated from a procedure created by the activity domain
+rather than independently by the procedure domain.
+If the request ID does not map to an activity, ActivityService
+will return a null response to ActivityWorker which will know
+to keep waiting for another procedure.lifecycle.created message.
+end note
+
+opt prepare_only not set
+ActivityService -> ScriptExecutionServiceWorker: message request.procedure.start (force=true)
+note right
+By default the ScriptExecutionServiceWorker
+does not allow a StartProcessCommand to be
+queued if the process is not yet ready to start.
+Instead of the ActivityService waiting for the
+process to be ready, set a flag to tell the
+SESWorker to ignore the current process state
+and queue the start command anyway.
+end note
+
+
+end
+note right
+**Note**
+If **prepare_only** flag is not set, the
+ActivityService creates and announces
+a StartProcessCommand but currently
+does not wait for response to further
+follow the lifecycle of the created
+procedure
+end note
 
 ActivityService -> ActivityWorker: ActivitySummary
 
@@ -89,44 +141,6 @@ Afterwards the user can stay updated on the activity
 status by querying the procedure CLI with the script
 ID given by the ActivitySummary or by listening to
 the lifecycle events.
-end note
-
-opt prepare_only not set
-ActivityService -> ScriptExecutionServiceWorker: message request.procedure.start (force=true)
-note right
-By default the ScriptExecutionServiceWorker
-does not allow a StartProcessCommand to be
-queued if the process is not yet ready to start.
-Instead of the ActivityService waiting for the
-process to be ready, set a flag to tell the
-SESWorker to ignore the current process state
-and queue the start command anyway.
-end note
-
-ScriptExecutionServiceWorker -> ScriptExecutionService: start(cmd: StartProcessCommand)
-
-ScriptExecutionService -> ScriptExecutionServiceWorker: ProcedureSummary
-
-ScriptExecutionServiceWorker -> ActivityService: message procedure.lifecycle.started
-
-ActivityService -> ActivityWorker: ActivitySummary
-note right
-ActivityService returns the ActivitySummary
-object to ActivityWorker. This is to allow
-the ActivityWorker in the future to publish
-events on the activity lifecycle but these
-events have not yet been implemented
-end note
-
-end
-note right
-If prepare_only flag is not set, the
-ActivityService creates and announces
-a StartProcessCommand and waits for a
-response on  procedure.lifecycle.started
-topic. Once it gets the response, it
-creates an ActivitySummary object that
-is returned to the ActivityWorker.
 end note
 
 @enduml
