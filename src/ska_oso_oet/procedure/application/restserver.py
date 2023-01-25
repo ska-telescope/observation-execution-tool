@@ -524,6 +524,13 @@ def make_public_activity_summary(activity: application.ActivitySummary):
     :param activity: ActivitySummary to convert
     :return: safe JSON representation
     """
+    script_args = {
+        fn: {
+            "args": activity.script_args[fn].args,
+            "kwargs": activity.script_args[fn].kwargs,
+        }
+        for fn in activity.script_args.keys()
+    }
     return {
         "uri": flask.url_for(
             "activities.get_activity", activity_id=activity.id, _external=True
@@ -532,7 +539,7 @@ def make_public_activity_summary(activity: application.ActivitySummary):
         "sbd_id": activity.sbd_id,
         "procedure_id": activity.pid,
         "prepare_only": activity.prepare_only,
-        "script_args": activity.script_args,
+        "script_args": script_args,
         "activity_states": [
             (state_enum.name, timestamp)
             for (state_enum, timestamp) in activity.activity_states

@@ -153,7 +153,7 @@ ACTIVITY_SUMMARY = ActivitySummary(
     activity_name="allocate",
     prepare_only=False,
     script_args={},
-    activity_states=[(ActivityState.REQUESTED, 123)],
+    activity_states=[(ActivityState.TODO, 123)],
 )
 
 # resource partial URL for testing procedure execution with above JSON

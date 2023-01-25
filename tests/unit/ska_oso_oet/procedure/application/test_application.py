@@ -703,7 +703,7 @@ class TestActivityService:
             }
             assert len(activity_service.states[1]) == 1
             assert activity_service.states[1][0] == (
-                ActivityState.REQUESTED,
+                ActivityState.TODO,
                 mock_state_time,
             )
 
@@ -780,7 +780,7 @@ class TestActivityService:
             pid=mock_pid,
             sbd_id="sbd-123",
             prepare_only=False,
-            activity_states=[(ActivityState.REQUESTED, mock_request_time)],
+            activity_states=[(ActivityState.TODO, mock_request_time)],
             script_args={"main": ProcedureInput([], {})},
         )
 
@@ -794,9 +794,7 @@ class TestActivityService:
             prepare_only=False,
         )
         activity_service.script_args[mock_aid] = {"main": ProcedureInput([], {})}
-        activity_service.states[mock_aid] = [
-            (ActivityState.REQUESTED, mock_request_time)
-        ]
+        activity_service.states[mock_aid] = [(ActivityState.TODO, mock_request_time)]
 
         summary = activity_service.complete_run_activity(
             mock_summary, mock_request_time
@@ -866,7 +864,7 @@ class TestActivityService:
             ),
             "main": ProcedureInput(args=[], kwargs={"subarray_id": 1}),
         }
-        a1_states = [(ActivityState.REQUESTED, time.time())]
+        a1_states = [(ActivityState.TODO, time.time())]
 
         activity2 = Activity(
             activity_id=2,
@@ -881,7 +879,7 @@ class TestActivityService:
             ),
             "main": ProcedureInput(args=[], kwargs={"subarray_id": 1}),
         }
-        a2_states = [(ActivityState.REQUESTED, time.time() + 1)]
+        a2_states = [(ActivityState.TODO, time.time() + 1)]
 
         # Create summary objects we expect from the service
         expected_a1_summary = ActivitySummary(
