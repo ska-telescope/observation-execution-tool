@@ -22,15 +22,15 @@ RELEASE_NAME ?= test
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
-# The default ODA_SBD_URL points to the umbrella chart ODA deployment where data is
-# lost on chart teardown. For longer-term data persistence, override ODA_SBD_URL to
+# The default ODA_URI points to the umbrella chart ODA deployment where data is
+# lost on chart teardown. For longer-term data persistence, override ODA_URI to
 # point to the persistent ODA deployment.
-ODA_SBD_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/api/v1/sbds
+ODA_URI ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/api/v1
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 
 K8S_CHART_PARAMS = \
-  --set ska-oso-oet.rest.oda.url=$(ODA_SBD_URL) \
+  --set ska-oso-oet.rest.oda.url=$(ODA_URI) \
   --set ska-db-oda.rest.postgres.host=$(POSTGRES_HOST) \
   --set ska-db-oda.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST)
 
@@ -44,7 +44,7 @@ endif
 
 # Set the k8s test command run inside the testing pod to only run the acceptance
 # tests (no k8s pod deployment required for unit tests)
-K8S_TEST_TEST_COMMAND = KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/acceptance | tee pytest.stdout
+K8S_TEST_TEST_COMMAND = ODA_URI=$(ODA_URI) KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/acceptance | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the integration tests
 PYTHON_TEST_FILE = tests/unit/

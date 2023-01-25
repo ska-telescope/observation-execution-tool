@@ -178,7 +178,7 @@ If using OET CLI within Poetry virtual environment these steps are needed
 for the CLI to access the REST server:
 
 - set `rest.ingress.enabled` to `true` in `charts/ska-oso-oet/values.yaml`
-- set `OET_REST_URI` environment variable with `export OET_REST_URI=http://<minikube IP>/<kube namespace>/ska-oso-oet/api/v1.0/procedures`
+- set `OET_REST_URI` environment variable with `export OET_REST_URI=http://<minikube IP>/<kube namespace>/ska-oso-oet/api/v1.0`
 
 To deploy OET REST server run
 

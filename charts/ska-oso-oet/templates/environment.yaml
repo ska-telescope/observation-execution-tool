@@ -10,13 +10,14 @@ metadata:
     function: ska-oso-oet-environment
     intent: production
 data:
+  LOG_LEVEL: {{ .Values.rest.logLevel }}
   TANGO_HOST: {{ if .Values.global.tango_host -}} {{ .Values.global.tango_host }} {{- else -}} databaseds-tango-base-{{ .Release.Name }}:10000 {{- end }}
-  OET_REST_URI: http://{{ template "ska-oso-oet.name" . }}-rest-{{ .Release.Name }}:5000/api/v1.0/procedures
+  OET_REST_URI: http://{{ template "ska-oso-oet.name" . }}-rest-{{ .Release.Name }}:5000/api/v1.0
   SKUID_URL: ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:9870
   SUBARRAYNODE_FQDN_PREFIX: {{.Values.subarray}}
   CENTRALNODE_FQDN: {{.Values.central_node}}
   SKA_TELESCOPE: {{.Values.telescope}}
   ODA_BACKEND_TYPE: {{ .Values.rest.oda.backendType }}
   {{- if .Values.rest.oda.url }}
-  ODA_SBDS_URI: {{ .Values.rest.oda.url }}
+  ODA_URI: {{ .Values.rest.oda.url }}
   {{ end }}

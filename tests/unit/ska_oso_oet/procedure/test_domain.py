@@ -340,6 +340,31 @@ class TestProcedureInput:
         assert pi1 != pi3
         assert pi1 != object()
 
+    def test_procedure_input_addition(self):
+        pi1 = ProcedureInput(1, 2, 3, a=1, b=2)
+        pi2 = ProcedureInput(c=3)
+
+        pi3 = pi1 + pi2
+
+        assert pi3.args == (1, 2, 3)
+        assert pi3.kwargs == dict(a=1, b=2, c=3)
+
+    def test_procedure_input_addition_overwrite(self):
+        pi1 = ProcedureInput(1, 2, 3, a=1, b=2)
+        pi2 = ProcedureInput(a=2, c=3)
+
+        pi3 = pi1 + pi2
+
+        assert pi3.args == (1, 2, 3)
+        assert pi3.kwargs == dict(a=2, b=2, c=3)
+
+    def test_procedure_input_addition_arg_error(self):
+        pi1 = ProcedureInput(1, 2, 3, a=1, b=2)
+        pi2 = ProcedureInput(4, a=2, c=3)
+
+        with pytest.raises(NotImplementedError):
+            _ = pi1 + pi2
+
 
 def wait_for_empty_message_queue(
     manager, timeout=1.0, tick=0.01
@@ -943,6 +968,33 @@ class TestProcessManager:
             assert manager.states[pid] == ProcedureState.LOADING
             with pytest.raises(ValueError):
                 manager.run(pid, call="main", run_args=ProcedureInput())
+
+    def test_run_with_force_start(self, manager, script):
+        """
+        Verify that the run command is queued for a script even if the loading
+        is not yet complete when force_start flag is set.
+        """
+        q = manager.ctx.MPQueue()
+        manager.procedures[1] = MagicMock()
+        manager.states[1] = ProcedureState.LOADING
+        manager.script_queues[1] = q
+
+        manager.run(1, call="main", run_args=ProcedureInput(), force_start=True)
+        msg = q.safe_get(timeout=0.1)
+        assert msg.msg_type == "RUN"
+
+    def test_run_with_force_start_fails(self, manager, script):
+        """
+        Verify that the run command is not queued for a script even if forced
+        if script is in a final state (STOPPED, COMPLETE, FAILED, UNKNOWN)
+        """
+        q = manager.ctx.MPQueue()
+        manager.procedures[1] = MagicMock()
+        manager.states[1] = ProcedureState.COMPLETE
+        manager.script_queues[1] = q
+
+        with pytest.raises(ValueError):
+            manager.run(1, call="main", run_args=ProcedureInput(), force_start=True)
 
     def test_run_fails_for_running_process(self, manager, barrier_script):
         """

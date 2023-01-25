@@ -41,4 +41,4 @@ tests:
       - equal:
           path: data.OET_REST_URI
           value:
-            http://ska-oso-oet-rest-RELEASE-NAME:5000/api/v1.0/procedures
+            http://ska-oso-oet-rest-RELEASE-NAME:5000/api/v1.0

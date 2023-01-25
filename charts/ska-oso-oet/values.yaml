@@ -18,12 +18,13 @@ rest:
   component: rest
   function: script-execution
   domain: operations
+  logLevel: INFO
   ingress:
     enabled: false
   image:
     registry: artefact.skao.int
     image: ska-oso-oet
-    tag: 4.0.6
+    tag: 4.0.7
     pullPolicy: IfNotPresent
   resources:
     requests:

@@ -86,11 +86,11 @@ class request:
             Emitted when a request to enumerate all activities is received.
             """
 
-            def msgDataSpec(msg_src, request_id, activity_id=None):
+            def msgDataSpec(msg_src, request_id, activity_ids=None):
                 """
                 - msg_src: component from which the request originated
                 - request_id: unique identifier for this request
-                - activity_id: Activity ID to list.
+                - activity_ids: Activity IDs to list.
                 """
 
 
