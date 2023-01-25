@@ -147,7 +147,7 @@ class ActivityCommand:
 
 
 class ActivityState(enum.Enum):
-    REQUESTED = enum.auto()
+    TODO = enum.auto()
 
 
 @dataclasses.dataclass
@@ -549,7 +549,7 @@ class ActivityService:
         )
 
         # This should be the first state to be added so create a new list
-        self.states[aid] = [(ActivityState.REQUESTED, time.time())]
+        self.states[aid] = [(ActivityState.TODO, time.time())]
 
         # The Activity dataclass is an internal representation of the Activity. The procedure_id will be populated
         # once the procedure created event has been received
