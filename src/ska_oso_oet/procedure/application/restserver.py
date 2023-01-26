@@ -244,10 +244,8 @@ def create_procedure():
     script_args = flask.request.json.get("script_args", {})
 
     init_dict = script_args.get("init", {})
-    init_args = init_dict.get("args", [])
-    init_kwargs = init_dict.get("kwargs", {})
 
-    procedure_input = domain.ProcedureInput(*init_args, **init_kwargs)
+    procedure_input = convert_request_dict_to_procedure_input(init_dict)
     prepare_cmd = application.PrepareProcessCommand(
         script=script, init_args=procedure_input
     )
@@ -320,9 +318,7 @@ def update_procedure(procedure_id: int):
         and new_state is domain.ProcedureState.RUNNING
     ):
         run_dict = script_args.get("main", {})
-        run_args = run_dict.get("args", [])
-        run_kwargs = run_dict.get("kwargs", {})
-        procedure_input = domain.ProcedureInput(*run_args, **run_kwargs)
+        procedure_input = convert_request_dict_to_procedure_input(run_dict)
         cmd = application.StartProcessCommand(
             procedure_id, fn_name="main", run_args=procedure_input
         )
@@ -373,12 +369,18 @@ def get_activities():
 @ActivityAPI.route("/activities", methods=["POST"])
 def run_activity():
     request_body = flask.request.json
+
+    script_args = {
+        fn: convert_request_dict_to_procedure_input(fn_args)
+        for (fn, fn_args) in request_body.get("script_args", {}).items()
+    }
+
     cmd = application.ActivityCommand(
         request_body["activity_name"],
         request_body["sbd_id"],
         request_body.get("prepare_only", False),
         request_body.get("create_env", False),
-        request_body.get("script_args", {}),
+        script_args,
     )
     summary = call_and_respond(
         topics.request.activity.run, topics.activity.lifecycle.running, cmd=cmd
@@ -548,6 +550,18 @@ def make_public_activity_summary(activity: application.ActivitySummary):
             states_to_time := dict(activity.activity_states), key=states_to_time.get
         ).name,
     }
+
+
+def convert_request_dict_to_procedure_input(fn_dict: dict) -> domain.ProcedureInput:
+    """
+    Convert the dict of arguments for a single function into the domain.ProcedureInput
+
+    :param fn_dict: Dict of the args and kwargs, eg {'args': [1, 2], 'kwargs': {'subarray_id': 42}}
+    :return: The ProcedureInput, eg <ProcedureInput(1, 2, subarray_id=42)>
+    """
+    fn_args = fn_dict.get("args", [])
+    fn_kwargs = fn_dict.get("kwargs", {})
+    return domain.ProcedureInput(*fn_args, **fn_kwargs)
 
 
 # def create_app(config_filename):

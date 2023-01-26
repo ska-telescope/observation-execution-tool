@@ -19,6 +19,7 @@ from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.application import restserver
 from ska_oso_oet.procedure.application.application import (
+    ActivityCommand,
     ActivityState,
     ActivitySummary,
     ArgCapture,
@@ -142,7 +143,7 @@ RUN_SUMMARY = ProcedureSummary(
 ACTIVITY_REQUEST = {
     "sbd_id": "sbi-001",
     "activity_name": "allocate",
-    "script_args": None,
+    "script_args": {"main": {"args": [1], "kwargs": {"subarray_id": "42"}}},
     "prepare_only": False,
 }
 
@@ -1249,10 +1250,16 @@ def test_successful_post_to_activities_endpoint_returns_summary_in_response(clie
             ([topics.activity.lifecycle.running], dict(result=ACTIVITY_SUMMARY))
         ],
     }
-    _ = PubSubHelper(spec)
+    helper = PubSubHelper(spec)
 
     response = client.post(ACTIVITIES_ENDPOINT, json=ACTIVITY_REQUEST)
     response_json = response.get_json()
+
+    cmd: ActivityCommand = helper.messages_on_topic(topics.request.activity.run)[0][
+        "cmd"
+    ]
+
+    assert cmd.script_args == {"main": ProcedureInput(1, subarray_id="42")}
 
     assert "activity" in response_json
     procedure_json = response_json["activity"]
