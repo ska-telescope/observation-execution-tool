@@ -79,10 +79,10 @@ rest:  ## start OET REST server
 diagrams:  ## recreate PlantUML diagrams whose source has been modified
 	@for i in $$(git diff --name-only -- '*.puml'); \
 	do \
-		echo "Recreating $${i%%.*}.svg"; \
-		cat $$i | docker run --rm -i think/plantuml -tsvg - > $${i%%.*}.svg; \
+		echo "Recreating `dirname $$i`/export/`basename $${i%%.*}.svg`"; \
+		cat $$i | docker run --rm -i think/plantuml -tsvg - > `dirname $$i`/export/`basename $${i%%.*}.svg`; \
 	done
-	docker run -v $(CURDIR):/data rlespinasse/drawio-export --format=svg --on-changes --remove-page-suffix docs/src/diagrams
+	docker run --rm -v $(CURDIR):/data rlespinasse/drawio-export:v4.5.0 --format=svg --on-changes --remove-page-suffix docs/src/diagrams
 
 # Set the release tag in the values.yaml and the chart version in the umbrella chart.
 # Has to be done after version is set everywhere else because changes in values.yaml are considered
