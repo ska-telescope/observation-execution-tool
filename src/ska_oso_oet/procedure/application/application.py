@@ -19,6 +19,7 @@ from pubsub import pub
 from ska_db_oda.unit_of_work.restunitofwork import RESTUnitOfWork
 from ska_oso_pdm.entities.common import procedures as pdm_procedures
 from ska_oso_pdm.entities.common.sb_definition import SBDefinition
+from ska_oso_pdm.schemas import CODEC
 
 from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
@@ -529,7 +530,11 @@ class ActivityService:
         pdm_script = sbd.activities.get(cmd.activity_name)
 
         script = self._get_oet_script(pdm_script, cmd.create_env)
-        script_args = self._get_script_args(pdm_script, cmd)
+        script_args = self._combine_script_args(pdm_script, cmd)
+
+        sbd_path = self.write_sbd_to_file(sbd)
+        script_args["main"].kwargs.update({"sb_json": sbd_path})
+
         prepare_cmd = PrepareProcessCommand(
             script=script,
             init_args=script_args.get("init", domain.ProcedureInput()),
@@ -665,19 +670,33 @@ class ActivityService:
                 f"Cannot run script with type {pdm_script.__class__.__name__}"
             )
 
-    def _get_script_args(
+    def _combine_script_args(
         self, pdm_script: pdm_procedures.PythonProcedure, cmd: ActivityCommand
     ) -> dict[str, domain.ProcedureInput]:
         """
         Combines the function args from the SB with any overwrites sent in the command,
         returning a dict of the OET representation of the args for each function.
         """
-        script_args = {}
-        for fn in pdm_script.function_args:
-            script_args[fn] = domain.ProcedureInput(
+
+        script_args = {
+            fn: domain.ProcedureInput(
                 *pdm_script.function_args[fn].args,
                 **pdm_script.function_args[fn].kwargs,
             )
+            for fn in pdm_script.function_args
+        }
 
         script_args.update(cmd.script_args)
+
         return script_args
+
+    def write_sbd_to_file(self, sbd) -> str:
+        """
+        Writes the SBD json to a temporary file location and returns the path.
+        """
+        path = f"/tmp/sbs/{sbd.sbd_id}-{sbd.metadata.version}-{time.time_ns()}.json"
+        LOGGER.debug("Writing SB %s to path: %s", sbd.sbd_id, path)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(CODEC.dumps(sbd))
+
+        return path

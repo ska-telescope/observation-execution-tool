@@ -15,6 +15,7 @@ import pytest
 from ska_oso_pdm.entities.common.procedures import (
     FilesystemScript as pdm_FilesystemScript,
 )
+from ska_oso_pdm.entities.common.procedures import PythonArguments
 from ska_oso_pdm.entities.common.sb_definition import SBDefinition
 
 from ska_oso_oet.event import topics
@@ -650,8 +651,11 @@ class TestSESHistory:
 
 
 class TestActivityService:
+    @mock.patch(
+        "ska_oso_oet.procedure.application.application.ActivityService.write_sbd_to_file"
+    )
     @mock.patch.object(time, "time")
-    def test_activityservice_prepare_run(self, mock_time_fn):
+    def test_activityservice_prepare_run(self, mock_time_fn, mock_write_fn):
         mock_pid = 2
         mock_summary = mock.MagicMock(id=mock_pid)
         spec = {
@@ -662,7 +666,7 @@ class TestActivityService:
         helper = PubSubHelper(spec)
         mock_state_time = time.time()
         mock_time_fn.return_value = mock_state_time
-
+        mock_write_fn.return_value = "/tmp/sbs/mock_path.json"
         mock_request_id = time.time_ns()
 
         with mock.patch(
@@ -670,6 +674,7 @@ class TestActivityService:
             return_value=MagicMock(),
         ):
             pdm_script = pdm_FilesystemScript(path="file:///script/path.py")
+            pdm_script.function_args["main"] = PythonArguments(kwargs={})
             activity_service = ActivityService()
             activity_service._oda.sbds.get.return_value = SBDefinition(
                 sbd_id="sbd-123", activities={"allocate": pdm_script}
@@ -693,7 +698,9 @@ class TestActivityService:
             # Check that the activity is recorded within the ActivityService
             # as expected
             assert activity_service.activities[1] == expected_activity
-            assert activity_service.script_args[1] == {}
+            assert activity_service.script_args[1] == {
+                "main": ProcedureInput(sb_json="/tmp/sbs/mock_path.json")
+            }
             assert len(activity_service.states[1]) == 1
             assert activity_service.states[1][0] == (
                 ActivityState.TODO,
@@ -712,9 +719,12 @@ class TestActivityService:
             ]
             assert prep_cmd == expected_prep_cmd
 
-    def test_activityservice_prepare_run_adds_function_args(self):
+    @mock.patch(
+        "ska_oso_oet.procedure.application.application.ActivityService.write_sbd_to_file"
+    )
+    def test_activityservice_prepare_run_adds_function_args(self, mock_write_fn):
         helper = PubSubHelper()
-
+        mock_write_fn.return_value = "/tmp/sbs/mock_path.json"
         with mock.patch(
             "ska_oso_oet.procedure.application.application.RESTUnitOfWork",
             return_value=MagicMock(),
@@ -750,6 +760,11 @@ class TestActivityService:
                 "cmd"
             ]
             assert prep_cmd == expected_prep_cmd
+
+            assert activity_service.script_args[1] == {
+                "init": ProcedureInput("1", a="b"),
+                "main": ProcedureInput("2", c="d", sb_json="/tmp/sbs/mock_path.json"),
+            }
 
     def test_activityservice_complete_run(self):
         mock_pid = 2
