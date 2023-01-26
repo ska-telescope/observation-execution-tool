@@ -5,8 +5,6 @@ import time
 import typing
 
 from ska_oso_oet_client.procedureclient import ProcedureAdapter
-from ska_oso_pdm.entities.common.sb_definition import SBDefinition
-from ska_oso_pdm.schemas import CODEC
 
 LOGGER = logging.getLogger(__name__)
 
@@ -96,21 +94,3 @@ class ScriptExecutionEnvironment:
             return tasks[-1].state
 
         raise ScriptExecutionError("No scripts currently known to the OET")
-
-
-def load_string_from_file(filename):
-    """
-    Return a file from the current directory as a string
-    """
-    cwd, _ = os.path.split(__file__)
-    path = os.path.join(cwd, filename)
-    with open(path, "r", encoding="utf-8") as json_file:
-        json_data = json_file.read()
-        return json_data
-
-
-VALID_MID_SBDEFINITION_JSON = load_string_from_file(
-    "scripts/testfile_sample_mid_sb.json"
-)
-
-test_sbd: SBDefinition = CODEC.loads(SBDefinition, VALID_MID_SBDEFINITION_JSON)

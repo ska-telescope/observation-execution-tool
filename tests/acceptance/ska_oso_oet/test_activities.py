@@ -5,8 +5,6 @@ from pytest_bdd import given, parsers, scenario, then, when
 from ska_db_oda.unit_of_work.restunitofwork import RESTUnitOfWork
 from ska_oso_oet_client.activityclient import ActivityAdapter
 
-from .util import test_sbd
-
 LOGGER = logging.getLogger()
 
 KUBE_NAMESPACE = getenv("KUBE_NAMESPACE", "ska-oso-oet")
@@ -30,17 +28,31 @@ def test_activity_prepare_only():
     pass
 
 
+@scenario(
+    "features/activity.feature",
+    "Run an Activity, with script args that cause an error",
+)
+def test_activity_with_raise_msg_kwarg():
+    pass
+
+
 @given(
     parsers.parse(
         "an SBDefinition {sbd_id} exists in the ODA with script {script} in the"
         " {activity_name} activity"
     )
 )
-def create_sbd(sbd_id, script, activity_name):
+def create_sbd(sbd_id, script, activity_name, test_sbd):
     oda = RESTUnitOfWork()
     test_sbd.sbd_id = sbd_id
     test_sbd.activities[activity_name].path = script
     with oda:
+        try:
+            existing_sbd = oda.sbds.get(test_sbd.sbd_id)
+            test_sbd.metadata.version = existing_sbd.metadata.version
+        except KeyError:
+            # sbd_id doesn't exist in ODA so no need to worry about versions
+            pass
         oda.sbds.add(test_sbd)
         oda.commit()
 
@@ -66,6 +78,16 @@ def run_activity(activity_name, sbd_id):
 )
 def run_activity_prepare_only(activity_name, sbd_id):
     adapter.run(activity_name, sbd_id, prepare_only=True)
+
+
+@when(
+    parsers.parse(
+        "the OET CLI is used to run the {activity_name} activity with {kwarg}={value}"
+        " on the SBDefinition {sbd_id}"
+    )
+)
+def run_activity_with_kwarg(activity_name, kwarg, value, sbd_id):
+    adapter.run(activity_name, sbd_id, script_args={"main": {"kwargs": {kwarg: value}}})
 
 
 @then(

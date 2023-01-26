@@ -2,6 +2,8 @@ import os
 
 import pytest
 import requests
+from ska_oso_pdm.entities.common.sb_definition import SBDefinition
+from ska_oso_pdm.schemas import CODEC
 
 from .util import ScriptExecutionEnvironment
 
@@ -36,3 +38,10 @@ def fixture_exec_env():
     """
     exec_env = ScriptExecutionEnvironment()
     return exec_env
+
+
+@pytest.fixture
+def test_sbd() -> SBDefinition:
+    cwd, _ = os.path.split(__file__)
+    path = os.path.join(cwd, "scripts/testfile_sample_mid_sb.json")
+    return CODEC.load_from_file(SBDefinition, path)
