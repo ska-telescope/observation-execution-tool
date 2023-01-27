@@ -442,7 +442,7 @@ activity.
 
 .. code-block:: console
 
-  $ oet activity run allocate sbd-123 --script-args={"init": {"kwargs": {"foo": "bar"}}}
+  $ oet activity run allocate sbd-123 --script-args='{"init": {"kwargs": {"foo": "bar"}}}'
 
     ID  Activity    SB ID    Creation Time          Procedure ID  State
   ----  ----------  -------  -------------------  --------------  ---------
@@ -461,7 +461,7 @@ but set the ``prepare-only`` flag to True:
 
 .. code-block:: console
 
-  $ oet activity run observe sbd-123 --prepare-only=False
+  $ oet activity run observe sbd-123 --prepare-only=True
 
     ID  Activity    SB ID    Creation Time          Procedure ID  State
   ----  ----------  -------  -------------------  --------------  ---------
