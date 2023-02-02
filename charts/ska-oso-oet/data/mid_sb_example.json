@@ -59,7 +59,8 @@
           }
         }
       }
-    },
+    }
+  },
   "scan_definitions": [
     {
       "scan_definition_id": "calibrator scan",
