@@ -11,9 +11,9 @@
   },
   "activities": {
     "allocate": {
-      "procedure_type": "filesystemscript",
-      "path": "/path/to/allocatescript.py",
-      "default_args": {
+      "kind": "filesystemscript",
+      "path": "file:///path/to/allocatescript.py",
+      "function_args": {
         "init": {
           "args": [
             "posarg1",
@@ -35,12 +35,12 @@
       }
     },
     "observe": {
-      "procedure_type": "gitscript",
-      "path": "/relative/path/to/scriptinsiderepo.py",
+      "kind": "gitscript",
+      "path": "git://relative/path/to/scriptinsiderepo.py",
       "repo": "https://gitlab.com/script_repo/operational_scripts",
       "branch": "main",
       "commit": "d234c257dadd18b3edcd990b8194c6ad94fc278a",
-      "default_args": {
+      "function_args": {
         "init": {
           "args": [
             "posarg1",
