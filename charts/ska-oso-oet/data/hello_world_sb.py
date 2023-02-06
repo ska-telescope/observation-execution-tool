@@ -36,7 +36,7 @@ def _main(subarray_id: int, sb_json: str, raise_msg=None):
     LOG.info(f'Running script in OS process {os.getpid()}')
 
     LOG.info(f'Loading SB from file {sb_json}')
-    sb: SBDefinition = CODEC.loads(SBDefinition, sb_json)
+    sb: SBDefinition = CODEC.load_from_file(SBDefinition, sb_json)
     LOG.info(f'Loaded SB with ID {sb.sbd_id}')
     announce(f'Loaded SB with ID {sb.sbd_id}')
 
