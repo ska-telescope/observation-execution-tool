@@ -1,6 +1,6 @@
 {
   "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
-  "sbd_id": "sbi-mvp01-20200325-00001",
+  "sbd_id": "sbi-mvp01-20200325-00002",
   "telescope": "ska_low",
   "metadata": {
     "version": 1,
