@@ -32,7 +32,8 @@ POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 K8S_CHART_PARAMS = \
   --set ska-oso-oet.rest.oda.url=$(ODA_URI) \
   --set ska-db-oda.rest.postgres.host=$(POSTGRES_HOST) \
-  --set ska-db-oda.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST)
+  --set ska-db-oda.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST) \
+  --set ska-oso-oet.rest.oda.backendType=filesystem
 
 # If running in the CI pipeline, set the variables to point to the freshly
 # built image in the GitLab registry
