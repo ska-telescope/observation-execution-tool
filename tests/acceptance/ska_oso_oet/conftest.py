@@ -17,12 +17,13 @@ def setup():
     oet_procedures_rest_uri = f"{os.getenv('OET_REST_URI')}/procedures"
     try:
         resp = requests.get(oet_procedures_rest_uri, timeout=1.0)
-    except requests.exceptions.ConnectionError:
-        raise Exception(
+    except requests.exceptions.ConnectionError as e:
+        raise IOError(
             f"OET REST service not available at {oet_procedures_rest_uri}"
-        ) from None
+        ) from e
+
     if resp.status_code != 200:
-        raise Exception(
+        raise IOError(
             f"Invalid response from OET REST service at {oet_procedures_rest_uri}"
         )
 
