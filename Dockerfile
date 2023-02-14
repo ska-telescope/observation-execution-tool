@@ -1,6 +1,7 @@
 ARG BUILD_IMAGE="artefact.skao.int/ska-tango-images-pytango-builder:9.3.32"
 ARG BASE_IMAGE="artefact.skao.int/ska-tango-images-pytango-runtime:9.3.19"
 ARG CAR_OCI_REGISTRY_HOST=artefact.skao.int
+ARG GITLAB_PRIVATE_TOKEN=""
 
 FROM $BUILD_IMAGE AS buildenv
 FROM $BASE_IMAGE
@@ -34,9 +35,14 @@ RUN git clone -b master https://gitlab.com/ska-telescope/oso/ska-oso-scripting.g
 #RUN python3 -m pip install \
 #    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==6.0.1
 
+#RUN python3 -m pip install  \
+#    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple  \
+#    --index-url https://gitlab.com/api/v4/projects/22057734/packages/pypi/simple \
+#    ska-oso-scripting==6.1.0+dev.c49beffcb
+
 RUN python3 -m pip install  \
     --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple  \
-    --index-url https://gitlab.com/api/v4/projects/22057734/packages/pypi/simple \
+    --index-url https://${GITLAB_PRIVATE_TOKEN}gitlab.com/api/v4/projects/22057734/packages/pypi/simple \
     ska-oso-scripting==6.1.0+dev.c49beffcb
 
 # install the client into the image so it can be used in the default k8s installation
