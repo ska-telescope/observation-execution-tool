@@ -145,21 +145,23 @@
       ],
       "scan_types": [
         {
-          "beams": {
-            "vis0": {
+          "beams": [
+            {
+              "beam_id": "vis0",
               "channels_id": "vis_channels",
               "polarisations_id": "all"
             }
-          },
+          ],
           "scan_type_id": ".default"
         },
         {
           "derive_from": ".default",
-          "beams": {
-            "vis0": {
+          "beams": [
+            {
+              "beam_id": "vis0",
               "field_id": "M83"
             }
-          },
+          ],
           "scan_type_id": "target:a"
         }
       ],
