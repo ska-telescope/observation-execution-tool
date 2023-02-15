@@ -43,7 +43,7 @@ RUN git clone -b master https://gitlab.com/ska-telescope/oso/ska-oso-scripting.g
 RUN python3 -m pip install  \
     --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple  \
     --index-url https://${GITLAB_PRIVATE_TOKEN}gitlab.com/api/v4/projects/22057734/packages/pypi/simple \
-    ska-oso-scripting==6.1.0+dev.c49beffcb
+    ska-oso-scripting==6.1.0+dev.c3256b083
 
 # install the client into the image so it can be used in the default k8s installation
 RUN pip install ska-oso-oet-client==1.0.0

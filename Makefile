@@ -31,10 +31,12 @@ POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 
 K8S_CHART_PARAMS = \
   --set ska-oso-oet.rest.oda.url=$(ODA_URI) \
-  --set ska-db-oda.rest.postgres.host=$(POSTGRES_HOST) \
-  --set ska-db-oda.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST) \
-  --set ska-db-oda.rest.oda.backend.type=filesystem \
-  --set ska-db-oda.pgadmin4.enabled=false
+  --set ska-db-oda.rest.backend.type=filesystem \
+  --set ska-db-oda.pgadmin4.enabled=false \
+  --set ska-db-oda.postgresql.enabled=false
+# Set postgres and pgadmin host if postgresql and/or pgadmin4 are enabled
+#   --set ska-db-oda.rest.postgres.host=$(POSTGRES_HOST) \
+#   --set ska-db-oda.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST) \
 
 # If running in the CI pipeline, set the variables to point to the freshly
 # built image in the GitLab registry
