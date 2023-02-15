@@ -1006,7 +1006,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "ska-db-oda"
-version = "1.6.0"
+version = "1.6.1"
 description = "SKA Database OSO Data Archive"
 category = "main"
 optional = false
@@ -1254,7 +1254,7 @@ docs = []
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "87cc49dfdc252323a031889491dec15459657bb58c4ae458ed3b8fb1c5299059"
+content-hash = "8fd56f0cfea87739d503dec1345a3b4880273662e6a4e8214229d3e98df52e41"
 
 [metadata.files]
 astroid = [
@@ -2034,8 +2034,8 @@ six = [
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
 ]
 ska-db-oda = [
-    {file = "ska_db_oda-1.6.0-py3-none-any.whl", hash = "sha256:1bbb14015c78e7764676e83dfc60633ba0ee1b23f3d8892d519b37b12be1cdce"},
-    {file = "ska_db_oda-1.6.0.tar.gz", hash = "sha256:94e5421c50f2076a137b00e6c49f30660b6183cf25674cd100d77b354edd3bc7"},
+    {file = "ska_db_oda-1.6.1-py3-none-any.whl", hash = "sha256:67ccd2bf760cd5ff8e9bcdf36f189738ebbd1ad44a583834253886530f5eaa52"},
+    {file = "ska_db_oda-1.6.1.tar.gz", hash = "sha256:02683b26981c05a0eee518a56411a4a755c15dae616b9d57ca6f59ba843d1b83"},
 ]
 ska-oso-oet-client = [
     {file = "ska_oso_oet_client-1.0.0-py3-none-any.whl", hash = "sha256:c6d9b3c454c66043b1d06669d4b55ab37e5da2382d5636c5ac2d448fd5b9ea1f"},
