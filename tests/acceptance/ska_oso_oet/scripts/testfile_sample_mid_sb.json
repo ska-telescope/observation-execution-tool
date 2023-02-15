@@ -1,6 +1,6 @@
 {
   "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
-  "sbd_id": "sbi-mvp01-20200325-00012",
+  "sbd_id": "sbi-mvp01-20200325-00013",
   "telescope": "ska_mid",
   "metadata": {
     "version": 1,
@@ -393,8 +393,8 @@
   ],
   "dish_allocations": {
     "receptor_ids": [
-      "0001",
-      "0002"
+      "SKA0001",
+      "SKA0002"
     ]
   },
   "dish_configurations": [
