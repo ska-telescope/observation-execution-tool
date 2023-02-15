@@ -17,5 +17,5 @@ data:
   SUBARRAYNODE_FQDN_PREFIX: {{.Values.subarray}}
   CENTRALNODE_FQDN: {{.Values.central_node}}
   SKA_TELESCOPE: {{.Values.telescope}}
-  ODA_BACKEND_TYPE: {{ .Values.rest.oda.backendType }}
+  ODA_BACKEND_TYPE: {{ .Values.rest.oda.backend.type }}
   ODA_URI: {{ .Values.rest.oda.url }}
