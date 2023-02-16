@@ -221,7 +221,7 @@
             "frequency_slice_id": 2,
             "integration_factor": 1,
             "zoom_factor": 1,
-            "zoom_window_tuning": 650000,
+            "zoom_window_tuning": 4900000,
             "output_link_map": [[0, 0], [200, 1]]
           }
         ]
@@ -241,4 +241,3 @@
     }
   ]
 }
-
