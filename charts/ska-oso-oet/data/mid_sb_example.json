@@ -43,6 +43,22 @@
           "kwargs": {}
         }
       }
+    },
+    "helloworld": {
+      "kind": "filesystem",
+      "path": "file:///tmp/oda/hello_world_sb.py",
+      "function_args": {
+        "init": {
+          "args": [],
+          "kwargs": {
+            "subarray_id": 1
+          }
+        },
+        "main": {
+          "args": [],
+          "kwargs": {}
+        }
+      }
     }
   },
   "scan_definitions": [
