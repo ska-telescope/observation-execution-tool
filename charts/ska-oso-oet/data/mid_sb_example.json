@@ -201,10 +201,7 @@
       },
       "common": {
         "subarray_id": 1,
-        "band_5_tuning": [
-          5.85,
-          7.25
-        ]
+        "band_5_tuning": [5.85, 7.25]
       },
       "cbf": {
         "fsp": [
@@ -214,27 +211,9 @@
             "frequency_slice_id": 1,
             "integration_factor": 1,
             "zoom_factor": 0,
-            "channel_averaging_map": [
-              [
-                0,
-                2
-              ],
-              [
-                744,
-                0
-              ]
-            ],
+            "channel_averaging_map": [[0, 2], [744, 0]],
             "channel_offset": 0,
-            "output_link_map": [
-              [
-                0,
-                0
-              ],
-              [
-                200,
-                1
-              ]
-            ]
+            "output_link_map": [[0, 0], [200, 1]]
           },
           {
             "fsp_id": 2,
@@ -242,7 +221,8 @@
             "frequency_slice_id": 2,
             "integration_factor": 1,
             "zoom_factor": 1,
-            "zoom_window_tuning": 650000
+            "zoom_window_tuning": 650000,
+            "output_link_map": [[0, 0], [200, 1]]
           }
         ]
       }
