@@ -34,37 +34,35 @@ Elements and their properties
 
    * - Component
      - Description
-   * - :class:`~ska_oso_oet.procedure.domain.ActivityState`
+   * - :class:`~ska_oso_oet.procedure.application.application.ActivityState`
      - ActivityState is an enumeration defining the states that an Activity (a concept linking Scheduling Blocks
        to Procedures) can be in. State machine for activities has not yet been completely defined and currently
        Activity can only be in state ``REQUESTED``.
    * - :class:`~ska_oso_oet.procedure.application.application.ActivityService`
      - ActivityService provides the high-level API for the activity domain, presenting methods that
-       'run a script referenced by activity _X_ of scheduling block _Y_'. The ActivityService completes user requests
+       'run a script referenced by activity *X* of scheduling block *Y*'. The ActivityService completes user requests
        by translating the activity requests into Procedure domain commands which then execute the scripts.
        |br|
        |br|
        The steps taken by the ActivityService to construct a PrepareProcedureCommand are:
 
-        #. retrieve the Scheduling Block by ID from ODA using the ODA client library
-        #. write Scheduling Block to a JSON file `/tmp/sbs/<sb_id>-<version>-<timestamp>.json`
-        #. convert PDM FileSystemScript object referenced by given SB and activity to OET FileSystemScript
-        #. create a collection of init and run arguments by combining user defined functions arguments with arguments listed in the SB
+        #. retrieve the Scheduling Block by ID from the ODA using the ODA client library
+        #. write Scheduling Block to a JSON file as `/tmp/sbs/<sb_id>-<version>-<timestamp>.json`
+        #. convert PDM FileSystemScript object referenced by the given SB and activity to OET FileSystemScript
+        #. create a collection of init and run arguments by combining user-defined functions arguments with arguments listed in the SB
         #. add the path to previously written SB JSON file to the run function arguments under key `sb_json`
         #. create PrepareProcessCommand using the FileSystemScript object and arguments for `init` function from the collection of function arguments
-
        |br|
-       |br|
-
        After the prepare command has been sent, it will wait for a response to record the procedure ID of the
        script relating to the activity. If `prepare_only` argument is set to false, ActivityService will create
        a StartProcessCommand and send it to the ScriptExecutionServiceWorker. It will include the Procedure ID,
        and request that function named `run` will be executed with the corresponding arguments.
-   * - :class:`~ska_oso_oet.procedure.domain.ActivityWorker`
-     - For a the OET REST deployment, ActivityWorker is the client sending requests to the ActivityService
+   * - :class:`~ska_oso_oet.procedure.application.main.ActivityServiceWorker`
+     - For a the OET REST deployment, ActivityServiceWorker is the client sending requests to the ActivityService.
        |br|
        |br|
-       ActivityWorker responds to requests received by the FlaskWorker, relaying the request to the ActivityService
+       ActivityWorker responds to requests received by the FlaskWorker, relaying the request to the
+       :class:`~ska_oso_oet.procedure.application.application.ActivityService`
        and publishing the response as an event that can be received by the FlaskWorker and returned to the user in the
        appropriate format.
 
@@ -73,8 +71,7 @@ Element Interfaces
 ------------------
 
 The major public interface in these interactions is the ActivityService API. For more information on this
-interface, please see the API documentation for
-:py:class:`~ska_oso_oet.procedure.application.application.ActivityService`.
+interface, please see the :doc:`architecture_module_rest_api`.
 
 Element Behaviour
 -----------------
@@ -99,8 +96,6 @@ The Activity domain uses the same publish-subscribe system as Procedure domain f
 FlaskWorker and ActivityServiceWorker and for the ActivityService to communicate with the ScriptExecutionServiceWorker.
 For a diagram illustrating the flow of in-process pypubsub messages, see the :ref:`Inter-process publish-subscribe section <architecture_backend_module_script_exec_ui_pubsub>`
 in the script execution API documentation.
-
-|br|
 
 Variability Guide
 =================
