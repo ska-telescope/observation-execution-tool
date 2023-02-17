@@ -1,3 +1,4 @@
+import logging
 import logging.config
 import logging.handlers
 import multiprocessing
@@ -8,6 +9,7 @@ from typing import List
 
 import waitress
 from pubsub import pub
+from ska_ser_logging import configure_logging
 
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import (
@@ -20,7 +22,10 @@ from ska_oso_oet.mptools import (
 )
 from ska_oso_oet.procedure.application import restserver
 from ska_oso_oet.procedure.application.application import (
+    ActivityCommand,
+    ActivityService,
     PrepareProcessCommand,
+    ProcedureSummary,
     ScriptExecutionService,
     StartProcessCommand,
     StopProcessCommand,
@@ -48,14 +53,12 @@ class EventBusWorker(QueueProcWorker):
         :param kwargs: any metadata associated with pypubsub message
         :return:
         """
-        # avoid infinite loop - do not republish external events
-        try:
-            msg_src = kwargs.pop("msg_src")
-        except KeyError:
-            # No message source = virgin event published on pypubsub
+        # No message source = virgin event published on pypubsub
+        if (msg_src := kwargs.pop("msg_src", self.name)) is None:
             msg_src = self.name
 
-        # ... but if this is a local message (message source = us), send it
+        # To avoid an infinite loop, do not republish external events.
+        # Only local messages (message source = this process), are sent
         # out to the main queue and hence on to other EventBusWorkers
         if msg_src == self.name:
             # Convert pypubsub event to the equivalent mptools EventMessage
@@ -335,6 +338,129 @@ class ScriptExecutionServiceWorker(EventBusWorker):
         super().shutdown()
 
 
+class ActivityServiceWorker(EventBusWorker):
+    """
+    ActivityServiceWorker listens for user request messages, calling the
+    appropriate ActivityService function and broadcasting its response.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        startup_event: multiprocessing.Event,
+        shutdown_event: multiprocessing.Event,
+        event_q: MPQueue,
+        work_q: MPQueue,
+        mp_context: multiprocessing.context.BaseContext,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(
+            name, startup_event, shutdown_event, event_q, work_q, *args, **kwargs
+        )
+        self._mp_context = mp_context
+
+    def startup(self) -> None:
+        super().startup()
+
+        # self.activity_service can't be created in __init__ as we want the service to belong to
+        # the child process, not the spawning process
+        self.activity_service = (  # pylint: disable=attribute-defined-outside-init
+            ActivityService()
+        )
+
+        # wire up topics to the corresponding ActivityService methods
+        pub.subscribe(self.list, topics.request.activity.list)
+        pub.subscribe(self.prepare, topics.request.activity.run)
+        pub.subscribe(self.complete, topics.procedure.lifecycle.created)
+
+    def shutdown(self) -> None:
+        pub.unsubscribe(self.list, pub.ALL_TOPICS)
+
+        # TODO ActivityService doesn't have same shutdown method SES does?
+        super().shutdown()
+
+    def list(
+        self,
+        # msg_src MUST be part of method signature for pypubsub to function
+        msg_src,  # pylint: disable=unused-argument
+        request_id: int,
+        activity_ids=None,
+    ):
+        self.log(logging.DEBUG, "List activities for request %s", request_id)
+        try:
+            summaries = self.activity_service.summarise(activity_ids)
+        except ValueError:
+            # ValueError raised when Activity ID not found.
+            summaries = []
+
+        self.log(logging.DEBUG, "Activity List result: %s", summaries)
+        self.send_message(
+            topics.activity.pool.list, request_id=request_id, result=summaries
+        )
+
+    def prepare(
+        self,
+        # msg_src MUST be part of method signature for pypubsub to function
+        msg_src,  # pylint: disable=unused-argument
+        request_id: int,
+        cmd: ActivityCommand,
+    ):
+        try:
+            self.log(
+                logging.DEBUG, "Preparing activity for request %s: %s", request_id, cmd
+            )
+            self.activity_service.prepare_run_activity(cmd, request_id)
+        except Exception as e:  # pylint: disable=broad-except
+            self.log(
+                logging.ERROR,
+                "Preparing activity for request %s failed: %s",
+                request_id,
+                e,
+            )
+            # TODO create failure topic for failures in activity domain
+            self.send_message(
+                topics.activity.lifecycle.running, request_id=request_id, result=e
+            )
+
+    def complete(
+        self,
+        # msg_src MUST be part of method signature for pypubsub to function
+        msg_src,  # pylint: disable=unused-argument
+        request_id: int,
+        result: ProcedureSummary,
+    ):
+        try:
+            self.log(
+                logging.DEBUG,
+                "Starting activity for request %s: %s",
+                request_id,
+                result,
+            )
+            summary = self.activity_service.complete_run_activity(result, request_id)
+        except Exception as e:  # pylint: disable=broad-except
+            self.log(
+                logging.ERROR,
+                "Starting activity for request %s failed: %s",
+                request_id,
+                e,
+            )
+            # TODO create failure topic for failures in activity domain
+            self.send_message(
+                topics.activity.lifecycle.running, request_id=request_id, result=e
+            )
+        else:
+            if summary is not None:
+                self.log(
+                    logging.DEBUG, "Activity request %s result: %s", request_id, summary
+                )
+                self.send_message(
+                    topics.activity.lifecycle.running,
+                    request_id=request_id,
+                    result=summary,
+                )
+
+
 def main(mp_ctx: multiprocessing.context.BaseContext):
     """
     Create the OET components and start an event loop that dispatches messages
@@ -354,20 +480,25 @@ def main(mp_ctx: multiprocessing.context.BaseContext):
         )
 
         # create our message queues:
-        # manager_q is the message queue for messages from the ScriptExecutionWorker
+        # script_executor_q is the message queue for messages from the ScriptExecutionServiceWorker
+        # activity_q is the message queue for messages from the ActivityServiceWorker
         # flask_q is the queue for messages intended for the FlaskWorker process
         script_executor_q = main_ctx.MPQueue()
+        activity_q = main_ctx.MPQueue()
         flask_q = main_ctx.MPQueue()
 
         # event bus messages received on the event_queue (the main queue that
         # child processes push to and which the while loop below listens to)
         # will be pushed onto the queues in this list
-        event_bus_queues = [script_executor_q, flask_q]
+        event_bus_queues = [script_executor_q, activity_q, flask_q]
 
         # create the OET components, which will run in child Python processes
         # and monitor the message queues here for event bus messages
         main_ctx.Proc(
             "SESWorker", ScriptExecutionServiceWorker, script_executor_q, mp_ctx
+        )
+        main_ctx.Proc(
+            "ActivityServiceWorker", ActivityServiceWorker, activity_q, mp_ctx
         )
         main_ctx.Proc("FlaskWorker", FlaskWorker, flask_q)
 
@@ -404,5 +535,6 @@ def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
 
 
 if __name__ == "__main__":
+    configure_logging(os.getenv("LOG_LEVEL", "INFO"))
     mp = multiprocessing.get_context("fork")
     main(mp)

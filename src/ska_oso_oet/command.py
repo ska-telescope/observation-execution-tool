@@ -137,7 +137,11 @@ class TangoExecutor:  # pylint: disable=too-few-public-methods
             :return: subscription identifier
             """
             if self._subscribed:
-                raise Exception(f"Multiple subscriptions not allowed: {attr}")
+                # TypeError seems the most appropriate base exception: 'this
+                # exception may be raised by user code to indicate that an
+                # attempted operation on an object is not supported, and is
+                # not meant to be.'
+                raise TypeError(f"Multiple subscriptions not allowed: {attr}")
 
             LOGGER.debug("Observing %s/%s", attr.device, attr.name)
             self._subscription_manager.register_observer(attr, self)

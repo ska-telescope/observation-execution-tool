@@ -1,12 +1,13 @@
-.. _architecture_backend_module_ui:
+.. _architecture_backend_module_script_exec_ui:
 
-*******************************
-Module view: UI and Service API
-*******************************
+************************************************
+Module view: Script Execution UI and Service API
+************************************************
 
 .. note::
     Diagrams are embedded as SVG images. If the text is too small, please use your web browser to zoom in to the images,
-    which should be magnified without losing detail.
+    which should be magnified without losing detail. Alternatively open image in a new tab with right click + Open in
+    a new tab.
 
 This view is a module view showing the key components responsible for the OET interface, how they relay requests from
 remote OET clients to the internal OET components responsible for meeting that request, and how the response makes
@@ -15,7 +16,7 @@ its way back to the client.
 Primary Presentation
 ====================
 
-.. figure:: diagrams/export/backend_module_ui_primary.svg
+.. figure:: diagrams/export/backend_module_ui_primary_script_exec.svg
    :align: center
 
    Major classes involved in the user interface and remote control of the script execution API.
@@ -138,6 +139,8 @@ hosting the ScriptExecutionService instance, and how the response is returned to
    :align: center
 
 |br|
+
+.. _architecture_backend_module_script_exec_ui_pubsub:
 
 Inter-process publish-subscribe
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

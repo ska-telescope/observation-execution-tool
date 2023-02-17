@@ -13,7 +13,7 @@ name = 'ska-nexus'
 url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.10"
 ska-oso-oet = "*"
 emoji = "^1.7.0"
 

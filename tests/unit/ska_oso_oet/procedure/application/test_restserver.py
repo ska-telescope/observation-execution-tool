@@ -19,6 +19,8 @@ from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.application import restserver
 from ska_oso_oet.procedure.application.application import (
+    ActivityCommand,
+    ActivityState,
     ActivitySummary,
     ArgCapture,
     PrepareProcessCommand,
@@ -141,7 +143,7 @@ RUN_SUMMARY = ProcedureSummary(
 ACTIVITY_REQUEST = {
     "sbd_id": "sbi-001",
     "activity_name": "allocate",
-    "arg_override": None,
+    "script_args": {"main": {"args": [1], "kwargs": {"subarray_id": "42"}}},
     "prepare_only": False,
 }
 
@@ -151,7 +153,8 @@ ACTIVITY_SUMMARY = ActivitySummary(
     sbd_id="sbd-mvp01-20220923-00001",
     activity_name="allocate",
     prepare_only=False,
-    arg_override={},
+    script_args={},
+    activity_states=[(ActivityState.TODO, 123)],
 )
 
 # resource partial URL for testing procedure execution with above JSON
@@ -298,7 +301,7 @@ def assert_json_equal_to_activity_summary(summary: ActivitySummary, summary_json
     :param summary_json: JSON for the ProcedureSummary
     """
     assert summary_json["uri"] == f"http://localhost/{ACTIVITIES_ENDPOINT}/{summary.id}"
-    assert summary_json["pid"] == summary.pid
+    assert summary_json["procedure_id"] == summary.pid
     assert summary_json["sbd_id"] == summary.sbd_id
     assert summary_json["activity_name"] == summary.activity_name
     assert summary_json["prepare_only"] == summary.prepare_only
@@ -972,10 +975,10 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
         time.sleep(0.1)
         for i in range(10):
             pub.sendMessage(
-                topics.procedure.pool.list, msg_src="mock", request_id="foo", result=i
+                topics.procedure.pool.list, msg_src="mock", request_id=123, result=i
             )
         pub.sendMessage(
-            topics.procedure.pool.list, msg_src="mock", request_id="bar", result="ok"
+            topics.procedure.pool.list, msg_src="mock", request_id=456, result="ok"
         )
 
     t = threading.Thread(target=publish)
@@ -985,8 +988,8 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
         app.config = dict(msg_src="mock")
 
         # this sets the request ID to match to 'bar'
-        with mock.patch("time.time") as mock_time:
-            mock_time.return_value = "bar"
+        with mock.patch("time.time_ns") as mock_time:
+            mock_time.return_value = 456
 
             t.start()
             result = restserver.call_and_respond(
@@ -1234,7 +1237,7 @@ def test_successful_post_to_activities_endpoint_returns_ok_http_status(client):
     _ = PubSubHelper(spec)
 
     response = client.post(ACTIVITIES_ENDPOINT, json=ACTIVITY_REQUEST)
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.CREATED
 
 
 def test_successful_post_to_activities_endpoint_returns_summary_in_response(client):
@@ -1247,10 +1250,16 @@ def test_successful_post_to_activities_endpoint_returns_summary_in_response(clie
             ([topics.activity.lifecycle.running], dict(result=ACTIVITY_SUMMARY))
         ],
     }
-    _ = PubSubHelper(spec)
+    helper = PubSubHelper(spec)
 
     response = client.post(ACTIVITIES_ENDPOINT, json=ACTIVITY_REQUEST)
     response_json = response.get_json()
+
+    cmd: ActivityCommand = helper.messages_on_topic(topics.request.activity.run)[0][
+        "cmd"
+    ]
+
+    assert cmd.script_args == {"main": ProcedureInput(1, subarray_id="42")}
 
     assert "activity" in response_json
     procedure_json = response_json["activity"]

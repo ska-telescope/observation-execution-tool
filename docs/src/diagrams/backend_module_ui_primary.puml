@@ -1,7 +1,16 @@
 @startuml
 'https://plantuml.com/class-diagram
 
-package ska_oso_oet.procedure {
+package ska_oso_oet {
+
+    skinparam noteFontSize<<not_implemented_note>> 50
+
+    note as not_implemented_note
+    **Note**
+    This diagram represents a proposed refactoring
+    of the current ska_oso_oet project structure and
+    has not yet been implemented.
+    end note
 
     package mptools <<Rectangle>> {
         note as mptools_note
@@ -12,130 +21,102 @@ package ska_oso_oet.procedure {
         end note
     }
 
-    package application as application_pkg {
+    package main <<Rectangle>> {
 
-        package restclient <<Rectangle>> {
-            class RestClientUI {
-                create(...)
-                start(...)
-                stop(...)
-                list(...)
-                describe(...)
-                listen(...)
+        class ScriptExecutionServiceWorker {
+            prepare(...)
+            start(...)
+            stop(...)
+            list(...)
+        }
+
+        class ActivityWorker {
+            run(...)
+            list(...)
+        }
+
+        class FlaskWorker {
+        }
+
+        class EventBusWorker {
+            republish(...)
+        }
+
+        class main_func <<function>>
+
+        ScriptExecutionServiceWorker -up-|> EventBusWorker
+        FlaskWorker -up-|> EventBusWorker
+        ActivityWorker -up-|> EventBusWorker
+    }
+
+    package app <<Rectangle>> {
+        class create_app <<function>>
+        class ServerSentEventsAPI
+
+        note as app_note
+        create_app function will
+        create a Flask application
+        using ProcedureAPI, ActivityAPI
+        and ServerSentEventsAPI
+        blueprints.
+        end note
+
+        app_note -left- create_app
+    }
+
+    FlaskWorker *-- create_app
+
+    package procedure {
+
+        package procedure.application <<Rectangle>> {
+
+            package procedure.application.api <<Rectangle>> {
+                class ProcedureAPI
+            }
+
+            package procedure.application.service <<Rectangle>> {
+                class ScriptExecutionService
             }
         }
 
-        package main <<Rectangle>> {
-            class ScriptExecutionServiceWorker {
-                prepare(...)
-                start(...)
-                stop(...)
-                list(...)
-            }
-
-            class FlaskWorker {
-            }
-
-            class EventBusWorker {
-                main_loop(...)
-                main_func(...)
-                republish(...)
-            }
-
-            ScriptExecutionServiceWorker --|> EventBusWorker
-            FlaskWorker --|> EventBusWorker
+        package procedure.domain <<Rectangle>> {
         }
-
-        package restserver <<Rectangle>> {
-            class app <<function return value>> {
-            }
-
-            class API
-
-            class ServerSentEventsBlueprint
-
-            app o-- API
-            app o-- ServerSentEventsBlueprint
-        }
-
-        package application <<Rectangle>> {
-            note as N1
-            See the Script Execution module
-            view for information on objects
-            from the ""domain"" Python module
-            that are held as class properties
-            of some of the classes in the
-            ""application"" package.
-            end note
-
-            class ScriptExecutionService {
-                prepare(cmd: PrepareProcessCommand) -> ProcedureSummary
-                start(cmd: StartProcessCommand) -> ProcedureSummary
-                stop(cmd: StopProcessCommand) -> List[ProcedureSummary]
-                summarise(pids: List[int]) -> List[[ProcedureSummary]
-            }
-
-            class ProcedureSummary {
-                id: int
-                script: domain.ExecutableScript
-                script_args: ...
-                state: domain.ProcedureState
-            }
-
-            class ProcedureHistory {
-                {field} process_states: List[(ProcedureState, time)]
-                stacktrace: Optional[str]
-            }
-            ProcedureSummary --> ProcedureHistory
-
-            together {
-            class PrepareProcessCommand {
-                script: domain.ExecutableScript
-                init_args: domain.ProcedureInput
-            }
-
-            class StartProcessCommand {
-                process_uid: int
-                fn_name: str
-                run_args: domain.ProcedureInput
-            }
-
-            class StopProcessCommand {
-                process_uid: int
-                run_abort: bool
-            }
-            }
-            PrepareProcessCommand -[hidden]- StartProcessCommand
-            StartProcessCommand -[hidden]- StopProcessCommand
-        }
-        FlaskWorker *-- app
         ScriptExecutionServiceWorker --> ScriptExecutionService
 
+    }
+
+    package activity {
+        package activity.application <<Rectangle>> {
+            package activity.application.api {
+                class ActivityAPI
+            }
+
+            package activity.application.service {
+                class ActivityService
+            }
+        }
+
+        package activity.domain <<Rectangle>> {
+
+        }
+        ActivityWorker --> ActivityService
     }
 }
 
 package flask {
     class Flask
     class Blueprint
-
-    Flask -down[hidden]- Blueprint
 }
 
-app -|> Flask
-API -|> Blueprint
-ServerSentEventsBlueprint --|> Blueprint
+create_app -|> Flask
+ServerSentEventsAPI --|> Blueprint
+ActivityAPI --|> Blueprint
+ProcedureAPI --|> Blueprint
 
-package pypubsub {
-}
-ska_oso_oet.procedure -[dashed]-> pypubsub: uses
-
-main -down[hidden]--> application
-restserver -left[hidden]--> application
-restserver -right[hidden]--> flask
-FlaskWorker -down[hidden]--> restserver
-ScriptExecutionService -down[hidden]- ProcedureSummary
-ScriptExecutionService -down[hidden]- PrepareProcessCommand
-PrepareProcessCommand -right[hidden]- ProcedureSummary
 EventBusWorker -[dotted]- mptools: uses
+
+procedure.application.service -down[hidden]- procedure.application.api
+activity.application.service -down[hidden]- activity.application.api
+create_app -down[hidden]- ServerSentEventsAPI
 
 @enduml

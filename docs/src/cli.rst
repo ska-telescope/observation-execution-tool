@@ -146,12 +146,12 @@ The commands available via ``oet procedure`` are described below.
 |                +------------+---------------------------------------------------------+ prepare it for execution.           |
 |                | args       | None                                                    |                                     |
 |                +------------+---------------------------------------------------------+ Arguments provided here are passed  |
-|                | kwargs     | --subarray_id=1                                         | to the script init function, if     |
-|                |            | --git_repo=                                             | defined                             |
+|                | kwargs     | \-\-subarray_id=1                                       | to the script init function, if     |
+|                |            | \-\-git_repo=                                           | defined                             |
 |                |            | "http://gitlab.com/ska-telescope/oso/ska-oso-scripting" |                                     |
-|                |            | --git_branch="master"                                   | OET maintains record of 10 newest   |
-|                |            | --git_commit=None                                       | scripts which means creating 11th   |
-|                |            | --create_env=False                                      | script will remove the oldest       |
+|                |            | \-\-git_branch="master"                                 | OET maintains record of 10 newest   |
+|                |            | \-\-git_commit=None                                     | scripts which means creating 11th   |
+|                |            | \-\-create_env=False                                    | script will remove the oldest       |
 |                |            |                                                         | script from the record.             |
 +----------------+------------+---------------------------------------------------------+-------------------------------------+
 | list           | server-url | See `Configuration`_ section                            | **List procedures**                 |
@@ -397,12 +397,13 @@ The commands available via ``oet activity`` are described below.
 |                | sbd-id        | None                                                    | The activity-name and sbd-id are    |
 |                +---------------+---------------------------------------------------------+ mandatory arguments. script-args is |
 |                | script-args   | None                                                    | a dictionary defining function name |
-+                +---------------+---------------------------------------------------------+ as a key (e.g. 'init') and any args |
-|                | prepare-only  | False                                                   | and kwargs to be passed for the     |
-+                +---------------+---------------------------------------------------------+ function on top of arguments present|
-|                | create-env    | False                                                   | in the SB.                          |
-|                +---------------+---------------------------------------------------------+                                     |
-|                | listen        | True                                                    | preparep-only should be set to False|
+|                +---------------+---------------------------------------------------------+ as a key (e.g. 'init') and any      |
+|                | prepare-only  | False                                                   | keyword arguments to be passed for  |
+|                +---------------+---------------------------------------------------------+ the function on top of arguments    |
+|                | create-env    | False                                                   | present in the SB. Only keyword args|
+|                +---------------+---------------------------------------------------------+ are currently allowed.              |
+|                | listen        | True                                                    |                                     |
+|                |               |                                                         | preparep-only should be set to False|
 |                |               |                                                         | if the script referred to by SB and |
 |                |               |                                                         | activity is not to be run yet. To   |
 |                |               |                                                         | start a prepared script, use the    |
@@ -433,26 +434,34 @@ Examples
 ~~~~~~~~
 
 This section runs through an example session in which we will
-run an activity with arguments to the script. Then we will prepare
-an activity without executing it and use the ``oet procedure``
-commands to run the prepared activity.
+run an activity with arguments to the script. We will also demonstrate
+the more advanced use of controlling activity execution with additional
+``oet procedure`` commands. For this we will prepare an activity without
+executing it and use the ``oet procedure`` commands to run the prepared
+activity.
 
 .. code-block:: console
 
-  $ oet activity run allocate sbd-123 --script-args={"init": {"args": [1, "foo"], "kwargs": {"foo": "bar"}}}
+  $ oet activity run allocate sbd-123 --script-args='{"init": {"kwargs": {"foo": "bar"}}}'
 
     ID  Activity    SB ID    Creation Time          Procedure ID  State
   ----  ----------  -------  -------------------  --------------  ---------
      1  allocate    sbd-123  2023-01-06 13:56:47               1  REQUESTED
 
-Note the use of both positional and keyword/value arguments for the
-script arguments that will be passed as arguments when each function
-in the script is run. Now run a second activity but set the ``prepare-only``
-flag to True:
+Note the use of keyword arguments for the script arguments. These will be
+passed as arguments when each function in the script is run. If the given
+keyword argument is already defined in the Scheduling Block, the value
+will be overwritten with the user provided one.
+
+The activity has now been started and will complete without any further
+interaction from the user.
+
+For an example of more advanced use of the activity interface, run an activity
+but set the ``prepare-only`` flag to True:
 
 .. code-block:: console
 
-  $ oet activity run observe sbd-123 --prepare-only=False
+  $ oet activity run observe sbd-123 --prepare-only=True
 
     ID  Activity    SB ID    Creation Time          Procedure ID  State
   ----  ----------  -------  -------------------  --------------  ---------

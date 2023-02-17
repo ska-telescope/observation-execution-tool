@@ -4,11 +4,11 @@ import subprocess
 import time
 import typing
 
-from ska_oso_oet_client.restclient import RestAdapter
+from ska_oso_oet_client.procedureclient import ProcedureAdapter
 
 LOGGER = logging.getLogger(__name__)
 
-REST_ADAPTER = RestAdapter(os.getenv("OET_REST_URI"))
+PROCEDURE_ADAPTER = ProcedureAdapter(f"{os.getenv('OET_REST_URI')}/procedures")
 
 
 if typing.TYPE_CHECKING:
@@ -37,7 +37,7 @@ class ScriptExecutionEnvironment:
 
     def create(self, script_uri: str):
         LOGGER.debug("Setting script ID for script: %s", script_uri)
-        summary: "ProcedureSummary" = REST_ADAPTER.create(
+        summary: "ProcedureSummary" = PROCEDURE_ADAPTER.create(
             script_uri=script_uri, init_args={"kwargs": {"subarray_id": 1}}
         )
         self.script_uri = summary.script["script_uri"]
@@ -54,7 +54,7 @@ class ScriptExecutionEnvironment:
             args.append(f"--pid={self.script_id}")
         LOGGER.debug("Executing OET command '%s' with args %s", cmd, args)
         result = subprocess.run(
-            ["oet", cmd, *args],
+            ["oet", "procedure", cmd, *args],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             check=False,
@@ -85,11 +85,12 @@ class ScriptExecutionEnvironment:
         raise ScriptExecutionError(msg)
 
     def get_script_state(self):
-        task = self._update_script()
-        return task.state
+        """
+        :return: the state of the latest script, eg COMPLETE
+        :raises: ScriptExecutionError if there are no scripts in any state
+        """
+        tasks = PROCEDURE_ADAPTER.list(self.script_id)
+        if tasks:
+            return tasks[-1].state
 
-    def _update_script(self):
-        task = REST_ADAPTER.list(self.script_id)
-        if task:
-            return task[0]
-        return None
+        raise ScriptExecutionError("No scripts currently known to the OET")

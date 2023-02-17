@@ -1,6 +1,7 @@
 ARG BUILD_IMAGE="artefact.skao.int/ska-tango-images-pytango-builder:9.3.32"
 ARG BASE_IMAGE="artefact.skao.int/ska-tango-images-pytango-runtime:9.3.19"
 ARG CAR_OCI_REGISTRY_HOST=artefact.skao.int
+ARG GITLAB_PRIVATE_TOKEN=""
 
 FROM $BUILD_IMAGE AS buildenv
 FROM $BASE_IMAGE
@@ -32,13 +33,22 @@ RUN git clone -b master https://gitlab.com/ska-telescope/oso/ska-oso-scripting.g
 # default control scripts. This is done as root so that the default environment
 # is installed to system dist-packages.
 RUN python3 -m pip install \
-    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==4.5.3
+    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==7.0.0
+
+## To build OET with an unreleased version of scripting for testing purposes, use the following
+#RUN python3 -m pip install  \
+#    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple  \
+#    --index-url https://${GITLAB_PRIVATE_TOKEN}gitlab.com/api/v4/projects/22057734/packages/pypi/simple \
+#    ska-oso-scripting==6.1.0+dev.c580f9d62
 
 # install the client into the image so it can be used in the default k8s installation
-RUN pip install ska-oso-oet-client==0.1.0
+RUN pip install ska-oso-oet-client==1.0.0
 
 # link default script location to a shorter path to make CLI interactions easier
 RUN ln -s /usr/local/lib/python3.10/dist-packages/scripts /scripts
+
+# Create the location for the Activity domain to store SBs
+RUN mkdir -p /tmp/sbs && chown -R tango /tmp/sbs
 
 USER tango
 

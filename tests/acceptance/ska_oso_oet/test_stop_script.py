@@ -21,5 +21,5 @@ def run_stop_command(exec_env):
 
 @then(parsers.parse("the script {file} status is STOPPED"))
 def error_returned(exec_env):
-    state = exec_env.get_script_state()
-    assert state == "STOPPED"
+    final_state = exec_env.wait_for_state("STOPPED")
+    assert final_state == "STOPPED"

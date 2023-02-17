@@ -18,10 +18,10 @@ variables:
 # It is also specified that only the master branch will be subject of this job.
 
 stages:
-  - lint
   - build
   - test
   - cleanup
+  - lint
   - publish
   - pages
   - scan
@@ -44,16 +44,6 @@ test-chart-templates:
       - "build/"
     reports:
       junit: build/reports/chart_template_tests.xml
-
-k8s-test-cleanup:
-    stage: cleanup
-    needs: ["k8s-test"]
-    variables:
-      KUBE_NAMESPACE: 'ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA'
-    script:
-      - make k8s-uninstall-chart
-      - make k8s-delete-namespace
-    when: always
 
 
 include:

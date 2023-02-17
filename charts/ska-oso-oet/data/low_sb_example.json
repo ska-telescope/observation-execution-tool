@@ -1,19 +1,17 @@
 {
   "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
-  "sbd_id": "sbi-mvp01-20200325-00001",
+  "sbd_id": "sbi-mvp01-20200325-00002",
   "telescope": "ska_low",
   "metadata": {
     "version": 1,
     "created_by": "Liz Bartlett",
-    "created_on": "2022-03-28T15:43:53.971548",
-    "last_modified_by": null,
-    "last_modified_on": null
+    "created_on": "2022-03-28T15:43:53.971548+00:00"
   },
   "activities": {
     "allocate": {
-      "procedure_type": "filesystemscript",
+      "kind": "filesystem",
       "path": "/path/to/allocatescript.py",
-      "default_args": {
+      "function_args": {
         "init": {
           "args": [
             "posarg1",
@@ -23,7 +21,7 @@
             "argname": "argval"
           }
         },
-        "run": {
+        "main": {
           "args": [
             "posarg1",
             "posarg2"
@@ -35,12 +33,12 @@
       }
     },
     "observe": {
-      "procedure_type": "gitscript",
+      "kind": "git",
       "path": "/relative/path/to/scriptinsiderepo.py",
       "repo": "https://gitlab.com/script_repo/operational_scripts",
       "branch": "main",
       "commit": "d234c257dadd18b3edcd990b8194c6ad94fc278a",
-      "default_args": {
+      "function_args": {
         "init": {
           "args": [
             "posarg1",
@@ -50,7 +48,7 @@
             "argname": "argval"
           }
         },
-        "run": {
+        "main": {
           "args": [
             "posarg1",
             "posarg2"
@@ -62,111 +60,64 @@
       }
     }
   },
-  "scan_definitions": [
+  "targets": [
     {
-      "scan_definition_id": "sbi-mvp01-20220328-00001",
-      "scan_duration": 64000,
-      "target_beam_configurations": [
-        "target #1 with beam A config 1"
-      ],
-      "field_configuration": "target field"
-    },
-    {
-      "scan_definition_id": "sbi-mvp01-20220328-00002",
-      "scan_duration": 64000,
-      "target_beam_configurations": [
-        "target #2 with beam A config 1"
-      ],
-      "field_configuration": "target field"
+      "target_id": "target #1",
+      "pointing_pattern": {
+        "active": "SinglePointParameters",
+        "parameters": [
+          {
+            "kind": "SinglePointParameters",
+            "offset_x_arcsec": 0.0,
+            "offset_y_arcsec": 0.0
+          }
+        ]
+      },
+      "reference_coordinate": {
+        "kind": "horizontal",
+        "az": 180.0,
+        "el": 45.0,
+        "reference_frame": "ALTAZ",
+        "unit": ["deg"]
+      }
     }
   ],
-  "scan_sequence": [
-    "sbi-mvp01-20220328-00001",
-    "sbi-mvp01-20220328-00002",
-    "sbi-mvp01-20220328-00002",
-    "sbi-mvp01-20220328-00001"
-  ],
-  "field_configurations": [
-    {
-      "field_id": "target field",
-      "targets": [
-        {
-          "target_id": "target #1",
-          "kind": "driftscan",
-          "target_name": "Drift scan at 45 degs",
-          "reference_frame": "HORIZON",
-          "az": 180.0,
-          "el": 45.0
-        },
-        {
-          "target_id": "target #2",
-          "kind": "driftscan",
-          "target_name": "Drift scan at 85 degs",
-          "reference_frame": "HORIZON",
-          "az": 180.0,
-          "el": 85.0
-        }
-      ]
-    }
-  ],
-  "dish_configurations": [],
-  "dish_allocations": null,
   "mccs_allocation": {
-    "subarray_beam_ids": [
-      "beam A"
-    ],
-    "station_ids": [
-      [
-        1,
-        2
-      ]
-    ],
-    "channel_blocks": [
-      1
-    ]
+    "subarray_beam_ids": ["beam A"],
+    "station_ids": [[1, 2]],
+    "channel_blocks": [1]
   },
-  "target_beam_configurations": [
-    {
-      "target_beam_id": "target #1 with beam A config 1",
-      "target": "target #1",
-      "subarray_beam_configuration": "beam A config 1"
-    },
-    {
-      "target_beam_id": "target #2 with beam A config 1",
-      "target": "target #2",
-      "subarray_beam_configuration": "beam A config 1"
-    }
-  ],
-  "csp_configurations": [],
-  "sdp_configuration": null,
   "subarray_beam_configurations": [
     {
       "subarray_beam_configuration_id": "beam A config 1",
       "subarray_beam_id": "beam A",
       "update_rate": 0.0,
-      "antenna_weights": [
-        1.0,
-        1.0,
-        1.0
-      ],
-      "phase_centre": [
-        0.0,
-        0.0
-      ],
+      "antenna_weights": [1.0, 1.0, 1.0],
+      "phase_centre": [0.0, 0.0],
       "channels": [
-        [
-          0,
-          8,
-          1,
-          1
-        ],
-        [
-          8,
-          8,
-          2,
-          1
-        ]
+        [0, 8, 1, 1]
       ]
     }
+  ],
+  "target_beam_configurations": [
+    {
+      "target_beam_id": "target #1 with beam A config 1",
+      "target": "target #1",
+      "subarray_beam_configuration": "beam A config 1"
+    }
+  ],
+  "scan_definitions": [
+    {
+      "scan_definition_id": "sbi-mvp01-20220328-00001",
+      "scan_duration": 12800,
+      "target_beam_configurations": [
+        "target #1 with beam A config 1"
+      ],
+      "target": "target #1"
+    }
+  ],
+  "scan_sequence": [
+    "sbi-mvp01-20220328-00001",
+    "sbi-mvp01-20220328-00001"
   ]
 }

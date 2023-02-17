@@ -1,0 +1,94 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+package ska_oso_oet.procedure {
+
+package application as application_pkg {
+
+    package main <<Rectangle>> {
+
+        class ActivityWorker {
+            run(...)
+        }
+
+        class FlaskWorker {
+        }
+
+        class EventBusWorker {
+            main_loop(...)
+            main_func(...)
+            republish(...)
+        }
+
+        ActivityWorker -up-|> EventBusWorker
+        FlaskWorker -up-|> EventBusWorker
+    }
+
+    package restserver <<Rectangle>> {
+        class app <<function return value>> {
+        }
+
+        class ActivityAPIBlueprint
+
+        app o-- ActivityAPIBlueprint
+    }
+
+    package application <<Rectangle>> {
+
+        class ActivityService {
+            history: List[ActivitySummary]
+
+            run(cmd: ActivityCommand) -> ActivitySummary
+        }
+
+        class ActivitySummary {
+            activity_id: int
+            procedure_id: int
+            sbd_id: str
+            activity_name: str
+            prepare_only: bool
+            arg_override: List[ArgCapture]
+            activity_states: List[(ActivityState, timestamp)]
+        }
+
+        class ArgCapture {
+            fn: str
+            fn_args: domain.ProcedureInput
+            time: float
+        }
+        ActivitySummary -right-|> ArgCapture
+
+        class ActivityCommand {
+            sbd_id: str
+            activity_name: str
+            prepare_only: bool
+            arg_override: Dict
+        }
+
+        enum ActivityState {
+            REQUESTED
+        }
+    }
+}
+
+FlaskWorker *-- app
+ActivityWorker *-- ActivityService
+
+package flask {
+    class Flask
+    class Blueprint
+
+    Flask -down[hidden]- Blueprint
+}
+
+app -|> Flask
+ActivityAPIBlueprint -|> Blueprint
+
+main -down[hidden]--> application
+restserver -left[hidden]--> application
+restserver -right[hidden]--> flask
+FlaskWorker -down[hidden]--> restserver
+ActivityService -down[hidden]- ActivitySummary
+ActivitySummary -left[hidden]- ActivityCommand
+
+@enduml

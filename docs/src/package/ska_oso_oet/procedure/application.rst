@@ -20,13 +20,6 @@ ska_oso_oet.procedure.application.main
    :members:
 
 ............................................
-ska_oso_oet.procedure.application.restclient
-............................................
-
-.. automodule:: ska_oso_oet.procedure.application.restclient
-   :members:
-
-............................................
 ska_oso_oet.procedure.application.restserver
 ............................................
 
