@@ -204,8 +204,8 @@
     ],
     "resources": {
       "receptors": [
-        "SKA0001",
-        "SKA0002"
+        "SKA001",
+        "SKA002"
       ]
     }
   },
