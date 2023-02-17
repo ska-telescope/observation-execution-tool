@@ -12,7 +12,7 @@
   "activities": {
     "allocate": {
       "kind": "filesystem",
-      "path": "file://scripts/allocate_from_mid_sb.py",
+      "path": "file:///scripts/allocate_from_file_mid_sb.py",
       "function_args": {
         "init": {
           "args": [],
