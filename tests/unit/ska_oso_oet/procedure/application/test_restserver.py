@@ -263,6 +263,17 @@ class PubSubHelper:
         states = [msg["new_state"] for msg in msgs if int(msg["msg_src"]) == pid]
         assert states == expected
 
+    def assert_state(self, pid: int, expected: ProcedureState):
+        """
+        Assert that the published state of a Procedure is as expected.
+
+        :param pid: PID of Procedure to inspect
+        :param expected: expected state for comparison
+        """
+        msgs = self.messages_on_topic(topics.procedure.lifecycle.statechange)
+        states = [msg["new_state"] for msg in msgs if int(msg["msg_src"]) == pid]
+        assert states[-1] == expected
+
 
 def assert_json_equal_to_procedure_summary(
     summary: ProcedureSummary, summary_json: dict

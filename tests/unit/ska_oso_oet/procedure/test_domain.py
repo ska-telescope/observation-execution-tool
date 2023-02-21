@@ -116,7 +116,7 @@ def fixture_barrier_script(tmpdir):
     """
     Pytest fixture to return a path to a script that sets an event
     """
-    script_path = tmpdir.join("script.py")
+    script_path = tmpdir.join("barrier_script.py")
     script_path.write(
         """
 INIT_RUNNING = None
@@ -1095,6 +1095,67 @@ class TestProcessManager:
         # object ID is different
         received: EventMessage = cb_received.pop()
         assert received.id == pubsub_msg.id and received.msg == pubsub_msg.msg
+
+    @pytest.mark.xfail(reason="BTN-1774")
+    def test_can_start_ready_procedure_while_another_procedure_is_initialising(
+        self, manager: ProcessManager, barrier_script, init_hang_script
+    ):
+        """
+        Confirm that it is possible to start a script while another script is
+        initialising.
+
+        In Sprint 17.5 Viivi found that it was not possible to begin execution
+        of the main function while another script was initialising. We want
+        this to be possible. This unit test should pass once the Procedure
+        lifecycle has been refined and we have a clearer concept of
+        initialising functions and 'main' functions. For now, this test
+        illustrates the problem, raising an exception with 'ValueError:
+        Cannot start PID 1: PID #2 is ProcedureState.RUNNING'.
+
+        Test strategy is to:
+
+        1. Create Procedure #1 that has a quick init
+        2. Create Procedure #2 that hangs in init.
+        3. Start Procedure #1
+        4. confirm that Procedure #1 ran while Procedure #2 is still initialising
+        """
+        helper = PubSubHelper()
+
+        # create and start Procedure #1, waiting for it to be ready
+        p1_init_running = multiprocessing.Barrier(2)
+        p1_main_running = multiprocessing.Barrier(2)
+        p1_resume = multiprocessing.Barrier(2)
+        p1_init_args = ProcedureInput(p1_init_running, p1_main_running, p1_resume)
+        p1_pid = manager.create(barrier_script, init_args=p1_init_args)
+
+        # start P1 init and let initialisation complete
+        p1_init_running.wait(0.1)
+        wait_for_state(manager, p1_pid, ProcedureState.RUNNING)
+        p1_resume.wait(0.1)
+        p1_resume.reset()  # reset to pause main method call
+        wait_for_state(manager, p1_pid, ProcedureState.READY)
+
+        # create and start Procedure #2, the script that hangs in init
+        p2_init_running = multiprocessing.Barrier(2)
+        p2_init_args = ProcedureInput(p2_init_running)
+        p2_pid = manager.create(init_hang_script, init_args=p2_init_args)
+        p2_init_running.wait(0.1)
+        wait_for_state(manager, p2_pid, ProcedureState.RUNNING)
+
+        # confirm test state is as expected: P1 ready, P2 initialising
+        helper.assert_state(p1_pid, ProcedureState.READY)
+        helper.assert_state(p2_pid, ProcedureState.RUNNING)
+
+        # now set P1 main running and wait for it to complete
+        manager.run(p1_pid, call="main", run_args=ProcedureInput())
+        p1_main_running.wait(0.1)
+        p1_resume.wait(0.1)
+        p1_resume.reset()  # reset to pause main method call
+        wait_for_state(manager, p1_pid, ProcedureState.COMPLETE)
+
+        # end test state should be that P1 ran successfully, P2 still initialising
+        helper.assert_state(p1_pid, ProcedureState.COMPLETE)
+        helper.assert_state(p2_pid, ProcedureState.RUNNING)
 
 
 class TestModuleFactory:
