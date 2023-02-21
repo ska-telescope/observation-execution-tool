@@ -7,7 +7,6 @@ import importlib.machinery
 import multiprocessing
 import time
 from multiprocessing import Manager
-from typing import List
 from unittest.mock import MagicMock, patch
 
 import pubsub.pub
@@ -488,12 +487,6 @@ class TestScriptWorkerPubSub:
 
 
 class TestProcessManagerScriptWorkerIntegration:
-    @staticmethod
-    def assert_states(helper: PubSubHelper, pid: int, expected: List[ProcedureState]):
-        msgs = helper.messages_on_topic(topics.procedure.lifecycle.statechange)
-        states = [msg["new_state"] for msg in msgs if int(msg["msg_src"]) == pid]
-        assert states == expected
-
     def test_happy_path_script_execution_lifecycle_states(
         self, manager: ProcessManager, barrier_script
     ):
@@ -521,21 +514,21 @@ class TestProcessManagerScriptWorkerIntegration:
             ProcedureState.IDLE,  # user module loaded
             ProcedureState.RUNNING,  # init present and called
         ]
-        self.assert_states(helper, pid, expected)
+        helper.assert_state_history(pid, expected)
 
         # let init complete, then check for completion
         resume.wait(0.1)
         resume.reset()  # reset to pause main method call
         wait_for_state(manager, pid, ProcedureState.READY)
         expected.append(ProcedureState.READY)  # init complete
-        self.assert_states(helper, pid, expected)
+        helper.assert_state_history(pid, expected)
 
         # now set main running
         manager.run(pid, call="main", run_args=ProcedureInput())
         expected.append(ProcedureState.RUNNING)  # main running
         main_running.wait(0.1)
         wait_for_state(manager, pid, ProcedureState.RUNNING)
-        self.assert_states(helper, pid, expected)
+        helper.assert_state_history(pid, expected)
 
         # wait for ScriptWorker process to complete
         resume.wait(0.1)
@@ -547,7 +540,7 @@ class TestProcessManagerScriptWorkerIntegration:
                 ProcedureState.COMPLETE,  # script complete
             ]
         )
-        self.assert_states(helper, pid, expected)
+        helper.assert_state_history(pid, expected)
 
     def test_error_in_main_lifecycles_states(
         self, manager: ProcessManager, fail_script
@@ -573,7 +566,7 @@ class TestProcessManagerScriptWorkerIntegration:
         helper.wait_for_lifecycle(ProcedureState.FAILED)
         # wait_for_state(manager, pid, ProcedureState.FAILED)
         # helper.wait_for_message_on_topic(topics.procedure.lifecycle.stacktrace)
-        self.assert_states(helper, pid, expected)
+        helper.assert_state_history(pid, expected)
 
     @patch("ska_oso_oet.procedure.domain.GitManager.clone_repo")
     @patch("ska_oso_oet.procedure.domain.subprocess.check_output")
@@ -728,7 +721,7 @@ class TestProcessManagerScriptWorkerIntegration:
             ProcedureState.STOPPED,  # init stopped
         ]
         helper.wait_for_lifecycle(ProcedureState.STOPPED)
-        self.assert_states(helper, pid, expected)
+        helper.assert_state_history(pid, expected)
 
     def test_stop_during_main_sets_lifecycle_state_to_stopped(
         self, manager, main_hang_script
@@ -761,7 +754,7 @@ class TestProcessManagerScriptWorkerIntegration:
             ProcedureState.RUNNING,  # main running
             ProcedureState.STOPPED,  # main stopped
         ]
-        self.assert_states(helper, pid, expected)
+        helper.assert_state_history(pid, expected)
 
     def test_running_set_to_none_on_stop(self, manager, init_hang_script):
         """
