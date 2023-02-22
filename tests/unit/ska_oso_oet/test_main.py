@@ -1,7 +1,7 @@
 # pylint: disable=W0613
 # - W0613(unused-argument): fixture usage
 """
-Unit tests for the ska_oso_oet.procedure.application.main module.
+Unit tests for the ska_oso_oet.main module.
 """
 import multiprocessing as mp
 import unittest.mock as mock
@@ -12,16 +12,16 @@ import pytest
 
 import ska_oso_oet.activity.application
 from ska_oso_oet.event import topics
-from ska_oso_oet.mptools import EventMessage, MPQueue
-from ska_oso_oet.procedure import domain
-from ska_oso_oet.procedure.application import application
-from ska_oso_oet.procedure.application.main import (
+from ska_oso_oet.main import (
     ActivityServiceWorker,
     EventBusWorker,
     FlaskWorker,
     ScriptExecutionServiceWorker,
     main_loop,
 )
+from ska_oso_oet.mptools import EventMessage, MPQueue
+from ska_oso_oet.procedure import domain
+from ska_oso_oet.procedure.application import application
 from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
 from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
 
@@ -123,7 +123,7 @@ class TestScriptExecutionWorker:
         event = mp_fixture.Event()
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ScriptExecutionService.summarise"
+            "ska_oso_oet.main.ScriptExecutionService.summarise"
         ) as mock_cls:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_cls.side_effect = partial(set_event, event)
@@ -162,7 +162,7 @@ class TestScriptExecutionWorker:
         work_q.put(msg)
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ScriptExecutionService.summarise"
+            "ska_oso_oet.main.ScriptExecutionService.summarise"
         ) as mock_cls:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_cls.side_effect = ValueError
@@ -194,9 +194,7 @@ class TestScriptExecutionWorker:
         cmd = application.StartProcessCommand(
             process_uid=123, fn_name="main", run_args=domain.ProcedureInput()
         )
-        with mock.patch(
-            "ska_oso_oet.procedure.application.main.ScriptExecutionService.start"
-        ) as mock_method:
+        with mock.patch("ska_oso_oet.main.ScriptExecutionService.start") as mock_method:
             assert_command_request_and_response(
                 mp_fixture,
                 caplog,
@@ -217,7 +215,7 @@ class TestScriptExecutionWorker:
             init_args=domain.ProcedureInput(),
         )
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ScriptExecutionService.prepare"
+            "ska_oso_oet.main.ScriptExecutionService.prepare"
         ) as mock_method:
             assert_command_request_and_response(
                 mp_fixture,
@@ -235,9 +233,7 @@ class TestScriptExecutionWorker:
         SES.stop should be called when 'request.procedure.stop' message is received
         """
         cmd = application.StopProcessCommand(process_uid=123, run_abort=False)
-        with mock.patch(
-            "ska_oso_oet.procedure.application.main.ScriptExecutionService.stop"
-        ) as mock_method:
+        with mock.patch("ska_oso_oet.main.ScriptExecutionService.stop") as mock_method:
             assert_command_request_and_response(
                 mp_fixture,
                 caplog,
@@ -270,9 +266,7 @@ class TestActivityWorker:
         work_q.put(msg)
         event = mp_fixture.Event()
 
-        with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.summarise"
-        ) as mock_method:
+        with mock.patch("ska_oso_oet.main.ActivityService.summarise") as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.side_effect = partial(set_event, event)
                 _proc_worker_wrapper_helper(
@@ -311,9 +305,7 @@ class TestActivityWorker:
         )
         work_q.put(msg)
 
-        with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.summarise"
-        ) as mock_method:
+        with mock.patch("ska_oso_oet.main.ActivityService.summarise") as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.side_effect = ValueError
                 _proc_worker_wrapper_helper(
@@ -362,7 +354,7 @@ class TestActivityWorker:
         event = mp_fixture.Event()
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.prepare_run_activity"
+            "ska_oso_oet.main.ActivityService.prepare_run_activity"
         ) as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.side_effect = partial(set_event, event)
@@ -407,7 +399,7 @@ class TestActivityWorker:
         expected_error = RuntimeError("test error")
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.prepare_run_activity"
+            "ska_oso_oet.main.ActivityService.prepare_run_activity"
         ) as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.side_effect = expected_error
@@ -460,7 +452,7 @@ class TestActivityWorker:
         )
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.complete_run_activity"
+            "ska_oso_oet.main.ActivityService.complete_run_activity"
         ) as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.return_value = expected_activity_summary
@@ -510,7 +502,7 @@ class TestActivityWorker:
         expected_error = RuntimeError("test error")
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.complete_run_activity"
+            "ska_oso_oet.main.ActivityService.complete_run_activity"
         ) as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.side_effect = expected_error
@@ -558,7 +550,7 @@ class TestActivityWorker:
         work_q.put(msg)
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.complete_run_activity"
+            "ska_oso_oet.main.ActivityService.complete_run_activity"
         ) as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.return_value = None

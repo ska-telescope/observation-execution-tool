@@ -36,7 +36,7 @@ Elements and Their Properties
      - Description
    * - app
        |br|
-       (variable in  :class:`~ska_oso_oet.procedure.application.main.FlaskWorker.startup`)
+       (variable in  :class:`~ska_oso_oet.main.FlaskWorker.startup`)
      - app is the Flask web application that makes the OET available over HTTP. app is the local variable created during
        FlaskWorker startup. The web application has the API blueprint and ServerSentEventsBlueprint registered, which
        makes the OET REST API and the OET event stream available when the web app is run.
