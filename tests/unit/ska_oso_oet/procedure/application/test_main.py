@@ -10,6 +10,7 @@ from functools import partial
 import pubsub.pub
 import pytest
 
+import ska_oso_oet.activity.application
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import EventMessage, MPQueue
 from ska_oso_oet.procedure import domain
@@ -344,7 +345,9 @@ class TestActivityWorker:
         """
         pubsub.pub.unsubAll()
         helper = PubSubHelper()
-        cmd = application.ActivityCommand("test_activity", "sbd-123", False, False, {})
+        cmd = ska_oso_oet.activity.application.application.ActivityCommand(
+            "test_activity", "sbd-123", False, False, {}
+        )
 
         work_q = MPQueue(ctx=mp_fixture)
         msg = EventMessage(
@@ -389,7 +392,9 @@ class TestActivityWorker:
         helper = PubSubHelper()
 
         work_q = MPQueue(ctx=mp_fixture)
-        cmd = application.ActivityCommand("test_activity", "sbd-123", False, False, {})
+        cmd = ska_oso_oet.activity.application.application.ActivityCommand(
+            "test_activity", "sbd-123", False, False, {}
+        )
         msg = EventMessage(
             "TEST_SUMMARY",
             "PUBSUB",
@@ -448,8 +453,10 @@ class TestActivityWorker:
             ),
         )
         work_q.put(msg)
-        expected_activity_summary = application.ActivitySummary(
-            1, 2, "sbd-123", "allocate", True, {}, []
+        expected_activity_summary = (
+            ska_oso_oet.activity.application.application.ActivitySummary(
+                1, 2, "sbd-123", "allocate", True, {}, []
+            )
         )
 
         with mock.patch(

@@ -17,12 +17,14 @@ import pytest
 from pubsub import pub
 
 from ska_oso_oet import mptools
+from ska_oso_oet.activity.application.application import (
+    ActivityCommand,
+    ActivitySummary,
+)
+from ska_oso_oet.activity.domain import ActivityState
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.application import restserver
 from ska_oso_oet.procedure.application.application import (
-    ActivityCommand,
-    ActivityState,
-    ActivitySummary,
     ArgCapture,
     PrepareProcessCommand,
     ProcedureHistory,

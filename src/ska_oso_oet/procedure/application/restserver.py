@@ -9,6 +9,7 @@ import jsonpickle
 from flask import Blueprint, current_app, stream_with_context
 from pubsub import pub
 
+import ska_oso_oet.activity.application
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import MPQueue
 from ska_oso_oet.procedure import domain
@@ -375,7 +376,7 @@ def run_activity():
         for (fn, fn_args) in request_body.get("script_args", {}).items()
     }
 
-    cmd = application.ActivityCommand(
+    cmd = ska_oso_oet.activity.application.application.ActivityCommand(
         request_body["activity_name"],
         request_body["sbd_id"],
         request_body.get("prepare_only", False),
@@ -516,7 +517,9 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
     }
 
 
-def make_public_activity_summary(activity: application.ActivitySummary):
+def make_public_activity_summary(
+    activity: ska_oso_oet.activity.application.application.ActivitySummary,
+):
     """
     Convert an ActivitySummary into JSON ready for client consumption.
 

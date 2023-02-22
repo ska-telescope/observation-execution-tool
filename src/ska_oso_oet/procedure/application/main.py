@@ -11,6 +11,10 @@ import waitress
 from pubsub import pub
 from ska_ser_logging import configure_logging
 
+from ska_oso_oet.activity.application.application import (
+    ActivityCommand,
+    ActivityService,
+)
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import (
     EventMessage,
@@ -22,8 +26,6 @@ from ska_oso_oet.mptools import (
 )
 from ska_oso_oet.procedure.application import restserver
 from ska_oso_oet.procedure.application.application import (
-    ActivityCommand,
-    ActivityService,
     PrepareProcessCommand,
     ProcedureSummary,
     ScriptExecutionService,
