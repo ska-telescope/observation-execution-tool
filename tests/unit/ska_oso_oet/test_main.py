@@ -337,7 +337,7 @@ class TestActivityWorker:
         """
         pubsub.pub.unsubAll()
         helper = PubSubHelper()
-        cmd = ska_oso_oet.activity.application.application.ActivityCommand(
+        cmd = ska_oso_oet.activity.application.ActivityCommand(
             "test_activity", "sbd-123", False, False, {}
         )
 
@@ -384,7 +384,7 @@ class TestActivityWorker:
         helper = PubSubHelper()
 
         work_q = MPQueue(ctx=mp_fixture)
-        cmd = ska_oso_oet.activity.application.application.ActivityCommand(
+        cmd = ska_oso_oet.activity.application.ActivityCommand(
             "test_activity", "sbd-123", False, False, {}
         )
         msg = EventMessage(
@@ -445,10 +445,8 @@ class TestActivityWorker:
             ),
         )
         work_q.put(msg)
-        expected_activity_summary = (
-            ska_oso_oet.activity.application.application.ActivitySummary(
-                1, 2, "sbd-123", "allocate", True, {}, []
-            )
+        expected_activity_summary = ska_oso_oet.activity.application.ActivitySummary(
+            1, 2, "sbd-123", "allocate", True, {}, []
         )
 
         with mock.patch(
