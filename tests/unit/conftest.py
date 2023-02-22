@@ -1,3 +1,4 @@
+import multiprocessing
 import threading
 
 import pytest
@@ -18,3 +19,22 @@ def fixture_client():
     with app.app_context():
         with app.test_client() as client:
             yield client
+
+
+@pytest.fixture(
+    scope="module",
+    params=[
+        multiprocessing.get_context("spawn"),
+        multiprocessing.get_context("fork"),
+        multiprocessing.get_context("forkserver"),
+    ],
+)
+def mp_fixture(request):
+    """
+    Test fixture that returns multiprocessing contexts.
+
+    This fixture is used to ensure that functionality related to
+    multiprocessing works correctly with each multiprocessing context, as
+    different OSes use a different default multiprocessing context.
+    """
+    yield request.param

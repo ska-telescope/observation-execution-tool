@@ -8,7 +8,6 @@
 Unit tests for mptools package.
 """
 import logging
-import multiprocessing as mp
 import os
 import signal
 import time
@@ -34,12 +33,6 @@ from ska_oso_oet.mptools import (
 # assessing process liveness
 COVERAGE_PROCESS_END_OVERHEAD_SECS = 0.4
 
-multiprocessing_contexts = [
-    mp.get_context("spawn"),
-    mp.get_context("fork"),
-    mp.get_context("forkserver"),
-]
-
 
 @pytest.fixture(autouse=True)
 def restore_default_signal_handlers():
@@ -52,7 +45,6 @@ def restore_default_signal_handlers():
         signal.signal(signal.SIGTERM, original_sigterm_handler)
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_mpqueue_get(mp_fixture):
     q = MPQueue(ctx=mp_fixture)
 
@@ -71,7 +63,6 @@ def test_mpqueue_get(mp_fixture):
     assert num_left == 0
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_queue_put(mp_fixture):
     # Create MPQueue of max size 2
     q = MPQueue(2, ctx=mp_fixture)
@@ -85,7 +76,6 @@ def test_queue_put(mp_fixture):
     assert num_left == 2
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_drain_queue(mp_fixture):
     q = MPQueue(ctx=mp_fixture)
 
@@ -115,7 +105,6 @@ def test_sleep_secs():
     assert got >= 3.7
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_signal_handling(mp_fixture):
     pid = os.getpid()
     evt = mp_fixture.Event()
@@ -146,7 +135,6 @@ def test_signal_handling(mp_fixture):
     assert so.shutdown_event.is_set()
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_procworker_rejects_unexpected_arguments(mp_fixture):
     with pytest.raises(ValueError):
         ProcWorker(
@@ -160,7 +148,6 @@ def test_procworker_rejects_unexpected_arguments(mp_fixture):
         )
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_procworker_passes_excess_arguments_to_init_args(mp_fixture):
     class ProcWorkerTest(ProcWorker):
         def init_args(self, args, kwargs):
@@ -183,7 +170,6 @@ def test_procworker_passes_excess_arguments_to_init_args(mp_fixture):
     assert argdict == {"k": "v"}
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_proc_worker_init_signals(mp_fixture):
     pid = os.getpid()
     evt = mp_fixture.Event()
@@ -208,7 +194,6 @@ def test_proc_worker_init_signals(mp_fixture):
     assert so.shutdown_event.is_set()
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_proc_worker_no_main_func(mp_fixture, caplog):
     startup_evt = mp_fixture.Event()
     shutdown_evt = mp_fixture.Event()
@@ -224,7 +209,6 @@ def test_proc_worker_no_main_func(mp_fixture, caplog):
         event_q.safe_close()
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_proc_worker_run(mp_fixture, caplog):
     class ProcWorkerTest(ProcWorker):
         def init_args(self, args, kwargs):
@@ -295,7 +279,6 @@ def _proc_worker_wrapper_helper(
     return items[:-1]
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_proc_worker_wrapper(mp_fixture, caplog):
     class ProcWorkerTest(ProcWorker):
         def init_args(self, args, kwargs):
@@ -312,7 +295,6 @@ def test_proc_worker_wrapper(mp_fixture, caplog):
     assert "MAIN_FUNC: ('ARG1', 'ARG2')" in caplog.text
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_proc_worker_exception(mp_fixture, caplog):
     class ProcWorkerException(ProcWorker):
         def main_func(self):
@@ -349,7 +331,6 @@ class TimerProcWorkerTest(TimerProcWorker):
             self.shutdown_event.set()
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_timer_proc_worker(mp_fixture, caplog):
     items = _proc_worker_wrapper_helper(mp_fixture, caplog, TimerProcWorkerTest)
     assert len(items) == 4
@@ -362,7 +343,6 @@ class QueueProcWorkerTest(QueueProcWorker):
         self.event_q.put(f"DONE {item}")
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_queue_proc_worker(mp_fixture, caplog):
     work_q = MPQueue(ctx=mp_fixture)
     work_q.put(1)
@@ -389,7 +369,6 @@ class StartHangWorker(ProcWorker):
             time.sleep(1.0)
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_proc_start_hangs(mp_fixture, caplog):
     shutdown_evt = mp_fixture.Event()
     event_q = MPQueue(ctx=mp_fixture)
@@ -403,7 +382,6 @@ def test_proc_start_hangs(mp_fixture, caplog):
         Proc.STARTUP_WAIT_SECS = 3.0
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_proc_full_stop(mp_fixture, caplog):
     shutdown_evt = mp_fixture.Event()
     event_q = MPQueue(ctx=mp_fixture)
@@ -431,7 +409,6 @@ class NeedTerminateWorker(ProcWorker):
             time.sleep(1.0)
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_proc_full_stop_need_terminate(mp_fixture, caplog):
     shutdown_evt = mp_fixture.Event()
     event_q = MPQueue(ctx=mp_fixture)
@@ -444,7 +421,6 @@ def test_proc_full_stop_need_terminate(mp_fixture, caplog):
     assert not proc.proc.is_alive()
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_context_stop_queues(mp_fixture):
     with MainContext(mp_fixture) as mctx:
         q1 = mctx.MPQueue()
@@ -492,7 +468,6 @@ def _test_stop_procs(mp_fixture, cap_log, proc_name, worker_class, *args):
     return num_failed, num_terminated, num_still_running
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_context_exception(mp_fixture):
     """
     Verify that MainContext does not swallow exceptions raised while the
@@ -512,7 +487,6 @@ class CleanProcWorker(ProcWorker):
         pass
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_context_stop_procs_clean(mp_fixture, caplog):
     num_failed, num_terminated, num_still_running = _test_stop_procs(
         mp_fixture, caplog, "CLEAN", CleanProcWorker
@@ -531,7 +505,6 @@ class FailProcWorker(ProcWorker):
         raise ValueError("main func value error")
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_context_stop_procs_fail(mp_fixture, caplog):
     """
     Verify stop_procs behaviour for a ProcWorker that fails due to an
@@ -578,7 +551,6 @@ def _test_main_context_hang(mp_fixture, cap_log, is_hard):
     return _test_stop_procs(mp_fixture, cap_log, "HANG", HangingProcWorker, is_hard)
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_context_stop_procs_hung_soft(mp_fixture, caplog):
     """
     Verify stop_procs behaviour when processes do not respond to settomg
@@ -592,7 +564,6 @@ def test_main_context_stop_procs_hung_soft(mp_fixture, caplog):
     assert num_still_running == 0
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_context_stop_procs_hung_hard(mp_fixture, caplog):
     """
     Verify stop_procs behaviour when processes do not respond to setting
