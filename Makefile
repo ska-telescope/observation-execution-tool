@@ -81,7 +81,7 @@ dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deploymen
 dev-down: k8s-uninstall-chart k8s-delete-namespace  ## tear down developer deployment
 
 rest:  ## start OET REST server
-	docker run --rm -p 5000:5000 -v $(CURDIR):/app -e PYTHONPATH=/app/src -w /app --name=ska-oso-oet-rest $(IMAGE_TO_TEST) python -m ska_oso_oet.procedure.application.main
+	docker run --rm -p 5000:5000 -v $(CURDIR):/app -e PYTHONPATH=/app/src -w /app --name=ska-oso-oet-rest $(IMAGE_TO_TEST) python -m ska_oso_oet.main
 
 diagrams:  ## recreate PlantUML diagrams whose source has been modified
 	@for i in $$(git diff --name-only -- '*.puml'); \

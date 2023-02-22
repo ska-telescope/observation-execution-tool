@@ -57,7 +57,7 @@ Elements and their properties
        script relating to the activity. If `prepare_only` argument is set to false, ActivityService will create
        a StartProcessCommand and send it to the ScriptExecutionServiceWorker. It will include the Procedure ID,
        and request that function named `run` will be executed with the corresponding arguments.
-   * - :class:`~ska_oso_oet.procedure.application.main.ActivityServiceWorker`
+   * - :class:`~ska_oso_oet.main.ActivityServiceWorker`
      - For a the OET REST deployment, ActivityServiceWorker is the client sending requests to the ActivityService.
        |br|
        |br|

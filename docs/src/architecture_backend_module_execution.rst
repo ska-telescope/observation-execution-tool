@@ -64,7 +64,7 @@ Elements and their properties
      - The Event class manages a flag that can be set and/or inspected by multi Python processes. Events are commonly
        used to signify to observers of the Event that a condition has occurred. Event is part of the standard Python
        library.
-   * - :class:`~ska_oso_oet.procedure.application.main.EventBusWorker`
+   * - :class:`~ska_oso_oet.main.EventBusWorker`
      - EventBusWorker is a QueueProcWorker that relays pubsub events seen in one EventBusWorker process to other
        EventBusWorker processes. See :doc:`architecture_backend_module_script_exec_ui` for more information.
    * - :class:`~ska_oso_oet.procedure.domain.ExecutableScript`
