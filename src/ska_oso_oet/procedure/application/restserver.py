@@ -1,7 +1,5 @@
 import json
 import multiprocessing
-import time
-from queue import Empty, Queue
 from typing import Generator, Optional, Union
 
 import flask
@@ -9,21 +7,21 @@ import jsonpickle
 from flask import Blueprint, current_app, stream_with_context
 from pubsub import pub
 
-import ska_oso_oet.activity.application
+from ska_oso_oet.activity.ui import ActivityAPI
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import MPQueue
 from ska_oso_oet.procedure import domain
 from ska_oso_oet.procedure.application import application
+from ska_oso_oet.utils.ui import (
+    call_and_respond,
+    convert_request_dict_to_procedure_input,
+)
 
 # from werkzeug.serving import WSGIRequestHandler
 # WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 # Blueprints for the REST API
 ProcedureAPI = Blueprint("procedures", __name__)
-ActivityAPI = Blueprint("activities", __name__)
-
-# time allowed for Flask <-> other ProcWorker communication before timeout
-TIMEOUT = 30
 
 
 class Message:
@@ -331,65 +329,6 @@ def update_procedure(procedure_id: int):
     return flask.jsonify({"procedure": make_public_procedure_summary(summary)})
 
 
-@ActivityAPI.route("/activities/<int:activity_id>", methods=["GET"])
-def get_activity(activity_id):
-    summaries = call_and_respond(
-        topics.request.activity.list,
-        topics.activity.pool.list,
-        activity_ids=[activity_id],
-    )
-
-    if not summaries:
-        description = {
-            "type": "ResourceNotFound",
-            "Message": f"No information available for ID={activity_id}",
-        }
-
-        flask.abort(404, description=description)
-    else:
-        return (
-            flask.jsonify({"activity": make_public_activity_summary(summaries[0])}),
-            200,
-        )
-
-
-@ActivityAPI.route("/activities", methods=["GET"])
-def get_activities():
-    summaries = call_and_respond(
-        topics.request.activity.list, topics.activity.pool.list
-    )
-
-    return (
-        flask.jsonify(
-            {"activities": [make_public_activity_summary(s) for s in summaries]}
-        ),
-        200,
-    )
-
-
-@ActivityAPI.route("/activities", methods=["POST"])
-def run_activity():
-    request_body = flask.request.json
-
-    script_args = {
-        fn: convert_request_dict_to_procedure_input(fn_args)
-        for (fn, fn_args) in request_body.get("script_args", {}).items()
-    }
-
-    cmd = ska_oso_oet.activity.application.ActivityCommand(
-        request_body["activity_name"],
-        request_body["sbd_id"],
-        request_body.get("prepare_only", False),
-        request_body.get("create_env", False),
-        script_args,
-    )
-    summary = call_and_respond(
-        topics.request.activity.run, topics.activity.lifecycle.running, cmd=cmd
-    )
-
-    return flask.jsonify({"activity": make_public_activity_summary(summary)}), 201
-
-
 @ProcedureAPI.errorhandler(400)
 @ProcedureAPI.errorhandler(404)
 @ProcedureAPI.errorhandler(500)
@@ -423,52 +362,6 @@ def server_error_response(cause):
     response.content_type = "application/json"
     response.data = json.dumps(response_data)
     return response
-
-
-def call_and_respond(request_topic, response_topic, *args, **kwargs):
-    q = Queue(1)
-    my_request_id = time.time_ns()
-
-    # msg_src MUST be part of method signature for pypubsub to function
-    def callback(msg_src, request_id, result):  # pylint: disable=unused-argument
-        if my_request_id == request_id:
-            q.put(result)
-
-    pub.subscribe(callback, response_topic)
-
-    msg_src = flask.current_app.config["msg_src"]
-
-    # With the callback now setup, publish an event to mark the user request event
-    pub.sendMessage(
-        request_topic, msg_src=msg_src, request_id=my_request_id, *args, **kwargs
-    )
-
-    try:
-        result = q.get(timeout=TIMEOUT)
-
-        if isinstance(result, Exception):
-            if isinstance(result, OSError):
-                description = {
-                    "type": result.__class__.__name__,
-                    "Message": f"{result.strerror}: {result.filename}",
-                }
-            else:
-                description = {
-                    "type": result.__class__.__name__,
-                    "Message": str(result),
-                }
-            flask.abort(500, description=description)
-
-        return result
-
-    except Empty:
-        description = {
-            "Message": (
-                f"Timeout waiting for msg #{my_request_id} on topic {response_topic}"
-            ),
-            "type": "Timeout Error",
-        }
-        flask.abort(504, description=description)
 
 
 def make_public_procedure_summary(procedure: application.ProcedureSummary):
@@ -515,56 +408,6 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
         "history": procedure_history,
         "state": procedure.state.name,
     }
-
-
-def make_public_activity_summary(
-    activity: ska_oso_oet.activity.application.ActivitySummary,
-):
-    """
-    Convert an ActivitySummary into JSON ready for client consumption.
-
-    The main use of this function is to replace the internal Activity ID with
-    the resource URI, e.g., 1 -> http://localhost:5000/api/v1.0/procedures/1
-
-    :param activity: ActivitySummary to convert
-    :return: safe JSON representation
-    """
-    script_args = {
-        fn: {
-            "args": activity.script_args[fn].args,
-            "kwargs": activity.script_args[fn].kwargs,
-        }
-        for fn in activity.script_args.keys()
-    }
-    return {
-        "uri": flask.url_for(
-            "activities.get_activity", activity_id=activity.id, _external=True
-        ),
-        "activity_name": activity.activity_name,
-        "sbd_id": activity.sbd_id,
-        "procedure_id": activity.pid,
-        "prepare_only": activity.prepare_only,
-        "script_args": script_args,
-        "activity_states": [
-            (state_enum.name, timestamp)
-            for (state_enum, timestamp) in activity.activity_states
-        ],
-        "state": max(
-            states_to_time := dict(activity.activity_states), key=states_to_time.get
-        ).name,
-    }
-
-
-def convert_request_dict_to_procedure_input(fn_dict: dict) -> domain.ProcedureInput:
-    """
-    Convert the dict of arguments for a single function into the domain.ProcedureInput
-
-    :param fn_dict: Dict of the args and kwargs, eg {'args': [1, 2], 'kwargs': {'subarray_id': 42}}
-    :return: The ProcedureInput, eg <ProcedureInput(1, 2, subarray_id=42)>
-    """
-    fn_args = fn_dict.get("args", [])
-    fn_kwargs = fn_dict.get("kwargs", {})
-    return domain.ProcedureInput(*fn_args, **fn_kwargs)
 
 
 # def create_app(config_filename):
