@@ -1,7 +1,7 @@
 # pylint: disable=protected-access
 # - protected-access - tests need to access protected props
 """
-Unit tests for the ska_oso_oet.activity.application.application module.
+Unit tests for the ska_oso_oet.activity.application module.
 """
 import time
 from unittest import mock as mock
@@ -12,8 +12,9 @@ from ska_oso_pdm.entities.common.procedures import (
 )
 from ska_oso_pdm.entities.common.procedures import PythonArguments
 from ska_oso_pdm.entities.common.sb_definition import SBDefinition
+from unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
 
-from ska_oso_oet.activity.application.application import (
+from ska_oso_oet.activity.application import (
     ActivityCommand,
     ActivityService,
     ActivitySummary,
@@ -26,13 +27,9 @@ from ska_oso_oet.procedure.application.application import (
 )
 from ska_oso_oet.procedure.domain import FileSystemScript, ProcedureInput
 
-from ...procedure.application.test_restserver import PubSubHelper
-
 
 class TestActivityService:
-    @mock.patch(
-        "ska_oso_oet.activity.application.application.ActivityService.write_sbd_to_file"
-    )
+    @mock.patch("ska_oso_oet.activity.application.ActivityService.write_sbd_to_file")
     @mock.patch.object(time, "time")
     def test_activityservice_prepare_run(self, mock_time_fn, mock_write_fn):
         mock_pid = 2
@@ -52,7 +49,7 @@ class TestActivityService:
         mock_request_id = time.time_ns()
 
         with mock.patch(
-            "ska_oso_oet.activity.application.application.RESTUnitOfWork",
+            "ska_oso_oet.activity.application.RESTUnitOfWork",
             return_value=MagicMock(),
         ):
             pdm_script = pdm_FilesystemScript(path="file:///script/path.py")
@@ -101,14 +98,12 @@ class TestActivityService:
             ]
             assert prep_cmd == expected_prep_cmd
 
-    @mock.patch(
-        "ska_oso_oet.activity.application.application.ActivityService.write_sbd_to_file"
-    )
+    @mock.patch("ska_oso_oet.activity.application.ActivityService.write_sbd_to_file")
     def test_activityservice_prepare_run_adds_function_args(self, mock_write_fn):
         helper = PubSubHelper()
         mock_write_fn.return_value = "/tmp/sbs/mock_path.json"
         with mock.patch(
-            "ska_oso_oet.activity.application.application.RESTUnitOfWork",
+            "ska_oso_oet.activity.application.RESTUnitOfWork",
             return_value=MagicMock(),
         ):
             pdm_script = pdm_FilesystemScript(path="file:///script/path.py")
@@ -284,7 +279,7 @@ class TestActivityService:
         )
 
         with mock.patch(
-            "ska_oso_oet.activity.application.application.RESTUnitOfWork",
+            "ska_oso_oet.activity.application.RESTUnitOfWork",
             return_value=MagicMock(),
         ):
             activity_service = ActivityService()

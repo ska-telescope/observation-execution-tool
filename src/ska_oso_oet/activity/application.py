@@ -1,5 +1,5 @@
 """
-The ska_oso_oet.activity.application.application module contains code related
+The ska_oso_oet.activity.application module contains code related
 to OET 'activities' that belong in the application layer. This application
 layer holds the application interface, delegating to objects in the domain
 layer for business rules and actions.

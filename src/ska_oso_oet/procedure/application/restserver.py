@@ -376,7 +376,7 @@ def run_activity():
         for (fn, fn_args) in request_body.get("script_args", {}).items()
     }
 
-    cmd = ska_oso_oet.activity.application.application.ActivityCommand(
+    cmd = ska_oso_oet.activity.application.ActivityCommand(
         request_body["activity_name"],
         request_body["sbd_id"],
         request_body.get("prepare_only", False),
@@ -518,7 +518,7 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
 
 
 def make_public_activity_summary(
-    activity: ska_oso_oet.activity.application.application.ActivitySummary,
+    activity: ska_oso_oet.activity.application.ActivitySummary,
 ):
     """
     Convert an ActivitySummary into JSON ready for client consumption.
