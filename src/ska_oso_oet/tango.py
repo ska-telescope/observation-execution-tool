@@ -1,7 +1,8 @@
 """
-The command module contains code that encapsulates Tango device interactions
+The tango module contains code that encapsulates Tango device interactions
 (commands, attribute read/writes, etc.) and provides the means to execute
 them.
+
 The OET decouples functions from Tango devices so that the commands can be
 managed and executed by a proxy. This allows the proxy to execute commands
 asynchronously while listening for interrupt signals, while to the caller

@@ -21,10 +21,10 @@ from typing import Callable, Dict, List, Optional, Type
 from pubsub import pub
 
 from ska_oso_oet import mptools
-from ska_oso_oet.command import SCAN_ID_GENERATOR
 from ska_oso_oet.mptools import EventMessage
 from ska_oso_oet.procedure.environment import Environment, EnvironmentManager
 from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
+from ska_oso_oet.tango import SCAN_ID_GENERATOR
 
 LOGGER = logging.getLogger(__name__)
 
