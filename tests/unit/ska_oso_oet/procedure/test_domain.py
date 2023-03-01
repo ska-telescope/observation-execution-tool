@@ -27,7 +27,8 @@ from ska_oso_oet.procedure.domain import (
 from ska_oso_oet.procedure.environment import Environment
 from ska_oso_oet.procedure.gitmanager import GitArgs
 from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
-from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
+
+from ..test_ui import PubSubHelper
 
 multiprocessing_contexts = [
     multiprocessing.get_context("spawn"),

@@ -12,7 +12,6 @@ from ska_oso_pdm.entities.common.procedures import (
 )
 from ska_oso_pdm.entities.common.procedures import PythonArguments
 from ska_oso_pdm.entities.common.sb_definition import SBDefinition
-from unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
 
 from ska_oso_oet.activity.application import (
     ActivityCommand,
@@ -26,6 +25,8 @@ from ska_oso_oet.procedure.application.application import (
     StartProcessCommand,
 )
 from ska_oso_oet.procedure.domain import FileSystemScript, ProcedureInput
+
+from ..test_ui import PubSubHelper
 
 
 class TestActivityService:
