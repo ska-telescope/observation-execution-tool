@@ -6,8 +6,7 @@ import flask
 from flask import Blueprint
 
 from ska_oso_oet.event import topics
-from ska_oso_oet.procedure import domain
-from ska_oso_oet.procedure.application import application
+from ska_oso_oet.procedure import application, domain
 from ska_oso_oet.utils.ui import (
     call_and_respond,
     convert_request_dict_to_procedure_input,

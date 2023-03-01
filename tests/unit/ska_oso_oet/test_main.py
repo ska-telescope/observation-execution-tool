@@ -18,8 +18,7 @@ from ska_oso_oet.main import (
     main_loop,
 )
 from ska_oso_oet.mptools import EventMessage, MPQueue
-from ska_oso_oet.procedure import domain
-from ska_oso_oet.procedure.application import application
+from ska_oso_oet.procedure import application, domain
 from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
 
 from .test_ui import PubSubHelper

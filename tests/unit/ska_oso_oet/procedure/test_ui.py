@@ -8,7 +8,7 @@ from unittest import mock
 import ska_oso_oet.procedure
 import ska_oso_oet.utils
 from ska_oso_oet.event import topics
-from ska_oso_oet.procedure.application.application import (
+from ska_oso_oet.procedure.application import (
     ArgCapture,
     PrepareProcessCommand,
     ProcedureHistory,

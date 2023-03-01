@@ -17,9 +17,8 @@ from pubsub import pub
 
 from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
-
-from .. import domain
-from ..domain import EventMessage, ProcedureState
+from ska_oso_oet.procedure import domain
+from ska_oso_oet.procedure.domain import EventMessage, ProcedureState
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 ABORT_SCRIPT = domain.FileSystemScript("file://" + base_dir + "/abort.py")
