@@ -1,8 +1,20 @@
-.. _api-ska_oso_oet-tango:
+===========
+ska_oso_oet
+===========
 
-*****************
+.. automodule:: ska_oso_oet
+   :members:
+
+................
+ska_oso_oet.main
+................
+
+.. automodule:: ska_oso_oet.main
+   :members:
+
+.................
 ska_oso_oet.tango
-*****************
+.................
 
 .. autoclass:: ska_oso_oet.tango.TangoDeviceProxyFactory
    :members:
@@ -28,12 +40,12 @@ ska_oso_oet.tango
    observer of events, with the ``TangoExecutor.notify`` method adding received events to the TangoExecutor queue read by
    the legacy ``TangoExecutor.read_event`` method.
 
-   .. figure:: subscriptionmanager-class.svg
+   .. figure:: ska_oso_oet/subscriptionmanager-class.svg
       :align: center
 
       Class diagram for components involved in OET event handling
 
-   .. figure:: subscriptionmanager-sequence.svg
+   .. figure:: ska_oso_oet/subscriptionmanager-sequence.svg
       :align: center
 
       Sequence diagram from OET event handling
@@ -47,4 +59,11 @@ ska_oso_oet.tango
    :members:
 
 .. autoclass:: ska_oso_oet.tango.Callback
+   :members:
+
+..............
+ska_oso_oet.ui
+..............
+
+.. automodule:: ska_oso_oet.ui
    :members:

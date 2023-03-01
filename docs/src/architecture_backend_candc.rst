@@ -72,7 +72,7 @@ Components
      - ScriptExecutionServiceWorker responds to requests received by the FlaskWorker, relaying the request to the
        ScriptExecutionService and publishing the response as an event that can be received by the FlaskWorker and
        returned to the user in the appropriate format.
-   * - :class:`~ska_oso_oet.procedure.application.application.ScriptExecutionService`
+   * - :class:`~ska_oso_oet.procedure.application.ScriptExecutionService`
      - ScriptExecutionService present the high-level API for script execution. The ScriptExecutionService orchestrates
        control of internal OET objects to satisfy an API request. ScriptExecutionService is also responsible for
        recording script execution history. ScriptExecutionService can return a presentation model of a script, its

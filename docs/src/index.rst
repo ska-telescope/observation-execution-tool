@@ -45,11 +45,12 @@
   :caption: Private API Documentation
   :hidden:
 
-  package/ska_oso_oet/tango
+  package/ska_oso_oet
+  package/ska_oso_oet/activity
   package/ska_oso_oet/event/topics
   package/ska_oso_oet/mptools
   package/ska_oso_oet/procedure
-  package/ska_oso_oet/activity
+  package/ska_oso_oet/utils
 
 ==========================
 Observation Execution Tool
