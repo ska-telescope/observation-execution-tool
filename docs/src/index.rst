@@ -49,7 +49,7 @@
   package/ska_oso_oet/event/topics
   package/ska_oso_oet/mptools
   package/ska_oso_oet/procedure
-  package/ska_oso_oet/procedure/application
+  package/ska_oso_oet/activity
 
 ==========================
 Observation Execution Tool
