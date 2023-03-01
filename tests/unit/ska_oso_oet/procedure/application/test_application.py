@@ -30,7 +30,6 @@ from ska_oso_oet.procedure.domain import (
     ProcedureState,
     ProcessManager,
 )
-from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
 
 # disable F401 to stop flake8 complaining about unused fixture imports
 from tests.unit.ska_oso_oet.procedure.test_domain import (  # noqa: F401
@@ -40,6 +39,8 @@ from tests.unit.ska_oso_oet.procedure.test_domain import (  # noqa: F401
     fixture_main_hang_script,
     fixture_script,
 )
+
+from ...test_ui import PubSubHelper
 
 
 @pytest.fixture(name="sleep_script")

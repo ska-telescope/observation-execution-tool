@@ -1,11 +1,11 @@
 from http import HTTPStatus
 
-from unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
-
 from ska_oso_oet.activity.application import ActivityCommand, ActivitySummary
 from ska_oso_oet.activity.domain import ActivityState
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.domain import ProcedureInput
+
+from ..test_ui import PubSubHelper
 
 ACTIVITIES_ENDPOINT = "api/v1.0/activities"
 ACTIVITY_REQUEST = {

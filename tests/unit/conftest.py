@@ -3,15 +3,15 @@ import threading
 
 import pytest
 
-from ska_oso_oet.procedure.application import restserver
+from ska_oso_oet import ui
 
 
 @pytest.fixture(name="client")
 def fixture_client():
     """
-    Test fixture that returns a Flask application instance
+    Test fixture that returns an OET Flask application instance
     """
-    app = restserver.create_app()
+    app = ui.create_app()
     app.config.update(TESTING=True)
     app.config.update(msg_src="unit tests")
     app.config.update(shutdown_event=threading.Event())
@@ -22,7 +22,6 @@ def fixture_client():
 
 
 @pytest.fixture(
-    scope="module",
     params=[
         multiprocessing.get_context("spawn"),
         multiprocessing.get_context("fork"),
