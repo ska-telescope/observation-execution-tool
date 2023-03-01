@@ -230,7 +230,7 @@ def fixture_script_that_increments_and_returns_scan_id(tmpdir):
 
     path.write(
         """
-from ska_oso_oet.command import SCAN_ID_GENERATOR
+from ska_oso_oet.tango import SCAN_ID_GENERATOR
 
 Q = None
 

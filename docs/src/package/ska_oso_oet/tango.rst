@@ -1,16 +1,16 @@
-.. _api-ska_oso_oet-command:
+.. _api-ska_oso_oet-tango:
 
-*******************
-ska_oso_oet.command
-*******************
+*****************
+ska_oso_oet.tango
+*****************
 
-.. autoclass:: ska_oso_oet.command.TangoDeviceProxyFactory
+.. autoclass:: ska_oso_oet.tango.TangoDeviceProxyFactory
    :members:
 
-.. autoclass:: ska_oso_oet.command.TangoExecutor
+.. autoclass:: ska_oso_oet.tango.TangoExecutor
    :members:
 
-.. autoclass:: ska_oso_oet.command.SubscriptionManager
+.. autoclass:: ska_oso_oet.tango.SubscriptionManager
 
    The SubscriptionManager component is responsible for managing events and event subscriptions in the OET. The
    SubscriptionManager sits as a proxy between client and Tango event subscriptions, moving the pub/sub layer accessed by
@@ -40,11 +40,11 @@ ska_oso_oet.command
 
    :members:
 
-.. autoclass:: ska_oso_oet.command.LocalScanIdGenerator
+.. autoclass:: ska_oso_oet.tango.LocalScanIdGenerator
    :members:
 
-.. autoclass:: ska_oso_oet.command.RemoteScanIdGenerator
+.. autoclass:: ska_oso_oet.tango.RemoteScanIdGenerator
    :members:
 
-.. autoclass:: ska_oso_oet.command.Callback
+.. autoclass:: ska_oso_oet.tango.Callback
    :members:

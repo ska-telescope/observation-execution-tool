@@ -2,7 +2,7 @@
 # - W0212(protected-access) - tests need access to protected members to prove
 #   correctness
 """
-Unit tests for the ska_oso_oet.command module.
+Unit tests for the ska_oso_oet.tango module.
 """
 import json
 import multiprocessing
@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import tango
 
-from ska_oso_oet.command import (
+from ska_oso_oet.tango import (
     Attribute,
     Callback,
     Command,
@@ -240,7 +240,7 @@ def test_tango_device_proxy_creates_device_proxy_to_named_device():
     Confirm that the TangoDeviceProxyFactory creates a DeviceProxy using the
     device name given as an argument.
     """
-    with patch("ska_oso_oet.command.tango") as mock_pytango:
+    with patch("ska_oso_oet.tango.tango") as mock_pytango:
         _ = TangoDeviceProxyFactory()("my device")
     mock_pytango.DeviceProxy.assert_called_once_with("my device")
 

@@ -37,7 +37,7 @@
   :caption: Public API Documentation
   :hidden:
 
-  package/ska_oso_oet/command_public
+  package/ska_oso_oet/tango_public
   package/ska_oso_oet/features
 
 .. toctree::
@@ -45,7 +45,7 @@
   :caption: Private API Documentation
   :hidden:
 
-  package/ska_oso_oet/command
+  package/ska_oso_oet/tango
   package/ska_oso_oet/event/topics
   package/ska_oso_oet/mptools
   package/ska_oso_oet/procedure
