@@ -171,7 +171,7 @@ Elements and their properties
      - QueueProcWorker is a ProcWorker that loops over items received on a message queue, calling the abstract
        `main_func()` function for every item received. Together with the ProcWorker base class functionality,
        QueueProcWorker will call `main_func()` for every event received for as long as the shutdown event is not set.
-   * - :class:`~ska_oso_oet.procedure.application.application.ScriptExecutionService`
+   * - :class:`~ska_oso_oet.procedure.application.ScriptExecutionService`
      - ScriptExecutionService provides the high-level API for the script execution domain, presenting methods that
        'start script _Y_' or 'run method _Y_ of user script _Z_'. The ScriptExecutionService orchestrates control of the
        ProcessManager and associated domain objects in order to satisfy an API request.
@@ -199,7 +199,7 @@ Element Interfaces
 
 The major public interface in these interactions is the ScriptExecutionService API. For more information on this
 interface, please see the API documentation for
-:py:class:`~ska_oso_oet.procedure.application.application.ScriptExecutionService`.
+:py:class:`~ska_oso_oet.procedure.application.ScriptExecutionService`.
 
 Element Behaviour
 -----------------
@@ -208,7 +208,7 @@ ScriptExecutionService
 ~~~~~~~~~~~~~~~~~~~~~~
 
 The sequence diagram below gives a high-level overview of how the
-:class:`~ska_oso_oet.procedure.application.application.ScriptExecutionService` controls objects in the domain module to
+:class:`~ska_oso_oet.procedure.application.ScriptExecutionService` controls objects in the domain module to
 meet requests to prepare, start, and stop user script execution.
 
 .. figure:: diagrams/export/backend_module_ui_sequence_ses.svg

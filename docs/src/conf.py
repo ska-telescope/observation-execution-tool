@@ -41,7 +41,8 @@ autodoc_mock_imports = [
     'ska_ser_skuid',
     'ska_ser_logging',
     'tango',
-    'tblib'
+    'tblib',
+    'werkzeug'
 ]
 
 autodoc_default_options = {

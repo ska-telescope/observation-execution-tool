@@ -1,38 +1,20 @@
 @startuml
 'https://plantuml.com/class-diagram
 
-package ska_oso_oet.procedure {
+package ska_oso_oet {
 
-    package application as application_pkg {
-
-        package application <<Rectangle>> {
-            class ScriptExecutionService {
-                prepare(cmd: PrepareProcessCommand) -> ProcedureSummary
-                start(cmd: StartProcessCommand) -> ProcedureSummary
-                stop(cmd: StopProcessCommand) -> List[ProcedureSummary]
-                summarise(pids: List[int]) -> List[[ProcedureSummary]
-            }
+    package main <<Rectangle>> {
+        class EventBusWorker {
+            work_q: MPQueue
+            main_func(event)
         }
-        note top
-        See UI and Service API view
-        for information on the input
-        arguments and output types for
-        ""ScriptExecutionService"".
-        end note
-
-        package main <<Rectangle>> {
-            class EventBusWorker {
-                work_q: MPQueue
-                main_func(event)
-            }
-        }
-        note top
-            See UI and Service API
-            module view for more
-            information on
-            ""EventBusWorker"" use.
-        end note
     }
+    note top
+        See UI and Service API
+        module view for more
+        information on
+        ""EventBusWorker"" use.
+    end note
 
     package mptools <<Rectangle>> {
         class MainContext {
@@ -74,68 +56,90 @@ package ska_oso_oet.procedure {
         MainContext *- "1" MPQueue: event_q
     }
 
-    package domain <<Rectangle>> {
-        class ProcessManager {
-            states: Dict[int, ProcedureState]
-            create(...)
-            run(...)
-            stop(...)
+    package procedure {
+        package application <<Rectangle>> {
+            class ScriptExecutionService {
+                prepare(cmd: PrepareProcessCommand) -> ProcedureSummary
+                start(cmd: StartProcessCommand) -> ProcedureSummary
+                stop(cmd: StopProcessCommand) -> List[ProcedureSummary]
+                summarise(pids: List[int]) -> List[[ProcedureSummary]
+            }
+        }
+        note top
+        See UI and Service API view
+        for information on the input
+        arguments and output types for
+        ""ScriptExecutionService"".
+        end note
+
+        package environment <<Rectangle>> {
+            class EnvironmentManager {
+                create_env(...)
+                delete_env(...)
+            }
+
+            class Environment {
+                env_id: abstract
+                site_packages: str
+                ...
+            }
         }
 
-        class EnvironmentManager {
-            create_env(...)
-            delete_env(...)
+        package domain <<Rectangle>> {
+            class ProcessManager {
+                states: Dict[int, ProcedureState]
+                create(...)
+                run(...)
+                stop(...)
+            }
+
+            class ScriptWorker {
+                work_q: mptools.MPQueue
+                main_func()
+                main_loop()
+                load(script: ExecutableScript)
+                call_fn(...)
+            }
+
+            abstract class ExecutableScript
+            class GitScript
+            class FilesystemScript
+            class EmbeddedStringScript
+            GitScript --|> ExecutableScript
+            FilesystemScript --|> ExecutableScript
+            EmbeddedStringScript --|> ExecutableScript
+
+            enum ProcedureState {
+                UNKNOWN
+                CREATING
+                IDLE
+                PREP_ENV
+                LOADING
+                READY
+                RUNNING
+                COMPLETE
+                STOPPED
+                FAILED
+            }
+
+            class ProcedureInput {
+                args: List
+                kwargs: Dict[str, Any]
+            }
+
+            ProcessManager *-- "1" EnvironmentManager
+            ProcessManager *-- "1" MainContext
+            EnvironmentManager *-- "0..*" Environment
+            ScriptWorker -right[hidden]- Environment
+            ScriptWorker -right[hidden]- ProcedureInput
+            ExecutableScript -down[hidden]- ProcedureInput
+            ExecutableScript -down[hidden]- ProcedureState
+
         }
 
-        class Environment {
-            env_id: abstract
-            site_packages: str
-            ...
-        }
-
-        class ScriptWorker {
-            work_q: mptools.MPQueue
-            main_func()
-            main_loop()
-            load(script: ExecutableScript)
-            call_fn(...)
-        }
-
-        abstract class ExecutableScript
-        class GitScript
-        class FilesystemScript
-        class EmbeddedStringScript
-        GitScript --|> ExecutableScript
-        FilesystemScript --|> ExecutableScript
-        EmbeddedStringScript --|> ExecutableScript
-
-        enum ProcedureState {
-            UNKNOWN
-            CREATING
-            IDLE
-            PREP_ENV
-            LOADING
-            READY
-            RUNNING
-            COMPLETE
-            STOPPED
-            FAILED
-        }
-
-        class ProcedureInput {
-            args: List
-            kwargs: Dict[str, Any]
-        }
-
-        ProcessManager *-left- "1" EnvironmentManager
-        ProcessManager *-right-- "1" MainContext
-        EnvironmentManager *-- "0..*" Environment
-        ProcessManager -down[hidden]- ScriptWorker
+        ScriptExecutionService *-- "1" ProcessManager
+        ScriptWorker --|> ProcWorker
     }
-
-    ScriptExecutionService *-- "1" ProcessManager
-    ScriptWorker --|> ProcWorker
-
 }
 
 package multiprocessing {
@@ -145,11 +149,5 @@ package multiprocessing {
 MPQueue --|> Queue
 
 EventBusWorker --|> QueueProcWorker
-
-Environment -down[hidden]- GitScript
-
-MPQueue -up[hidden]- ProcWorker
-ProcedureInput -right[hidden]- ProcedureState
-ProcedureState -up[hidden]- ExecutableScript
 
 @enduml

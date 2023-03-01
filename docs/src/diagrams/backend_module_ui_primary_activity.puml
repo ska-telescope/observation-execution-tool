@@ -1,9 +1,7 @@
 @startuml
 'https://plantuml.com/class-diagram
 
-package ska_oso_oet.procedure {
-
-package application as application_pkg {
+package ska_oso_oet {
 
     package main <<Rectangle>> {
 
@@ -11,8 +9,7 @@ package application as application_pkg {
             run(...)
         }
 
-        class FlaskWorker {
-        }
+        class FlaskWorker
 
         class EventBusWorker {
             main_loop(...)
@@ -24,55 +21,69 @@ package application as application_pkg {
         FlaskWorker -up-|> EventBusWorker
     }
 
-    package restserver <<Rectangle>> {
+    package ui <<Rectangle>> {
+
         class app <<function return value>> {
         }
-
-        class ActivityAPIBlueprint
-
-        app o-- ActivityAPIBlueprint
     }
 
-    package application <<Rectangle>> {
+    package activity {
 
-        class ActivityService {
-            history: List[ActivitySummary]
+        package ui as activity_ui <<Rectangle>> {
+            class ActivityAPI
+        }
+        app o-- ActivityAPI
 
-            run(cmd: ActivityCommand) -> ActivitySummary
+
+        package application <<Rectangle>> {
+
+            class ActivityCommand {
+                sbd_id: str
+                activity_name: str
+                prepare_only: bool
+                arg_override: Dict
+            }
+
+            class ActivityService {
+                history: List[ActivitySummary]
+                run(cmd: ActivityCommand) -> ActivitySummary
+            }
+
+            class ActivitySummary {
+                activity_id: int
+                procedure_id: int
+                sbd_id: str
+                activity_name: str
+                prepare_only: bool
+                arg_override: List[ArgCapture]
+                activity_states: List[(ActivityState, timestamp)]
+            }
+
         }
 
-        class ActivitySummary {
-            activity_id: int
-            procedure_id: int
-            sbd_id: str
-            activity_name: str
-            prepare_only: bool
-            arg_override: List[ArgCapture]
-            activity_states: List[(ActivityState, timestamp)]
+        package domain as activity_domain <<Rectangle>> {
+            enum ActivityState {
+                REQUESTED
+            }
         }
 
-        class ArgCapture {
-            fn: str
-            fn_args: domain.ProcedureInput
-            time: float
-        }
-        ActivitySummary -right-|> ArgCapture
+        FlaskWorker *-- app
+        ActivityWorker *-- ActivityService
+    }
 
-        class ActivityCommand {
-            sbd_id: str
-            activity_name: str
-            prepare_only: bool
-            arg_override: Dict
-        }
+    package procedure {
 
-        enum ActivityState {
-            REQUESTED
+        package domain as procedure_domain <<Rectangle>> {
+            class ArgCapture {
+                fn: str
+                fn_args: domain.ProcedureInput
+                time: float
+            }
         }
+        ActivitySummary -left-|> ArgCapture
+
     }
 }
-
-FlaskWorker *-- app
-ActivityWorker *-- ActivityService
 
 package flask {
     class Flask
@@ -82,13 +93,16 @@ package flask {
 }
 
 app -|> Flask
-ActivityAPIBlueprint -|> Blueprint
+ActivityAPI -|> Blueprint
 
-main -down[hidden]--> application
-restserver -left[hidden]--> application
-restserver -right[hidden]--> flask
-FlaskWorker -down[hidden]--> restserver
+activity_ui -down[hidden]- application
+application -down[hidden]- activity_domain
+
+'main -down[hidden]--> application
+'restserver -left[hidden]--> application
+'restserver -right[hidden]--> flask
+'FlaskWorker -down[hidden]--> restserver
+ActivitySummary -right[hidden]- ActivityCommand
 ActivityService -down[hidden]- ActivitySummary
-ActivitySummary -left[hidden]- ActivityCommand
 
 @enduml
