@@ -22,7 +22,7 @@ from ska_oso_oet.mptools import (
     default_signal_handler,
     init_signals,
 )
-from ska_oso_oet.procedure.application.application import (
+from ska_oso_oet.procedure.application import (
     PrepareProcessCommand,
     ProcedureSummary,
     ScriptExecutionService,

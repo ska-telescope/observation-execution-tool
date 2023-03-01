@@ -12,10 +12,11 @@ from unittest.mock import MagicMock, call, patch
 
 import pubsub.pub
 import pytest
+from unit.ska_oso_oet.test_ui import PubSubHelper
 
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import EventMessage
-from ska_oso_oet.procedure.application.application import (
+from ska_oso_oet.procedure.application import (
     ArgCapture,
     PrepareProcessCommand,
     ProcedureHistory,
@@ -39,8 +40,6 @@ from tests.unit.ska_oso_oet.procedure.test_domain import (  # noqa: F401
     fixture_main_hang_script,
     fixture_script,
 )
-
-from ...test_ui import PubSubHelper
 
 
 @pytest.fixture(name="sleep_script")
@@ -605,7 +604,7 @@ class TestSESHistory:
         # reduce max history to make test quicker
         limit = 3
         with patch(
-            "ska_oso_oet.procedure.application.application.HISTORY_MAX_LENGTH",
+            "ska_oso_oet.procedure.application.HISTORY_MAX_LENGTH",
             new=limit,
         ):
             for _ in range(limit):

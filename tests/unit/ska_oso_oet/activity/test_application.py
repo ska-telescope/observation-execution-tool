@@ -20,10 +20,7 @@ from ska_oso_oet.activity.application import (
 )
 from ska_oso_oet.activity.domain import Activity, ActivityState
 from ska_oso_oet.event import topics
-from ska_oso_oet.procedure.application.application import (
-    PrepareProcessCommand,
-    StartProcessCommand,
-)
+from ska_oso_oet.procedure.application import PrepareProcessCommand, StartProcessCommand
 from ska_oso_oet.procedure.domain import FileSystemScript, ProcedureInput
 
 from ..test_ui import PubSubHelper
