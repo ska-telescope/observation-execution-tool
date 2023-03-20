@@ -9,6 +9,7 @@ import threading
 import time
 import types
 from http import HTTPStatus
+from typing import List
 from unittest import mock
 
 import flask
@@ -250,6 +251,28 @@ class PubSubHelper:
             sleep_secs = mptools._sleep_secs(tick, deadline)
 
         return any_msgs_with_state()
+
+    def assert_state_history(self, pid: int, expected: List[ProcedureState]):
+        """
+        Assert that the state history of a Procedure is as expected.
+
+        :param pid: PID of Procedure to inspect
+        :param expected: ordered list of states for comparison
+        """
+        msgs = self.messages_on_topic(topics.procedure.lifecycle.statechange)
+        states = [msg["new_state"] for msg in msgs if int(msg["msg_src"]) == pid]
+        assert states == expected
+
+    def assert_state(self, pid: int, expected: ProcedureState):
+        """
+        Assert that the published state of a Procedure is as expected.
+
+        :param pid: PID of Procedure to inspect
+        :param expected: expected state for comparison
+        """
+        msgs = self.messages_on_topic(topics.procedure.lifecycle.statechange)
+        states = [msg["new_state"] for msg in msgs if int(msg["msg_src"]) == pid]
+        assert states[-1] == expected
 
 
 def assert_json_equal_to_procedure_summary(

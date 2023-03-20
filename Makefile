@@ -58,6 +58,7 @@ K8S_CHART = ska-oso-oet-umbrella
 # unset defaults so settings in pyproject.toml take effect
 PYTHON_SWITCHES_FOR_BLACK =
 PYTHON_SWITCHES_FOR_ISORT =
+PYTHON_LINE_LENGTH = 88
 
 # Pylint tweaks:
 # - C = disable msgs about Python conventions
