@@ -1,7 +1,20 @@
 @startuml
 'https://plantuml.com/class-diagram
 
-package ska_oso_oet.procedure {
+package ska_oso_oet_client {
+    package restclient <<Rectangle>> {
+        class RestClientUI {
+            create(...)
+            start(...)
+            stop(...)
+            list(...)
+            describe(...)
+            listen(...)
+        }
+    }
+}
+
+package ska_oso_oet {
 
     package mptools <<Rectangle>> {
         note as mptools_note
@@ -12,53 +25,46 @@ package ska_oso_oet.procedure {
         end note
     }
 
-    package application as application_pkg {
-
-        package restclient <<Rectangle>> {
-            class RestClientUI {
-                create(...)
-                start(...)
-                stop(...)
-                list(...)
-                describe(...)
-                listen(...)
-            }
+    package main <<Rectangle>> {
+        class ScriptExecutionServiceWorker {
+            prepare(...)
+            start(...)
+            stop(...)
+            list(...)
         }
 
-        package main <<Rectangle>> {
-            class ScriptExecutionServiceWorker {
-                prepare(...)
-                start(...)
-                stop(...)
-                list(...)
-            }
+        class FlaskWorker
 
-            class FlaskWorker {
-            }
-
-            class EventBusWorker {
-                main_loop(...)
-                main_func(...)
-                republish(...)
-            }
-
-            ScriptExecutionServiceWorker --|> EventBusWorker
-            FlaskWorker --|> EventBusWorker
+        class EventBusWorker {
+            main_loop(...)
+            main_func(...)
+            republish(...)
         }
 
-        package restserver <<Rectangle>> {
-            class app <<function return value>> {
-            }
+        ScriptExecutionServiceWorker -up-|> EventBusWorker
+        FlaskWorker -up-|> EventBusWorker
+        EventBusWorker -right[dotted]- mptools: uses
+        EventBusWorker -right[dotted]- pypubsub: uses
+    }
 
-            class API
-
-            class ServerSentEventsBlueprint
-
-            app o-- API
-            app o-- ServerSentEventsBlueprint
+    package ui <<Rectangle>> {
+        class app <<function return value>> {
         }
+
+        class ServerSentEventsBlueprint
+
+        app o-- ServerSentEventsBlueprint
+    }
+
+    package procedure {
+
+        package ui as procedure_ui <<Rectangle>> {
+            class ProcedureAPI
+        }
+        app o-- ProcedureAPI
 
         package application <<Rectangle>> {
+
             note as N1
             See the Script Execution module
             view for information on objects
@@ -110,9 +116,10 @@ package ska_oso_oet.procedure {
         }
         FlaskWorker *-- app
         ScriptExecutionServiceWorker --> ScriptExecutionService
-
     }
+
 }
+
 
 package flask {
     class Flask
@@ -122,20 +129,18 @@ package flask {
 }
 
 app -|> Flask
-API -|> Blueprint
+ProcedureAPI -|> Blueprint
 ServerSentEventsBlueprint --|> Blueprint
 
 package pypubsub {
 }
-ska_oso_oet.procedure -[dashed]-> pypubsub: uses
 
-main -down[hidden]--> application
-restserver -left[hidden]--> application
-restserver -right[hidden]--> flask
-FlaskWorker -down[hidden]--> restserver
+'main -down[hidden]--> application
+'restserver -left[hidden]--> application
+'restserver -right[hidden]--> flask
+'FlaskWorker -down[hidden]--> restserver
 ScriptExecutionService -down[hidden]- ProcedureSummary
 ScriptExecutionService -down[hidden]- PrepareProcessCommand
 PrepareProcessCommand -right[hidden]- ProcedureSummary
-EventBusWorker -[dotted]- mptools: uses
 
 @enduml

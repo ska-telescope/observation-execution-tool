@@ -3,16 +3,7 @@
 
 package ska_oso_oet {
 
-    skinparam noteFontSize<<not_implemented_note>> 50
-
-    note as not_implemented_note
-    **Note**
-    This diagram represents a proposed refactoring
-    of the current ska_oso_oet project structure and
-    has not yet been implemented.
-    end note
-
-    package mptools <<Rectangle>> {
+    package mptools {
         note as mptools_note
         See the ScriptExecutionService
         view for more information on
@@ -22,7 +13,6 @@ package ska_oso_oet {
     }
 
     package main <<Rectangle>> {
-
         class ScriptExecutionServiceWorker {
             prepare(...)
             start(...)
@@ -49,15 +39,15 @@ package ska_oso_oet {
         ActivityWorker -up-|> EventBusWorker
     }
 
-    package app <<Rectangle>> {
+    package ui <<Rectangle>> {
         class create_app <<function>>
-        class ServerSentEventsAPI
+        class ServerSentEventsBlueprint
 
         note as app_note
         create_app function will
         create a Flask application
         using ProcedureAPI, ActivityAPI
-        and ServerSentEventsAPI
+        and ServerSentEventsBlueprint
         blueprints.
         end note
 
@@ -68,36 +58,30 @@ package ska_oso_oet {
 
     package procedure {
 
-        package procedure.application <<Rectangle>> {
-
-            package procedure.application.api <<Rectangle>> {
-                class ProcedureAPI
-            }
-
-            package procedure.application.service <<Rectangle>> {
-                class ScriptExecutionService
-            }
+        package ui as procedure_ui <<Rectangle>> {
+            class ProcedureAPI
         }
 
-        package procedure.domain <<Rectangle>> {
+        package application as procedure_application <<Rectangle>> {
+            class ScriptExecutionService
+        }
+
+        package domain as procedure_domain <<Rectangle>> {
         }
         ScriptExecutionServiceWorker --> ScriptExecutionService
 
     }
 
     package activity {
-        package activity.application <<Rectangle>> {
-            package activity.application.api {
-                class ActivityAPI
-            }
-
-            package activity.application.service {
-                class ActivityService
-            }
+        package ui as activity_ui <<Rectangle>> {
+            class ActivityAPI
         }
 
-        package activity.domain <<Rectangle>> {
+        package application as activity_application <<Rectangle>> {
+            class ActivityService
+        }
 
+        package domain as activity_domain <<Rectangle>> {
         }
         ActivityWorker --> ActivityService
     }
@@ -108,15 +92,15 @@ package flask {
     class Blueprint
 }
 
-create_app -|> Flask
-ServerSentEventsAPI --|> Blueprint
+create_app --|> Flask
+ServerSentEventsBlueprint --|> Blueprint
 ActivityAPI --|> Blueprint
 ProcedureAPI --|> Blueprint
 
 EventBusWorker -[dotted]- mptools: uses
 
-procedure.application.service -down[hidden]- procedure.application.api
-activity.application.service -down[hidden]- activity.application.api
-create_app -down[hidden]- ServerSentEventsAPI
+procedure_application -down[hidden]- procedure_ui
+activity_application -down[hidden]- activity_ui
+create_app -down[hidden]- ServerSentEventsBlueprint
 
 @enduml

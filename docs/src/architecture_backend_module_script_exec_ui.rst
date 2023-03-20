@@ -36,13 +36,13 @@ Elements and Their Properties
      - Description
    * - app
        |br|
-       (variable in  :class:`~ska_oso_oet.procedure.application.main.FlaskWorker.startup`)
+       (variable in  :class:`~ska_oso_oet.main.FlaskWorker.startup`)
      - app is the Flask web application that makes the OET available over HTTP. app is the local variable created during
        FlaskWorker startup. The web application has the API blueprint and ServerSentEventsBlueprint registered, which
        makes the OET REST API and the OET event stream available when the web app is run.
-   * - :class:`~ska_oso_oet.procedure.application.restserver.API`
-     - API is a Flask blueprint containing the Python functions that implement the OET REST API. HTTP resources in
-       this blueprint are accessed and modified to control script execution. As the resources are accessed, the API
+   * - :class:`~ska_oso_oet.procedure.ui.ProcedureAPI`
+     - ProcedureAPI is a Flask blueprint containing the Python functions that implement the OET REST API. HTTP resources
+       in this blueprint are accessed and modified to control script execution. As the resources are accessed, the API
        implementation publishes an equivalent request event, which triggers the ScriptExecutionServiceWorker to take the
        appropriate action to satisfy that request. API also converts the response back to a suitable HTML response.
        |br|
@@ -52,7 +52,7 @@ Elements and Their Properties
      - A Flask Blueprint collects a set of HTTP operations that can be registered on a Flask web application.
        Registering a Blueprint to a Flask application makes the HTTP operations in that blueprint available when
        the web application is deployed.
-   * - :class:`~ska_oso_oet.procedure.application.main.EventBusWorker`
+   * - :class:`~ska_oso_oet.main.EventBusWorker`
      - EventBusWorker is a base class that bridges the independent pypubsub publish-subscribe networks so that a
        pypubsub message seen in one EventBusWorker process is also seen by other EventBusWorker processes.
        EventBusWorker is intended to be inherited by classes that register their methods as subscribers to pypubsub
@@ -61,20 +61,20 @@ Elements and Their Properties
      - Flask (https://flask.palletsprojects.com) is a third-party Python framework for developing web applications. It
        provides an easy way to expose a Python function as a HTTP endpoint. Flask is used to present the functions in
        the restserver module as HTTP REST resources.
-   * - :class:`~ska_oso_oet.procedure.application.main.FlaskWorker`
+   * - :class:`~ska_oso_oet.main.FlaskWorker`
      - FlaskWorker runs the 'app' Flask application. As a subclass of EventBusWorker, FlaskWorker also relays pypubsub
        messages to and from other Python processes.
    * - :class:`~ska_oso_oet.mptools`
      - mptools is a Python framework for creating robust Python applications that run code concurrently in independent
        Python processes. See :doc:`architecture_backend_module_execution` for details.
-   * - :class:`~ska_oso_oet.procedure.application.application.PrepareProcessCommand`
+   * - :class:`~ska_oso_oet.procedure.application.PrepareProcessCommand`
      - PrepareProcessCommand encapsulates all the information required to prepare a script for execution. It references
        both the script location and arguments that should be passed to the script initialisation function, if such a
        function is present.
-   * - :class:`~ska_oso_oet.procedure.application.application.ProcedureHistory`
+   * - :class:`~ska_oso_oet.procedure.application.ProcedureHistory`
      - ProcedureHistory represents the state history of a script execution process, holding a timeline of state
        transitions and any stacktrace resulting from script execution failure.
-   * - :class:`~ska_oso_oet.procedure.application.application.ProcedureSummary`
+   * - :class:`~ska_oso_oet.procedure.application.ProcedureSummary`
      - ProcedureSummary is a presentation model capturing information on a script and its execution history. Through
        the ProcedureSummary, information identifying the script, the process running it, the current and historic
        process state, plus a timeline of all function called on the script and any resulting stacktrace can be resolved.
@@ -88,7 +88,7 @@ Elements and Their Properties
        commands for creating new script execution processes, invoking methods on user scripts, terminating scrip
        execution, listing user processes on the remote machine, and inspecting the state of a particular user script
        process.
-   * - :class:`~ska_oso_oet.procedure.application.application.ScriptExecutionService`
+   * - :class:`~ska_oso_oet.procedure.application.ScriptExecutionService`
      - ScriptExecutionService provides the high-level API for the script execution domain, presenting methods that
        'start script X' or 'run method Y of user script Z'. See :doc:`architecture_backend_module_execution` for details on
        how this is achieved.
@@ -102,17 +102,17 @@ Elements and Their Properties
        ScriptExecutionService provides a presentation model of a script and its
        execution history, which can be formatted for presentation via the REST service and CLI. This presentation model
        is called a ProcedureSummary.
-   * - :class:`~ska_oso_oet.procedure.application.restserver.ServerSentEventsBlueprint`
+   * - :class:`~ska_oso_oet.ui.ServerSentEventsBlueprint`
      - ServerSentEventsBlueprint is a Flask Blueprint contains the functions required to expose the OET event bus
        as a server-sent events stream (https://en.wikipedia.org/wiki/Server-sent_events). This SSE stream republishes
        all events sent over the OET event bus as HTTP data. This provides the mechanism for external visibility of OET
        actions, significant milestones, and user events emitted by the script such as 'subarray resources allocated',
        'scan started', 'scan stopped', etc.
-   * - :class:`~ska_oso_oet.procedure.application.application.StartProcessCommand`
+   * - :class:`~ska_oso_oet.procedure.application.StartProcessCommand`
      - StartProcessCommand encapsulates all the information required to call a method of a user script running on the
        OET backend. It captures information on the script process to target, the script function to call, and any
        arguments to be passed to the function.
-   * - :class:`~ska_oso_oet.procedure.application.application.StopProcessCommand`
+   * - :class:`~ska_oso_oet.procedure.application.StopProcessCommand`
      - StopProcesCommand encapsulates the information required to terminate a process. It holds information on which
        script process should be terminated and whether the 'abort subarray activity' follow-on script should be run.
 

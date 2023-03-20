@@ -38,10 +38,14 @@ autodoc_mock_imports = [
     'jsonpickle',
     'marshmallow',
     'pubsub',
+    'ska_db_oda',
+    'ska_oso_pdm',
     'ska_ser_skuid',
     'ska_ser_logging',
     'tango',
-    'tblib'
+    'tblib',
+    'waitress',
+    'werkzeug'
 ]
 
 autodoc_default_options = {
@@ -58,10 +62,10 @@ def setup(app):
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-nitpick_ignore = [
-    ("py:class", "tango.EventData"),
-    ("py:class", "ska_oso_oet.command.SubscriptionManager"),
-]
+# nitpick_ignore = [
+#     ("py:class", "tango.EventData"),
+#     ("py:class", "ska_oso_oet.tango.SubscriptionManager"),
+# ]
 
 
 # -- General configuration ------------------------------------------------

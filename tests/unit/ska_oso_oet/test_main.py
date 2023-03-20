@@ -1,38 +1,30 @@
 # pylint: disable=W0613
 # - W0613(unused-argument): fixture usage
 """
-Unit tests for the ska_oso_oet.procedure.application.main module.
+Unit tests for the ska_oso_oet.main module.
 """
-import multiprocessing as mp
 import unittest.mock as mock
 from functools import partial
 
 import pubsub.pub
-import pytest
 
+import ska_oso_oet.activity.application
 from ska_oso_oet.event import topics
-from ska_oso_oet.mptools import EventMessage, MPQueue
-from ska_oso_oet.procedure import domain
-from ska_oso_oet.procedure.application import application
-from ska_oso_oet.procedure.application.main import (
+from ska_oso_oet.main import (
     ActivityServiceWorker,
     EventBusWorker,
     FlaskWorker,
     ScriptExecutionServiceWorker,
     main_loop,
 )
+from ska_oso_oet.mptools import EventMessage, MPQueue
+from ska_oso_oet.procedure import application, domain
 from tests.unit.ska_oso_oet.mptools.test_mptools import _proc_worker_wrapper_helper
-from tests.unit.ska_oso_oet.procedure.application.test_restserver import PubSubHelper
 
-multiprocessing_contexts = [
-    mp.get_context("spawn"),
-    mp.get_context("fork"),
-    mp.get_context("forkserver"),
-]
+from .test_ui import PubSubHelper
 
 
 class TestEventBusWorker:
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_external_messages_are_published_locally(self, mp_fixture, caplog):
         """
         Verify that message event is published if the event originates from an
@@ -61,7 +53,6 @@ class TestEventBusWorker:
         assert topics.request.procedure.list in helper.topic_list
         work_q.safe_close()
 
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_internal_messages_not_republished(self, mp_fixture, caplog):
         """
         Verify that message event is not published if the event originates from
@@ -104,7 +95,6 @@ class TestEventBusWorker:
 
 
 class TestScriptExecutionWorker:
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_list_method_called(self, mp_fixture, caplog):
         """
         SES.summarise should be called when 'request.procedure.list' message is received
@@ -122,7 +112,7 @@ class TestScriptExecutionWorker:
         event = mp_fixture.Event()
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ScriptExecutionService.summarise"
+            "ska_oso_oet.main.ScriptExecutionService.summarise"
         ) as mock_cls:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_cls.side_effect = partial(set_event, event)
@@ -144,7 +134,6 @@ class TestScriptExecutionWorker:
 
         work_q.safe_close()
 
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_handles_request_to_list_invalid_id(self, mp_fixture, caplog):
         """
         The ValueError raised when SES.summarise is given an invalid PID should be handled.
@@ -161,7 +150,7 @@ class TestScriptExecutionWorker:
         work_q.put(msg)
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ScriptExecutionService.summarise"
+            "ska_oso_oet.main.ScriptExecutionService.summarise"
         ) as mock_cls:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_cls.side_effect = ValueError
@@ -185,7 +174,6 @@ class TestScriptExecutionWorker:
 
         work_q.safe_close()
 
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_start_method_called(self, mp_fixture, caplog):
         """
         SES.start should be called when 'request.procedure.start' message is received
@@ -193,9 +181,7 @@ class TestScriptExecutionWorker:
         cmd = application.StartProcessCommand(
             process_uid=123, fn_name="main", run_args=domain.ProcedureInput()
         )
-        with mock.patch(
-            "ska_oso_oet.procedure.application.main.ScriptExecutionService.start"
-        ) as mock_method:
+        with mock.patch("ska_oso_oet.main.ScriptExecutionService.start") as mock_method:
             assert_command_request_and_response(
                 mp_fixture,
                 caplog,
@@ -206,7 +192,6 @@ class TestScriptExecutionWorker:
                 cmd,
             )
 
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_prepare_method_called(self, mp_fixture, caplog):
         """
         SES.prepare should be called when 'request.procedure.create' message is received
@@ -216,7 +201,7 @@ class TestScriptExecutionWorker:
             init_args=domain.ProcedureInput(),
         )
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ScriptExecutionService.prepare"
+            "ska_oso_oet.main.ScriptExecutionService.prepare"
         ) as mock_method:
             assert_command_request_and_response(
                 mp_fixture,
@@ -228,15 +213,12 @@ class TestScriptExecutionWorker:
                 cmd,
             )
 
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_stop_method_called(self, mp_fixture, caplog):
         """
         SES.stop should be called when 'request.procedure.stop' message is received
         """
         cmd = application.StopProcessCommand(process_uid=123, run_abort=False)
-        with mock.patch(
-            "ska_oso_oet.procedure.application.main.ScriptExecutionService.stop"
-        ) as mock_method:
+        with mock.patch("ska_oso_oet.main.ScriptExecutionService.stop") as mock_method:
             assert_command_request_and_response(
                 mp_fixture,
                 caplog,
@@ -249,7 +231,6 @@ class TestScriptExecutionWorker:
 
 
 class TestActivityWorker:
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_list_method_called(self, mp_fixture, caplog):
         """
         ActivityService.summarise should be called when 'topics.request.activity.list' message is received.
@@ -269,9 +250,7 @@ class TestActivityWorker:
         work_q.put(msg)
         event = mp_fixture.Event()
 
-        with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.summarise"
-        ) as mock_method:
+        with mock.patch("ska_oso_oet.main.ActivityService.summarise") as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.side_effect = partial(set_event, event)
                 _proc_worker_wrapper_helper(
@@ -292,7 +271,6 @@ class TestActivityWorker:
 
         work_q.safe_close()
 
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def tests_handles_request_to_list_handles_invalid_id(self, mp_fixture, caplog):
         """
         A ValueError raised by ActivityService.summarise should be handled by the worker
@@ -310,9 +288,7 @@ class TestActivityWorker:
         )
         work_q.put(msg)
 
-        with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.summarise"
-        ) as mock_method:
+        with mock.patch("ska_oso_oet.main.ActivityService.summarise") as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.side_effect = ValueError
                 _proc_worker_wrapper_helper(
@@ -336,7 +312,6 @@ class TestActivityWorker:
 
         work_q.safe_close()
 
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_prepare_method_called(self, mp_fixture, caplog):
         """
         ActivityService.prepare_run_activity should be called when 'topics.request.activity.run' message is received.
@@ -344,7 +319,9 @@ class TestActivityWorker:
         """
         pubsub.pub.unsubAll()
         helper = PubSubHelper()
-        cmd = application.ActivityCommand("test_activity", "sbd-123", False, False, {})
+        cmd = ska_oso_oet.activity.application.ActivityCommand(
+            "test_activity", "sbd-123", False, False, {}
+        )
 
         work_q = MPQueue(ctx=mp_fixture)
         msg = EventMessage(
@@ -359,7 +336,7 @@ class TestActivityWorker:
         event = mp_fixture.Event()
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.prepare_run_activity"
+            "ska_oso_oet.main.ActivityService.prepare_run_activity"
         ) as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.side_effect = partial(set_event, event)
@@ -379,7 +356,6 @@ class TestActivityWorker:
 
             work_q.safe_close()
 
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_prepare_handles_error(self, mp_fixture, caplog):
         """
         An exception raised by ActivityService.prepare_run_activity should be handled by the worker by sending
@@ -389,7 +365,9 @@ class TestActivityWorker:
         helper = PubSubHelper()
 
         work_q = MPQueue(ctx=mp_fixture)
-        cmd = application.ActivityCommand("test_activity", "sbd-123", False, False, {})
+        cmd = ska_oso_oet.activity.application.ActivityCommand(
+            "test_activity", "sbd-123", False, False, {}
+        )
         msg = EventMessage(
             "TEST_SUMMARY",
             "PUBSUB",
@@ -402,7 +380,7 @@ class TestActivityWorker:
         expected_error = RuntimeError("test error")
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.prepare_run_activity"
+            "ska_oso_oet.main.ActivityService.prepare_run_activity"
         ) as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.side_effect = expected_error
@@ -427,7 +405,6 @@ class TestActivityWorker:
 
         work_q.safe_close()
 
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_complete_method_called(self, mp_fixture, caplog):
         """
         ActivityService.complete_run_activity should be called when 'topics.procedure.lifecycle.created' message is received,
@@ -448,12 +425,12 @@ class TestActivityWorker:
             ),
         )
         work_q.put(msg)
-        expected_activity_summary = application.ActivitySummary(
+        expected_activity_summary = ska_oso_oet.activity.application.ActivitySummary(
             1, 2, "sbd-123", "allocate", True, {}, []
         )
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.complete_run_activity"
+            "ska_oso_oet.main.ActivityService.complete_run_activity"
         ) as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.return_value = expected_activity_summary
@@ -480,7 +457,6 @@ class TestActivityWorker:
             assert activity_summary == expected_activity_summary
             work_q.safe_close()
 
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_complete_handles_error(self, mp_fixture, caplog):
         """
         An exception raised by ActivityService.complete_run_activity should be handled by the worker by sending
@@ -503,7 +479,7 @@ class TestActivityWorker:
         expected_error = RuntimeError("test error")
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.complete_run_activity"
+            "ska_oso_oet.main.ActivityService.complete_run_activity"
         ) as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.side_effect = expected_error
@@ -528,7 +504,6 @@ class TestActivityWorker:
 
         work_q.safe_close()
 
-    @pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
     def test_complete_handle_none_activity_procedure(self, mp_fixture, caplog):
         """
         When ActivityService.complete_run_activity returns None this means the Procedure was not created from an Activity request
@@ -551,7 +526,7 @@ class TestActivityWorker:
         work_q.put(msg)
 
         with mock.patch(
-            "ska_oso_oet.procedure.application.main.ActivityService.complete_run_activity"
+            "ska_oso_oet.main.ActivityService.complete_run_activity"
         ) as mock_method:
             with mock.patch.object(pubsub.pub, "unsubAll", return_value=[]):
                 mock_method.return_value = None
@@ -615,7 +590,6 @@ def set_event(event, *args, **kwargs):
     event.set()
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts[0:1])
 def test_flaskworker_server_lifecycle(mp_fixture, caplog, mocker):
     """
     Verify that the FlaskWorker starts and shuts down the Waitress server.
@@ -635,7 +609,6 @@ def test_flaskworker_server_lifecycle(mp_fixture, caplog, mocker):
         mock_app_instance.close.assert_called_once()
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_loop_ends_when_shutdown_event_is_set(mp_fixture):
     """
     Main loop should terminate when shutdown event is set.
@@ -658,7 +631,6 @@ def test_main_loop_ends_when_shutdown_event_is_set(mp_fixture):
     assert event_q.safe_close() == 2
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_loop_ends_on_end_message(mp_fixture):
     """
     Main loop should terminate when end message is received.
@@ -679,7 +651,6 @@ def test_main_loop_ends_on_end_message(mp_fixture):
     assert event_q.safe_close() == 0
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_loop_adds_pubsub_messages_to_event_queues(mp_fixture):
     """
     PUBSUB messages should be added to event queues.
@@ -708,7 +679,6 @@ def test_main_loop_adds_pubsub_messages_to_event_queues(mp_fixture):
     event_q.safe_close()
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_loop_ignores_and_logs_events_of_unknown_types(mp_fixture):
     """
     Loop should log events it doesn't know how to handle.
@@ -730,7 +700,6 @@ def test_main_loop_ignores_and_logs_events_of_unknown_types(mp_fixture):
     assert "Unhandled Event" in mock_ctx.log.call_args[0][1]
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_loop_checks_shutdown_event_after_every_queue_get(mp_fixture):
     """
     Loop should regularly check shutdown event,
@@ -753,7 +722,6 @@ def test_main_loop_checks_shutdown_event_after_every_queue_get(mp_fixture):
     assert mock_ctx.shutdown_event.is_set.call_count == 3
 
 
-@pytest.mark.parametrize("mp_fixture", multiprocessing_contexts)
 def test_main_loop_ends_on_fatal_message(mp_fixture):
     """
     Main loop should terminate when fatal messsage is received.

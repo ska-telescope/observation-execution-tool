@@ -11,6 +11,8 @@ import waitress
 from pubsub import pub
 from ska_ser_logging import configure_logging
 
+from ska_oso_oet import ui
+from ska_oso_oet.activity.application import ActivityCommand, ActivityService
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import (
     EventMessage,
@@ -20,10 +22,7 @@ from ska_oso_oet.mptools import (
     default_signal_handler,
     init_signals,
 )
-from ska_oso_oet.procedure.application import restserver
-from ska_oso_oet.procedure.application.application import (
-    ActivityCommand,
-    ActivityService,
+from ska_oso_oet.procedure.application import (
     PrepareProcessCommand,
     ProcedureSummary,
     ScriptExecutionService,
@@ -140,7 +139,7 @@ class FlaskWorker(EventBusWorker):
         # Call super.startup to enable pypubsub <-> event queue republishing
         super().startup()
 
-        app = restserver.create_app()
+        app = ui.create_app()
 
         # override default msg_src with our real process name
         app.config.update(msg_src=self.name)

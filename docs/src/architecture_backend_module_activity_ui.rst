@@ -34,11 +34,11 @@ Elements and their properties
 
    * - Component
      - Description
-   * - :class:`~ska_oso_oet.procedure.application.application.ActivityState`
+   * - :class:`~ska_oso_oet.activity.domain.ActivityState`
      - ActivityState is an enumeration defining the states that an Activity (a concept linking Scheduling Blocks
        to Procedures) can be in. State machine for activities has not yet been completely defined and currently
        Activity can only be in state ``REQUESTED``.
-   * - :class:`~ska_oso_oet.procedure.application.application.ActivityService`
+   * - :class:`~ska_oso_oet.activity.application.ActivityService`
      - ActivityService provides the high-level API for the activity domain, presenting methods that
        'run a script referenced by activity *X* of scheduling block *Y*'. The ActivityService completes user requests
        by translating the activity requests into Procedure domain commands which then execute the scripts.
@@ -52,17 +52,18 @@ Elements and their properties
         #. create a collection of init and run arguments by combining user-defined functions arguments with arguments listed in the SB
         #. add the path to previously written SB JSON file to the run function arguments under key `sb_json`
         #. create PrepareProcessCommand using the FileSystemScript object and arguments for `init` function from the collection of function arguments
+
        |br|
        After the prepare command has been sent, it will wait for a response to record the procedure ID of the
        script relating to the activity. If `prepare_only` argument is set to false, ActivityService will create
        a StartProcessCommand and send it to the ScriptExecutionServiceWorker. It will include the Procedure ID,
        and request that function named `run` will be executed with the corresponding arguments.
-   * - :class:`~ska_oso_oet.procedure.application.main.ActivityServiceWorker`
+   * - :class:`~ska_oso_oet.main.ActivityServiceWorker`
      - For a the OET REST deployment, ActivityServiceWorker is the client sending requests to the ActivityService.
        |br|
        |br|
        ActivityWorker responds to requests received by the FlaskWorker, relaying the request to the
-       :class:`~ska_oso_oet.procedure.application.application.ActivityService`
+       :class:`~ska_oso_oet.activity.application.ActivityService`
        and publishing the response as an event that can be received by the FlaskWorker and returned to the user in the
        appropriate format.
 
