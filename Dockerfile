@@ -1,5 +1,5 @@
-ARG BUILD_IMAGE="artefact.skao.int/ska-tango-images-pytango-builder:9.3.32"
-ARG BASE_IMAGE="artefact.skao.int/ska-tango-images-pytango-runtime:9.3.19"
+ARG BUILD_IMAGE="artefact.skao.int/ska-tango-images-pytango-builder:9.4.1"
+ARG BASE_IMAGE="artefact.skao.int/ska-tango-images-pytango-runtime:9.4.1"
 ARG CAR_OCI_REGISTRY_HOST=artefact.skao.int
 ARG GITLAB_PRIVATE_TOKEN=""
 
@@ -33,7 +33,7 @@ RUN git clone -b master https://gitlab.com/ska-telescope/oso/ska-oso-scripting.g
 # default control scripts. This is done as root so that the default environment
 # is installed to system dist-packages.
 RUN python3 -m pip install \
-    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==7.0.0
+    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==7.1.0
 
 ## To build OET with an unreleased version of scripting for testing purposes, use the following
 #RUN python3 -m pip install  \
