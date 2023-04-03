@@ -2,8 +2,8 @@
   "subarrayID": 1,
   "dish": {
     "receptorIDList": [
-      "0001",
-      "0002"
+      "SKA001",
+      "SKA002"
     ]
   },
   "sdp": {
