@@ -32,9 +32,8 @@ RUN git clone -b master https://gitlab.com/ska-telescope/oso/ska-oso-scripting.g
 # install ska-oso-scripting library to provide a default environment and set of
 # default control scripts. This is done as root so that the default environment
 # is installed to system dist-packages.
-# TEMPORARILY DISABLED TO RESOLVE CIRCULAR DEPENDENCY
-#RUN python3 -m pip install \
-#    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==7.1.0
+RUN python3 -m pip install \
+    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==7.2.0
 
 ## To build OET with an unreleased version of scripting for testing purposes, use the following
 #RUN python3 -m pip install  \

@@ -10,7 +10,6 @@ import threading
 from contextlib import contextmanager
 from unittest.mock import MagicMock, Mock, patch
 
-import pytest
 import tango
 
 from ska_oso_oet.tango import (
@@ -451,11 +450,3 @@ class TestCallback:
         cb(evt_2)
 
         observer.notify.assert_called_once_with(evt_2)
-
-
-def test_command_module_backwards_compatibility_import():
-    # pylint: disable=unused-import
-    try:
-        from ska_oso_oet import command  # noqa: F401
-    except ImportError:
-        pytest.fail("command module not available in old location")
