@@ -10,9 +10,6 @@ from tblib import pickling_support
 
 import ska_oso_oet.event.topics
 
-# backwards compatibility with ska-oso-oet < 5.0.0, to be removed once
-# ska-oso-scripting has been updated to use tango module
-from . import tango as command  # noqa: F401
 from .features import Features
 
 # Set pypubsub to throw an error if topic in sendMessage does not correspond
