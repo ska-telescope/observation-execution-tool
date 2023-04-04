@@ -26,6 +26,18 @@ stages:
   - pages
   - scan
 
+docs-pages:
+  stage: pages
+  needs: []
+
+oci-image-lint:
+  stage: build
+  needs: ["oci-image-build"]
+
+oci-image-scan:
+  stage: scan
+  needs: ["oci-image-build"]
+
 test-chart-templates:
   stage: test
   variables:
