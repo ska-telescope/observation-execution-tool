@@ -34,7 +34,7 @@ test-chart-templates:
   - k8srunner
   image: $SKA_K8S_TOOLS_DEPLOY_IMAGE
   script:
-    - helm plugin install https://github.com/quintush/helm-unittest
+    - helm plugin install https://github.com/helm-unittest/helm-unittest.git
     - make k8s-chart-test
     - mkdir -p ./build/reports
     - mv charts/build/chart_template_tests.xml ./build/reports/chart_template_tests.xml
