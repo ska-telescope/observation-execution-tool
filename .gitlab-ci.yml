@@ -65,6 +65,7 @@ include:
   # .post step finalisers eg: badges
   - project: "ska-telescope/templates-repository"
     file: "gitlab-ci/includes/finaliser.gitlab-ci.yml"
+    ref: st-1441-switch-to-gitlab-dependency-scan
   # Tag Based GitLab Release Management
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/release.gitlab-ci.yml'
