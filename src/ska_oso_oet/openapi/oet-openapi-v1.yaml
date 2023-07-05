@@ -1,0 +1,23 @@
+openapi: 3.0.0
+info:
+  title: OSO OET API
+  description: This OpenAPI document defines the API for the OSO OET REST service
+  license:
+    name: BSD-3-Clause
+    url: https://opensource.org/licenses/BSD-3-Clause
+  version: 1.0.0
+externalDocs:
+  description: Find out more about OSO OET (Observation Execution Tool)
+  url: https://developer.skao.int/projects/ska-oso-oet/en/latest/index.html
+servers:
+  - url: /api/v1.0
+tags:
+  - name: Procedure APIs
+    description: >-
+      Responsible for Preparation and execution of script and getting detail of
+      the script execution
+paths:
+  /procedures:
+    $ref: paths/procedures.yaml
+  /procedures/{procedure_id}:
+    $ref: paths/procedures_{procedure_id}.yaml

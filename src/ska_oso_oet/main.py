@@ -30,6 +30,8 @@ from ska_oso_oet.procedure.application import (
     StopProcessCommand,
 )
 
+os.environ["hostname"] = "localhost"
+
 
 class EventBusWorker(QueueProcWorker):
     """

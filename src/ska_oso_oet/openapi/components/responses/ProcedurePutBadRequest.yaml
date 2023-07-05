@@ -1,0 +1,16 @@
+description: Bad Request
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ErrorDetail.yaml
+    examples:
+      Empty Response:
+        value:
+          error: 400 Bad Request
+          type: Empty Response
+          message: No JSON available in response
+      Malformed Script Args:
+        value:
+          error: 400 Bad Request
+          type: Malformed Request
+          message: Malformed script_args in request

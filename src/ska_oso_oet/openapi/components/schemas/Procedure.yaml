@@ -1,0 +1,61 @@
+type: object
+properties:
+  procedure:
+    type: object
+    properties:
+      history:
+        type: object
+        properties:
+          process_states:
+            type: array
+            items:
+              type: array
+              items:
+                oneOf:
+                  - type: string
+                  - type: number
+            example:
+              - - CREATING
+                - 1688310988.2942257
+              - - IDLE
+                - 1688310988.2944262
+              - - LOADING
+                - 1688310988.2952604
+          stacktrace:
+            type: string
+            example: null
+      script:
+        type: object
+        properties:
+          script_type:
+            type: string
+            example: filesystem
+          script_uri:
+            type: string
+            example: file://test.py
+      script_args:
+        type: object
+        properties:
+          init:
+            type: object
+            properties:
+              args:
+                type: array
+                items:
+                  type: object
+                example: []
+              kwargs:
+                type: object
+                properties:
+                  subarray_id:
+                    type: number
+                    example: 0
+                  verbose:
+                    type: string
+                    example: 'true'
+      state:
+        type: string
+        example: CREATING
+      uri:
+        type: string
+        example: http://localhost:5000/api/v1.0/procedures/2

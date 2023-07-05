@@ -5,16 +5,17 @@ interface
 """
 import json
 import multiprocessing
-from typing import Generator, Optional, Union
+import os
+from typing import Any, Dict, Generator, Optional, Union
 
 import flask
 import jsonpickle
+import prance
+from connexion import App
 from flask import Blueprint, current_app, stream_with_context
 from pubsub import pub
 
-from ska_oso_oet.activity.ui import ActivityAPI
 from ska_oso_oet.mptools import MPQueue
-from ska_oso_oet.procedure.ui import ProcedureAPI
 
 
 class Message:
@@ -121,57 +122,72 @@ class ServerSentEventsBlueprint(Blueprint):
         return current_app.response_class(generator(), mimetype="text/event-stream")
 
 
-@ProcedureAPI.errorhandler(400)
-@ProcedureAPI.errorhandler(404)
-@ProcedureAPI.errorhandler(500)
-@ProcedureAPI.errorhandler(504)
-@ActivityAPI.errorhandler(400)
-@ActivityAPI.errorhandler(404)
-@ActivityAPI.errorhandler(500)
-@ActivityAPI.errorhandler(504)
-def server_error_response(cause):
-    """
-    Custom error handler for Procedure API.
-    This is overloaded for 400, 404, 500 and 504 and could conceivably be
-    extended for other errors by adding the appropriate errorhander decorator.
+class CustomRequestBodyValidator:
+    def __init__(self, *args, **kwargs):
+        pass
 
-    :param cause: root exception for failure (e.g., KeyError)
-    :return: HTTP Response
-    """
-    response = cause.get_response()
-    if isinstance(cause.description, dict):
-        response_data = {
-            "error": f"{cause.code} {cause.name}",
-            "type": cause.description["type"],
-            "Message": cause.description["Message"],
-        }
-    else:
-        response_data = {
-            "error": f"{cause.code} {cause.name}",
-            "type": cause.name,
-            "Message": cause.description,
-        }
-    response.content_type = "application/json"
-    response.data = json.dumps(response_data)
-    return response
+    def __call__(self, function):
+        return function
 
 
-# def create_app(config_filename):
-def create_app():
-    """
-    Create and return a new Flask app that will serve the REST API.
-    """
-    app = flask.Flask(__name__)
-    # TODO get application config working
-    # app.config.from_pyfile(config_filename)
+def get_openapi_spec() -> Dict[str, Any]:
+    "Parses and Returns OpenAPI spec"
+    cwd, _ = os.path.split(__file__)
+    path = os.path.join(cwd, "./openapi/oet-openapi-v1.yaml")
+    parser = prance.ResolvingParser(path, lazy=True, strict=True)
+    parser.parse()
+    return parser.specification
 
-    app.register_blueprint(ProcedureAPI, url_prefix="/api/v1.0", name="procedures")
-    app.register_blueprint(ActivityAPI, url_prefix="/api/v1.0", name="activities")
 
+def create_app(open_api_spec=None):
+    "Returns Flask App using Connexion"
+    if open_api_spec is None:
+        open_api_spec = get_openapi_spec()
+
+    validator_map = {
+        "body": CustomRequestBodyValidator,
+    }
+    connexion = App(__name__, specification_dir="openapi/")
+    connexion.add_api(
+        open_api_spec,
+        arguments={"title": "OpenAPI OET"},
+        validator_map=validator_map,
+        pythonic_params=True,
+    )
+
+    connexion.app.config.update(msg_src=__name__)
     sse = ServerSentEventsBlueprint("sse", __name__)
     sse.add_url_rule(rule="", endpoint="stream", view_func=sse.stream)
-    app.register_blueprint(sse, url_prefix="/api/v1.0/stream")
+    connexion.app.register_blueprint(sse, url_prefix="/api/v1.0/stream")
 
-    app.config.update(msg_src=__name__)
+    @connexion.app.errorhandler(400)
+    @connexion.app.errorhandler(404)
+    @connexion.app.errorhandler(504)
+    @connexion.app.errorhandler(500)
+    def server_error_response(cause):
+        """
+        Custom error handler for Procedure API.
+        This is overloaded for 400, 404, 500 and 504 and could conceivably be
+        extended for other errors by adding the appropriate errorhander decorator.
 
-    return app
+        :param cause: root exception for failure (e.g., KeyError)
+        :return: HTTP Response
+        """
+        response = cause.get_response()
+        if isinstance(cause.description, dict):
+            response_data = {
+                "error": f"{cause.code} {cause.name}",
+                "type": cause.description["type"],
+                "Message": cause.description["Message"],
+            }
+        else:
+            response_data = {
+                "error": f"{cause.code} {cause.name}",
+                "type": cause.name,
+                "Message": cause.description,
+            }
+        response.content_type = "application/json"
+        response.data = json.dumps(response_data)
+        return response
+
+    return connexion.app

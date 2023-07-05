@@ -1,0 +1,27 @@
+type: object
+properties:
+  scripts_args:
+    type: object
+    properties:
+      run:
+        type: object
+        properties:
+          args:
+            type: array
+            items:
+              oneOf:
+                - type: array
+                - type: boolean
+                - type: integer
+                - type: number
+                - type: object
+                - type: string
+            example: []
+          kwargs:
+            type: object
+            additionalProperties: true
+            example:
+              scan_duration: '14.0'
+  state:
+    type: string
+    example: RUNNING
