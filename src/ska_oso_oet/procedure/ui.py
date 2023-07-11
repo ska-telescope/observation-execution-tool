@@ -246,9 +246,7 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
         "stacktrace": procedure.history.stacktrace,
     }
     return {
-        "uri": (
-            f"{os.environ.get('OET_REST_URI','https://localhost/api/v1.0')}/procedures/{procedure.id}"
-        ),
+        "uri": f"{os.environ.get('OET_REST_URI','https://localhost/api/v1.0')}/procedures/{procedure.id}",
         "script": script,
         "script_args": script_args,
         "history": procedure_history,

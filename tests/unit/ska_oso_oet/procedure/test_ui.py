@@ -2,10 +2,11 @@
 Unit tests for the ska_oso_oet.procedure.ui package.
 """
 import copy
+import os
 from http import HTTPStatus
 from unittest import mock
-import os
 from urllib.parse import urlparse
+
 import ska_oso_oet.procedure
 import ska_oso_oet.utils
 from ska_oso_oet.event import topics
@@ -27,9 +28,8 @@ from ska_oso_oet.procedure.gitmanager import GitArgs
 
 from ..test_ui import PubSubHelper
 
-
-#BASE URL
-url = os.environ.get('OET_REST_URI', 'http://localhost/api/v1.0')
+# BASE URL
+url = os.environ.get("OET_REST_URI", "http://localhost/api/v1.0")
 parsed_url = urlparse(url)
 BASE_URL = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
