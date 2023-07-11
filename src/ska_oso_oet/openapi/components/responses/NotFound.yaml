@@ -1,9 +1,0 @@
-description: Not Found
-content:
-  application/json:
-    schema:
-      $ref: ../schemas/ErrorDetail.yaml
-    example:
-      error: 404 Not Found
-      type: ResourceNotFound
-      message: No information available for PID=1
