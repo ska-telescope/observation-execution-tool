@@ -15,8 +15,8 @@ from connexion import App
 from flask import Blueprint, current_app, stream_with_context
 from pubsub import pub
 
-from ska_oso_oet.mptools import MPQueue
 from ska_oso_oet.activity.ui import ActivityAPI
+from ska_oso_oet.mptools import MPQueue
 
 
 class Message:
@@ -161,8 +161,9 @@ def create_app(open_api_spec=None):
     sse = ServerSentEventsBlueprint("sse", __name__)
     sse.add_url_rule(rule="", endpoint="stream", view_func=sse.stream)
     connexion.app.register_blueprint(sse, url_prefix="/api/v1.0/stream")
-    connexion.app.register_blueprint(ActivityAPI, url_prefix="/api/v1.0", name="activities")
-
+    connexion.app.register_blueprint(
+        ActivityAPI, url_prefix="/api/v1.0", name="activities"
+    )
 
     @connexion.app.errorhandler(400)
     @connexion.app.errorhandler(404)
