@@ -4,7 +4,8 @@ Unit tests for the ska_oso_oet.procedure.ui package.
 import copy
 from http import HTTPStatus
 from unittest import mock
-
+import os
+from urllib.parse import urlparse
 import ska_oso_oet.procedure
 import ska_oso_oet.utils
 from ska_oso_oet.event import topics
@@ -25,6 +26,12 @@ from ska_oso_oet.procedure.domain import (
 from ska_oso_oet.procedure.gitmanager import GitArgs
 
 from ..test_ui import PubSubHelper
+
+
+#BASE URL
+url = os.environ.get('OET_REST_URI', 'http://localhost/api/v1.0')
+parsed_url = urlparse(url)
+BASE_URL = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
 # Endpoint for the REST API
 PROCEDURES_ENDPOINT = "api/v1.0/procedures"
@@ -721,7 +728,7 @@ def test_giving_non_dict_script_args_returns_error_code(client):
 def test_make_public_summary():
     with mock.patch("flask.url_for") as mock_url_fn:
         mock_url_fn.return_value = (
-            f"http://localhost/api/v1.0/procedures/{CREATE_SUMMARY.id}"
+            f"{BASE_URL}/{PROCEDURES_ENDPOINT}/{CREATE_SUMMARY.id}"
         )
         summary_json = ska_oso_oet.procedure.ui.make_public_procedure_summary(
             CREATE_SUMMARY
@@ -732,7 +739,7 @@ def test_make_public_summary():
 def test_make_public_summary_git_args():
     with mock.patch("flask.url_for") as mock_url_fn:
         mock_url_fn.return_value = (
-            f"http://localhost/api/v1.0/procedures/{CREATE_GIT_SUMMARY.id}"
+            f"{BASE_URL}/{PROCEDURES_ENDPOINT}/{CREATE_GIT_SUMMARY.id}"
         )
         summary_json = ska_oso_oet.procedure.ui.make_public_procedure_summary(
             CREATE_GIT_SUMMARY
@@ -750,7 +757,7 @@ def assert_json_equal_to_procedure_summary(
     :param summary: reference ProcedureSummary instance
     :param summary_json: JSON for the ProcedureSummary
     """
-    assert summary_json["uri"] == f"http://localhost/{PROCEDURES_ENDPOINT}/{summary.id}"
+    assert summary_json["uri"] == f"{BASE_URL}/{PROCEDURES_ENDPOINT}/{summary.id}"
     assert summary_json["script"]["script_type"] == summary.script.get_type()
     assert summary_json["script"]["script_uri"] == summary.script.script_uri
     if summary_json["script"].get("git_args"):

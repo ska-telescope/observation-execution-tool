@@ -247,7 +247,7 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
     }
     return {
         "uri": (
-            f"http://{os.environ.get('hostname')}/api/v1.0/procedures/{procedure.id}"
+            f"{os.environ.get('OET_REST_URI','https://localhost/api/v1.0')}/procedures/{procedure.id}"
         ),
         "script": script,
         "script_args": script_args,
