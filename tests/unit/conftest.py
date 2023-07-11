@@ -1,5 +1,4 @@
 import multiprocessing
-import os
 import threading
 
 import pytest
@@ -12,7 +11,7 @@ def fixture_client():
     """
     Test fixture that returns an OET Flask application instance
     """
-    os.environ["hostname"] = "localhost"
+
     app = ui.create_app()
     app.config.update(TESTING=True)
     app.config.update(msg_src="unit tests")
