@@ -20,4 +20,7 @@ paths:
     $ref: './procedures.yaml'
   /procedures/{procedure_id}:
     $ref: './procedure.yaml'
-
+  /activities:
+    $ref: './activities.yaml'
+  /activities/{activity_id}:
+    $ref: './activity.yaml'

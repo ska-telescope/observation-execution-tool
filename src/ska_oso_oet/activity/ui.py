@@ -54,8 +54,10 @@ def get_activities():
 
 @ActivityAPI.route("/activities", methods=["POST"])
 def run_activity():
+    # import pdb
+    # pdb.set_trace()
     request_body = flask.request.json
-
+    print(f"request_body {request_body}")
     script_args = {
         fn: convert_request_dict_to_procedure_input(fn_args)
         for (fn, fn_args) in request_body.get("script_args", {}).items()
@@ -68,6 +70,7 @@ def run_activity():
         request_body.get("create_env", False),
         script_args,
     )
+    print(f"cmd {cmd}")
     summary = call_and_respond(
         topics.request.activity.run, topics.activity.lifecycle.running, cmd=cmd
     )
