@@ -15,7 +15,6 @@ from connexion import App
 from flask import Blueprint, current_app, stream_with_context
 from pubsub import pub
 
-from ska_oso_oet.activity.ui import ActivityAPI
 from ska_oso_oet.mptools import MPQueue
 
 

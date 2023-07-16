@@ -4,8 +4,8 @@ UI/presentation layer. This layer is the means by which external users or
 systems would interact with activities.
 """
 import flask
-from flask import Blueprint
 
+import os
 from ska_oso_oet.activity.application import ActivityCommand, ActivitySummary
 from ska_oso_oet.event import topics
 from ska_oso_oet.utils.ui import (
@@ -13,10 +13,8 @@ from ska_oso_oet.utils.ui import (
     convert_request_dict_to_procedure_input,
 )
 
-ActivityAPI = Blueprint("activities", __name__)
 
 
-@ActivityAPI.route("/activities/<int:activity_id>", methods=["GET"])
 def get_activity(activity_id):
     summaries = call_and_respond(
         topics.request.activity.list,
@@ -38,7 +36,6 @@ def get_activity(activity_id):
         )
 
 
-@ActivityAPI.route("/activities", methods=["GET"])
 def get_activities():
     summaries = call_and_respond(
         topics.request.activity.list, topics.activity.pool.list
@@ -52,7 +49,6 @@ def get_activities():
     )
 
 
-@ActivityAPI.route("/activities", methods=["POST"])
 def run_activity():
     # import pdb
     # pdb.set_trace()
@@ -98,9 +94,7 @@ def make_public_activity_summary(
         for fn in activity.script_args.keys()
     }
     return {
-        "uri": flask.url_for(
-            "activities.get_activity", activity_id=activity.id, _external=True
-        ),
+        "uri": f"{os.environ.get('OET_REST_URI', 'https://localhost/api/v1.0')}/procedures/{activity.id}",
         "activity_name": activity.activity_name,
         "sbd_id": activity.sbd_id,
         "procedure_id": activity.pid,
