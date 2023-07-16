@@ -11,6 +11,7 @@ components:
           items:
             type: array
             items:
+              oneOf:
               - type: string
                 example: TODO
               - type: number
@@ -38,8 +39,6 @@ components:
                   items:
                     type: string
                     example: posarg1
-                    example: posarg2
-              properties:
                 kwargs:
                   type: object
                   properties:
@@ -69,3 +68,37 @@ components:
         uri:
           type: string
           example: "http://localhost:5000/api/v1.0/activities/1"
+    ActivityPostInput:
+      type: object
+      properties:
+        sbd_id:
+          type: string
+          example: "16"
+        activity_name:
+          type: string
+          example: allocate
+        script_args:
+          type: object
+          properties:
+            main:
+              type: object
+              properties:
+                args:
+                  type: array
+                  items:
+                    type: integer
+                    example: 1
+                kwargs:
+                  type: object
+                  properties:
+                    subarray_id:
+                      type: string
+                      example: "42"
+          example:
+            main:
+              args: [ 1 ]
+              kwargs:
+                subarray_id: "42"
+        prepare_only:
+          type: boolean
+          example: false
