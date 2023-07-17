@@ -93,16 +93,15 @@ class ActivityService:
 
         aid = next(self._aid_counter)
         with self._oda:
-            #sbd: SBDefinition = self._oda.sbds.get(cmd.sbd_id)
-            sb_json = "sb_json.json"
-            sbd: SBDefinition = CODEC.load_from_file(SBDefinition, sb_json)
+            sbd: SBDefinition = self._oda.sbds.get(cmd.sbd_id)
+            # for testing without db
+            # sb_json = "sb_json.json"
+            # sbd: SBDefinition = CODEC.load_from_file(SBDefinition, sb_json)
 
         pdm_script = sbd.activities.get(cmd.activity_name)
 
         script = self._get_oet_script(pdm_script, cmd.create_env)
         script_args = self._combine_script_args(pdm_script, cmd)
-        # import pdb
-        # pdb.set_trace()
         sbd_path = self.write_sbd_to_file(sbd)
         print(f"sbd_path {sbd_path}")
         script_args["main"].kwargs.update({"sb_json": sbd_path})

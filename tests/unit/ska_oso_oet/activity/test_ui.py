@@ -1,11 +1,18 @@
 from http import HTTPStatus
+import os
 
+from urllib.parse import urlparse
 from ska_oso_oet.activity.application import ActivityCommand, ActivitySummary
 from ska_oso_oet.activity.domain import ActivityState
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.domain import ProcedureInput
 
 from ..test_ui import PubSubHelper
+
+# BASE URL
+url = os.environ.get("OET_REST_URI", "http://localhost/api/v1.0")
+parsed_url = urlparse(url)
+BASE_URL = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
 ACTIVITIES_ENDPOINT = "api/v1.0/activities"
 ACTIVITY_REQUEST = {
@@ -33,7 +40,7 @@ def assert_json_equal_to_activity_summary(summary: ActivitySummary, summary_json
     :param summary: reference ActivitySummary instance
     :param summary_json: JSON for the ProcedureSummary
     """
-    assert summary_json["uri"] == f"http://localhost/{ACTIVITIES_ENDPOINT}/{summary.id}"
+    assert summary_json["uri"] ==  f"{BASE_URL}/{ACTIVITIES_ENDPOINT}/{summary.id}"
     assert summary_json["procedure_id"] == summary.pid
     assert summary_json["sbd_id"] == summary.sbd_id
     assert summary_json["activity_name"] == summary.activity_name
