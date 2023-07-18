@@ -1,7 +1,7 @@
-from http import HTTPStatus
 import os
-
+from http import HTTPStatus
 from urllib.parse import urlparse
+
 from ska_oso_oet.activity.application import ActivityCommand, ActivitySummary
 from ska_oso_oet.activity.domain import ActivityState
 from ska_oso_oet.event import topics
@@ -40,7 +40,7 @@ def assert_json_equal_to_activity_summary(summary: ActivitySummary, summary_json
     :param summary: reference ActivitySummary instance
     :param summary_json: JSON for the ProcedureSummary
     """
-    assert summary_json["uri"] ==  f"{BASE_URL}/{ACTIVITIES_ENDPOINT}/{summary.id}"
+    assert summary_json["uri"] == f"{BASE_URL}/{ACTIVITIES_ENDPOINT}/{summary.id}"
     assert summary_json["procedure_id"] == summary.pid
     assert summary_json["sbd_id"] == summary.sbd_id
     assert summary_json["activity_name"] == summary.activity_name

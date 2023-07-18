@@ -94,9 +94,6 @@ class ActivityService:
         aid = next(self._aid_counter)
         with self._oda:
             sbd: SBDefinition = self._oda.sbds.get(cmd.sbd_id)
-            # for testing without db
-            # sb_json = "sb_json.json"
-            # sbd: SBDefinition = CODEC.load_from_file(SBDefinition, sb_json)
 
         pdm_script = sbd.activities.get(cmd.activity_name)
 
