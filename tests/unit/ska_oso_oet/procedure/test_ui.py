@@ -26,7 +26,6 @@ from ska_oso_oet.procedure.gitmanager import GitArgs
 
 from ..test_ui import PubSubHelper
 
-
 # Endpoint for the REST API
 PROCEDURES_ENDPOINT = "api/v1.0/procedures"
 
@@ -133,7 +132,7 @@ RUN_SUMMARY = ProcedureSummary(
 RUN_ENDPOINT = f"{PROCEDURES_ENDPOINT}/{RUN_SUMMARY.id}"
 
 
-def test_get_procedures_returns_expected_summaries(client,base_url):
+def test_get_procedures_returns_expected_summaries(client, base_url):
     """
     Test that listing procedure resources returns the expected JSON payload
     """
@@ -150,10 +149,10 @@ def test_get_procedures_returns_expected_summaries(client,base_url):
     assert "procedures" in response_json
     procedures_json = response_json["procedures"]
     assert len(procedures_json) == 1
-    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedures_json[0],base_url)
+    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedures_json[0], base_url)
 
 
-def test_get_procedure_by_id(client,base_url):
+def test_get_procedure_by_id(client, base_url):
     """
     Verify that getting a resource by ID returns the expected JSON payload
     """
@@ -170,7 +169,7 @@ def test_get_procedure_by_id(client,base_url):
     response_json = response.get_json()
     assert "procedure" in response_json
     procedure_json = response_json["procedure"]
-    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedure_json,base_url)
+    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedure_json, base_url)
 
 
 def test_get_procedure_gives_404_for_invalid_id(client):
@@ -212,7 +211,9 @@ def test_successful_post_to_procedures_endpoint_returns_created_http_status(clie
     assert response.status_code == HTTPStatus.CREATED
 
 
-def test_successful_post_to_procedures_endpoint_returns_summary_in_response(client,base_url):
+def test_successful_post_to_procedures_endpoint_returns_summary_in_response(
+    client, base_url
+):
     """
     Verify that creating a new Procedure returns the expected JSON payload:
     a summary of the created Procedure.
@@ -229,10 +230,12 @@ def test_successful_post_to_procedures_endpoint_returns_summary_in_response(clie
 
     assert "procedure" in response_json
     procedure_json = response_json["procedure"]
-    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedure_json,base_url)
+    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedure_json, base_url)
 
 
-def test_successful_post_to_procedures_endpoint_returns_git_summary_in_response(client,base_url):
+def test_successful_post_to_procedures_endpoint_returns_git_summary_in_response(
+    client, base_url
+):
     """
     Verify that creating a new Procedure returns the expected JSON payload:
     a summary of the created Procedure with git arguments.
@@ -249,11 +252,11 @@ def test_successful_post_to_procedures_endpoint_returns_git_summary_in_response(
 
     assert "procedure" in response_json
     procedure_json = response_json["procedure"]
-    assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, procedure_json,base_url)
+    assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, procedure_json, base_url)
 
 
 def test_successful_post_to_procedures_endpoint_returns_git_summary_in_response_with_default_git_args(
-    client,base_url
+    client, base_url
 ):
     """
     Verify that creating a new Procedure returns the expected JSON payload:
@@ -273,7 +276,7 @@ def test_successful_post_to_procedures_endpoint_returns_git_summary_in_response_
 
     assert "procedure" in response_json
     procedure_json = response_json["procedure"]
-    assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, procedure_json,base_url)
+    assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, procedure_json, base_url)
 
 
 def test_post_to_procedures_endpoint_requires_script_uri_json_parameter(client):
@@ -482,7 +485,7 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
     ]
 
 
-def test_put_procedure_calls_run_on_execution_service(client,base_url):
+def test_put_procedure_calls_run_on_execution_service(client, base_url):
     """
     Verify that the appropriate ScriptExecutionService methods are called
     when a valid 'start Procedure' PUT request is received
@@ -509,7 +512,9 @@ def test_put_procedure_calls_run_on_execution_service(client,base_url):
 
     # verify RUNNING ProcedureSummary is contained in response JSON
     assert "procedure" in response_json
-    assert_json_equal_to_procedure_summary(RUN_SUMMARY, response_json["procedure"],base_url)
+    assert_json_equal_to_procedure_summary(
+        RUN_SUMMARY, response_json["procedure"], base_url
+    )
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -640,7 +645,7 @@ def test_put_procedure_does_not_start_a_procedure_unless_new_state_is_running(cl
     assert topics.request.procedure.start not in helper.topic_list
 
 
-def test_put_procedure_returns_procedure_summary(client,base_url):
+def test_put_procedure_returns_procedure_summary(client, base_url):
     """
     Verify that PUT returns the expected JSON payload even if a state
     transition doesn't occur
@@ -665,7 +670,9 @@ def test_put_procedure_returns_procedure_summary(client,base_url):
     response_json = response.get_json()
 
     assert "procedure" in response_json
-    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, response_json["procedure"],base_url)
+    assert_json_equal_to_procedure_summary(
+        CREATE_SUMMARY, response_json["procedure"], base_url
+    )
 
 
 def test_stopping_a_non_running_procedure_returns_appropriate_error_message(client):
@@ -727,7 +734,7 @@ def test_make_public_summary(base_url):
         summary_json = ska_oso_oet.procedure.ui.make_public_procedure_summary(
             CREATE_SUMMARY
         )
-        assert_json_equal_to_procedure_summary(CREATE_SUMMARY, summary_json,base_url)
+        assert_json_equal_to_procedure_summary(CREATE_SUMMARY, summary_json, base_url)
 
 
 def test_make_public_summary_git_args(base_url):
@@ -738,7 +745,9 @@ def test_make_public_summary_git_args(base_url):
         summary_json = ska_oso_oet.procedure.ui.make_public_procedure_summary(
             CREATE_GIT_SUMMARY
         )
-        assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, summary_json,base_url)
+        assert_json_equal_to_procedure_summary(
+            CREATE_GIT_SUMMARY, summary_json, base_url
+        )
 
 
 def assert_json_equal_to_procedure_summary(

@@ -1,11 +1,11 @@
 import multiprocessing
+import os
 import threading
+from urllib.parse import urlparse
 
 import pytest
 
 from ska_oso_oet import ui
-import os
-from urllib.parse import urlparse
 
 
 @pytest.fixture(name="base_url")
@@ -14,6 +14,7 @@ def fixture_base_url():
     parsed_url = urlparse(url)
     base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
     return base_url
+
 
 @pytest.fixture(name="client")
 def fixture_client():

@@ -17,10 +17,10 @@ tags:
 
 paths:
   /procedures:
-    $ref: './procedures.yaml'
+    $ref: './procedure.yaml#/procedures'
   /procedures/{procedure_id}:
-    $ref: './procedure.yaml'
+    $ref: './procedure.yaml#/procedures-procedure_id'
   /activities:
-    $ref: './activities.yaml'
+    $ref: './activity.yaml#/activities'
   /activities/{activity_id}:
-    $ref: './activity.yaml'
+    $ref: './activity.yaml#/activity-activity_id'
