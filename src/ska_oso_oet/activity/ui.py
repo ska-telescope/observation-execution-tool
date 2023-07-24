@@ -91,7 +91,7 @@ def make_public_activity_summary(
     }
     return {
         "uri": (
-            f"{os.environ.get('OET_REST_URI', 'https://localhost/api/v1.0')}/activities/{activity.id}"
+            f"{os.environ.get('OET_REST_URI', 'http://localhost/api/v1.0')}/activities/{activity.id}"
         ),
         "activity_name": activity.activity_name,
         "sbd_id": activity.sbd_id,
