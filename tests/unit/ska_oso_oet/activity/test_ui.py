@@ -25,7 +25,9 @@ ACTIVITY_SUMMARY = ActivitySummary(
 )
 
 
-def assert_json_equal_to_activity_summary(summary: ActivitySummary, summary_json: dict):
+def assert_json_equal_to_activity_summary(
+    summary: ActivitySummary, summary_json: dict, base_url
+):
     """
     Helper function to compare JSON against a reference ActivitySummary
     instance. An assertion error will be raised if the JSON does not match.
@@ -33,7 +35,7 @@ def assert_json_equal_to_activity_summary(summary: ActivitySummary, summary_json
     :param summary: reference ActivitySummary instance
     :param summary_json: JSON for the ProcedureSummary
     """
-    assert summary_json["uri"] == f"http://localhost/{ACTIVITIES_ENDPOINT}/{summary.id}"
+    assert summary_json["uri"] == f"{base_url}/{ACTIVITIES_ENDPOINT}/{summary.id}"
     assert summary_json["procedure_id"] == summary.pid
     assert summary_json["sbd_id"] == summary.sbd_id
     assert summary_json["activity_name"] == summary.activity_name
@@ -56,7 +58,7 @@ def test_get_activities_with_no_activities_present_returns_empty_list(client):
     assert response_json["activities"] == []
 
 
-def test_get_activities_returns_expected_summaries(client):
+def test_get_activities_returns_expected_summaries(client, base_url):
     """
     Test that listing activities resources returns the expected JSON payload
     """
@@ -73,10 +75,12 @@ def test_get_activities_returns_expected_summaries(client):
     assert "activities" in response_json
     activities_json = response_json["activities"]
     assert len(activities_json) == 1
-    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, activities_json[0])
+    assert_json_equal_to_activity_summary(
+        ACTIVITY_SUMMARY, activities_json[0], base_url
+    )
 
 
-def test_get_activity_by_id(client):
+def test_get_activity_by_id(client, base_url):
     """
     Verify that getting a resource by ID returns the expected JSON payload
     """
@@ -93,7 +97,7 @@ def test_get_activity_by_id(client):
     response_json = response.get_json()
     assert "activity" in response_json
     activity_json = response_json["activity"]
-    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, activity_json)
+    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, activity_json, base_url)
 
 
 def test_get_activity_gives_404_for_invalid_id(client):
@@ -133,7 +137,9 @@ def test_successful_post_to_activities_endpoint_returns_ok_http_status(client):
     assert response.status_code == HTTPStatus.CREATED
 
 
-def test_successful_post_to_activities_endpoint_returns_summary_in_response(client):
+def test_successful_post_to_activities_endpoint_returns_summary_in_response(
+    client, base_url
+):
     """
     Verify that posting a new Activity returns the expected JSON payload:
     a summary of the created Procedure.
@@ -156,4 +162,4 @@ def test_successful_post_to_activities_endpoint_returns_summary_in_response(clie
 
     assert "activity" in response_json
     procedure_json = response_json["activity"]
-    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, procedure_json)
+    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, procedure_json, base_url)

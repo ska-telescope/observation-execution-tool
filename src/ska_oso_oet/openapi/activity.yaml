@@ -1,0 +1,79 @@
+  activities:
+    get:
+      tags:
+        - Activity APIs
+      summary: "List activities"
+      description: "Return the collection of all activities."
+      operationId: "ska_oso_oet.activity.ui.get_activities"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './components_activity.yaml#/components/schemas/Activity'
+        "500":
+          $ref: './common.yaml#/components/responses/InternalServerError'
+        "504":
+          $ref: './common.yaml#/components/responses/GatewayTimeout'
+
+    post:
+      tags:
+        - Activity APIs
+      summary: "Prepare a new activity"
+      description: "Loads the script from the SBDefinition for the given activity and prepares it for execution. Response is an ActivitySummary."
+      operationId: "ska_oso_oet.activity.ui.run_activity"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './components_activity.yaml#/components/schemas/ActivityPostInput'
+      responses:
+        "200":
+          description: Activity creation request received successfully
+          content:
+            application/json:
+              schema:
+                $ref: './components_activity.yaml#/components/schemas/Activity'
+        "201":
+          description: Activity has been created
+          content:
+            application/json:
+              schema:
+                $ref: './components_activity.yaml#/components/schemas/Activity'
+        "400":
+          $ref: './common.yaml#/components/responses/ProcedurePostBadRequest'
+        "404":
+          $ref: './common.yaml#/components/responses/NotFound'
+        "500":
+          $ref: './common.yaml#/components/responses/InternalServerError'
+        "504":
+          $ref: './common.yaml#/components/responses/GatewayTimeout'
+  activity-activity_id:
+    get:
+      tags:
+        - Activity APIs
+      summary: "Get activity details"
+      description: "Return the a summary of the activity with given id"
+      operationId: "ska_oso_oet.activity.ui.get_activity"
+      parameters:
+        - name: activity_id
+          in: path
+          schema:
+            type: integer
+            format: int64
+          required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './components_activity.yaml#/components/schemas/Activity'
+        "404":
+          $ref: './common.yaml#/components/responses/NotFound'
+        "500":
+          $ref: './common.yaml#/components/responses/InternalServerError'
+        "504":
+          $ref: './common.yaml#/components/responses/GatewayTimeout'

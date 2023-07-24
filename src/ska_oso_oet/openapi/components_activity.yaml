@@ -1,0 +1,104 @@
+components:
+  schemas:
+    Activity:
+      type: object
+      properties:
+        activity_name:
+          type: string
+          example: allocate
+        activity_states:
+          type: array
+          items:
+            type: array
+            items:
+              oneOf:
+              - type: string
+                example: TODO
+              - type: number
+                example: 1689539582.4126852
+          example:
+            - - TODO
+              - 1689539582.4126852
+        prepare_only:
+          type: boolean
+          example: true
+        procedure_id:
+          type: integer
+          example: 1
+        sbd_id:
+          type: string
+          example: "16"
+        script_args:
+          type: object
+          properties:
+            init:
+              type: object
+              properties:
+                args:
+                  type: array
+                  items:
+                    type: string
+                    example: posarg1
+                kwargs:
+                  type: object
+                  properties:
+                    argname:
+                      type: string
+                      example: argval
+            main:
+              type: object
+              properties:
+                args:
+                  type: array
+                  items:
+                    type: integer
+                    example: 1
+                kwargs:
+                  type: object
+                  properties:
+                    sb_json:
+                      type: string
+                      example: "/tmp/sbs/16-1-1689539582408860487.json"
+                    subarray_id:
+                      type: string
+                      example: "42"
+        state:
+          type: string
+          example: TODO
+        uri:
+          type: string
+          example: "http://localhost:5000/api/v1.0/activities/1"
+    ActivityPostInput:
+      type: object
+      properties:
+        sbd_id:
+          type: string
+          example: "16"
+        activity_name:
+          type: string
+          example: allocate
+        script_args:
+          type: object
+          properties:
+            main:
+              type: object
+              properties:
+                args:
+                  type: array
+                  items:
+                    type: integer
+                    example: 1
+                kwargs:
+                  type: object
+                  properties:
+                    subarray_id:
+                      type: string
+                      example: "42"
+          example:
+            main:
+              args: [ 1 ]
+              kwargs:
+                subarray_id: "42"
+        prepare_only:
+          type: boolean
+          example: false

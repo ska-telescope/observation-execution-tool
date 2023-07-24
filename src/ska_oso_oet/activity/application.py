@@ -99,7 +99,6 @@ class ActivityService:
 
         script = self._get_oet_script(pdm_script, cmd.create_env)
         script_args = self._combine_script_args(pdm_script, cmd)
-
         sbd_path = self.write_sbd_to_file(sbd)
         script_args["main"].kwargs.update({"sb_json": sbd_path})
 
