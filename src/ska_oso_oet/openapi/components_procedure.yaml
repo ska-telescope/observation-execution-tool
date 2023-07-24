@@ -143,3 +143,5 @@ components:
         state:
           type: string
           example: "RUNNING"
+      required:
+        - state

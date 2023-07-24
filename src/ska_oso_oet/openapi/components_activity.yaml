@@ -102,3 +102,6 @@ components:
         prepare_only:
           type: boolean
           example: false
+      required:
+        - activity_name
+        - sbd_id
