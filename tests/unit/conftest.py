@@ -1,7 +1,6 @@
 import multiprocessing
 import os
 import threading
-from urllib.parse import urlparse
 
 import pytest
 
@@ -11,9 +10,7 @@ from ska_oso_oet import ui
 @pytest.fixture(name="base_url")
 def fixture_base_url():
     url = os.environ.get("OET_REST_URI", "http://localhost/api/v1.0")
-    parsed_url = urlparse(url)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-    return base_url
+    return url
 
 
 @pytest.fixture(name="client")

@@ -28,6 +28,7 @@ from ..test_ui import PubSubHelper
 
 # Endpoint for the REST API
 PROCEDURES_ENDPOINT = "api/v1.0/procedures"
+PROCEDURES_RESOURCE = "procedures"
 
 # Valid JSON struct for creating a new procedure
 CREATE_JSON = dict(
@@ -760,7 +761,7 @@ def assert_json_equal_to_procedure_summary(
     :param summary: reference ProcedureSummary instance
     :param summary_json: JSON for the ProcedureSummary
     """
-    assert summary_json["uri"] == f"{base_url}/{PROCEDURES_ENDPOINT}/{summary.id}"
+    assert summary_json["uri"] == f"{base_url}/{PROCEDURES_RESOURCE}/{summary.id}"
     assert summary_json["script"]["script_type"] == summary.script.get_type()
     assert summary_json["script"]["script_uri"] == summary.script.script_uri
     if summary_json["script"].get("git_args"):

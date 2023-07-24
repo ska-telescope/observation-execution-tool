@@ -8,6 +8,7 @@ from ska_oso_oet.procedure.domain import ProcedureInput
 from ..test_ui import PubSubHelper
 
 ACTIVITIES_ENDPOINT = "api/v1.0/activities"
+ACTIVITY_RESOURCE = "activities"
 ACTIVITY_REQUEST = {
     "sbd_id": "sbi-001",
     "activity_name": "allocate",
@@ -35,7 +36,7 @@ def assert_json_equal_to_activity_summary(
     :param summary: reference ActivitySummary instance
     :param summary_json: JSON for the ProcedureSummary
     """
-    assert summary_json["uri"] == f"{base_url}/{ACTIVITIES_ENDPOINT}/{summary.id}"
+    assert summary_json["uri"] == f"{base_url}/{ACTIVITY_RESOURCE}/{summary.id}"
     assert summary_json["procedure_id"] == summary.pid
     assert summary_json["sbd_id"] == summary.sbd_id
     assert summary_json["activity_name"] == summary.activity_name
