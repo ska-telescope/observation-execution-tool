@@ -43,7 +43,7 @@ components:
           example:
                 error: 404 Not Found
                 type: ResourceNotFound
-                message: No information available for PID=1
+                message: No information available for ID=1
     InternalServerError:
       description: Internal server error
     GatewayTimeout:

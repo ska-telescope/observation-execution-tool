@@ -14,6 +14,8 @@ servers:
 tags:
   - name: Procedure APIs
     description: Responsible for Preparation and execution of script and getting detail of the script execution
+  - name: Activity APIs
+    description: Responsible for Preparation and execution of observing activity of a Scheduling Block
 
 paths:
   /procedures:
