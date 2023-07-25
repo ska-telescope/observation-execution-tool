@@ -45,6 +45,9 @@ ska-oso-pdm = "^10.0.1"
 connexion = "^2.14.0"
 prance = "^0.22.11"
 sphinxcontrib-openapi = {version = "^0.7.0", optional = true, extras = ["docs"]}
+openapi-schema-validator = "^0.4.4"
+openapi-spec-validator="0.5.6"
+
 
 [tool.poetry.dev-dependencies]
 black = "^22.8.0"
