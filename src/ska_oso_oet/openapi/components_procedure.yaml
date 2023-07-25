@@ -58,6 +58,7 @@ components:
               example: "http://localhost:5000/api/v1.0/procedures/2"
     ProcedurePostInput:
       type: object
+      required: [script]
       properties:
         script_args:
           type: object
@@ -75,16 +76,13 @@ components:
                       - type: number
                       - type: object
                       - type: string
-                  example: []
                 kwargs:
                   type: object
                   properties:
                     sb_uri:
                       type: string
-                      example: "file:///path/to/scheduling_block_123.json"
                     subarray_id:
                       type: integer
-                      example: 1
               required:
                 - kwargs
             run:
@@ -100,23 +98,19 @@ components:
                       - type: number
                       - type: object
                       - type: string
-                  example: []
                 kwargs:
                   type: object
-
         script:
           type: object
           properties:
             script_type:
               type: string
-              example: "filesystem"
             script_uri:
               type: string
-              example: "file://observing_script.py"
-      required:
-        - script
+
     ProcedurePutInput:
       type: object
+      required: [state]
       properties:
         scripts_args:
           type: object
@@ -134,14 +128,8 @@ components:
                       - type: number
                       - type: object
                       - type: string
-                  example: [ ]
                 kwargs:
                   type: object
                   additionalProperties: true
-                  example:
-                    scan_duration: "14.0"
         state:
           type: string
-          example: "RUNNING"
-      required:
-        - state

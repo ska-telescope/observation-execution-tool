@@ -29,6 +29,36 @@
           application/json:
             schema:
               $ref: './components_procedure.yaml#/components/schemas/ProcedurePostInput'
+            examples:
+              Filesystem:
+                value:
+                  script:
+                    script_type: "filesystem"
+                    script_uri: "file://observing_script.py"
+                  script_args:
+                    init:
+                      args: [ ]
+                      kwargs:
+                        sb_uri: "file:///path/to/scheduling_block_123.json"
+                        subarray_id: 1
+                    run:
+                      args: [ ]
+                      kwargs: { }
+              Git:
+                value:
+                  script:
+                    script_type: "git"
+                    script_uri: "git:///path/to/observing_script.py"
+                    git_args: { 'git_repo': 'http://gitrepo.git', 'git_branch': 'test' }
+                  script_args:
+                    init:
+                      args: [ ]
+                      kwargs:
+                        sb_uri: "file:///path/to/scheduling_block_123.json"
+                        subarray_id: 1
+                    run:
+                      args: [ ]
+                      kwargs: { }
       responses:
         "200":
           description: Procedure creation request received successfully
@@ -97,6 +127,19 @@
           application/json:
             schema:
               $ref: "./components_procedure.yaml#/components/schemas/ProcedurePutInput"
+            examples:
+              Execution:
+                value:
+                  scripts_args:
+                    run:
+                      args: [ ]
+                      kwargs:
+                        scan_duration: '14.0'
+                  state: RUNNING
+              Terminate:
+                value:
+                  abort: true
+                  state: STOPPED
       responses:
         "200":
           description: Procedure has been updated
