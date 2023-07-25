@@ -42,6 +42,9 @@ GitPython = "^3.1.27"
 waitress = "^2.1.2"
 ska-db-oda = "^1.6.1"
 ska-oso-pdm = "^10.0.1"
+connexion = "^2.14.2"
+openapi-schema-validator = "^0.4.4"
+openapi-spec-validator = "^0.5.6"
 
 [tool.poetry.dev-dependencies]
 black = "^22.8.0"

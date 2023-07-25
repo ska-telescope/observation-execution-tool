@@ -148,7 +148,6 @@ def create_app(open_api_spec=None):
         "body": CustomRequestBodyValidator,
     }
     connexion = App(__name__, specification_dir="openapi/")
-
     connexion.add_api(
         open_api_spec,
         arguments={"title": "OpenAPI OET"},
@@ -157,7 +156,7 @@ def create_app(open_api_spec=None):
     )
 
     connexion.app.config.update(msg_src=__name__)
-    # TODO: Due to the limitation of Swagger Open API, we kept the same earlier blueprint approach for steam API and couldn't include it in the open API spec, we can plan this work when full SSE support is available in OPEN API 3.0 or any latest version.
+    # TODO: Due to the limitation of Swagger Open API, we kept the same earlier blueprint approach for Stream API and couldn't include it in the open API spec, we can plan this work when full SSE support is available in OPEN API 3.0 or any latest version.
     sse = ServerSentEventsBlueprint("sse", __name__)
     sse.add_url_rule(rule="", endpoint="stream", view_func=sse.stream)
     connexion.app.register_blueprint(sse, url_prefix="/api/v1.0/stream")
