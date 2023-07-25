@@ -45,7 +45,7 @@ autodoc_mock_imports = [
     'tango',
     'tblib',
     'waitress',
-    'werkzeug',
+    'werkzeug'
 ]
 
 autodoc_default_options = {
