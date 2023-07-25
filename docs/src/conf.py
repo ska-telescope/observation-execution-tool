@@ -45,7 +45,7 @@ autodoc_mock_imports = [
     'tango',
     'tblib',
     'waitress',
-    'werkzeug'
+    'werkzeug',
 ]
 
 autodoc_default_options = {
@@ -86,7 +86,8 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages'
+    'sphinx.ext.githubpages',
+    "sphinxcontrib.openapi"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
