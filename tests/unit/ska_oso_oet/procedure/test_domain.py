@@ -53,7 +53,8 @@ def fixture_pubsub_script(tmpdir):
     Pytest fixture to return a path to a script that emits OET events
     """
     script_path = tmpdir.join("script.py")
-    script_path.write("""
+    script_path.write(
+        """
 import threading
 from pubsub import pub
 from ska_oso_oet.event import topics
@@ -64,7 +65,8 @@ def main(msg):
         msg_src=threading.current_thread().name,
         msg=msg
     )
-""")
+"""
+    )
     return FileSystemScript(f"file://{str(script_path)}")
 
 
@@ -98,13 +100,15 @@ def fixture_git_sys_path_script(tmpdir):
     Pytest fixture to return a path to a script file
     """
     script_path = tmpdir.join("git_sys_path_script.py")
-    script_path.write("""
+    script_path.write(
+        """
 import sys
 
 def main(site_package):
     print(sys.path)
     assert site_package in sys.path
-""")
+"""
+    )
     return GitScript(f"git://{str(script_path)}", git_args=GitArgs(), create_env=True)
 
 
@@ -114,7 +118,8 @@ def fixture_barrier_script(tmpdir):
     Pytest fixture to return a path to a script that sets an event
     """
     script_path = tmpdir.join("barrier_script.py")
-    script_path.write("""
+    script_path.write(
+        """
 INIT_RUNNING = None
 MAIN_RUNNING = None
 RESUME = None
@@ -129,7 +134,8 @@ def init(evt1, evt2, evt3):
 def main():
     MAIN_RUNNING.wait()
     RESUME.wait()
-""")
+"""
+    )
     return FileSystemScript(f"file://{str(script_path)}")
 
 
@@ -139,12 +145,14 @@ def fixture_init_hang_script(tmpdir):
     Pytest fixture to return a path to a script that sets an event
     """
     script_path = tmpdir.join("script.py")
-    script_path.write("""
+    script_path.write(
+        """
 def init(init_running):
     init_running.wait()
     while True:
         pass
-""")
+"""
+    )
     return FileSystemScript(f"file://{str(script_path)}")
 
 
@@ -154,7 +162,8 @@ def fixture_main_hang_script(tmpdir):
     Pytest fixture to return a path to a script that sets an event
     """
     script_path = tmpdir.join("script.py")
-    script_path.write("""
+    script_path.write(
+        """
 MAIN_RUNNING = None
 
 def init(main_running):
@@ -165,7 +174,8 @@ def main():
     MAIN_RUNNING.wait()
     while True:
         pass
-""")
+"""
+    )
     return FileSystemScript(f"file://{str(script_path)}")
 
 
@@ -175,10 +185,12 @@ def fixture_fail_script(tmpdir):
     Pytest fixture to return a path to a script file
     """
     script_path = tmpdir.join("fail.py")
-    script_path.write("""
+    script_path.write(
+        """
 def main(msg):
     raise Exception(msg)
-""")
+"""
+    )
     return FileSystemScript(f"file://{str(script_path)}")
 
 
@@ -188,7 +200,8 @@ def fixture_abort_script(tmpdir):
     Pytest fixture to return a path to a script file
     """
     script_path = tmpdir.join("abort.py")
-    script_path.write("""
+    script_path.write(
+        """
 import time
 
 Q = None
@@ -202,7 +215,8 @@ def main():
     MAIN_RUNNING.wait()
     time.sleep(2)
     Q.put('foo')
-""")
+"""
+    )
     return FileSystemScript(f"file://{str(script_path)}")
 
 
@@ -214,7 +228,8 @@ def fixture_script_that_increments_and_returns_scan_id(tmpdir):
     """
     path = tmpdir.join("script_for_scan_id.py")
 
-    path.write("""
+    path.write(
+        """
 from ska_oso_oet.tango import SCAN_ID_GENERATOR
 
 Q = None
@@ -225,7 +240,8 @@ def init(q):
 
 def main():
     Q.put(SCAN_ID_GENERATOR.next())
-""")
+"""
+    )
     return FileSystemScript(f"file://{str(path)}")
 
 

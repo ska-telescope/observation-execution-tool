@@ -89,7 +89,7 @@ def make_public_activity_summary(
     }
     return {
         "uri": flask.url_for(
-            "/api/v1_0.ska_oso_oet_activities_ui_get_activity",
+            "/api/v1_0.ska_oso_oet_activity_ui_get_activity",
             activity_id=activity.id,
             _external=True,
         ),
