@@ -73,7 +73,7 @@
               schema:
                 $ref: './components_procedure.yaml#/components/schemas/Procedure'
         "400":
-          $ref: './common.yaml#/components/responses/ProcedurePostBadRequest'
+          $ref: './common.yaml#/components/responses/BadRequest'
         "404":
           $ref: './common.yaml#/components/responses/NotFound'
         "500":
@@ -148,7 +148,7 @@
               schema:
                 $ref: "./components_procedure.yaml#/components/schemas/Procedure"
         "400":
-          $ref: './common.yaml#/components/responses/ProcedurePutBadRequest'
+          $ref: './common.yaml#/components/responses/BadRequest'
         "404":
           $ref: './common.yaml#/components/responses/NotFound'
         "500":

@@ -1,24 +1,7 @@
 components:
   responses:
-    ProcedurePostBadRequest:
-      description: Bad Request
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorDetail'
-          examples:
-            Malformed Script:
-              value:
-                error: 400 Bad Request
-                type: Malformed Request
-                message: Malformed script in request
-            Malformed Script Args:
-              value:
-                error: 400 Bad Request
-                type: Malformed Request
-                message: Malformed script_args in request
-    ProcedurePutBadRequest:
-      description: Bad Request
+    BadRequest:
+      description: Bad Request, for example if the request is invalid against the OpenAPI specification.
       content:
         application/json:
           schema:
@@ -49,6 +32,30 @@ components:
     GatewayTimeout:
       description: Gateway Timeout
   schemas:
+    FunctionArgs:
+      type: object
+      description: The positional and keyword arguments that will be passed to the named function within the script.
+      properties:
+        args:
+          type: array
+          items:
+            oneOf:
+              - type: array
+              - type: boolean
+              - type: integer
+              - type: number
+              - type: object
+              - type: string
+        kwargs:
+          type: object
+    ScriptArgs:
+      type: object
+      description: The arguments to be passed into the script during initialisation and execution. The arguments will be passed to the function within the script with the same name as the keys in this object, which are not restricted to init and run.
+      properties:
+        init:
+          $ref: '#/components/schemas/FunctionArgs'
+        run:
+          $ref: '#/components/schemas/FunctionArgs'
     ErrorDetail:
       type: object
       properties:

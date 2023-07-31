@@ -29,39 +29,7 @@ components:
           type: string
           example: "16"
         script_args:
-          type: object
-          properties:
-            init:
-              type: object
-              properties:
-                args:
-                  type: array
-                  items:
-                    type: string
-                    example: posarg1
-                kwargs:
-                  type: object
-                  properties:
-                    argname:
-                      type: string
-                      example: argval
-            main:
-              type: object
-              properties:
-                args:
-                  type: array
-                  items:
-                    type: integer
-                    example: 1
-                kwargs:
-                  type: object
-                  properties:
-                    sb_json:
-                      type: string
-                      example: "/tmp/sbs/16-1-1689539582408860487.json"
-                    subarray_id:
-                      type: string
-                      example: "42"
+          $ref: './common.yaml#/components/schemas/ScriptArgs'
         state:
           type: string
           example: TODO
@@ -78,22 +46,7 @@ components:
           type: string
           example: allocate
         script_args:
-          type: object
-          properties:
-            main:
-              type: object
-              properties:
-                args:
-                  type: array
-                  items:
-                    type: integer
-                    example: 1
-                kwargs:
-                  type: object
-                  properties:
-                    subarray_id:
-                      type: string
-                      example: "42"
+          $ref: './common.yaml#/components/schemas/ScriptArgs'
           example:
             main:
               args: [ 1 ]

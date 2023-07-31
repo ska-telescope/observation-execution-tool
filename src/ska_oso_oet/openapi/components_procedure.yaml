@@ -31,25 +31,7 @@ components:
                   type: string
                   example: "file://test.py"
             script_args:
-              type: object
-              properties:
-                init:
-                  type: object
-                  properties:
-                    args:
-                      type: array
-                      items:
-                        type: object
-                      example: [ ]
-                    kwargs:
-                      type: object
-                      properties:
-                        subarray_id:
-                          type: number
-                          example: 0
-                        verbose:
-                          type: string
-                          example: "true"
+              $ref: './common.yaml#/components/schemas/ScriptArgs'
             state:
               type: string
               example: "CREATING"
@@ -61,45 +43,7 @@ components:
       required: [script]
       properties:
         script_args:
-          type: object
-          properties:
-            init:
-              type: object
-              properties:
-                args:
-                  type: array
-                  items:
-                    oneOf:
-                      - type: array
-                      - type: boolean
-                      - type: integer
-                      - type: number
-                      - type: object
-                      - type: string
-                kwargs:
-                  type: object
-                  properties:
-                    sb_uri:
-                      type: string
-                    subarray_id:
-                      type: integer
-              required:
-                - kwargs
-            run:
-              type: object
-              properties:
-                args:
-                  type: array
-                  items:
-                    oneOf:
-                      - type: array
-                      - type: boolean
-                      - type: integer
-                      - type: number
-                      - type: object
-                      - type: string
-                kwargs:
-                  type: object
+          $ref: './common.yaml#/components/schemas/ScriptArgs'
         script:
           type: object
           properties:
@@ -113,23 +57,6 @@ components:
       required: [state]
       properties:
         scripts_args:
-          type: object
-          properties:
-            run:
-              type: object
-              properties:
-                args:
-                  type: array
-                  items:
-                    oneOf:
-                      - type: array
-                      - type: boolean
-                      - type: integer
-                      - type: number
-                      - type: object
-                      - type: string
-                kwargs:
-                  type: object
-                  additionalProperties: true
+          $ref: './common.yaml#/components/schemas/ScriptArgs'
         state:
           type: string

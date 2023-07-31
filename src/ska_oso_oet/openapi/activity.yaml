@@ -43,7 +43,7 @@
               schema:
                 $ref: './components_activity.yaml#/components/schemas/Activity'
         "400":
-          $ref: './common.yaml#/components/responses/ProcedurePostBadRequest'
+          $ref: './common.yaml#/components/responses/BadRequest'
         "404":
           $ref: './common.yaml#/components/responses/NotFound'
         "500":
