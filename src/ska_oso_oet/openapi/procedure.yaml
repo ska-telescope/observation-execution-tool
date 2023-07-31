@@ -41,7 +41,7 @@
                       kwargs:
                         sb_uri: "file:///path/to/scheduling_block_123.json"
                         subarray_id: 1
-                    run:
+                    main:
                       args: [ ]
                       kwargs: { }
               Git:
@@ -56,7 +56,7 @@
                       kwargs:
                         sb_uri: "file:///path/to/scheduling_block_123.json"
                         subarray_id: 1
-                    run:
+                    main:
                       args: [ ]
                       kwargs: { }
       responses:
@@ -131,7 +131,7 @@
               Execution:
                 value:
                   scripts_args:
-                    run:
+                    main:
                       args: [ ]
                       kwargs:
                         scan_duration: '14.0'

@@ -54,7 +54,7 @@ components:
       properties:
         init:
           $ref: '#/components/schemas/FunctionArgs'
-        run:
+        main:
           $ref: '#/components/schemas/FunctionArgs'
     ErrorDetail:
       type: object
