@@ -18,7 +18,7 @@ git submodule update --recursive --remote
 git submodule update --init --recursive
 ```
 
-## Build and test
+# Build and test
 
 Install dependencies with Poetry and activate the virtual environment
 
@@ -99,7 +99,20 @@ python src/ska_oso_oet/main.py
 http://{hostname}:{port}/api/v1.0/ui
 ```
 
-## Documentation
+# Deployments from CICD
+
+## Deploying to non-production environments
+
+There are 3 different environments which are defined through the standard pipeline templates. They need to be manually triggered in the Gitlab UI.
+
+1. `dev` - a temporary (4 hours) deployment from a feature branch, using the artefacts built in the branch pipeline
+2. `integration` - a permanent deployment from the main branch, using the latest version of the artefacts built in the main pipeline
+3. `staging` - a permanent deployment of the latest published artefact from CAR
+
+To find the URL for the environment, see the 'info' job of the CICD pipeline stage, which should output the URL alongside the status of the Kubernetes pods.
+Generally the API URL should be available at  `https://k8s.stfc.skao.int/$KUBE_NAMESPACE/ska-oso-oet/api/`
+
+# Documentation
 
 [![Documentation Status](https://readthedocs.org/projects/ska-telescope-ska-oso-oet/badge/?version=latest)](https://developer.skao.int/projects/ska-oso-oet/en/latest/?badge=latest)
 
@@ -115,5 +128,3 @@ and build the documentation (will be built in docs/build folder) with
 ```
 make docs-build html
 ```
-
-

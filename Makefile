@@ -38,13 +38,15 @@ K8S_CHART_PARAMS = \
 #   --set ska-db-oda.rest.postgres.host=$(POSTGRES_HOST) \
 #   --set ska-db-oda.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST) \
 
-# If running in the CI pipeline, set the variables to point to the freshly
-# built image in the GitLab registry
-ifneq ($(CI_REGISTRY),)
+# For the test, dev and integration environment, use the freshly built image in the GitLab registry
+ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'test|dev|integration')
+ifneq ($(ENV_CHECK),)
 K8S_CHART_PARAMS += --set ska-oso-oet.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
 	--set ska-oso-oet.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-oet
-K8S_TEST_IMAGE_TO_TEST=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-oet/ska-oso-oet:$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA)
 endif
+# For the staging environment, make k8s-install-chart-car will pull the chart from CAR so we do not need to
+# change any values
+
 
 # Set the k8s test command run inside the testing pod to only run the acceptance
 # tests (no k8s pod deployment required for unit tests)
