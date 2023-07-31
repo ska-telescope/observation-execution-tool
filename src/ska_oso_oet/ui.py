@@ -125,14 +125,6 @@ class ServerSentEventsBlueprint(Blueprint):
         return current_app.response_class(generator(), mimetype="text/event-stream")
 
 
-class CustomRequestBodyValidator:
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __call__(self, function):
-        return function
-
-
 def get_openapi_spec() -> Dict[str, Any]:
     "Parses and Returns OpenAPI spec"
     cwd, _ = os.path.split(__file__)
@@ -147,15 +139,11 @@ def create_app(open_api_spec=None):
     if open_api_spec is None:
         open_api_spec = get_openapi_spec()
 
-    validator_map = {
-        "body": CustomRequestBodyValidator,
-    }
     connexion = App(__name__, specification_dir="openapi/")
     connexion.add_api(
         open_api_spec,
         base_path="/api/v1.0",
         arguments={"title": "OpenAPI OET"},
-        validator_map=validator_map,
         pythonic_params=True,
     )
 

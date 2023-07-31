@@ -39,7 +39,7 @@ components:
         args:
           type: array
           items:
-            oneOf:
+            anyOf:
               - type: array
               - type: boolean
               - type: integer
