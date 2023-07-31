@@ -77,6 +77,8 @@ Version used: 3.0.0
 
 [OpenAPI Specification User Guide](https://spec.openapis.org/oas/v3.0.0)
 
+To access the Swagger UI for a Kubernetes deployment, follow the instructions above then the UI should be available at `http://<KUBE_HOST>/<KUBE_NAMESPACE>/ska-oso-oet/ui/`
+
 For accessing Swagger UI on local development environment follow below steps:
 
 Pre-requisite:

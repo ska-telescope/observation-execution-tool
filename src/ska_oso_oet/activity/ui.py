@@ -3,8 +3,6 @@ The ska_oso_oet.activity.ui module contains code that belongs to the activity
 UI/presentation layer. This layer is the means by which external users or
 systems would interact with activities.
 """
-import os
-
 import flask
 
 from ska_oso_oet.activity.application import ActivityCommand, ActivitySummary
@@ -90,8 +88,10 @@ def make_public_activity_summary(
         for fn in activity.script_args.keys()
     }
     return {
-        "uri": (
-            f"{os.environ.get('OET_REST_URI', 'http://localhost/api/v1.0')}/activities/{activity.id}"
+        "uri": flask.url_for(
+            "/api/v1_0.ska_oso_oet_activities_ui_get_activity",
+            activity_id=activity.id,
+            _external=True,
         ),
         "activity_name": activity.activity_name,
         "sbd_id": activity.sbd_id,

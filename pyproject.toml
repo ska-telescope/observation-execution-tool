@@ -47,6 +47,7 @@ prance = "^0.22.11"
 sphinxcontrib-openapi = {version = "^0.7.0", optional = true, extras = ["docs"]}
 openapi-schema-validator = "^0.4.4"
 openapi-spec-validator="0.5.6"
+flask-swagger-ui = "^4.11.1"
 
 
 [tool.poetry.dev-dependencies]

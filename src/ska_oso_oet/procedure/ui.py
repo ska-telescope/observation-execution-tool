@@ -2,8 +2,6 @@
 The ska_oso_oet.procedure.ui package contains code that belong to the OET
 procedure UI layer. This consists of the Procedure REST resources.
 """
-import os
-
 import flask
 
 from ska_oso_oet.event import topics
@@ -246,7 +244,11 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
         "stacktrace": procedure.history.stacktrace,
     }
     return {
-        "uri": f"{os.environ.get('OET_REST_URI','http://localhost/api/v1.0')}/procedures/{procedure.id}",
+        "uri": flask.url_for(
+            "/api/v1_0.ska_oso_oet_procedure_ui_get_procedure",
+            procedure_id=procedure.id,
+            _external=True,
+        ),
         "script": script,
         "script_args": script_args,
         "history": procedure_history,

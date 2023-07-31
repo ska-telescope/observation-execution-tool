@@ -11,7 +11,9 @@ metadata:
     intent: production
 data:
   LOG_LEVEL: {{ .Values.rest.logLevel }}
+  KUBE_NAMESPACE: {{ .Release.Namespace }}
   TANGO_HOST: {{ if .Values.global.tango_host -}} {{ .Values.global.tango_host }} {{- else -}} databaseds-tango-base-{{ .Release.Name }}:10000 {{- end }}
+  # This env variable is used by the OET CLI which is also included in the application. It is not required by the server itself
   OET_REST_URI: http://{{ template "ska-oso-oet.name" . }}-rest-{{ .Release.Name }}:5000/api/v1.0
   SKUID_URL: ska-ser-skuid-{{ .Release.Name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:9870
   SUBARRAYNODE_FQDN_PREFIX: {{.Values.subarray}}
