@@ -50,8 +50,7 @@ def fixture_sleep_script(tmpdir):
     amount of time.
     """
     script_path = tmpdir.join("sleep_script.py")
-    script_path.write(
-        """
+    script_path.write("""
 import time
 
 def init(subarray_id):
@@ -59,8 +58,7 @@ def init(subarray_id):
 
 def main(secs):
     time.sleep(secs)
-"""
-    )
+""")
     return FileSystemScript(f"file://{str(script_path)}")
 
 

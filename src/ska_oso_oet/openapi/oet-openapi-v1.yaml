@@ -1,0 +1,28 @@
+openapi: 3.0.0
+info:
+  title: OSO OET API
+  description: | 
+    This OpenAPI document defines the API for the OSO OET REST service
+    
+    To know more about OET REST API click [here](https://developer.skao.int/projects/ska-oso-oet/en/latest/architecture_module_rest_api.html)
+  license:
+    name: BSD-3-Clause
+    url: https://opensource.org/licenses/BSD-3-Clause
+  version: "1.0.0"
+servers:
+- url: "/ska-oso-oet/ska-oso-oet/api/v1.0"
+tags:
+  - name: Procedure APIs
+    description: Responsible for Preparation and execution of script and getting detail of the script execution
+  - name: Activity APIs
+    description: Responsible for Preparation and execution of observing activity of a Scheduling Block
+
+paths:
+  /procedures:
+    $ref: 'procedure.yaml#/procedures'
+  /procedures/{procedure_id}:
+    $ref: 'procedure.yaml#/procedures-procedure_id'
+  /activities:
+    $ref: 'activity.yaml#/activities'
+  /activities/{activity_id}:
+    $ref: 'activity.yaml#/activity-activity_id'

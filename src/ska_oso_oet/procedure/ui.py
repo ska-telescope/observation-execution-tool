@@ -3,7 +3,6 @@ The ska_oso_oet.procedure.ui package contains code that belong to the OET
 procedure UI layer. This consists of the Procedure REST resources.
 """
 import flask
-from flask import Blueprint
 
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure import application, domain
@@ -11,8 +10,6 @@ from ska_oso_oet.utils.ui import (
     call_and_respond,
     convert_request_dict_to_procedure_input,
 )
-
-ProcedureAPI = Blueprint("procedures", __name__)
 
 
 def _get_summary_or_404(pid):
@@ -37,7 +34,6 @@ def _get_summary_or_404(pid):
         return summaries[0]
 
 
-@ProcedureAPI.route("/procedures", methods=["GET"])
 def get_procedures():
     """
     List all Procedures.
@@ -56,7 +52,6 @@ def get_procedures():
     )
 
 
-@ProcedureAPI.route("/procedures/<int:procedure_id>", methods=["GET"])
 def get_procedure(procedure_id: int):
     """
     Get a Procedure.
@@ -71,7 +66,6 @@ def get_procedure(procedure_id: int):
     return flask.jsonify({"procedure": make_public_procedure_summary(summary)})
 
 
-@ProcedureAPI.route("/procedures", methods=["POST"])
 def create_procedure():
     """
     Create a new Procedure.
@@ -145,7 +139,6 @@ def create_procedure():
     return flask.jsonify({"procedure": make_public_procedure_summary(summary)}), 201
 
 
-@ProcedureAPI.route("/procedures/<int:procedure_id>", methods=["PUT"])
 def update_procedure(procedure_id: int):
     """
     Update a Procedure resource using the desired Procedure state described in
@@ -250,10 +243,11 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
         ],
         "stacktrace": procedure.history.stacktrace,
     }
-
     return {
         "uri": flask.url_for(
-            "procedures.get_procedure", procedure_id=procedure.id, _external=True
+            "/api/v1_0.ska_oso_oet_procedure_ui_get_procedure",
+            procedure_id=procedure.id,
+            _external=True,
         ),
         "script": script,
         "script_args": script_args,

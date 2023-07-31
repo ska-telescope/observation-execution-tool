@@ -5,16 +5,20 @@ interface
 """
 import json
 import multiprocessing
-from typing import Generator, Optional, Union
+import os
+from typing import Any, Dict, Generator, Optional, Union
 
 import flask
 import jsonpickle
+import prance
+from connexion import App
 from flask import Blueprint, current_app, stream_with_context
+from flask_swagger_ui import get_swaggerui_blueprint
 from pubsub import pub
 
-from ska_oso_oet.activity.ui import ActivityAPI
 from ska_oso_oet.mptools import MPQueue
-from ska_oso_oet.procedure.ui import ProcedureAPI
+
+KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-oet")
 
 
 class Message:
@@ -121,57 +125,85 @@ class ServerSentEventsBlueprint(Blueprint):
         return current_app.response_class(generator(), mimetype="text/event-stream")
 
 
-@ProcedureAPI.errorhandler(400)
-@ProcedureAPI.errorhandler(404)
-@ProcedureAPI.errorhandler(500)
-@ProcedureAPI.errorhandler(504)
-@ActivityAPI.errorhandler(400)
-@ActivityAPI.errorhandler(404)
-@ActivityAPI.errorhandler(500)
-@ActivityAPI.errorhandler(504)
-def server_error_response(cause):
-    """
-    Custom error handler for Procedure API.
-    This is overloaded for 400, 404, 500 and 504 and could conceivably be
-    extended for other errors by adding the appropriate errorhander decorator.
-
-    :param cause: root exception for failure (e.g., KeyError)
-    :return: HTTP Response
-    """
-    response = cause.get_response()
-    if isinstance(cause.description, dict):
-        response_data = {
-            "error": f"{cause.code} {cause.name}",
-            "type": cause.description["type"],
-            "Message": cause.description["Message"],
-        }
-    else:
-        response_data = {
-            "error": f"{cause.code} {cause.name}",
-            "type": cause.name,
-            "Message": cause.description,
-        }
-    response.content_type = "application/json"
-    response.data = json.dumps(response_data)
-    return response
+def get_openapi_spec() -> Dict[str, Any]:
+    "Parses and Returns OpenAPI spec"
+    cwd, _ = os.path.split(__file__)
+    path = os.path.join(cwd, "./openapi/oet-openapi-v1.yaml")
+    parser = prance.ResolvingParser(path, lazy=True, strict=True)
+    parser.parse()
+    return parser.specification
 
 
-# def create_app(config_filename):
-def create_app():
-    """
-    Create and return a new Flask app that will serve the REST API.
-    """
-    app = flask.Flask(__name__)
-    # TODO get application config working
-    # app.config.from_pyfile(config_filename)
+def create_app(open_api_spec=None):
+    "Returns Flask App using Connexion"
+    if open_api_spec is None:
+        open_api_spec = get_openapi_spec()
 
-    app.register_blueprint(ProcedureAPI, url_prefix="/api/v1.0", name="procedures")
-    app.register_blueprint(ActivityAPI, url_prefix="/api/v1.0", name="activities")
+    connexion = App(__name__, specification_dir="openapi/")
+    connexion.add_api(
+        open_api_spec,
+        base_path="/api/v1.0",
+        arguments={"title": "OpenAPI OET"},
+        pythonic_params=True,
+    )
 
+    connexion.app.config.update(msg_src=__name__)
+    # TODO: Due to the limitation of Swagger Open API, we kept the same earlier blueprint approach for Stream API and couldn't include it in the open API spec, we can plan this work when full SSE support is available in OPEN API 3.0 or any latest version.
     sse = ServerSentEventsBlueprint("sse", __name__)
     sse.add_url_rule(rule="", endpoint="stream", view_func=sse.stream)
-    app.register_blueprint(sse, url_prefix="/api/v1.0/stream")
+    connexion.app.register_blueprint(sse, url_prefix="/api/v1.0/stream")
 
-    app.config.update(msg_src=__name__)
+    # Use the Flask blueprint rather than letting the Connexion extra dependency handle the SwaggerUI.
+    # This is because our k8s ingress rules require the SwaggerUI to make requests to a different base path
+    # than the spec is registered with above.
+    swagger_ui_url = f"/{KUBE_NAMESPACE}/ska-oso-oet/ui"
+    specification_url = f"/{KUBE_NAMESPACE}/ska-oso-oet/openapi/oet-openapi-v1.yaml"
+    swagger_urls_config = [{"url": specification_url, "name": "OET API"}]
 
-    return app
+    # Swagger UI expects the resolved spec files to be available at the fixed location
+    @connexion.app.route(specification_url)
+    def api_spec():
+        return json.dumps(open_api_spec)
+
+    swaggerui_blueprint = get_swaggerui_blueprint(
+        swagger_ui_url,
+        specification_url,
+        config={
+            "app_name": "Observation Execution Tool API",
+            "urls": swagger_urls_config,
+            "showCommonExtensions": True,
+        },
+    )
+    connexion.app.register_blueprint(swaggerui_blueprint, url_prefix=swagger_ui_url)
+
+    @connexion.app.errorhandler(400)
+    @connexion.app.errorhandler(404)
+    @connexion.app.errorhandler(504)
+    @connexion.app.errorhandler(500)
+    def server_error_response(cause):
+        """
+        Custom error handler for Procedure API.
+        This is overloaded for 400, 404, 500 and 504 and could conceivably be
+        extended for other errors by adding the appropriate errorhander decorator.
+
+        :param cause: root exception for failure (e.g., KeyError)
+        :return: HTTP Response
+        """
+        response = cause.get_response()
+        if isinstance(cause.description, dict):
+            response_data = {
+                "error": f"{cause.code} {cause.name}",
+                "type": cause.description["type"],
+                "Message": cause.description["Message"],
+            }
+        else:
+            response_data = {
+                "error": f"{cause.code} {cause.name}",
+                "type": cause.name,
+                "Message": cause.description,
+            }
+        response.content_type = "application/json"
+        response.data = json.dumps(response_data)
+        return response
+
+    return connexion.app

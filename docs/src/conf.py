@@ -86,7 +86,8 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages'
+    'sphinx.ext.githubpages',
+    "sphinxcontrib.openapi"
 ]
 
 # Add any paths that contain templates here, relative to this directory.

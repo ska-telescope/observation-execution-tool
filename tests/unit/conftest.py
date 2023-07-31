@@ -1,4 +1,5 @@
 import multiprocessing
+import os
 import threading
 
 import pytest
@@ -6,11 +7,18 @@ import pytest
 from ska_oso_oet import ui
 
 
+@pytest.fixture(name="base_url")
+def fixture_base_url():
+    url = os.environ.get("OET_REST_URI", "http://localhost/api/v1.0")
+    return url
+
+
 @pytest.fixture(name="client")
 def fixture_client():
     """
     Test fixture that returns an OET Flask application instance
     """
+
     app = ui.create_app()
     app.config.update(TESTING=True)
     app.config.update(msg_src="unit tests")

@@ -16,9 +16,9 @@ class GitArgs:
     located in git repositories.
     """
 
-    git_repo: Optional[
-        str
-    ] = "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git"
+    git_repo: Optional[str] = (
+        "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git"
+    )
     git_branch: Optional[str] = "master"
     git_commit: Optional[str] = None
 
