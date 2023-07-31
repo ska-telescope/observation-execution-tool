@@ -46,6 +46,7 @@ components:
               - type: number
               - type: object
               - type: string
+                nullable: true
         kwargs:
           type: object
     ScriptArgs:
