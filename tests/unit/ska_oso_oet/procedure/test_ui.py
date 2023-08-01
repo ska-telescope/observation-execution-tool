@@ -5,8 +5,6 @@ import copy
 from http import HTTPStatus
 from unittest import mock
 
-import ska_oso_oet.procedure
-import ska_oso_oet.utils
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.application import (
     ArgCapture,
@@ -23,6 +21,7 @@ from ska_oso_oet.procedure.domain import (
     ProcedureState,
 )
 from ska_oso_oet.procedure.gitmanager import GitArgs
+from ska_oso_oet.procedure.ui import make_public_procedure_summary
 
 from ..test_ui import PubSubHelper
 
@@ -321,11 +320,9 @@ def test_post_to_procedures_endpoint_requires_script_arg_be_a_dict(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
-    assert response_json == {
-        "error": "400 Bad Request",
-        "type": "Malformed Request",
-        "Message": "Malformed script_args in request",
-    }
+    assert response_json == openapi_validation_error(
+        "'junk' is not of type 'object' - 'script_args'"
+    )
 
 
 def test_post_to_procedures_endpoint_sends_init_arguments(client):
@@ -434,7 +431,7 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
     }
     helper = PubSubHelper(spec)
 
-    response = client.put(f"{PROCEDURES_ENDPOINT}/123")
+    response = client.put(f"{PROCEDURES_ENDPOINT}/123", json=RUN_JSON)
     assert response.status_code == HTTPStatus.NOT_FOUND
 
     response_json = response.get_json()
@@ -453,7 +450,7 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
 
 def test_put_procedure_returns_error_if_no_json_supplied(client):
     """
-    Verify that a PUT request requires a JSON payload
+    Verify that a PUT request requires a JSON payload. This will be validated against the OpenAPI spec, so the response is dictated by connexion
     """
     # The procedure is retrieved before the JSON is examined, hence we need to
     # prime the pubsub messages
@@ -468,17 +465,10 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     response_json = response.get_json()
-    assert response_json == {
-        "error": "400 Bad Request",
-        "type": "Empty Response",
-        "Message": "No JSON available in response",
-    }
+    assert response_json == openapi_validation_error("None is not of type 'object'")
 
-    # verify message sequence and topics
-    assert helper.topic_list == [
-        topics.request.procedure.list,  # procedure retrieval requested
-        topics.procedure.pool.list,  # procedure returned
-    ]
+    # The Connexion validation will fail before the update_procedure call is made, so no messages will be sent to topics
+    assert helper.topic_list == []
 
 
 def test_put_procedure_calls_run_on_execution_service(client):
@@ -695,7 +685,7 @@ def test_stopping_a_non_running_procedure_returns_appropriate_error_message(clie
 
 def test_giving_non_dict_script_args_returns_error_code(client):
     """
-    script_args JSON parameter must be a dict, otherwise HTTP 500 is raised.
+    script_args JSON parameter must match the OpenAPI spec, otherwise HTTP 400 is raised by Connexion.
     """
     spec = {
         topics.request.procedure.list: [
@@ -711,11 +701,9 @@ def test_giving_non_dict_script_args_returns_error_code(client):
     assert response.status_code == 400
 
     response_json = response.get_json()
-    assert response_json == {
-        "error": "400 Bad Request",
-        "type": "Malformed Response",
-        "Message": "Malformed script_args in response",
-    }
+    assert response_json == openapi_validation_error(
+        "['foo'] is not of type 'object' - 'script_args'"
+    )
 
 
 def test_make_public_summary():
@@ -723,9 +711,7 @@ def test_make_public_summary():
         mock_url_fn.return_value = (
             f"http://localhost/api/v1.0/procedures/{CREATE_SUMMARY.id}"
         )
-        summary_json = ska_oso_oet.procedure.ui.make_public_procedure_summary(
-            CREATE_SUMMARY
-        )
+        summary_json = make_public_procedure_summary(CREATE_SUMMARY)
         assert_json_equal_to_procedure_summary(CREATE_SUMMARY, summary_json)
 
 
@@ -734,10 +720,26 @@ def test_make_public_summary_git_args():
         mock_url_fn.return_value = (
             f"http://localhost/api/v1.0/procedures/{CREATE_GIT_SUMMARY.id}"
         )
-        summary_json = ska_oso_oet.procedure.ui.make_public_procedure_summary(
-            CREATE_GIT_SUMMARY
-        )
+        summary_json = make_public_procedure_summary(CREATE_GIT_SUMMARY)
         assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, summary_json)
+
+
+def test_get_procedures_with_no_procedures_present_returns_empty_list(client):
+    """
+    Verify that listing resources returns an empty response when no procedures
+    have been registered
+    """
+    spec = {
+        topics.request.procedure.list: [
+            ([topics.procedure.pool.list], dict(result=[]))
+        ],
+    }
+    _ = PubSubHelper(spec)
+
+    response = client.get(PROCEDURES_ENDPOINT)
+    response_json = response.get_json()
+    assert "procedures" in response_json
+    assert response_json["procedures"] == []
 
 
 def assert_json_equal_to_procedure_summary(
@@ -780,19 +782,13 @@ def assert_json_equal_to_procedure_summary(
         assert isinstance(summary_json["history"]["process_states"][i][1], float)
 
 
-def test_get_procedures_with_no_procedures_present_returns_empty_list(client):
+def openapi_validation_error(detail: str):
     """
-    Verify that listing resources returns an empty response when no procedures
-    have been registered
+    This is the validation error message in the format that Connexion defines
     """
-    spec = {
-        topics.request.procedure.list: [
-            ([topics.procedure.pool.list], dict(result=[]))
-        ],
+    return {
+        "title": "Bad Request",
+        "status": 400,
+        "type": "about:blank",
+        "detail": detail,
     }
-    _ = PubSubHelper(spec)
-
-    response = client.get(PROCEDURES_ENDPOINT)
-    response_json = response.get_json()
-    assert "procedures" in response_json
-    assert response_json["procedures"] == []
