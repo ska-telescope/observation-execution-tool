@@ -110,7 +110,7 @@ spec:
         imagePullPolicy: {{ .Values.rest.image.pullPolicy }}
         command: ["/bin/sh"]
 #        The OpenAPI specs define the server url with the default namespace, ska-oso-oet. We want to overwrite this to the actual namespace at runtime, for example in the CICD deployments.
-        args: [ "-c", 'sed -i "s/ska-oso-oet\/ska-oso-oet/$KUBE_NAMESPACE\/ska-oso-oet/g" /app/src/ska_oso_oet/openapi/oet-openapi-v1.yaml && python -m ska_oso_oet.main' ]
+        args: [ "-c", 'sed -i "s|ska-oso-oet/ska-oso-oet|$KUBE_NAMESPACE/ska-oso-oet|g" /app/src/ska_oso_oet/openapi/oet-openapi-v1.yaml && python -m ska_oso_oet.main' ]
         envFrom:
           - configMapRef:
               name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment
