@@ -131,7 +131,10 @@ def get_openapi_spec() -> Dict[str, Any]:
     path = os.path.join(cwd, "./openapi/oet-openapi-v1.yaml")
     parser = prance.ResolvingParser(path, lazy=True, strict=True)
     parser.parse()
-    return parser.specification
+    spec = parser.specification
+    # The OpenAPI specs define the server url with the default namespace, ska-oso-oet. We want to overwrite this to the actual namespace at runtime, for example in the CICD deployments.
+    spec["servers"][0]["url"] = f"/{KUBE_NAMESPACE}/ska-oso-oet/api/v1.0"
+    return spec
 
 
 def create_app(open_api_spec=None):
