@@ -22,7 +22,7 @@ tests:
           count: 4
 
   - it: should have the correct apiVersion, apps/v1, for the StatefulSet resource.
-    documentIndex: 3
+    documentIndex: 2
     asserts:
       - isKind:
           of: StatefulSet
@@ -30,7 +30,7 @@ tests:
           of: apps/v1
 
   - it: should include environment variables from environment.yaml.
-    documentIndex: 3
+    documentIndex: 2
     asserts:
       - equal:
           path: spec.template.spec.containers[0].envFrom

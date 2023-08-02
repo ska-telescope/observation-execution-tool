@@ -20,7 +20,7 @@ rest:
   domain: operations
   logLevel: INFO
   ingress:
-    enabled: true
+    enabled: false
   image:
     registry: artefact.skao.int
     image: ska-oso-oet
