@@ -4,6 +4,10 @@ templates:
   - rest.yaml
 tests:
   - it: should have three documents rendered if ingress type is disabled.
+    set:
+      rest:
+        ingress:
+          enabled: false
     asserts:
       - hasDocuments:
           count: 3

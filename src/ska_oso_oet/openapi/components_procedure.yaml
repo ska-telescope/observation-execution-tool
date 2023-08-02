@@ -54,9 +54,8 @@ components:
 
     ProcedurePutInput:
       type: object
-      required: [state]
       properties:
-        scripts_args:
+        script_args:
           $ref: './common.yaml#/components/schemas/ScriptArgs'
         state:
           type: string
