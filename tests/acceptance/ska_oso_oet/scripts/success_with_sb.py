@@ -32,7 +32,7 @@ def init(subarray_id: int):
     LOG.info(f"Script bound to sub-array {subarray_id}")
 
 
-def _main(subarray_id: int, sb_json: os.PathLike, raise_msg=None):
+def _main(subarray_id: int, sb_json: os.PathLike, sbi_id: str = None, raise_msg=None):
     LOG.info(f"Running script in OS process {os.getpid()}")
     announce(f"Running script in OS process {os.getpid()}")
 

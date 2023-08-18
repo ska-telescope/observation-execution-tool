@@ -22,6 +22,7 @@ ACTIVITY_SUMMARY = ActivitySummary(
     prepare_only=False,
     script_args={},
     activity_states=[(ActivityState.TODO, 123)],
+    sbi_id="sbi-123",
 )
 
 
@@ -38,6 +39,7 @@ def assert_json_equal_to_activity_summary(summary: ActivitySummary, summary_json
     assert summary_json["sbd_id"] == summary.sbd_id
     assert summary_json["activity_name"] == summary.activity_name
     assert summary_json["prepare_only"] == summary.prepare_only
+    assert summary_json["sbi_id"] == summary.sbi_id
 
 
 def test_get_activities_with_no_activities_present_returns_empty_list(client):

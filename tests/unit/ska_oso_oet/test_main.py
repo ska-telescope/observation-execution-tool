@@ -426,7 +426,7 @@ class TestActivityWorker:
         )
         work_q.put(msg)
         expected_activity_summary = ska_oso_oet.activity.application.ActivitySummary(
-            1, 2, "sbd-123", "allocate", True, {}, []
+            1, 2, "sbd-123", "allocate", True, {}, [], "sbi-1234"
         )
 
         with mock.patch(

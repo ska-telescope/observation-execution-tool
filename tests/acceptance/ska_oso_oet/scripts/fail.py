@@ -12,7 +12,7 @@ def init(subarray_id):
     main = functools.partial(_main, subarray_id)
 
 
-def _main(subarray_id):
+def _main(subarray_id, sbi_id: str = None):
     """
     Script should raise an exception when main function is run.
     """

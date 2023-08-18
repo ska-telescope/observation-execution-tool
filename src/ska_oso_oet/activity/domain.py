@@ -38,3 +38,4 @@ class Activity:
     sbd_id: str
     activity_name: str
     prepare_only: bool
+    sbi_id: str

@@ -1,6 +1,7 @@
 import logging
 from os import getenv
 
+import requests
 from pytest_bdd import given, parsers, scenario, then, when
 from ska_db_oda.unit_of_work.restunitofwork import RESTUnitOfWork
 from ska_oso_oet_client.activityclient import ActivityAdapter
@@ -102,3 +103,17 @@ def procedure_ends_in_expected_state(state, exec_env):
 def activity_ends_in_expected_state(state):
     summaries = adapter.list()
     assert summaries[-1].state == state
+
+
+@then(parsers.parse("an SBInstance exists in the ODA linked to {sbd_id}"))
+def sbi_exists_in_oda(sbd_id):
+    url = adapter.server_url
+    response = requests.get(url, timeout=5)
+    activities_json = response.json()["activities"]
+    assert activities_json[-1]["sbi_id"]
+    sbi_id = activities_json[-1]["sbi_id"]
+
+    with RESTUnitOfWork() as oda:
+        sbi = oda.sbis.get(sbi_id)
+
+    assert sbi.sbd_id == sbd_id

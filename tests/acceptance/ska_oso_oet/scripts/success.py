@@ -12,7 +12,7 @@ def init(subarray_id):
     main = functools.partial(_main, subarray_id)
 
 
-def _main(subarray_id):
+def _main(subarray_id, sbi_id: str = None):
     """
     Script should execute successfully so no need to do anything here.
     """
