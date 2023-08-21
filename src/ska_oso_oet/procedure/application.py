@@ -158,6 +158,7 @@ class ScriptExecutionService:
     # defines which lifecycle event to announce when a lifecycle.statechange is received
     # TODO rationalise procedure lifecycle events and topics for multi-run scripts
     state_to_topic = {
+        ProcedureState.INITIALISING: topics.procedure.lifecycle.started,
         ProcedureState.RUNNING: topics.procedure.lifecycle.started,
         ProcedureState.COMPLETE: topics.procedure.lifecycle.complete,
         ProcedureState.FAILED: topics.procedure.lifecycle.failed,

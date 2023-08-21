@@ -507,13 +507,13 @@ class TestProcessManagerScriptWorkerIntegration:
 
         pid = manager.create(barrier_script, init_args=init_args)
         init_running.wait(0.1)
-        wait_for_state(manager, pid, ProcedureState.RUNNING)
+        wait_for_state(manager, pid, ProcedureState.INITIALISING)
         expected = [
             ProcedureState.CREATING,  # ScriptWorker initialising
             ProcedureState.IDLE,  # ScriptWorker ready
             ProcedureState.LOADING,  # load user module
             ProcedureState.IDLE,  # user module loaded
-            ProcedureState.RUNNING,  # init present and called
+            ProcedureState.INITIALISING,  # init present and called
         ]
         helper.assert_state_history(pid, expected)
 
@@ -559,7 +559,7 @@ class TestProcessManagerScriptWorkerIntegration:
             ProcedureState.IDLE,  # ScriptWorker ready
             ProcedureState.LOADING,  # load user module
             ProcedureState.IDLE,  # user module loaded
-            # fail script has no init so no IDLE->READY expected
+            # fail script has no init so no INITIALISING expected
             ProcedureState.READY,  # init complete
             ProcedureState.RUNNING,  # main running
             ProcedureState.FAILED,  # exception raised
@@ -718,7 +718,7 @@ class TestProcessManagerScriptWorkerIntegration:
             ProcedureState.IDLE,  # ScriptWorker ready
             ProcedureState.LOADING,  # load user module
             ProcedureState.IDLE,  # user module loaded
-            ProcedureState.RUNNING,  # init running
+            ProcedureState.INITIALISING,  # init running
             ProcedureState.STOPPED,  # init stopped
         ]
         helper.wait_for_lifecycle(ProcedureState.STOPPED)
@@ -750,14 +750,14 @@ class TestProcessManagerScriptWorkerIntegration:
             ProcedureState.IDLE,  # ScriptWorker ready
             ProcedureState.LOADING,  # load user module
             ProcedureState.IDLE,  # user module loaded
-            ProcedureState.RUNNING,  # init running
+            ProcedureState.INITIALISING,  # init running
             ProcedureState.READY,  # init complete
             ProcedureState.RUNNING,  # main running
             ProcedureState.STOPPED,  # main stopped
         ]
         helper.assert_state_history(pid, expected)
 
-    def test_running_set_to_none_on_stop(self, manager, init_hang_script):
+    def test_running_not_set_on_init(self, manager, init_hang_script):
         """
         Verify that ProcessManager sets running procedure attribute to None
         when script is stopped
@@ -767,6 +767,22 @@ class TestProcessManagerScriptWorkerIntegration:
 
         pid = manager.create(init_hang_script, init_args=init_args)
         init_running.wait(0.1)
+        wait_for_state(manager, pid, ProcedureState.INITIALISING)
+        assert manager.running is None
+
+    def test_running_set_to_none_on_stop(self, manager, main_hang_script):
+        """
+        Verify that ProcessManager sets running procedure attribute to None
+        when script is stopped
+        """
+        assert manager.running is None
+        main_running = multiprocessing.Barrier(2)
+        init_args = ProcedureInput(main_running)
+
+        pid = manager.create(main_hang_script, init_args=init_args)
+        wait_for_state(manager, pid, ProcedureState.READY)
+        manager.run(pid, call="main", run_args=ProcedureInput())
+        main_running.wait(0.5)
         wait_for_state(manager, pid, ProcedureState.RUNNING)
         assert manager.running is not None
 
@@ -910,7 +926,7 @@ class TestProcessManager:
 
         pid = manager.create(init_hang_script, init_args=init_args)
         init_running.wait(0.1)
-        wait_for_state(manager, pid, ProcedureState.RUNNING)
+        wait_for_state(manager, pid, ProcedureState.INITIALISING)
         manager.stop(pid)
         wait_for_state(manager, pid, ProcedureState.STOPPED)
 
@@ -1097,7 +1113,6 @@ class TestProcessManager:
         received: EventMessage = cb_received.pop()
         assert received.id == pubsub_msg.id and received.msg == pubsub_msg.msg
 
-    @pytest.mark.xfail(reason="BTN-1774")
     def test_can_start_ready_procedure_while_another_procedure_is_initialising(
         self, manager: ProcessManager, barrier_script, init_hang_script
     ):
@@ -1131,7 +1146,7 @@ class TestProcessManager:
 
         # start P1 init and let initialisation complete
         p1_init_running.wait(0.1)
-        wait_for_state(manager, p1_pid, ProcedureState.RUNNING)
+        wait_for_state(manager, p1_pid, ProcedureState.INITIALISING)
         p1_resume.wait(0.1)
         p1_resume.reset()  # reset to pause main method call
         wait_for_state(manager, p1_pid, ProcedureState.READY)
@@ -1141,11 +1156,11 @@ class TestProcessManager:
         p2_init_args = ProcedureInput(p2_init_running)
         p2_pid = manager.create(init_hang_script, init_args=p2_init_args)
         p2_init_running.wait(0.1)
-        wait_for_state(manager, p2_pid, ProcedureState.RUNNING)
+        wait_for_state(manager, p2_pid, ProcedureState.INITIALISING)
 
         # confirm test state is as expected: P1 ready, P2 initialising
         helper.assert_state(p1_pid, ProcedureState.READY)
-        helper.assert_state(p2_pid, ProcedureState.RUNNING)
+        helper.assert_state(p2_pid, ProcedureState.INITIALISING)
 
         # now set P1 main running and wait for it to complete
         manager.run(p1_pid, call="main", run_args=ProcedureInput())
@@ -1156,7 +1171,7 @@ class TestProcessManager:
 
         # end test state should be that P1 ran successfully, P2 still initialising
         helper.assert_state(p1_pid, ProcedureState.COMPLETE)
-        helper.assert_state(p2_pid, ProcedureState.RUNNING)
+        helper.assert_state(p2_pid, ProcedureState.INITIALISING)
 
 
 class TestModuleFactory:

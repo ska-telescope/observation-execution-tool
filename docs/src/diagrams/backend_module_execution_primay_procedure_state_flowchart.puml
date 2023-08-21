@@ -1,0 +1,29 @@
+@startuml
+'https://plantuml.com/state-diagram
+
+state git <<choice>>
+state init <<choice>>
+
+CREATING --> git
+
+git --> PREP_ENV : run GitScript
+git --> IDLE : run FilesystemScript
+
+PREP_ENV --> IDLE
+
+IDLE --> LOADING
+LOADING --> IDLE
+
+IDLE --> init
+
+init --> INITIALISING : has init fn
+init --> READY : no init fn
+
+INITIALISING --> READY
+READY --> RUNNING
+RUNNING --> READY
+
+READY --> COMPLETE
+READY --> UNKNOWN
+
+@enduml
