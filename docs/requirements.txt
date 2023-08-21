@@ -1,1 +1,0 @@
-sphinxcontrib-openapi==0.7.0
