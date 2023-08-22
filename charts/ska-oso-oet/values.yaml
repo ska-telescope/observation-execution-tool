@@ -24,7 +24,7 @@ rest:
   image:
     registry: artefact.skao.int
     image: ska-oso-oet
-    tag: 5.2.0
+    tag: 5.2.1
     pullPolicy: IfNotPresent
   resources:
     requests:
