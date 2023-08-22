@@ -115,6 +115,7 @@ package ska_oso_oet {
                 CREATING
                 IDLE
                 LOADING
+                INITIALISING
                 READY
                 RUNNING
                 COMPLETE

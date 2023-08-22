@@ -128,6 +128,7 @@ Elements and their properties
         * ``IDLE``: child process has been successfully created and is ready to process the next instruction.
         * ``PREP_ENV``: virtual environment for the user script is being prepared and its dependencies installed.
         * ``LOADING``: user script is being retrieved and loaded.
+        * ``INITIALISING``: the 'init' function of the user script is being run.
         * ``READY``: user script is fully initialised and ready to run.
         * ``RUNNING``: a function of the user script is being run.
         * ``COMPLETE``: the user script has completed successfully and the child process exited cleanly.
@@ -266,7 +267,15 @@ N/A
 Rationale
 =========
 
-N/A
+The figure below shows the state diagram for a Procedure. The diagram omits failure states STOPPED and FAILED as
+these can be reached from any of the states. The procedure states from CREATING to READY describe the preparing
+of the script, which includes setting up the script environment, loading the script to memory and running the ``init``
+function if one is present. Currently the Procedure state moves to COMPLETE once a function called ``main`` has been
+run but this could be a temporary design decision if the need for running multiple functions/the same function multiple
+times arises.
+
+.. figure:: diagrams/export/backend_module_execution_procedure_state_flowchart.svg
+   :align: center
 
 
 .. |br| raw:: html

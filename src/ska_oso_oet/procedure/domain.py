@@ -75,6 +75,7 @@ class ProcedureState(enum.Enum):
     CREATING = enum.auto()
     PREP_ENV = enum.auto()
     LOADING = enum.auto()
+    INITIALISING = enum.auto()
     READY = enum.auto()
     RUNNING = enum.auto()
     COMPLETE = enum.auto()
@@ -414,6 +415,7 @@ class ScriptWorker(mptools.ProcWorker):
 
     def _on_run(self, evt: EventMessage) -> Optional[Type[StopIteration]]:
         fn_name, fn_args = evt.msg
+        running_state = ProcedureState.RUNNING
 
         # special case: get init args from instance, check for method.
         # we may want to revisit whether init remains a special case
@@ -422,13 +424,14 @@ class ScriptWorker(mptools.ProcWorker):
                 self.publish_lifecycle(ProcedureState.READY)
                 return
             fn_args = self.init_input
+            running_state = ProcedureState.INITIALISING
 
         self.log(
             logging.DEBUG,
             "Calling user function %s",
             repr(fn_args).replace("<ProcedureInput", fn_name)[:-1],
         )
-        self.publish_lifecycle(ProcedureState.RUNNING)
+        self.publish_lifecycle(running_state)
         fn = getattr(self.user_module, fn_name)
         fn(*fn_args.args, **fn_args.kwargs)
         self.publish_lifecycle(ProcedureState.READY)
@@ -839,6 +842,7 @@ class ProcessManager:
 
         stoppable_states = [
             ProcedureState.IDLE,
+            ProcedureState.INITIALISING,
             ProcedureState.READY,
             ProcedureState.RUNNING,
             ProcedureState.LOADING,
