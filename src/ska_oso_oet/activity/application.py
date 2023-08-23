@@ -99,9 +99,9 @@ class ActivityService:
         :param request_id: The original request_id from the REST layer
         """
         aid = next(self._aid_counter)
+        sbi = self._create_sbi(cmd)
         with self._oda as oda:
             sbd: SBDefinition = oda.sbds.get(cmd.sbd_id)
-            sbi = self._create_sbi(cmd)
             oda.sbis.add(sbi)
             oda.commit()
 
