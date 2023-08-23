@@ -105,4 +105,5 @@ def make_public_activity_summary(
         "state": max(
             states_to_time := dict(activity.activity_states), key=states_to_time.get
         ).name,
+        "sbi_id": activity.sbi_id,
     }

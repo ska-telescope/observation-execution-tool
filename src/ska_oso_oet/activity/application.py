@@ -8,13 +8,16 @@ import dataclasses
 import itertools
 import logging
 import time
+from os import getenv
 from typing import Dict, List, Optional, Tuple
 
 from pubsub import pub
 from ska_db_oda.unit_of_work.restunitofwork import RESTUnitOfWork
 from ska_oso_pdm.entities.common import procedures as pdm_procedures
 from ska_oso_pdm.entities.common.sb_definition import SBDefinition
+from ska_oso_pdm.generated.models.sb_instance import PythonArguments, SBInstance
 from ska_oso_pdm.schemas import CODEC
+from ska_ser_skuid.client import SkuidClient
 
 from ska_oso_oet.activity.domain import Activity, ActivityState
 from ska_oso_oet.event import topics
@@ -26,6 +29,10 @@ from ska_oso_oet.procedure.application import (
 )
 
 LOGGER = logging.getLogger(__name__)
+
+SKUID_URL = getenv("SKUID_URL", "http://ska-ser-skuid-test-svc:9870")
+
+skuid = SkuidClient(SKUID_URL)
 
 
 @dataclasses.dataclass
@@ -48,6 +55,7 @@ class ActivitySummary:
     prepare_only: bool
     script_args: Dict[str, domain.ProcedureInput]
     activity_states: List[Tuple[ActivityState, float]]
+    sbi_id: str
 
 
 class ActivityService:
@@ -90,17 +98,19 @@ class ActivityService:
         :param cmd: dataclass argument capturing the activity name and SB ID
         :param request_id: The original request_id from the REST layer
         """
-
         aid = next(self._aid_counter)
-        with self._oda:
-            sbd: SBDefinition = self._oda.sbds.get(cmd.sbd_id)
+        sbi = self._create_sbi(cmd)
+        with self._oda as oda:
+            sbd: SBDefinition = oda.sbds.get(cmd.sbd_id)
+            oda.sbis.add(sbi)
+            oda.commit()
 
         pdm_script = sbd.activities.get(cmd.activity_name)
 
         script = self._get_oet_script(pdm_script, cmd.create_env)
         script_args = self._combine_script_args(pdm_script, cmd)
         sbd_path = self.write_sbd_to_file(sbd)
-        script_args["main"].kwargs.update({"sb_json": sbd_path})
+        script_args["main"].kwargs.update({"sb_json": sbd_path, "sbi_id": sbi.sbi_id})
 
         prepare_cmd = PrepareProcessCommand(
             script=script,
@@ -126,6 +136,7 @@ class ActivityService:
             activity_name=cmd.activity_name,
             sbd_id=cmd.sbd_id,
             prepare_only=cmd.prepare_only,
+            sbi_id=sbi.sbi_id,
         )
         self.script_args[aid] = script_args
         self.request_ids_to_aid[request_id] = aid
@@ -215,6 +226,7 @@ class ActivityService:
             script_args=script_args,
             activity_states=state,
             prepare_only=activity.prepare_only,
+            sbi_id=activity.sbi_id,
         )
 
     def _get_oet_script(
@@ -269,3 +281,22 @@ class ActivityService:
             f.write(CODEC.dumps(sbd))
 
         return path
+
+    def _create_sbi(self, cmd: ActivityCommand) -> SBInstance:
+        """
+        Creates an SBInstance from the relevant fields in the command.
+        """
+        # TODO The PDM SBInstance current only accepts a single function argument, which for now
+        # we take as the main function. Once BTN-1947 has refined the SBInstance model and released
+        # a new version to use here, it should be clearer how best to capture the args
+        main_args = cmd.script_args.get(
+            "main", domain.ProcedureInput(args=[], kwargs={})
+        )
+        sbi_runtime_args = PythonArguments(
+            args=list(main_args.args), kwargs=main_args.kwargs.copy()
+        )
+        return SBInstance(
+            sbi_id=skuid.fetch_skuid("sbi"),
+            sbd_id=cmd.sbd_id,
+            runtime_args=sbi_runtime_args,
+        )
