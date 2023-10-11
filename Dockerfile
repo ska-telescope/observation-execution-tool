@@ -15,6 +15,12 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     apt-get -y install --no-install-recommends git python3-venv && \
     rm -rf /var/lib/apt/lists/*
 
+# install ska-oso-scripting library to provide a default environment and set of
+# default control scripts. This is done as root so that the default environment
+# is installed to system dist-packages.
+RUN python3 -m pip install \
+    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==7.2.0
+
 # Copy poetry.lock* in case it doesn't exist in the repo
 COPY pyproject.toml poetry.lock* ./
 
@@ -28,12 +34,6 @@ RUN poetry export --format requirements.txt --output poetry-requirements.txt --w
 
 # clone the ska-oso-scripting library
 RUN git clone -b master https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git /repos/scripting/
-
-# install ska-oso-scripting library to provide a default environment and set of
-# default control scripts. This is done as root so that the default environment
-# is installed to system dist-packages.
-RUN python3 -m pip install \
-    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==7.2.0
 
 ## To build OET with an unreleased version of scripting for testing purposes, use the following
 #RUN python3 -m pip install  \
