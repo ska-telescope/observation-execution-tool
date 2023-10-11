@@ -4,6 +4,8 @@
 Unit tests for the ska_oso_oet.activity.application module.
 """
 import time
+from copy import deepcopy
+from datetime import datetime
 from unittest import mock as mock
 
 from ska_oso_pdm.entities.common.procedures import (
@@ -11,7 +13,11 @@ from ska_oso_pdm.entities.common.procedures import (
 )
 from ska_oso_pdm.entities.common.procedures import PythonArguments
 from ska_oso_pdm.entities.common.sb_definition import SBDefinition
-from ska_oso_pdm.generated.models.sb_instance import SBInstance
+from ska_oso_pdm.generated.models.function_args import FunctionArgs
+from ska_oso_pdm.generated.models.function_args import (
+    PythonArguments as PdmPythonArguments,
+)
+from ska_oso_pdm.generated.models.sb_instance import ActivityCall, SBInstance
 
 from ska_oso_oet.activity.application import (
     ActivityCommand,
@@ -27,11 +33,11 @@ from ..test_ui import PubSubHelper
 
 
 class TestActivityService:
-    @mock.patch("ska_oso_oet.activity.application.skuid.fetch_skuid")
     @mock.patch("ska_oso_oet.activity.application.ActivityService.write_sbd_to_file")
     @mock.patch.object(time, "time")
+    @mock.patch("ska_oso_oet.activity.application.datetime")
     def test_activityservice_prepare_run(
-        self, mock_time_fn, mock_write_fn, mock_skuid_fn
+        self, mock_datetime, mock_time_fn, mock_write_fn
     ):
         mock_pid = 2
         mock_summary = mock.MagicMock(id=mock_pid)
@@ -43,21 +49,53 @@ class TestActivityService:
                 )
             ],
         }
+        mock_executed_at_time = datetime.now()
+        mock_datetime.now.return_value = mock_executed_at_time
         helper = PubSubHelper(spec)
         mock_state_time = time.time()
         mock_time_fn.return_value = mock_state_time
         mock_write_fn.return_value = "/tmp/sbs/mock_path.json"
         mock_request_id = time.time_ns()
         test_sbi_id = "sbi-1234"
-        mock_skuid_fn.return_value = test_sbi_id
+        expected_sbi_without_id = SBInstance(
+            interface="https://schema.skao.int/ska-oso-pdm-sbi/0.1",
+            sbi_id=None,
+            sbd_ref="sbd-123",
+            activities=[
+                ActivityCall(
+                    activity_ref="allocate",
+                    executed_at=mock_executed_at_time,
+                    runtime_args=[
+                        FunctionArgs(
+                            "init",
+                            PdmPythonArguments(args=[], kwargs={"init_arg": "value"}),
+                        ),
+                        FunctionArgs(
+                            "main",
+                            PdmPythonArguments(
+                                args=[],
+                                kwargs={
+                                    "main_arg": "value",
+                                    "sb_json": "/tmp/sbs/mock_path.json",
+                                    "sbi_id": test_sbi_id,
+                                },
+                            ),
+                        ),
+                    ],
+                )
+            ],
+        )
+        expected_sbi = deepcopy(expected_sbi_without_id)
+        expected_sbi.sbi_id = test_sbi_id
 
         with mock.patch("ska_oso_oet.activity.application.RESTUnitOfWork"):
             pdm_script = pdm_FilesystemScript(path="file:///script/path.py")
-            pdm_script.function_args["main"] = PythonArguments(kwargs={})
+            pdm_script.function_args["main"] = PythonArguments(kwargs={}, args=[])
 
             activity_service = ActivityService()
             # Mock the ODA context manager
             activity_service._oda.__enter__.return_value = activity_service._oda
+            activity_service._oda.sbis.add.return_value = expected_sbi
             activity_service._oda.sbds.get.return_value = SBDefinition(
                 sbd_id="sbd-123", activities={"allocate": pdm_script}
             )
@@ -84,15 +122,9 @@ class TestActivityService:
                 prepare_only=False,
                 sbi_id=test_sbi_id,
             )
-            expected_sbi = SBInstance(
-                sbi_id=test_sbi_id,
-                sbd_id="sbd-123",
-                runtime_args=PythonArguments(args=[], kwargs={"main_arg": "value"}),
-            )
             # Check the SBI is created and persisted
-            mock_skuid_fn.assert_called_once()
             activity_service._oda.sbis.add.assert_called_once_with(  # pylint: disable=E1101
-                expected_sbi
+                expected_sbi_without_id
             )
 
             # Check that the activity is recorded within the ActivityService
@@ -124,13 +156,41 @@ class TestActivityService:
             ]
             assert prep_cmd == expected_prep_cmd
 
-    @mock.patch("ska_oso_oet.activity.application.skuid.fetch_skuid")
+    @mock.patch("ska_oso_oet.activity.application.datetime")
     @mock.patch("ska_oso_oet.activity.application.ActivityService.write_sbd_to_file")
     def test_activityservice_prepare_run_adds_function_args(
-        self, mock_write_fn, mock_skuid_fn
+        self, mock_write_fn, mock_datetime
     ):
         test_sbi_id = "sbi-123"
-        mock_skuid_fn.return_value = test_sbi_id
+        mock_executed_at_time = datetime.now()
+        mock_datetime.now.return_value = mock_executed_at_time
+        expected_sbi = SBInstance(
+            sbi_id=test_sbi_id,
+            sbd_ref="sbd-123",
+            activities=[
+                ActivityCall(
+                    activity_ref="allocate",
+                    executed_at=mock_executed_at_time,
+                    runtime_args=[
+                        FunctionArgs(
+                            "init",
+                            PdmPythonArguments(args=[], kwargs={"init_arg": "value"}),
+                        ),
+                        FunctionArgs(
+                            "main",
+                            PdmPythonArguments(
+                                args=[],
+                                kwargs={
+                                    "main_arg": "value",
+                                    "sb_json": "/tmp/sbs/mock_path.json",
+                                    "sbi_id": test_sbi_id,
+                                },
+                            ),
+                        ),
+                    ],
+                )
+            ],
+        )
         helper = PubSubHelper()
         mock_write_fn.return_value = "/tmp/sbs/mock_path.json"
         with mock.patch(
@@ -143,6 +203,7 @@ class TestActivityService:
             activity_service._oda.sbds.get.return_value = SBDefinition(
                 sbd_id="sbd-123", activities={"allocate": pdm_script}
             )
+            activity_service._oda.sbis.add.return_value = expected_sbi
 
             init_args = ProcedureInput("1", a="b")
             main_args = ProcedureInput("2", c="d")
