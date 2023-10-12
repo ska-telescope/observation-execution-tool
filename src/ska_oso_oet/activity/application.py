@@ -8,16 +8,16 @@ import dataclasses
 import itertools
 import logging
 import time
-from os import getenv
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 from pubsub import pub
 from ska_db_oda.unit_of_work.restunitofwork import RESTUnitOfWork
 from ska_oso_pdm.entities.common import procedures as pdm_procedures
 from ska_oso_pdm.entities.common.sb_definition import SBDefinition
-from ska_oso_pdm.generated.models.sb_instance import PythonArguments, SBInstance
+from ska_oso_pdm.generated.models.function_args import FunctionArgs, PythonArguments
+from ska_oso_pdm.generated.models.sb_instance import ActivityCall, SBInstance
 from ska_oso_pdm.schemas import CODEC
-from ska_ser_skuid.client import SkuidClient
 
 from ska_oso_oet.activity.domain import Activity, ActivityState
 from ska_oso_oet.event import topics
@@ -29,10 +29,6 @@ from ska_oso_oet.procedure.application import (
 )
 
 LOGGER = logging.getLogger(__name__)
-
-SKUID_URL = getenv("SKUID_URL", "http://ska-ser-skuid-test-svc:9870")
-
-skuid = SkuidClient(SKUID_URL)
 
 
 @dataclasses.dataclass
@@ -102,7 +98,7 @@ class ActivityService:
         sbi = self._create_sbi(cmd)
         with self._oda as oda:
             sbd: SBDefinition = oda.sbds.get(cmd.sbd_id)
-            oda.sbis.add(sbi)
+            sbi = oda.sbis.add(sbi)
             oda.commit()
 
         pdm_script = sbd.activities.get(cmd.activity_name)
@@ -286,17 +282,25 @@ class ActivityService:
         """
         Creates an SBInstance from the relevant fields in the command.
         """
-        # TODO The PDM SBInstance current only accepts a single function argument, which for now
-        # we take as the main function. Once BTN-1947 has refined the SBInstance model and released
-        # a new version to use here, it should be clearer how best to capture the args
-        main_args = cmd.script_args.get(
-            "main", domain.ProcedureInput(args=[], kwargs={})
-        )
-        sbi_runtime_args = PythonArguments(
-            args=list(main_args.args), kwargs=main_args.kwargs.copy()
-        )
+        function_args = [
+            FunctionArgs(
+                function_name=fn_name,
+                function_args=PythonArguments(
+                    args=list(procedure_input.args), kwargs=procedure_input.kwargs
+                ),
+            )
+            for (fn_name, procedure_input) in cmd.script_args.items()
+        ]
+
+        # sbi_id is left as None and will be set when uploaded to the ODA
         return SBInstance(
-            sbi_id=skuid.fetch_skuid("sbi"),
-            sbd_id=cmd.sbd_id,
-            runtime_args=sbi_runtime_args,
+            interface="https://schema.skao.int/ska-oso-pdm-sbi/0.1",
+            sbd_ref=cmd.sbd_id,
+            activities=[
+                ActivityCall(
+                    activity_ref=cmd.activity_name,
+                    executed_at=datetime.now(),
+                    runtime_args=function_args,
+                )
+            ],
         )

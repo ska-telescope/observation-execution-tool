@@ -48,12 +48,6 @@ def create_sbd(sbd_id, script, activity_name, test_sbd):
     test_sbd.sbd_id = sbd_id
     test_sbd.activities[activity_name].path = script
     with oda:
-        try:
-            existing_sbd = oda.sbds.get(test_sbd.sbd_id)
-            test_sbd.metadata.version = existing_sbd.metadata.version
-        except KeyError:
-            # sbd_id doesn't exist in ODA so no need to worry about versions
-            pass
         oda.sbds.add(test_sbd)
         oda.commit()
 
@@ -116,4 +110,4 @@ def sbi_exists_in_oda(sbd_id):
     with RESTUnitOfWork() as oda:
         sbi = oda.sbis.get(sbi_id)
 
-    assert sbi.sbd_id == sbd_id
+    assert sbi.sbd_ref == sbd_id
