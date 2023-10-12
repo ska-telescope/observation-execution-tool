@@ -13,6 +13,6 @@ dependencies:
   version: 5.3.0
   repository: file://../ska-oso-oet
 - name: ska-db-oda
-  version: 1.8.0
+  version: 1.8.1
   repository: https://artefact.skao.int/repository/helm-internal
   condition: ska-db-oda.enabled

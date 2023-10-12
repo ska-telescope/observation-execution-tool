@@ -292,7 +292,7 @@ class ActivityService:
             for (fn_name, procedure_input) in cmd.script_args.items()
         ]
 
-        # sbd_id is left as None and will be set when uploaded to the ODA
+        # sbi_id is left as None and will be set when uploaded to the ODA
         return SBInstance(
             interface="https://schema.skao.int/ska-oso-pdm-sbi/0.1",
             sbd_ref=cmd.sbd_id,
