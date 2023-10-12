@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ska-oso-oet"
-version = "5.3.0"
+version = "5.4.0"
 description = "SKA Observation Execution Tool"
 authors = ["Team Buttons"]
 license = "BSD-3-Clause"
