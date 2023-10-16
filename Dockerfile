@@ -19,7 +19,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 # default control scripts. This is done as root so that the default environment
 # is installed to system dist-packages.
 RUN python3 -m pip install \
-    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==7.2.0
+    --extra-index-url=https://artefact.skao.int/repository/pypi-all/simple ska-oso-scripting==7.6.0
 
 # Copy poetry.lock* in case it doesn't exist in the repo
 COPY pyproject.toml poetry.lock* ./
