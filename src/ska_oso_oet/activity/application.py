@@ -101,7 +101,11 @@ class ActivityService:
             sbi = oda.sbis.add(sbi)
             oda.commit()
 
-        pdm_script = sbd.activities.get(cmd.activity_name)
+        if (pdm_script := sbd.activities.get(cmd.activity_name)) is None:
+            raise KeyError(
+                f"Activity '{cmd.activity_name}' not present in the SBDefinition"
+                f" {cmd.sbd_id}"
+            )
 
         script = self._get_oet_script(pdm_script, cmd.create_env)
         script_args = self._combine_script_args(pdm_script, cmd)
