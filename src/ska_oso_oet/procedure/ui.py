@@ -92,26 +92,7 @@ def create_procedure():
         flask.abort(400, description=description)
     script_type = script_dict.get("script_type")
     script_uri = script_dict.get("script_uri")
-    script = None
-
-    if script_type == "filesystem":
-        script = domain.FileSystemScript(script_uri)
-    elif script_type == "git":
-        if script_dict.get("git_args"):
-            git_args = domain.GitArgs(**script_dict.get("git_args"))
-        else:
-            git_args = domain.GitArgs()
-        script = domain.GitScript(
-            script_uri,
-            git_args=git_args,
-            create_env=script_dict.get("create_env", False),
-        )
-    else:
-        description = {
-            "type": "Malformed Request",
-            "Message": f"Script type {script_type} not supported",
-        }
-        flask.abort(400, description=description)
+    script = _get_script(script_type, script_uri, script_dict)
 
     if "script_args" in flask.request.json and not isinstance(
         flask.request.json["script_args"], dict
@@ -254,3 +235,32 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
         "history": procedure_history,
         "state": procedure.state.name,
     }
+
+
+def _get_script(script_type, script_uri, script_dict):
+    try:
+        if script_type == "filesystem":
+            return domain.FileSystemScript(script_uri)
+        elif script_type == "git":
+            if script_dict.get("git_args"):
+                git_args = domain.GitArgs(**script_dict.get("git_args"))
+            else:
+                git_args = domain.GitArgs()
+            return domain.GitScript(
+                script_uri,
+                git_args=git_args,
+                create_env=script_dict.get("create_env", False),
+            )
+        else:
+            description = {
+                "type": "Malformed Request",
+                "Message": f"Script type {script_type} not supported",
+            }
+            flask.abort(400, description=description)
+    except ValueError as err:
+        # The initialisation of the script class will throw a ValueError if the prefix is incorrect
+        description = {
+            "type": err.__class__.__name__,
+            "Message": str(err),
+        }
+        flask.abort(400, description=description)

@@ -19,8 +19,14 @@ class GitArgs:
     git_repo: Optional[
         str
     ] = "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git"
-    git_branch: Optional[str] = "master"
+    git_branch: Optional[str] = None
     git_commit: Optional[str] = None
+
+    def __post_init__(self):
+        # We only want to set the default branch if the commit isn't set, as the user
+        # might just give a commit hash from a feature branch
+        if self.git_branch is None and self.git_commit is None:
+            self.git_branch = "master"
 
 
 class GitManager:

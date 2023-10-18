@@ -8,6 +8,7 @@ from copy import deepcopy
 from datetime import datetime
 from unittest import mock as mock
 
+from pytest import raises
 from ska_oso_pdm.entities.common.procedures import (
     FilesystemScript as pdm_FilesystemScript,
 )
@@ -239,6 +240,32 @@ class TestActivityService:
                     "2", c="d", sb_json="/tmp/sbs/mock_path.json", sbi_id=test_sbi_id
                 ),
             }
+
+    def test_activityservice_prepare_run_raises_key_error_when_activity_not_found(self):
+        with mock.patch("ska_oso_oet.activity.application.RESTUnitOfWork"):
+            activity_service = ActivityService()
+            # Mock the ODA context manager
+            activity_service._oda.__enter__.return_value = activity_service._oda
+            activity_service._oda.sbds.get.return_value = SBDefinition(
+                sbd_id="sbd-123", activities={"allocate": None}
+            )
+            cmd = ActivityCommand(
+                activity_name="NOT_allocate",
+                sbd_id="sbd-123",
+                prepare_only=False,
+                create_env=False,
+                script_args={
+                    "init": ProcedureInput(init_arg="value"),
+                    "main": ProcedureInput(main_arg="value"),
+                },
+            )
+
+            with raises(KeyError) as e:
+                activity_service.prepare_run_activity(cmd, "request-id-123")
+            assert (
+                "Activity 'NOT_allocate' not present in the SBDefinition sbd-123"
+                in str(e)
+            )
 
     def test_activityservice_complete_run(self):
         test_sbi_id = "sbi-1234"

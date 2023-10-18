@@ -318,6 +318,19 @@ class TestGitArgs:
         assert git_args.git_branch == "master"
         assert git_args.git_commit is None
 
+    def test_git_args_branch_not_defaulted_when_commit_given(self):
+        """
+        Verify that GitArgs if a commit is passed then the branch is not set as default
+        if a branch isn't given (as the commit might be from a non main branch)
+        """
+        git_args = GitArgs(git_commit="qwerty")
+        assert (
+            git_args.git_repo
+            == "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git"
+        )
+        assert git_args.git_branch is None
+        assert git_args.git_commit == "qwerty"
+
 
 class TestProcedureInput:
     def test_procedure_input_accepts_expected_constructor_values(self):

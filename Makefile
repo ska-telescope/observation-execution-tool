@@ -50,9 +50,7 @@ endif
 # change any values
 ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'staging')
 ifneq ($(ENV_CHECK),)
-K8S_CHART_PARAMS += --set ska-oso-oet.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
-	--set ska-oso-oet.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-oet \
-	--set ska-oso-oet.rest.ingress.enabled=true
+K8S_CHART_PARAMS += --set ska-oso-oet.rest.ingress.enabled=true
 endif
 
 
