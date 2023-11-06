@@ -37,6 +37,7 @@ autodoc_mock_imports = [
     'git',
     'jsonpickle',
     'marshmallow',
+    'prance',
     'pubsub',
     'ska_db_oda',
     'ska_oso_pdm',
