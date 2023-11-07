@@ -33,10 +33,13 @@ sys.path.insert(0, os.path.abspath('../../src'))
 
 autodoc_mock_imports = [
     'astropy',
+    'connexion',
     'flask',
+    'flask_swagger_ui',
     'git',
     'jsonpickle',
     'marshmallow',
+    'prance',
     'pubsub',
     'ska_db_oda',
     'ska_oso_pdm',

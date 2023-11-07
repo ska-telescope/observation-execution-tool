@@ -10,6 +10,10 @@ CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-oet
 RELEASE_NAME ?= test
 
+# Set sphinx documentation build to fail on warnings (as it is configured
+# in .readthedocs.yaml as well)
+DOCS_SPHINXOPTS ?= -W --keep-going
+
 # include makefile to pick up the standard Make targets from the submodule
 -include .make/base.mk
 -include .make/python.mk
