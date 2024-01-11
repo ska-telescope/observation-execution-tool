@@ -27,13 +27,31 @@ tests:
           value:
             databaseds-tango-base-test:10000
 
-  - it: should have the correct SKUID URL configuration.
+  - it: should set SKUID_URL to the global cluster domain if SKUID_URL is not set
     documentIndex: 0
+    set:
+      rest:
+        skuid:
+          url:
     asserts:
       - equal:
           path: data.SKUID_URL
           value:
             ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.cluster.local:9870
+
+  - it: should configure SKUID_URL using custom cluster domain when set
+    documentIndex: 0
+    set:
+      global:
+        cluster_domain: foo
+      rest:
+        skuid:
+          url:
+    asserts:
+      - equal:
+          path: data.SKUID_URL
+          value:
+            ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.foo:9870
 
   - it: should have the correct OET_REST_URI configuration.
     documentIndex: 0
