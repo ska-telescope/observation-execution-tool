@@ -18,7 +18,7 @@ from ska_oso_pdm.generated.models.function_args import FunctionArgs
 from ska_oso_pdm.generated.models.function_args import (
     PythonArguments as PdmPythonArguments,
 )
-from ska_oso_pdm.generated.models.sb_instance import ActivityCall, SBInstance
+from ska_oso_pdm.generated.models.sb_instance import ActivityCall, Metadata, SBInstance
 
 from ska_oso_oet.activity.application import (
     ActivityCommand,
@@ -62,6 +62,7 @@ class TestActivityService:
             interface="https://schema.skao.int/ska-oso-pdm-sbi/0.1",
             sbi_id=None,
             sbd_ref="sbd-123",
+            sbd_version=1,
             activities=[
                 ActivityCall(
                     activity_ref="allocate",
@@ -98,7 +99,9 @@ class TestActivityService:
             activity_service._oda.__enter__.return_value = activity_service._oda
             activity_service._oda.sbis.add.return_value = expected_sbi
             activity_service._oda.sbds.get.return_value = SBDefinition(
-                sbd_id="sbd-123", activities={"allocate": pdm_script}
+                sbd_id="sbd-123",
+                activities={"allocate": pdm_script},
+                metadata=Metadata(version=1),
             )
 
             cmd = ActivityCommand(
@@ -168,6 +171,7 @@ class TestActivityService:
         expected_sbi = SBInstance(
             sbi_id=test_sbi_id,
             sbd_ref="sbd-123",
+            sbd_version=1,
             activities=[
                 ActivityCall(
                     activity_ref="allocate",
@@ -202,7 +206,9 @@ class TestActivityService:
             # Mock the ODA context manager
             activity_service._oda.__enter__.return_value = activity_service._oda
             activity_service._oda.sbds.get.return_value = SBDefinition(
-                sbd_id="sbd-123", activities={"allocate": pdm_script}
+                sbd_id="sbd-123",
+                activities={"allocate": pdm_script},
+                metadata=Metadata(version=1),
             )
             activity_service._oda.sbis.add.return_value = expected_sbi
 
@@ -247,7 +253,9 @@ class TestActivityService:
             # Mock the ODA context manager
             activity_service._oda.__enter__.return_value = activity_service._oda
             activity_service._oda.sbds.get.return_value = SBDefinition(
-                sbd_id="sbd-123", activities={"allocate": None}
+                sbd_id="sbd-123",
+                activities={"allocate": None},
+                metadata=Metadata(version=1),
             )
             cmd = ActivityCommand(
                 activity_name="NOT_allocate",

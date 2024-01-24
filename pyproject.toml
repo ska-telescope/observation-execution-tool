@@ -40,7 +40,7 @@ ska-ser-skuid = "^3.3.3"
 tblib = "^1.7.0"
 GitPython = "^3.1.27"
 waitress = "^2.1.2"
-ska-db-oda = "^1.8.1"
+ska-db-oda = "^2.0.0"
 ska-oso-pdm = "^11.2.0"
 connexion = {extras = ["swagger-ui"], version = "^2.14.0"}
 prance = "^23.6.21.0"
@@ -81,7 +81,8 @@ log_file_format = "%(asctime)s.%(msecs)03dZ|%(levelname)s|%(threadName)s|%(funcN
 log_file_level = "DEBUG"
 env = [
     "D:OET_URL = http://ska-oso-oet-rest-test:5000/ska-oso-oet/oet/api/v5",
-    "D:ODA_URL = http://ska-db-oda-rest-test:5000/ska-oso-oet/api/v1"
+    "D:OET_REST_URI = http://ska-oso-oet-rest-test:5000/ska-oso-oet/oet/api/v5",
+    "D:ODA_URL = http://ska-db-oda-rest-test:5000/ska-oso-oet/oda/api/v2"
 ]
 
 [tool.coverage.run]

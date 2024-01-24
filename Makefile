@@ -29,7 +29,7 @@ IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 # The default ODA_URL points to the umbrella chart ODA deployment where data is
 # lost on chart teardown. For longer-term data persistence, override ODA_URL to
 # point to the persistent ODA deployment.
-ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/api/v1
+ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v2
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 
