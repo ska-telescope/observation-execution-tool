@@ -84,9 +84,9 @@ For accessing Swagger UI on local development environment follow below steps:
 Pre-requisite:
 - Run ODA Application server : [Refer this ODA Installation link](https://gitlab.com/ska-telescope/db/ska-db-oda/-/blob/main/README.md?ref_type=heads) 
 
-- Export ODA Server URL as an Environment variable ODA_URI
+- Export ODA Server URL as an Environment variable ODA_URL
 ```
-export ODA_URI=<oda_server_url>
+export ODA_URL=<oda_server_url>
 ```
 
 - Start the OET REST API server:
@@ -96,7 +96,7 @@ python src/ska_oso_oet/main.py
 
 - Access Swagger UI On a browser using below link:
 ```
-http://{hostname}:{port}/api/v1.0/ui
+http://{hostname}:{port}/ska-oso-oet/oet/api/v<OET major version>/ui
 ```
 
 # Deployments from CICD

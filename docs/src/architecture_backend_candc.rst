@@ -118,7 +118,7 @@ Context
 Variability Guide
 =================
 
-The OET CLI reads the ``OET_REST_URI`` environment variable to find the URL of the OET REST server.
+The OET CLI reads the ``OET_URL`` environment variable to find the URL of the OET REST server.
 
 Rationale
 =========

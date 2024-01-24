@@ -8,7 +8,7 @@ from ska_oso_oet_client.procedureclient import ProcedureAdapter
 
 LOGGER = logging.getLogger(__name__)
 
-PROCEDURE_ADAPTER = ProcedureAdapter(f"{os.getenv('OET_REST_URI')}/procedures")
+PROCEDURE_ADAPTER = ProcedureAdapter(f"{os.getenv('OET_URL')}/procedures")
 
 
 if typing.TYPE_CHECKING:

@@ -22,11 +22,9 @@ from ska_oso_oet.procedure.domain import (
 )
 from ska_oso_oet.procedure.gitmanager import GitArgs
 from ska_oso_oet.procedure.ui import make_public_procedure_summary
+from tests.unit.conftest import PROCEDURES_ENDPOINT
 
 from ..test_ui import PubSubHelper
-
-# Endpoint for the REST API
-PROCEDURES_ENDPOINT = "api/v1.0/procedures"
 
 # Valid JSON struct for creating a new procedure
 CREATE_JSON = dict(
@@ -709,7 +707,7 @@ def test_giving_non_dict_script_args_returns_error_code(client):
 def test_make_public_summary():
     with mock.patch("flask.url_for") as mock_url_fn:
         mock_url_fn.return_value = (
-            f"http://localhost/api/v1.0/procedures/{CREATE_SUMMARY.id}"
+            f"http://localhost/{PROCEDURES_ENDPOINT}/{CREATE_SUMMARY.id}"
         )
         summary_json = make_public_procedure_summary(CREATE_SUMMARY)
         assert_json_equal_to_procedure_summary(CREATE_SUMMARY, summary_json)
@@ -718,7 +716,7 @@ def test_make_public_summary():
 def test_make_public_summary_git_args():
     with mock.patch("flask.url_for") as mock_url_fn:
         mock_url_fn.return_value = (
-            f"http://localhost/api/v1.0/procedures/{CREATE_GIT_SUMMARY.id}"
+            f"http://localhost/{PROCEDURES_ENDPOINT}/{CREATE_GIT_SUMMARY.id}"
         )
         summary_json = make_public_procedure_summary(CREATE_GIT_SUMMARY)
         assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, summary_json)

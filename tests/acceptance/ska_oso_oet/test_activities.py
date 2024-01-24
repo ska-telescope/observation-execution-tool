@@ -10,7 +10,7 @@ LOGGER = logging.getLogger()
 
 KUBE_NAMESPACE = getenv("KUBE_NAMESPACE", "ska-oso-oet")
 
-adapter = ActivityAdapter(f"{getenv('OET_REST_URI')}/activities")
+adapter = ActivityAdapter(f"{getenv('OET_URL')}/activities")
 
 
 @scenario(

@@ -19,8 +19,7 @@ from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.domain import ProcedureState
 from ska_oso_oet.ui import Message
-
-PROCEDURES_ENDPOINT = "api/v1.0/procedures"
+from tests.unit.conftest import DEFAULT_API_PATH, PROCEDURES_ENDPOINT
 
 
 @pytest.fixture(name="short_timeout")
@@ -216,7 +215,7 @@ def test_sse_string_messages_are_streamed_correctly(client):
         "ska_oso_oet.ui.ServerSentEventsBlueprint.messages"
     ) as mock_messages:
         mock_messages.return_value = [msg]
-        response = client.get("/api/v1.0/stream")
+        response = client.get(f"/{DEFAULT_API_PATH}/stream")
 
         assert isinstance(response, flask.Response)
         assert response.mimetype == "text/event-stream"
@@ -236,7 +235,7 @@ def test_sse_complex_messages_are_streamed_correctly(client):
         "ska_oso_oet.ui.ServerSentEventsBlueprint.messages"
     ) as mock_messages:
         mock_messages.return_value = [msg]
-        response = client.get("/api/v1.0/stream")
+        response = client.get(f"/{DEFAULT_API_PATH}/stream")
 
         assert isinstance(response, flask.Response)
         assert response.mimetype == "text/event-stream"

@@ -43,3 +43,10 @@ Create chart name and version as used by the chart label.
 {{- define "ska-oso-oet.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{/*
+Get the major version of the release
+*/}}
+{{- define "ska-oso-oet.major-version" }}
+{{- with $x := printf "%s" .Chart.Version | split "."}}{{index $x "_0"}}{{end}}
+{{- end -}}

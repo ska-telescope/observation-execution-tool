@@ -12,9 +12,9 @@ from .util import ScriptExecutionEnvironment
 def setup():
     """
     A setup fixture to check that OET REST server is running and available at
-    address defined by OET_REST_URI environment variable.
+    address defined by OET_URL environment variable.
     """
-    oet_procedures_rest_uri = f"{os.getenv('OET_REST_URI')}/procedures"
+    oet_procedures_rest_uri = f"{os.getenv('OET_URL')}/procedures"
     try:
         resp = requests.get(oet_procedures_rest_uri, timeout=1.0)
     except requests.exceptions.ConnectionError as e:
