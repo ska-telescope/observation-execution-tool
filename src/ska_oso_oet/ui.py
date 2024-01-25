@@ -6,7 +6,7 @@ interface
 import json
 import multiprocessing
 import os
-from importlib import metadata
+from importlib.metadata import version
 from typing import Any, Dict, Generator, Optional, Union
 
 import flask
@@ -19,7 +19,7 @@ from pubsub import pub
 from ska_oso_oet.mptools import MPQueue
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-oet")
-OET_MAJOR_VERSION = metadata.version("ska-oso-oet").split(".")[0]
+OET_MAJOR_VERSION = version("ska-oso-oet").split(".")[0]
 # The base path includes the namespace which is known at runtime
 # to avoid clashes in deployments, for example in CICD
 API_PATH = f"/{KUBE_NAMESPACE}/oet/api/v{OET_MAJOR_VERSION}"

@@ -1,14 +1,22 @@
 import logging
-import os
 import subprocess
 import time
 import typing
+from importlib.metadata import version
+from os import getenv
 
 from ska_oso_oet_client.procedureclient import ProcedureAdapter
 
 LOGGER = logging.getLogger(__name__)
 
-PROCEDURE_ADAPTER = ProcedureAdapter(f"{os.getenv('OET_URL')}/procedures")
+KUBE_NAMESPACE = getenv("KUBE_NAMESPACE", "ska-oso-oet")
+OET_MAJOR_VERSION = version("ska-oso-oet").split(".")[0]
+OET_URL = getenv(
+    "OET_URL",
+    f"http://ska-oso-oet-rest-test:5000/{KUBE_NAMESPACE}/oet/api/v{OET_MAJOR_VERSION}",
+)
+
+PROCEDURE_ADAPTER = ProcedureAdapter(f"{OET_URL}/procedures")
 
 
 if typing.TYPE_CHECKING:

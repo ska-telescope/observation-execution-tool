@@ -80,8 +80,6 @@ log_file = "pytest-logs.txt"
 log_file_format = "%(asctime)s.%(msecs)03dZ|%(levelname)s|%(threadName)s|%(funcName)s|%(filename)s#%(lineno)d||%(message)s"
 log_file_level = "DEBUG"
 env = [
-    "D:OET_URL = http://ska-oso-oet-rest-test:5000/ska-oso-oet/oet/api/v5",
-    "D:OET_REST_URI = http://ska-oso-oet-rest-test:5000/ska-oso-oet/oet/api/v5",
     "D:ODA_URL = http://ska-db-oda-rest-test:5000/ska-oso-oet/oda/api/v2"
 ]
 

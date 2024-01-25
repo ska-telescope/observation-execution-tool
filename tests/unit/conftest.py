@@ -1,13 +1,13 @@
 import multiprocessing
 import os
 import threading
-from importlib import metadata
+from importlib.metadata import version
 
 import pytest
 
 from ska_oso_oet import ui
 
-OET_MAJOR_VERSION = metadata.version("ska-oso-oet").split(".")[0]
+OET_MAJOR_VERSION = version("ska-oso-oet").split(".")[0]
 # Default as it uses the default namespace. When deployed to a different namespace the first part will change to that namespace.
 DEFAULT_API_PATH = f"ska-oso-oet/oet/api/v{OET_MAJOR_VERSION}"
 PROCEDURES_ENDPOINT = f"{DEFAULT_API_PATH}/procedures"
