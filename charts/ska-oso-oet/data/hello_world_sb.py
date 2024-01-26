@@ -32,8 +32,11 @@ def init(subarray_id: int):
     LOG.info(f'Script bound to sub-array {subarray_id}')
 
 
-def _main(subarray_id: int, sb_json: str, raise_msg=None):
+def _main(subarray_id: int, sb_json: str, sbi_id: str = "sbi-default-123", raise_msg=None):
     LOG.info(f'Running script in OS process {os.getpid()}')
+
+    LOG.info(f'Pretending to create EB for SBI {sbi_id}')
+    announce(f'Pretending to create EB for SBI {sbi_id}')
 
     LOG.info(f'Loading SB from file {sb_json}')
     sb: SBDefinition = CODEC.load_from_file(SBDefinition, sb_json)
