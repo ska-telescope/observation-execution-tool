@@ -9,6 +9,7 @@ CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-oet
 RELEASE_NAME ?= test
+MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
 
 # Set sphinx documentation build to fail on warnings (as it is configured
 # in .readthedocs.yaml as well)
