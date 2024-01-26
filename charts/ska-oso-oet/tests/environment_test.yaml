@@ -59,4 +59,4 @@ tests:
       - equal:
           path: data.OET_URL
           value:
-            http://ska-oso-oet-rest-RELEASE-NAME:5000/NAMESPACE/oet/api/v5
+            http://ska-oso-oet-rest-RELEASE-NAME:5000/NAMESPACE/oet/api/v6

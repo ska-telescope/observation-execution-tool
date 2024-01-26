@@ -58,10 +58,12 @@ ifneq ($(ENV_CHECK),)
 K8S_CHART_PARAMS += --set ska-oso-oet.rest.ingress.enabled=true
 endif
 
-
+# The OET_URL is used by the OET client which runs inside the test pod during k8s-test. We set it explicitly here rather than rely on
+# the default in the client, to ensure we are pointing at this instance of the OET
+OET_URL ?= http://ska-oso-oet-rest-test:5000/$(KUBE_NAMESPACE)/oet/api/v$(MAJOR_VERSION)
 # Set the k8s test command run inside the testing pod to only run the acceptance
 # tests (no k8s pod deployment required for unit tests)
-K8S_TEST_TEST_COMMAND = ODA_URL=$(ODA_URL) KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/acceptance | tee pytest.stdout
+K8S_TEST_TEST_COMMAND = OET_URL=$(OET_URL) ODA_URL=$(ODA_URL) KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/acceptance | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the integration tests
 PYTHON_TEST_FILE = tests/unit/
