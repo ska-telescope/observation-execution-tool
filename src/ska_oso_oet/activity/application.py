@@ -95,9 +95,9 @@ class ActivityService:
         :param request_id: The original request_id from the REST layer
         """
         aid = next(self._aid_counter)
-        sbi = self._create_sbi(cmd)
         with self._oda as oda:
             sbd: SBDefinition = oda.sbds.get(cmd.sbd_id)
+            sbi = self._create_sbi(cmd, sbd_version=sbd.metadata.version)
             sbi = oda.sbis.add(sbi)
             oda.commit()
 
@@ -282,7 +282,7 @@ class ActivityService:
 
         return path
 
-    def _create_sbi(self, cmd: ActivityCommand) -> SBInstance:
+    def _create_sbi(self, cmd: ActivityCommand, sbd_version: int) -> SBInstance:
         """
         Creates an SBInstance from the relevant fields in the command.
         """
@@ -300,6 +300,7 @@ class ActivityService:
         return SBInstance(
             interface="https://schema.skao.int/ska-oso-pdm-sbi/0.1",
             sbd_ref=cmd.sbd_id,
+            sbd_version=sbd_version,
             activities=[
                 ActivityCall(
                     activity_ref=cmd.activity_name,

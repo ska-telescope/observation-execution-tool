@@ -1,15 +1,22 @@
 import multiprocessing
 import os
 import threading
+from importlib.metadata import version
 
 import pytest
 
 from ska_oso_oet import ui
 
+OET_MAJOR_VERSION = version("ska-oso-oet").split(".")[0]
+# Default as it uses the default namespace. When deployed to a different namespace the first part will change to that namespace.
+DEFAULT_API_PATH = f"ska-oso-oet/oet/api/v{OET_MAJOR_VERSION}"
+PROCEDURES_ENDPOINT = f"{DEFAULT_API_PATH}/procedures"
+ACTIVITIES_ENDPOINT = f"{DEFAULT_API_PATH}/activities"
+
 
 @pytest.fixture(name="base_url")
 def fixture_base_url():
-    url = os.environ.get("OET_REST_URI", "http://localhost/api/v1.0")
+    url = os.environ.get("OET_URL", f"http://localhost/{DEFAULT_API_PATH}")
     return url
 
 

@@ -34,7 +34,6 @@ autodoc_mock_imports = [
     "astropy",
     "connexion",
     "flask",
-    "flask_swagger_ui",
     "git",
     "jsonpickle",
     "marshmallow",

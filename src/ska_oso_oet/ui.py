@@ -6,6 +6,7 @@ interface
 import json
 import multiprocessing
 import os
+from importlib.metadata import version
 from typing import Any, Dict, Generator, Optional, Union
 
 import flask
@@ -13,12 +14,15 @@ import jsonpickle
 import prance
 from connexion import App
 from flask import Blueprint, current_app, stream_with_context
-from flask_swagger_ui import get_swaggerui_blueprint
 from pubsub import pub
 
 from ska_oso_oet.mptools import MPQueue
 
 KUBE_NAMESPACE = os.getenv("KUBE_NAMESPACE", "ska-oso-oet")
+OET_MAJOR_VERSION = version("ska-oso-oet").split(".")[0]
+# The base path includes the namespace which is known at runtime
+# to avoid clashes in deployments, for example in CICD
+API_PATH = f"/{KUBE_NAMESPACE}/oet/api/v{OET_MAJOR_VERSION}"
 
 
 class Message:
@@ -132,8 +136,6 @@ def get_openapi_spec() -> Dict[str, Any]:
     parser = prance.ResolvingParser(path, lazy=True, strict=True)
     parser.parse()
     spec = parser.specification
-    # The OpenAPI specs define the server url with the default namespace, ska-oso-oet. We want to overwrite this to the actual namespace at runtime, for example in the CICD deployments.
-    spec["servers"][0]["url"] = f"/{KUBE_NAMESPACE}/ska-oso-oet/api/v1.0"
     return spec
 
 
@@ -145,7 +147,7 @@ def create_app(open_api_spec=None):
     connexion = App(__name__, specification_dir="openapi/")
     connexion.add_api(
         open_api_spec,
-        base_path="/api/v1.0",
+        base_path=API_PATH,
         arguments={"title": "OpenAPI OET"},
         pythonic_params=True,
     )
@@ -154,30 +156,7 @@ def create_app(open_api_spec=None):
     # TODO: Due to the limitation of Swagger Open API, we kept the same earlier blueprint approach for Stream API and couldn't include it in the open API spec, we can plan this work when full SSE support is available in OPEN API 3.0 or any latest version.
     sse = ServerSentEventsBlueprint("sse", __name__)
     sse.add_url_rule(rule="", endpoint="stream", view_func=sse.stream)
-    connexion.app.register_blueprint(sse, url_prefix="/api/v1.0/stream")
-
-    # Use the Flask blueprint rather than letting the Connexion extra dependency handle the SwaggerUI.
-    # This is because our k8s ingress rules require the SwaggerUI to make requests to a different base path
-    # than the spec is registered with above.
-    swagger_ui_url = f"/{KUBE_NAMESPACE}/ska-oso-oet/ui"
-    specification_url = f"/{KUBE_NAMESPACE}/ska-oso-oet/openapi/oet-openapi-v1.yaml"
-    swagger_urls_config = [{"url": specification_url, "name": "OET API"}]
-
-    # Swagger UI expects the resolved spec files to be available at the fixed location
-    @connexion.app.route(specification_url)
-    def api_spec():
-        return json.dumps(open_api_spec)
-
-    swaggerui_blueprint = get_swaggerui_blueprint(
-        swagger_ui_url,
-        specification_url,
-        config={
-            "app_name": "Observation Execution Tool API",
-            "urls": swagger_urls_config,
-            "showCommonExtensions": True,
-        },
-    )
-    connexion.app.register_blueprint(swaggerui_blueprint, url_prefix=swagger_ui_url)
+    connexion.app.register_blueprint(sse, url_prefix=f"{API_PATH}/stream")
 
     @connexion.app.errorhandler(400)
     @connexion.app.errorhandler(404)

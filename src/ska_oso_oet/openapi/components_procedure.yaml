@@ -37,7 +37,7 @@ components:
               example: "CREATING"
             uri:
               type: string
-              example: "http://localhost:5000/api/v1.0/procedures/2"
+              example: "http://localhost:5000/ska-oso-oet/oet/api/v1/procedures/2"
     ProcedurePostInput:
       type: object
       required: [script]

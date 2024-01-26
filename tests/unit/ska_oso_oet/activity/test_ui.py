@@ -4,10 +4,10 @@ from ska_oso_oet.activity.application import ActivityCommand, ActivitySummary
 from ska_oso_oet.activity.domain import ActivityState
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.domain import ProcedureInput
+from tests.unit.conftest import ACTIVITIES_ENDPOINT
 
 from ..test_ui import PubSubHelper
 
-ACTIVITIES_ENDPOINT = "api/v1.0/activities"
 ACTIVITY_REQUEST = {
     "sbd_id": "sbi-001",
     "activity_name": "allocate",

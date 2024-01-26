@@ -9,8 +9,6 @@ info:
     name: BSD-3-Clause
     url: https://opensource.org/licenses/BSD-3-Clause
   version: "1.0.0"
-servers:
-- url: "/ska-oso-oet/ska-oso-oet/api/v1.0"
 tags:
   - name: Procedure APIs
     description: Responsible for Preparation and execution of script and getting detail of the script execution

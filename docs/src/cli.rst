@@ -51,23 +51,22 @@ Configuration
 
 The address of the remote OET backend can be specified at the command line
 via the ``server-url`` argument, or set session-wide by setting the
-``OET_REST_URI`` environment variable, e.g.,
+``OET_URL`` environment variable, e.g.,
 
 .. code-block:: console
 
   # provide the server URL when running the command, e.g.
-  $ oet --server-url=http://my-oet-deployment.com:5000/api/v1.0 procedure list
+  $ oet --server-url=http://my-oet-deployment.com:5000/ska-oso-oet/oet/api/v1 procedure list
 
   # alternatively, set the server URL for a session by defining an environment variable
-  $ export OET_REST_URI=http://my-oet-deployment.com:5000/api/v1.0
+  $ export OET_URL=http://my-oet-deployment.com:5000/ska-oso-oet/oet/api/v1
   $ oet procedure list
   $ oet activity describe
   $ oet procedure create ...
 
-By default, the client assumes it is operating within a SKAMPI environment
+By default, the client assumes it is operating within a Kubernetes environment
 and attempts to connect to a REST server using the default REST service name
-of http://ska-oso-oet-rest:5000/api/v1.0. If running the OET
-client within a SKAMPI pod, the ``OET_REST_URI`` should automatically be set.
+of http://ska-oso-oet-rest:5000/ska-oso-oet/oet/api/v1.
 
 
 Commands
@@ -293,7 +292,7 @@ matter its state.
 
     ID  Script           URI
   ----  ---------------  -----------------------------------------
-     2  file://test2.py  http://0.0.0.0:5000/api/v1.0/procedures/2
+     2  file://test2.py  http://0.0.0.0:5000/ska-oso-oet/oet/api/v1/procedures/2
 
   Time                        State
   --------------------------  -------
@@ -318,7 +317,7 @@ Describing a script from git shows additional information on the repository:
 
     ID  Script           URI
   ----  ---------------  -----------------------------------------
-     3  git://test3.py    http://0.0.0.0:5000/api/v1.0/procedures/3
+     3  git://test3.py    http://0.0.0.0:5000/ska-oso-oet/oet/api/v1/procedures/3
 
   Time                        State
   --------------------------  -------
@@ -504,7 +503,7 @@ An ``oet activity describe`` command will give further detail on an activity.
 
   URI                                        Prepare Only
   -----------------------------------------  --------------
-  http://0.0.0.0:5000/api/v1.0/activities/1  False
+  http://0.0.0.0:5000/ska-oso-oet/oet/api/v1/activities/1  False
 
   Time                        State
   --------------------------  ---------
@@ -530,7 +529,7 @@ You can also view the details of the script that was run by the activity:
 
     ID  Script                URI
   ----  ---------------       -----------------------------------------
-     1  file://allocate.py    http://0.0.0.0:5000/api/v1.0/procedures/1
+     1  file://allocate.py    http://0.0.0.0:5000/ska-oso-oet/oet/api/v1/procedures/1
 
   Time                        State
   --------------------------  -------

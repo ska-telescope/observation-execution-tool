@@ -42,7 +42,7 @@ RUN git clone -b master https://gitlab.com/ska-telescope/oso/ska-oso-scripting.g
 #    ska-oso-scripting==6.1.0+dev.c580f9d62
 
 # install the client into the image so it can be used in the default k8s installation
-RUN pip install ska-oso-oet-client==1.0.0
+RUN pip install ska-oso-oet-client==1.1.0
 
 # link default script location to a shorter path to make CLI interactions easier
 RUN ln -s /usr/local/lib/python3.10/dist-packages/scripts /scripts

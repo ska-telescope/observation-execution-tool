@@ -35,7 +35,7 @@ components:
           example: TODO
         uri:
           type: string
-          example: "http://localhost:5000/api/v1.0/activities/1"
+          example: "http://localhost:5000/ska-oso-oet/oet/api/v1/activities/1"
     ActivityPostInput:
       type: object
       properties:

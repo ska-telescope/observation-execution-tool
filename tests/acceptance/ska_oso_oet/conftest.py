@@ -5,16 +5,16 @@ import requests
 from ska_oso_pdm.entities.common.sb_definition import SBDefinition
 from ska_oso_pdm.schemas import CODEC
 
-from .util import ScriptExecutionEnvironment
+from .util import OET_URL, ScriptExecutionEnvironment
 
 
 @pytest.fixture(autouse=True, scope="session")
 def setup():
     """
     A setup fixture to check that OET REST server is running and available at
-    address defined by OET_REST_URI environment variable.
+    address defined by OET_URL environment variable.
     """
-    oet_procedures_rest_uri = f"{os.getenv('OET_REST_URI')}/procedures"
+    oet_procedures_rest_uri = f"{OET_URL}/procedures"
     try:
         resp = requests.get(oet_procedures_rest_uri, timeout=1.0)
     except requests.exceptions.ConnectionError as e:
@@ -24,7 +24,8 @@ def setup():
 
     if resp.status_code != 200:
         raise IOError(
-            f"Invalid response from OET REST service at {oet_procedures_rest_uri}"
+            f"Invalid {resp.status_code} response from OET REST service at"
+            f" {oet_procedures_rest_uri} with body {resp.text}"
         )
 
 

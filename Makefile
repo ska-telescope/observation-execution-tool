@@ -9,6 +9,7 @@ CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-oet
 RELEASE_NAME ?= test
+MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
 
 # Set sphinx documentation build to fail on warnings (as it is configured
 # in .readthedocs.yaml as well)
@@ -26,15 +27,15 @@ DOCS_SPHINXOPTS ?= -W --keep-going
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
-# The default ODA_URI points to the umbrella chart ODA deployment where data is
-# lost on chart teardown. For longer-term data persistence, override ODA_URI to
+# The default ODA_URL points to the umbrella chart ODA deployment where data is
+# lost on chart teardown. For longer-term data persistence, override ODA_URL to
 # point to the persistent ODA deployment.
-ODA_URI ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/api/v1
+ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v2
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 
 K8S_CHART_PARAMS = \
-  --set ska-oso-oet.rest.oda.url=$(ODA_URI) \
+  --set ska-oso-oet.rest.oda.url=$(ODA_URL) \
   --set ska-db-oda.rest.backend.type=filesystem \
   --set ska-db-oda.pgadmin4.enabled=false \
   --set ska-db-oda.postgresql.enabled=false
@@ -60,7 +61,7 @@ endif
 
 # Set the k8s test command run inside the testing pod to only run the acceptance
 # tests (no k8s pod deployment required for unit tests)
-K8S_TEST_TEST_COMMAND = ODA_URI=$(ODA_URI) KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/acceptance | tee pytest.stdout
+K8S_TEST_TEST_COMMAND = ODA_URL=$(ODA_URL) KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/acceptance | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the integration tests
 PYTHON_TEST_FILE = tests/unit/
@@ -84,7 +85,7 @@ up: namespace install-chart wait
 dev-up: K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION) \
 	--set ska-oso-oet.rest.ingress.enabled=true \
 	--set ska-oso-oet.rest.oda.backend.type=filesystem \
-	--set ska-oso-oet.rest.oda.url=$(ODA_URI) \
+	--set ska-oso-oet.rest.oda.url=$(ODA_URL) \
 	--set ska-db-oda.enabled=true \
 	--set ska-db-oda.pgadmin4.enabled=false
 
@@ -122,6 +123,10 @@ k8s-pre-test:
 k8s-post-test:
 	kubectl -n $(KUBE_NAMESPACE) exec ska-oso-oet-rest-$(HELM_RELEASE)-0 -- rm -r /tmp/scripts
 	kubectl -n $(KUBE_NAMESPACE) exec ska-oso-oet-rest-$(HELM_RELEASE)-0 -- rm -r /tmp/test_repo
+
+# The docs build fails unless the ska-oso-oet package is installed locally as importlib.metadata.version requires it.
+docs-pre-build:
+	poetry install --only-root
 
 # install helm plugin from https://github.com/helm-unittest/helm-unittest.git
 k8s-chart-test:

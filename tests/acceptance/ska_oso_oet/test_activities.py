@@ -1,16 +1,15 @@
 import logging
-from os import getenv
 
 import requests
 from pytest_bdd import given, parsers, scenario, then, when
 from ska_db_oda.unit_of_work.restunitofwork import RESTUnitOfWork
 from ska_oso_oet_client.activityclient import ActivityAdapter
 
+from .util import OET_URL
+
 LOGGER = logging.getLogger()
 
-KUBE_NAMESPACE = getenv("KUBE_NAMESPACE", "ska-oso-oet")
-
-adapter = ActivityAdapter(f"{getenv('OET_REST_URI')}/activities")
+adapter = ActivityAdapter(f"{OET_URL}/activities")
 
 
 @scenario(
