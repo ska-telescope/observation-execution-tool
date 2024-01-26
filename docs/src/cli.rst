@@ -64,10 +64,9 @@ via the ``server-url`` argument, or set session-wide by setting the
   $ oet activity describe
   $ oet procedure create ...
 
-By default, the client assumes it is operating within a SKAMPI environment
+By default, the client assumes it is operating within a Kubernetes environment
 and attempts to connect to a REST server using the default REST service name
-of http://ska-oso-oet-rest:5000/ska-oso-oet/oet/api/v1. If running the OET
-client within a SKAMPI pod, the ``OET_URL`` should automatically be set.
+of http://ska-oso-oet-rest:5000/ska-oso-oet/oet/api/v1.
 
 
 Commands
