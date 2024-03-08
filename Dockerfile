@@ -23,8 +23,6 @@ RUN python3 -m pip install \
 
 # Copy poetry.lock* in case it doesn't exist in the repo
 COPY pyproject.toml poetry.lock* ./
-# Update Poetry to the latest version
-RUN poetry self update 1.8.2
 
 # Install runtime dependencies. Add --dev to export for images usable in an IDE
 # Note that the 'pip install .' MUST be present otherwise a potentially stale version
