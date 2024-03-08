@@ -83,7 +83,6 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
-    "sphinxcontrib.openapi",
 ]
 
 # The suffix(es) of source filenames.
