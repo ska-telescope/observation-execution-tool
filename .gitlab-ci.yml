@@ -54,9 +54,9 @@ test-chart-templates:
       echo "Status of pods in $KUBE_NAMESPACE namespace:"
       kubectl get pods -n $KUBE_NAMESPACE -o jsonpath="{range .items[*]}{'Pod: '}{.metadata.name}:{'\n'}{'\t'}{'Image: '}{.spec.containers[*].image}{'\n'}{'\t'}{'Status: '}{.status.phase}{'\n'}{end}{'\n'}"
       echo "Address to connect to the deployment of the OET API: "
-      echo "  https://k8s.stfc.skao.int/$KUBE_NAMESPACE/oet/api/v$MAJOR_VERSION"
+      echo "  https://k8s.stfc.skao.int/$KUBE_NAMESPACE/oet/api/v6"
       echo "Address to connect to the Swagger UI for the deployment: "
-      echo "  https://k8s.stfc.skao.int/$KUBE_NAMESPACE/oet/api/v$MAJOR_VERSION/ui/"
+      echo "  https://k8s.stfc.skao.int/$KUBE_NAMESPACE/oet/api/v6/ui/"
 
 # Currently, the dev template uses ci-dev-$CI_PROJECT_NAME which means only one branch can be deployed at a time, so we overwrite this
 .dev_env: &dev_env
@@ -67,6 +67,8 @@ test-chart-templates:
 
 deploy-dev-environment:
   <<: *dev_env
+  needs:
+    - oci-image-build
 
 test-dev-environment:
   <<: *dev_env
