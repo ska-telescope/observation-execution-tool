@@ -22,6 +22,7 @@ build:
       # Install dependencies with 'docs' dependency group. If you do not have docs group, please omit it
       # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
       - poetry install --only docs
+      - python -c "import sys; print('\n'.join(sys.path))"
 
 
 # Build documentation in the docs/src/ directory with Sphinx
