@@ -37,7 +37,7 @@ tests:
       - equal:
           path: data.SKUID_URL
           value:
-            ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.cluster.local:9870
+            ska-ser-skuid-RELEASE-NAME-svc.NAMESPACE.svc.techops.internal.skao.int:9870
 
   - it: should configure SKUID_URL using custom cluster domain when set
     documentIndex: 0
