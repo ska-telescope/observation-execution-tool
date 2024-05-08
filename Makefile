@@ -92,10 +92,16 @@ up: namespace install-chart wait
 
 dev-up: K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION) \
 	--set ska-oso-oet.rest.ingress.enabled=true \
-	--set ska-oso-oet.rest.oda.backend.type=filesystem \
 	--set ska-oso-oet.rest.oda.url=$(ODA_URL) \
+	--set ska-oso-oet.rest.skuid.url=http://ska-ser-skuid-test-svc:9870 \
 	--set ska-db-oda.enabled=true \
+	--set ska-db-oda.rest.ingress.enabled=true \
+	--set ska-db-oda.rest.backend.type=filesystem \
+	--set ska-db-oda.rest.skuid.url=http://ska-ser-skuid-test-svc:9870 \
 	--set ska-db-oda.pgadmin4.enabled=false
+
+#	--set ska-oso-oet.rest.oda.backend.type=filesystem \
+
 
 dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deployment
 

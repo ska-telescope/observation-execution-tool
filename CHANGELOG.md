@@ -9,4 +9,4 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 *****
 
 * Updates OET to use ODA v3.0.0 and PDM v12.0.1
-
+* Exposes SKUID URL via ska-oso-oet.rest.skuid.url Helm variable 

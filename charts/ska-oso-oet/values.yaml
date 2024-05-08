@@ -54,6 +54,8 @@ rest:
     # For the ODA deployed by the umbrella chart, the url is only known at deploy time so is set in the Makefile
     # In the production system, the url should be static so can be set here.
     url:
+  skuid:
+    url:
 
 # Configure Ingress
 ingress:
