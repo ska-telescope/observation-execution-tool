@@ -4,8 +4,7 @@ import os
 import threading
 
 from pubsub import pub
-from ska_oso_pdm.entities.common.sb_definition import SBDefinition
-from ska_oso_pdm.schemas import CODEC as pdm_CODEC
+from ska_oso_pdm import SBDefinition
 
 from ska_oso_oet.event import topics
 
@@ -41,7 +40,8 @@ def _main(subarray_id: int, sb_json: os.PathLike, sbi_id: str = None, raise_msg=
         LOG.error(msg)
         raise IOError(msg)
 
-    sbd = pdm_CODEC.load_from_file(SBDefinition, sb_json)
+    with open(sb_json, "r") as fh:
+        sbd = SBDefinition.model_validate_json(fh.read())
 
     LOG.info(f"Retrieved SBD {sbd.sbd_id} from filesystem path {sb_json}")
     announce(f"Retrieved SBD {sbd.sbd_id} from filesystem path {sb_json}")

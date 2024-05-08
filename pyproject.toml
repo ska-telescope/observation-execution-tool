@@ -28,15 +28,14 @@ classifiers = [
 name = 'ska-nexus'
 url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 
-
 [[tool.poetry.source]]
 name = "PyPI-public"
 url = 'https://pypi.org/simple'
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pytango = "^9.4.1"
-Flask = "^2.2.2"
+pytango = "^9.4.3"
+Flask = "~2.2"
 jsonpickle = "^2.2.0"
 PyPubSub = "^4.0.3"
 requests = "^2.28.1"
@@ -45,8 +44,8 @@ ska-ser-skuid = "^3.3.3"
 tblib = "^1.7.0"
 GitPython = "^3.1.27"
 waitress = "^2.1.2"
-ska-db-oda = "^2.0.0"
-ska-oso-pdm = "^11.2.0"
+ska-db-oda = "^3.0.0"
+ska-oso-pdm = "^12.0.1"
 connexion = {extras = ["swagger-ui"], version = "^2.14.0"}
 prance = "^23.6.21.0"
 
@@ -71,8 +70,12 @@ ska-oso-oet-client = "^1.1.0"
 optional = true
 
 [tool.poetry.group.docs.dependencies]
-sphinxcontrib-openapi = "^0.8.1"
-ska-ser-sphinx-theme = "^0.1.2"
+sphinxcontrib-openapi = "^0.8.4"
+ska-ser-sphinx-theme = "^0.1.3"
+recommonmark = "^0.7.1"
+# required to resolve the following import issue:
+# Could not import extension sphinxcontrib.openapi (exception: cannot import name 'error_string' from 'docutils.io'
+mistune = "^2"
 
 [tool.poetry.scripts]
 oet = "ska_oso_oet_client.main:main"
@@ -85,7 +88,7 @@ log_file = "pytest-logs.txt"
 log_file_format = "%(asctime)s.%(msecs)03dZ|%(levelname)s|%(threadName)s|%(funcName)s|%(filename)s#%(lineno)d||%(message)s"
 log_file_level = "DEBUG"
 env = [
-    "D:ODA_URL = http://ska-db-oda-rest-test:5000/ska-oso-oet/oda/api/v2"
+    "D:ODA_URL = http://ska-db-oda-rest-test:5000/ska-oso-oet/oda/api/v3"
 ]
 
 [tool.coverage.run]
