@@ -52,6 +52,8 @@
   package/ska_oso_oet/procedure
   package/ska_oso_oet/utils
 
+  CHANGELOG
+
 ==========================
 Observation Execution Tool
 ==========================

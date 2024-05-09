@@ -5,8 +5,8 @@
   "metadata": {
     "version": 1,
     "created_by": "DefaultUser",
-    "created_on": "2022-03-28T15:43:53.971548+00:00",
-    "last_modified_on": "2022-03-28T15:43:53.971548+00:00",
+    "created_on": "2022-03-28T15:43:53.971548Z",
+    "last_modified_on": "2022-03-28T15:43:53.971548Z",
     "last_modified_by": "DefaultUser"
   },
   "activities": {
@@ -23,7 +23,6 @@
         },
         "main": {
           "args": [
-
           ],
           "kwargs": {
           }
@@ -35,18 +34,20 @@
     {
       "scan_definition_id": "calibrator scan",
       "scan_duration": 60000,
-      "target": "Polaris Australis",
-      "dish_configuration": "dish config 123",
-      "scan_type": "calibration_B",
-      "csp_configuration": "csp config 123"
+      "target_ref": "Polaris Australis",
+      "dish_configuration_ref": "dish config 123",
+      "scan_type_ref": "calibration_B",
+      "csp_configuration_ref": "csp config 123",
+      "pointing_correction": "MAINTAIN"
     },
     {
       "scan_duration": 60000,
-      "target": "M83",
-      "dish_configuration": "dish config 123",
-      "scan_type": "science_A",
+      "target_ref": "M83",
+      "dish_configuration_ref": "dish config 123",
+      "scan_type_ref": "science_A",
       "scan_definition_id": "science scan",
-      "csp_configuration": "csp config 123"
+      "csp_configuration_ref": "csp config 123",
+      "pointing_correction": "UPDATE"
     }
   ],
   "scan_sequence": [
@@ -86,8 +87,20 @@
         "kind": "equatorial",
         "ra": "21:08:47.92",
         "dec": "-88:57:22.9",
-        "reference_frame": "ICRS",
-        "unit": ["hourangle","deg"]
+        "reference_frame": "icrs",
+        "unit": [
+          "hourangle",
+          "deg"
+        ]
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": -12.345,
+          "unit": "km / s"
+        },
+        "definition": "OPTICAL",
+        "reference_frame": "LSRK",
+        "redshift": 1.23
       }
     },
     {
@@ -106,8 +119,20 @@
         "kind": "equatorial",
         "ra": "13:37:00.919",
         "dec": "-29:51:56.74",
-        "reference_frame": "ICRS",
-        "unit": ["hourangle","deg"]
+        "reference_frame": "icrs",
+        "unit": [
+          "hourangle",
+          "deg"
+        ]
+      },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0.0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0.0
       }
     }
   ],
@@ -155,39 +180,39 @@
           "scan_type_id": ".default",
           "beams": [
             {
-              "beam_id": "vis0",
-              "channels_id": "vis_channels",
-              "polarisations_id": "all"
+              "beam_ref": "vis0",
+              "channels_ref": "vis_channels",
+              "polarisations_ref": "all"
             },
             {
-              "beam_id": "pss1",
-              "field_id": "M83",
-              "channels_id": "pulsar_channels",
-              "polarisations_id": "all"
+              "beam_ref": "pss1",
+              "field_ref": "M83",
+              "channels_ref": "pulsar_channels",
+              "polarisations_ref": "all"
             },
             {
-              "beam_id": "pss2",
-              "field_id": "Polaris Australis",
-              "channels_id": "pulsar_channels",
-              "polarisations_id": "all"
+              "beam_ref": "pss2",
+              "field_ref": "Polaris Australis",
+              "channels_ref": "pulsar_channels",
+              "polarisations_ref": "all"
             },
             {
-              "beam_id": "pst1",
-              "field_id": "M83",
-              "channels_id": "pulsar_channels",
-              "polarisations_id": "all"
+              "beam_ref": "pst1",
+              "field_ref": "M83",
+              "channels_ref": "pulsar_channels",
+              "polarisations_ref": "all"
             },
             {
-              "beam_id": "pst2",
-              "field_id": "Polaris Australis",
-              "channels_id": "pulsar_channels",
-              "polarisations_id": "all"
+              "beam_ref": "pst2",
+              "field_ref": "Polaris Australis",
+              "channels_ref": "pulsar_channels",
+              "polarisations_ref": "all"
             },
             {
-              "beam_id": "vlbi",
-              "field_id": "Polaris Australis",
-              "channels_id": "vlbi_channels",
-              "polarisations_id": "all"
+              "beam_ref": "vlbi",
+              "field_ref": "Polaris Australis",
+              "channels_ref": "vlbi_channels",
+              "polarisations_ref": "all"
             }
           ]
         },
@@ -196,8 +221,8 @@
           "derive_from": ".default",
           "beams": [
             {
-              "beam_id": "vis0",
-              "field_id": "M83"
+              "beam_ref": "vis0",
+              "field_ref": "M83"
             }
           ]
         }
@@ -269,31 +294,29 @@
     "processing_blocks": [
       {
         "pb_id": "pb-mvp01-20200325-00001",
-        "sbi_ids": [
+        "sbi_refs": [
           "sbi-mvp01-20200325-00001"
         ],
         "script": {
           "version": "0.1.0",
           "name": "vis_receive",
           "kind": "realtime"
-        },
-        "parameters": {}
+        }
       },
       {
         "pb_id": "pb-mvp01-20200325-00002",
-        "sbi_ids": [
+        "sbi_refs": [
           "sbi-mvp01-20200325-00001"
         ],
         "script": {
           "version": "0.1.0",
           "name": "test_realtime",
           "kind": "realtime"
-        },
-        "parameters": {}
+        }
       },
       {
         "pb_id": "pb-mvp01-20200325-00003",
-        "sbi_ids": [
+        "sbi_refs": [
           "sbi-mvp01-20200325-00001"
         ],
         "script": {
@@ -301,10 +324,9 @@
           "name": "ical",
           "kind": "batch"
         },
-        "parameters": {},
         "dependencies": [
           {
-            "pb_id": "pb-mvp01-20200325-00001",
+            "pb_ref": "pb-mvp01-20200325-00001",
             "kind": [
               "visibilities"
             ]
@@ -313,7 +335,7 @@
       },
       {
         "pb_id": "pb-mvp01-20200325-00004",
-        "sbi_ids": [
+        "sbi_refs": [
           "sbi-mvp01-20200325-00001"
         ],
         "script": {
@@ -321,11 +343,12 @@
           "name": "dpreb",
           "kind": "batch"
         },
-        "parameters": {},
         "dependencies": [
           {
-            "pb_id": "pb-mvp01-20200325-00003",
-            "kind": ["calibration"]
+            "pb_ref": "pb-mvp01-20200325-00003",
+            "kind": [
+              "calibration"
+            ]
           }
         ]
       }
@@ -350,7 +373,7 @@
         ]
       },
       "cbf": {
-        "fsp": [
+        "fsps": [
           {
             "fsp_id": 1,
             "function_mode": "CORR",

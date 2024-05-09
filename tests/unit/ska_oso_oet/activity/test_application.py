@@ -5,20 +5,15 @@ Unit tests for the ska_oso_oet.activity.application module.
 """
 import time
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest import mock as mock
 
 from pytest import raises
-from ska_oso_pdm.entities.common.procedures import (
-    FilesystemScript as pdm_FilesystemScript,
-)
-from ska_oso_pdm.entities.common.procedures import PythonArguments
-from ska_oso_pdm.entities.common.sb_definition import SBDefinition
-from ska_oso_pdm.generated.models.function_args import FunctionArgs
-from ska_oso_pdm.generated.models.function_args import (
-    PythonArguments as PdmPythonArguments,
-)
-from ska_oso_pdm.generated.models.sb_instance import ActivityCall, Metadata, SBInstance
+from ska_oso_pdm import Metadata, SBDefinition
+from ska_oso_pdm._shared import TelescopeType
+from ska_oso_pdm.sb_definition.procedures import FilesystemScript as PDMFilesystemScript
+from ska_oso_pdm.sb_definition.procedures import PythonArguments
+from ska_oso_pdm.sb_instance import ActivityCall, FunctionArgs, SBInstance
 
 from ska_oso_oet.activity.application import (
     ActivityCommand,
@@ -50,7 +45,7 @@ class TestActivityService:
                 )
             ],
         }
-        mock_executed_at_time = datetime.now()
+        mock_executed_at_time = datetime.now(tz=timezone.utc)
         mock_datetime.now.return_value = mock_executed_at_time
         helper = PubSubHelper(spec)
         mock_state_time = time.time()
@@ -60,6 +55,7 @@ class TestActivityService:
         test_sbi_id = "sbi-1234"
         expected_sbi_without_id = SBInstance(
             interface="https://schema.skao.int/ska-oso-pdm-sbi/0.1",
+            telescope=TelescopeType.SKA_MID,
             sbi_id=None,
             sbd_ref="sbd-123",
             sbd_version=1,
@@ -69,17 +65,17 @@ class TestActivityService:
                     executed_at=mock_executed_at_time,
                     runtime_args=[
                         FunctionArgs(
-                            "init",
-                            PdmPythonArguments(args=[], kwargs={"init_arg": "value"}),
+                            function_name="init",
+                            function_args=PythonArguments(
+                                args=[], kwargs={"init_arg": "value"}
+                            ),
                         ),
                         FunctionArgs(
-                            "main",
-                            PdmPythonArguments(
+                            function_name="main",
+                            function_args=PythonArguments(
                                 args=[],
                                 kwargs={
                                     "main_arg": "value",
-                                    "sb_json": "/tmp/sbs/mock_path.json",
-                                    "sbi_id": test_sbi_id,
                                 },
                             ),
                         ),
@@ -91,8 +87,10 @@ class TestActivityService:
         expected_sbi.sbi_id = test_sbi_id
 
         with mock.patch("ska_oso_oet.activity.application.RESTUnitOfWork"):
-            pdm_script = pdm_FilesystemScript(path="file:///script/path.py")
-            pdm_script.function_args["main"] = PythonArguments(kwargs={}, args=[])
+            pdm_script = PDMFilesystemScript(
+                path="file:///script/path.py",
+                function_args={"main": PythonArguments(kwargs={}, args=[])},
+            )
 
             activity_service = ActivityService()
             # Mock the ODA context manager
@@ -100,6 +98,7 @@ class TestActivityService:
             activity_service._oda.sbis.add.return_value = expected_sbi
             activity_service._oda.sbds.get.return_value = SBDefinition(
                 sbd_id="sbd-123",
+                telescope=TelescopeType.SKA_MID,
                 activities={"allocate": pdm_script},
                 metadata=Metadata(version=1),
             )
@@ -166,10 +165,11 @@ class TestActivityService:
         self, mock_write_fn, mock_datetime
     ):
         test_sbi_id = "sbi-123"
-        mock_executed_at_time = datetime.now()
+        mock_executed_at_time = datetime.now(tz=timezone.utc)
         mock_datetime.now.return_value = mock_executed_at_time
         expected_sbi = SBInstance(
             sbi_id=test_sbi_id,
+            telescope=TelescopeType.SKA_MID,
             sbd_ref="sbd-123",
             sbd_version=1,
             activities=[
@@ -178,12 +178,14 @@ class TestActivityService:
                     executed_at=mock_executed_at_time,
                     runtime_args=[
                         FunctionArgs(
-                            "init",
-                            PdmPythonArguments(args=[], kwargs={"init_arg": "value"}),
+                            function_name="init",
+                            function_args=PythonArguments(
+                                args=[], kwargs={"init_arg": "value"}
+                            ),
                         ),
                         FunctionArgs(
-                            "main",
-                            PdmPythonArguments(
+                            function_name="main",
+                            function_args=PythonArguments(
                                 args=[],
                                 kwargs={
                                     "main_arg": "value",
@@ -201,12 +203,13 @@ class TestActivityService:
         with mock.patch(
             "ska_oso_oet.activity.application.RESTUnitOfWork",
         ):
-            pdm_script = pdm_FilesystemScript(path="file:///script/path.py")
+            pdm_script = PDMFilesystemScript(path="file:///script/path.py")
             activity_service = ActivityService()
             # Mock the ODA context manager
             activity_service._oda.__enter__.return_value = activity_service._oda
             activity_service._oda.sbds.get.return_value = SBDefinition(
                 sbd_id="sbd-123",
+                telescope=TelescopeType.SKA_MID,
                 activities={"allocate": pdm_script},
                 metadata=Metadata(version=1),
             )
@@ -254,7 +257,8 @@ class TestActivityService:
             activity_service._oda.__enter__.return_value = activity_service._oda
             activity_service._oda.sbds.get.return_value = SBDefinition(
                 sbd_id="sbd-123",
-                activities={"allocate": None},
+                telescope=TelescopeType.SKA_MID,
+                activities={"allocate": PDMFilesystemScript(path="file://foo")},
                 metadata=Metadata(version=1),
             )
             cmd = ActivityCommand(
@@ -269,7 +273,7 @@ class TestActivityService:
             )
 
             with raises(KeyError) as e:
-                activity_service.prepare_run_activity(cmd, "request-id-123")
+                activity_service.prepare_run_activity(cmd, 123)
             assert (
                 "Activity 'NOT_allocate' not present in the SBDefinition sbd-123"
                 in str(e)

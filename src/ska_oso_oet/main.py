@@ -29,6 +29,7 @@ from ska_oso_oet.procedure.application import (
     StartProcessCommand,
     StopProcessCommand,
 )
+from ska_oso_oet.ui import API_PATH
 
 
 class EventBusWorker(QueueProcWorker):
@@ -159,6 +160,7 @@ class FlaskWorker(EventBusWorker):
             )
         )
         self.server_thread.start()
+        logging.info("OET listening for REST API requests at %s", API_PATH)
 
     def shutdown(self) -> None:
         self.server.application.config["shutdown_event"].set()

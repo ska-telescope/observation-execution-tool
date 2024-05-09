@@ -30,7 +30,7 @@ IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 # The default ODA_URL points to the umbrella chart ODA deployment where data is
 # lost on chart teardown. For longer-term data persistence, override ODA_URL to
 # point to the persistent ODA deployment.
-ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v2
+ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v3
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 
@@ -92,10 +92,16 @@ up: namespace install-chart wait
 
 dev-up: K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION) \
 	--set ska-oso-oet.rest.ingress.enabled=true \
-	--set ska-oso-oet.rest.oda.backend.type=filesystem \
 	--set ska-oso-oet.rest.oda.url=$(ODA_URL) \
+	--set ska-oso-oet.rest.skuid.url=http://ska-ser-skuid-test-svc:9870 \
 	--set ska-db-oda.enabled=true \
+	--set ska-db-oda.rest.ingress.enabled=true \
+	--set ska-db-oda.rest.backend.type=filesystem \
+	--set ska-db-oda.rest.skuid.url=http://ska-ser-skuid-test-svc:9870 \
 	--set ska-db-oda.pgadmin4.enabled=false
+
+#	--set ska-oso-oet.rest.oda.backend.type=filesystem \
+
 
 dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deployment
 

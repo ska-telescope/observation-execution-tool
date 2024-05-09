@@ -7,17 +7,22 @@ layer for business rules and actions.
 import dataclasses
 import itertools
 import logging
+import tempfile
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 from pubsub import pub
 from ska_db_oda.unit_of_work.restunitofwork import RESTUnitOfWork
-from ska_oso_pdm.entities.common import procedures as pdm_procedures
-from ska_oso_pdm.entities.common.sb_definition import SBDefinition
-from ska_oso_pdm.generated.models.function_args import FunctionArgs, PythonArguments
-from ska_oso_pdm.generated.models.sb_instance import ActivityCall, SBInstance
-from ska_oso_pdm.schemas import CODEC
+from ska_oso_pdm import SBDefinition
+from ska_oso_pdm._shared import TelescopeType
+from ska_oso_pdm.sb_definition.procedures import (
+    FilesystemScript,
+    GitScript,
+    PythonArguments,
+    PythonProcedure,
+)
+from ska_oso_pdm.sb_instance import ActivityCall, FunctionArgs, SBInstance
 
 from ska_oso_oet.activity.domain import Activity, ActivityState
 from ska_oso_oet.event import topics
@@ -97,7 +102,8 @@ class ActivityService:
         aid = next(self._aid_counter)
         with self._oda as oda:
             sbd: SBDefinition = oda.sbds.get(cmd.sbd_id)
-            sbi = self._create_sbi(cmd, sbd_version=sbd.metadata.version)
+            telescope = sbd.telescope
+            sbi = self._create_sbi(telescope, cmd, sbd_version=sbd.metadata.version)
             sbi = oda.sbis.add(sbi)
             oda.commit()
 
@@ -230,12 +236,12 @@ class ActivityService:
         )
 
     def _get_oet_script(
-        self, pdm_script: pdm_procedures.PythonProcedure, create_env: bool
+        self, pdm_script: PythonProcedure, create_env: bool
     ) -> domain.ExecutableScript:
         """
         Converts the PDM representation of the script retrieved from the SB into the OET representation.
         """
-        if isinstance(pdm_script, pdm_procedures.GitScript):
+        if isinstance(pdm_script, GitScript):
             git_args = domain.GitArgs(
                 git_repo=pdm_script.repo, git_branch=pdm_script.branch
             )
@@ -244,7 +250,7 @@ class ActivityService:
                 git_args=git_args,
                 create_env=create_env,
             )
-        elif isinstance(pdm_script, pdm_procedures.FilesystemScript):
+        elif isinstance(pdm_script, FilesystemScript):
             return domain.FileSystemScript(script_uri=pdm_script.path)
         else:
             raise RuntimeError(
@@ -252,7 +258,7 @@ class ActivityService:
             )
 
     def _combine_script_args(
-        self, pdm_script: pdm_procedures.PythonProcedure, cmd: ActivityCommand
+        self, pdm_script: PythonProcedure, cmd: ActivityCommand
     ) -> dict[str, domain.ProcedureInput]:
         """
         Combines the function args from the SB with any overwrites sent in the command,
@@ -271,18 +277,22 @@ class ActivityService:
 
         return script_args
 
-    def write_sbd_to_file(self, sbd) -> str:
+    def write_sbd_to_file(self, sbd: SBDefinition) -> str:
         """
         Writes the SBD json to a temporary file location and returns the path.
         """
-        path = f"/tmp/sbs/{sbd.sbd_id}-{sbd.metadata.version}-{time.time_ns()}.json"
-        LOGGER.debug("Writing SB %s to path: %s", sbd.sbd_id, path)
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(CODEC.dumps(sbd))
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, suffix=".json", encoding="utf-8"
+        ) as f:
+            path = f.name
+            LOGGER.debug("Writing SB %s to path: %s", sbd.sbd_id, path)
+            f.write(sbd.model_dump_json())
 
         return path
 
-    def _create_sbi(self, cmd: ActivityCommand, sbd_version: int) -> SBInstance:
+    def _create_sbi(
+        self, telescope: TelescopeType, cmd: ActivityCommand, sbd_version: int
+    ) -> SBInstance:
         """
         Creates an SBInstance from the relevant fields in the command.
         """
@@ -299,12 +309,13 @@ class ActivityService:
         # sbi_id is left as None and will be set when uploaded to the ODA
         return SBInstance(
             interface="https://schema.skao.int/ska-oso-pdm-sbi/0.1",
+            telescope=telescope,
             sbd_ref=cmd.sbd_id,
             sbd_version=sbd_version,
             activities=[
                 ActivityCall(
                     activity_ref=cmd.activity_name,
-                    executed_at=datetime.now(),
+                    executed_at=datetime.now(tz=timezone.utc),
                     runtime_args=function_args,
                 )
             ],
