@@ -7,12 +7,12 @@ appVersion: 6.1.0
 icon: https://www.skatelescope.org/wp-content/uploads/2016/07/09545_NEW_LOGO_2014.png
 dependencies:
 - name: ska-ser-skuid
-  version: 0.3.0
+  version: 3.3.3
   repository: https://artefact.skao.int/repository/helm-internal
 - name: ska-oso-oet
   version: 6.1.0
   repository: file://../ska-oso-oet
 - name: ska-db-oda
-  version: 3.0.0
+  version: 5.0.0
   repository: https://artefact.skao.int/repository/helm-internal
   condition: ska-db-oda.enabled

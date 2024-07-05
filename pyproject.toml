@@ -44,8 +44,12 @@ ska-ser-skuid = "^3.3.3"
 tblib = "^1.7.0"
 GitPython = "^3.1.27"
 waitress = "^2.1.2"
-ska-db-oda = "^3.0.0"
-ska-oso-pdm = "^12.0.1"
+# The OET depends on the PDM as we need access to SBD activities, etc., but the
+# data model is evolving so fast moving that we don't want to pin to a specific
+# version. The best compromise for compatibility with ska-oso-scripting, which
+# also depends on the OET and ODA, is implicitly depend on whatever version of
+# the PDM is pulled in by the ODA.
+ska-db-oda = "^5.0.0"
 connexion = {extras = ["swagger-ui"], version = "^2.14.0"}
 prance = "^23.6.21.0"
 
