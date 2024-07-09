@@ -38,7 +38,7 @@ url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pytango = "^9.4.3"
+pytango = "^9.5.1"
 Flask = "~2.2"
 jsonpickle = "^2.2.0"
 PyPubSub = "^4.0.3"

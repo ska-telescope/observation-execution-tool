@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 6.2.0
 *****
 
-* Updates OET to use ODA v5.0.1 and, indirectly, PDM v14.3.0.
+* Updates OET to use PyTango 9.5, ODA v5.0.1 and, indirectly, PDM v14.3.0.
 
 
 6.1.0
