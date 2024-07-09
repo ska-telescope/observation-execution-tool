@@ -1,5 +1,5 @@
-ARG BUILD_IMAGE="artefact.skao.int/ska-tango-images-pytango-builder:9.4.3"
-ARG BASE_IMAGE="artefact.skao.int/ska-tango-images-pytango-runtime:9.4.3"
+ARG BUILD_IMAGE="artefact.skao.int/ska-tango-images-pytango-builder:9.5.0"
+ARG BASE_IMAGE="artefact.skao.int/ska-tango-images-pytango-runtime:9.5.0"
 ARG CAR_OCI_REGISTRY_HOST=artefact.skao.int
 ARG GITLAB_PRIVATE_TOKEN=""
 
