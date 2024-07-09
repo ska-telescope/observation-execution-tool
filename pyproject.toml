@@ -32,6 +32,10 @@ url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 name = "PyPI-public"
 url = 'https://pypi.org/simple'
 
+[[tool.poetry.source]]
+name = "gitlab-ska-db-oda"
+url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
+
 [tool.poetry.dependencies]
 python = "^3.10"
 pytango = "^9.4.3"
@@ -49,7 +53,7 @@ waitress = "^2.1.2"
 # version. The best compromise for compatibility with ska-oso-scripting, which
 # also depends on the OET and ODA, is implicitly depend on whatever version of
 # the PDM is pulled in by the ODA.
-ska-db-oda = "^5.0.0"
+ska-db-oda = "^5.0.1"
 connexion = {extras = ["swagger-ui"], version = "^2.14.0"}
 prance = "^23.6.21.0"
 
