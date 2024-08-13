@@ -33,7 +33,7 @@
   "scan_definitions": [
     {
       "scan_definition_id": "calibrator scan",
-      "scan_duration": 60000,
+      "scan_duration_ms": 60000,
       "target_ref": "Polaris Australis",
       "dish_configuration_ref": "dish config 123",
       "scan_type_ref": "calibration_B",
@@ -41,7 +41,7 @@
       "pointing_correction": "MAINTAIN"
     },
     {
-      "scan_duration": 60000,
+      "scan_duration_ms": 60000,
       "target_ref": "M83",
       "dish_configuration_ref": "dish config 123",
       "scan_type_ref": "science_A",

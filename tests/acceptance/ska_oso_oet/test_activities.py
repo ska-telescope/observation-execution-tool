@@ -2,7 +2,7 @@ import logging
 
 import requests
 from pytest_bdd import given, parsers, scenario, then, when
-from ska_db_oda.unit_of_work.restunitofwork import RESTUnitOfWork
+from ska_db_oda.persistence.unitofwork.postgresunitofwork import PostgresUnitOfWork
 from ska_oso_oet_client.activityclient import ActivityAdapter
 
 from .util import OET_URL
@@ -10,6 +10,8 @@ from .util import OET_URL
 LOGGER = logging.getLogger()
 
 adapter = ActivityAdapter(f"{OET_URL}/activities")
+
+oda = PostgresUnitOfWork()
 
 
 @scenario(
@@ -43,7 +45,6 @@ def test_activity_with_raise_msg_kwarg():
     )
 )
 def create_sbd(sbd_id, script, activity_name, test_sbd):
-    oda = RESTUnitOfWork()
     test_sbd.sbd_id = sbd_id
     test_sbd.activities[activity_name].path = script
     with oda:
@@ -106,7 +107,7 @@ def sbi_exists_in_oda(sbd_id):
     assert activities_json[-1]["sbi_id"]
     sbi_id = activities_json[-1]["sbi_id"]
 
-    with RESTUnitOfWork() as oda:
+    with oda:
         sbi = oda.sbis.get(sbi_id)
 
     assert sbi.sbd_ref == sbd_id

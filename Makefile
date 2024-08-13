@@ -27,21 +27,9 @@ DOCS_SPHINXOPTS ?= -W --keep-going
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
-# The default ODA_URL points to the umbrella chart ODA deployment where data is
-# lost on chart teardown. For longer-term data persistence, override ODA_URL to
-# point to the persistent ODA deployment.
-ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v5
-
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
-
-K8S_CHART_PARAMS = \
-  --set ska-oso-oet.rest.oda.url=$(ODA_URL) \
-  --set ska-db-oda.rest.backend.type=filesystem \
-  --set ska-db-oda.pgadmin4.enabled=false \
-  --set ska-db-oda.postgresql.enabled=false
-# Set postgres and pgadmin host if postgresql and/or pgadmin4 are enabled
-#   --set ska-db-oda.rest.postgres.host=$(POSTGRES_HOST) \
-#   --set ska-db-oda.pgadmin4.serverDefinitions.servers.firstServer.Host=$(POSTGRES_HOST) \
+# TODO BTN-2449 will extract this
+ADMIN_POSTGRES_PASSWORD ?= secretpassword
 
 # For the test, dev and integration environment, use the freshly built image in the GitLab registry
 ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'test|dev|integration')
@@ -69,7 +57,7 @@ endif
 OET_URL ?= http://ska-oso-oet-rest-test:5000/$(KUBE_NAMESPACE)/oet/api/v$(MAJOR_VERSION)
 # Set the k8s test command run inside the testing pod to only run the acceptance
 # tests (no k8s pod deployment required for unit tests)
-K8S_TEST_TEST_COMMAND = OET_URL=$(OET_URL) ODA_URL=$(ODA_URL) KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/acceptance | tee pytest.stdout
+K8S_TEST_TEST_COMMAND = OET_URL=$(OET_URL) POSTGRES_HOST=$(POSTGRES_HOST) ADMIN_POSTGRES_PASSWORD=$(ADMIN_POSTGRES_PASSWORD) KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/acceptance | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the integration tests
 PYTHON_TEST_FILE = tests/unit/
@@ -92,15 +80,8 @@ up: namespace install-chart wait
 
 dev-up: K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION) \
 	--set ska-oso-oet.rest.ingress.enabled=true \
-	--set ska-oso-oet.rest.oda.url=$(ODA_URL) \
 	--set ska-oso-oet.rest.skuid.url=http://ska-ser-skuid-test-svc:9870 \
-	--set ska-db-oda.enabled=true \
-	--set ska-db-oda.rest.ingress.enabled=true \
-	--set ska-db-oda.rest.backend.type=filesystem \
-	--set ska-db-oda.rest.skuid.url=http://ska-ser-skuid-test-svc:9870 \
-	--set ska-db-oda.pgadmin4.enabled=false
-
-#	--set ska-oso-oet.rest.oda.backend.type=filesystem \
+	--set ska-oso-oet.rest.oda.backendType=filesystem
 
 
 dev-up: k8s-namespace k8s-install-chart k8s-wait ## bring up developer deployment

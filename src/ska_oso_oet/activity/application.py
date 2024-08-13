@@ -7,13 +7,15 @@ layer for business rules and actions.
 import dataclasses
 import itertools
 import logging
+import os
 import tempfile
 import time
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 from pubsub import pub
-from ska_db_oda.unit_of_work.restunitofwork import RESTUnitOfWork
+from ska_db_oda.persistence.unitofwork.filesystemunitofwork import FilesystemUnitOfWork
+from ska_db_oda.persistence.unitofwork.postgresunitofwork import PostgresUnitOfWork
 from ska_oso_pdm import SBDefinition
 from ska_oso_pdm._shared import TelescopeType
 from ska_oso_pdm.sb_definition.procedures import (
@@ -85,7 +87,11 @@ class ActivityService:
         # counter used to generate activity ID for new activities
         self._aid_counter = itertools.count(1)
 
-        self._oda = RESTUnitOfWork()
+        self._oda = (
+            PostgresUnitOfWork()
+            if os.getenv("ODA_BACKEND_TYPE", "postgres") == "postgres"
+            else FilesystemUnitOfWork()
+        )
 
     def prepare_run_activity(self, cmd: ActivityCommand, request_id: int) -> None:
         """
