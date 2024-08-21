@@ -13,26 +13,12 @@ metadata:
     domain: {{ .Values.rest.domain }}
     intent: production
   annotations:
-    kubernetes.io/ingress.class: nginx
+    spec.ingressClassName: nginx
 spec:
   rules:
     - http:
         paths:
           - path: /{{ .Release.Namespace }}/oet/api.*
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
-                port:
-                  number: 5000
-          - path: /{{ .Release.Namespace }}/oet/openapi/.*
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
-                port:
-                  number: 5000
-          - path: /{{ .Release.Namespace }}/oet/ui/.*
             pathType: Prefix
             backend:
               service:

@@ -78,7 +78,7 @@ PYTHON_SWITCHES_FOR_PYLINT = --disable=C,R,fixme
 
 up: namespace install-chart wait
 
-dev-up: K8S_CHART_PARAMS = --set ska-oso-oet.rest.image.tag=$(VERSION) \
+dev-up: K8S_CHART_PARAMS += --set ska-oso-oet.rest.image.tag=$(VERSION) \
 	--set ska-oso-oet.rest.ingress.enabled=true \
 	--set ska-oso-oet.rest.skuid.url=http://ska-ser-skuid-test-svc:9870 \
 	--set ska-oso-oet.rest.oda.backendType=filesystem

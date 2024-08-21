@@ -4,7 +4,7 @@ ARG BASE_IMAGE="artefact.skao.int/ska-cicd-k8s-tools-build-deploy:0.12.0"
 FROM $BUILD_IMAGE AS buildenv
 FROM $BASE_IMAGE AS runtime
 
-ENV APP_USER="oet"
+ENV APP_USER="tango"
 ENV APP_DIR="/app"
 
 ARG CAR_PYPI_REPOSITORY_URL=https://artefact.skao.int/repository/pypi-internal
@@ -13,6 +13,10 @@ ENV PIP_INDEX_URL ${CAR_PYPI_REPOSITORY_URL}/simple
 USER root
 
 RUN adduser $APP_USER --disabled-password --home $APP_DIR
+
+WORKDIR $APP_DIR
+
+ENV PATH="$PATH:$APP_DIR/.local/bin"
 
 RUN pip install poetry-plugin-export && \
     poetry config warnings.export false
@@ -58,8 +62,7 @@ RUN ln -s /usr/local/lib/python3.10/dist-packages/scripts /scripts
 # Create the location for the Activity domain to store SBs
 RUN mkdir -p /tmp/sbs && chown -R ${APP_USER} /tmp/sbs
 
-# TODO
-#USER ${APP_USER}
+USER ${APP_USER}
 
 # give developers access to Pytango in site-packages for when updating poetry.locl
 RUN poetry config virtualenvs.options.system-site-packages true
