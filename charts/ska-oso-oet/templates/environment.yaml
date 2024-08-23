@@ -35,3 +35,5 @@ data:
   {{ if .Values.rest.oda.postgres.user }}
   ADMIN_POSTGRES_USER: {{ .Values.rest.oda.postgres.user }}
   {{ end }}
+  # The scripts currently use the oda_helper to communicate with the ODA API, rather than a direct connection to the db.
+  ODA_URL: {{ .Values.rest.oda.url }}

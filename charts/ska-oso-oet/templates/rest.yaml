@@ -12,9 +12,8 @@ metadata:
     function: {{ .Values.rest.function }}
     domain: {{ .Values.rest.domain }}
     intent: production
-  annotations:
-    spec.ingressClassName: nginx
 spec:
+  ingressClassName: nginx
   rules:
     - http:
         paths:

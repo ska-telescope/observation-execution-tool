@@ -48,7 +48,7 @@ ska-tango-base:
 ska-db-oda-umbrella:
   ska-db-oda:
     rest:
-      enabled: false # Disabled by default as ska-oso-oet does not use the ska-db-oda REST server. Would be useful to enable for demos and testing.
+      enabled: true # The scripts currently use the oda_helper to communicate with the ODA API, rather than a direct connection to the db.
   postgresql:
     enabled: true
   pgadmin4:
