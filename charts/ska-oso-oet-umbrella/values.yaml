@@ -45,7 +45,14 @@ ska-tango-base:
 #        memory: 256Mi  # 256Mi = 0.25 GB mem
 #        ephemeral-storage: 1Gi
 
-ska-db-oda:
-  enabled: true
-  rest:
-    logLevel: INFO
+ska-db-oda-umbrella:
+  ska-db-oda:
+    rest:
+      enabled: true # The scripts currently use the oda_helper to communicate with the ODA API, rather than a direct connection to the db.
+  postgresql:
+    enabled: true
+  pgadmin4:
+    enabled: true
+  ska-ser-skuid:
+    skuid:
+      enabled: true

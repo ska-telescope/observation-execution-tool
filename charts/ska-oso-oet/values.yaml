@@ -25,7 +25,7 @@ rest:
   image:
     registry: artefact.skao.int
     image: ska-oso-oet
-    tag: 6.2.0
+    tag: ~ # Defaults to the chart appVersion if not set
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -49,11 +49,14 @@ rest:
     successThreshold: 1
     failureThreshold: 3
   oda:
-    backend:
-      type: rest
-    # For the ODA deployed by the umbrella chart, the url is only known at deploy time so is set in the Makefile
-    # In the production system, the url should be static so can be set here.
-    url:
+    backendType: postgres
+    postgres: # The below values are used to set environment variables that are used in the ODA Repository. If they are not set then the defaults defined by the ODA will be used.
+      host: ~
+      port: ~
+      user: ~
+      password: secretpassword # TODO BTN-2449 will extract this
+      db:
+        name: ~
   skuid:
     url:
 

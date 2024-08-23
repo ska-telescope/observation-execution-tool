@@ -447,7 +447,7 @@ should be defined in the ‘run’ script_args key.
 The example below requests execution of procedure #2, with late binding kw
 argument scan_duration=14::
 
-    tangodev@buster:~/ska/ska-oso-oet$ curl -i -H "Content-Type: application/json" -X PUT -d '{"script_args": {"run": {"kwargs": {"scan_duration": 14.0}}}, "state": "RUNNING"}' http://localhost:5000/ska-oso-oet/oet/api/v1/procedures/2
+    tangodev@buster:~/ska/ska-oso-oet$ curl -i -H "Content-Type: application/json" -X PUT -d '{"script_args": {"run": {"kwargs": {"scan_duration_ms": 14.0}}}, "state": "RUNNING"}' http://localhost:5000/ska-oso-oet/oet/api/v1/procedures/2
     HTTP/1.0 200 OK
     Content-Type: application/json
     Content-Length: 467
@@ -467,7 +467,7 @@ argument scan_duration=14::
           "run": {
             "args": [],
             "kwargs": {
-              "scan_duration": 14.0
+              "scan_duration_ms": 14.0
             }
           }
         },

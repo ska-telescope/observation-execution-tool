@@ -27,14 +27,16 @@ classifiers = [
 [[tool.poetry.source]]
 name = 'ska-nexus'
 url = 'https://artefact.skao.int/repository/pypi-internal/simple'
+priority = 'supplemental'
 
 [[tool.poetry.source]]
-name = "PyPI-public"
-url = 'https://pypi.org/simple'
+name = 'PyPI'
+priority = 'primary'
 
-[[tool.poetry.source]]
-name = "gitlab-ska-db-oda"
-url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
+# Uncomment this and the dependency below to use an unreleased ODA version
+#[[tool.poetry.source]]
+#name = "gitlab-ska-db-oda"
+#url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -53,8 +55,9 @@ waitress = "^2.1.2"
 # version. The best compromise for compatibility with ska-oso-scripting, which
 # also depends on the OET and ODA, is implicitly depend on whatever version of
 # the PDM is pulled in by the ODA.
-ska-db-oda = "^5.0.1"
-connexion = {extras = ["swagger-ui"], version = "^2.14.0"}
+ska-db-oda = "^6.0.0"
+#ska-db-oda = { version="5.3.3+dev.cea0b078b", source="gitlab-ska-db-oda" }
+connexion = {extras = ["swagger-ui"], version = "^2.14.2"}
 prance = "^23.6.21.0"
 
 [tool.poetry.group.dev.dependencies]

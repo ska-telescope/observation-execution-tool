@@ -109,7 +109,7 @@
   "scan_definitions": [
     {
       "scan_definition_id": "sbi-mvp01-20220328-00001",
-      "scan_duration": 12800,
+      "scan_duration_ms": 12800,
       "target_beam_configurations": [
         "target #1 with beam A config 1"
       ],

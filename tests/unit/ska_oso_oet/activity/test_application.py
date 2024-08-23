@@ -86,7 +86,7 @@ class TestActivityService:
         expected_sbi = deepcopy(expected_sbi_without_id)
         expected_sbi.sbi_id = test_sbi_id
 
-        with mock.patch("ska_oso_oet.activity.application.RESTUnitOfWork"):
+        with mock.patch("ska_oso_oet.activity.application.PostgresUnitOfWork"):
             pdm_script = PDMFilesystemScript(
                 path="file:///script/path.py",
                 function_args={"main": PythonArguments(kwargs={}, args=[])},
@@ -201,7 +201,7 @@ class TestActivityService:
         helper = PubSubHelper()
         mock_write_fn.return_value = "/tmp/sbs/mock_path.json"
         with mock.patch(
-            "ska_oso_oet.activity.application.RESTUnitOfWork",
+            "ska_oso_oet.activity.application.PostgresUnitOfWork",
         ):
             pdm_script = PDMFilesystemScript(path="file:///script/path.py")
             activity_service = ActivityService()
@@ -251,7 +251,7 @@ class TestActivityService:
             }
 
     def test_activityservice_prepare_run_raises_key_error_when_activity_not_found(self):
-        with mock.patch("ska_oso_oet.activity.application.RESTUnitOfWork"):
+        with mock.patch("ska_oso_oet.activity.application.PostgresUnitOfWork"):
             activity_service = ActivityService()
             # Mock the ODA context manager
             activity_service._oda.__enter__.return_value = activity_service._oda
@@ -423,7 +423,7 @@ class TestActivityService:
         )
 
         with mock.patch(
-            "ska_oso_oet.activity.application.RESTUnitOfWork",
+            "ska_oso_oet.activity.application.PostgresUnitOfWork",
         ):
             activity_service = ActivityService()
 

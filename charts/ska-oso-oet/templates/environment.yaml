@@ -23,5 +23,17 @@ data:
   SUBARRAYNODE_FQDN_PREFIX: {{.Values.subarray}}
   CENTRALNODE_FQDN: {{.Values.central_node}}
   SKA_TELESCOPE: {{.Values.telescope}}
-  ODA_BACKEND_TYPE: {{ .Values.rest.oda.backend.type }}
+  ODA_BACKEND_TYPE: {{ .Values.rest.oda.backendType }}
+  POSTGRES_HOST: {{ if .Values.rest.oda.postgres.host }} {{ .Values.rest.oda.postgres.host }} {{ else }} {{ .Release.Name }}-postgresql {{ end }}
+  ADMIN_POSTGRES_PASSWORD: {{ .Values.rest.oda.postgres.password }}
+  {{ if .Values.rest.oda.postgres.port }}
+  POSTGRES_PORT: {{ .Values.rest.oda.postgres.port | quote }}
+  {{ end }}
+  {{ if .Values.rest.oda.postgres.db.name }}
+  POSTGRES_DB_NAME: {{ .Values.rest.oda.postgres.db.name }}
+  {{ end }}
+  {{ if .Values.rest.oda.postgres.user }}
+  ADMIN_POSTGRES_USER: {{ .Values.rest.oda.postgres.user }}
+  {{ end }}
+  # The scripts currently use the oda_helper to communicate with the ODA API, rather than a direct connection to the db.
   ODA_URL: {{ .Values.rest.oda.url }}

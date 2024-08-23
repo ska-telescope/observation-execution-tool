@@ -34,3 +34,12 @@ of the Tango devices used to control the central node (telescope) and
 sub-arrays are set as environment variables ``CENTRALNODE_FQDN`` and
 ``SUBARRAYNODE_FQDN_PREFIX`` respectively. These environment variables are set
 to the those defined in `values.yaml` when ska-oso-scripting/SKAMPI is deployed.
+
+-----------------------
+OSO Data Archive (ODA)
+-----------------------
+
+The ODA offers a PostgreSQL or filesystem implementation. The OET can be configured to use
+either by setting ``ODA_BACKEND_TYPE`` to ``postgres`` or `filesystem``. There are further environment
+variables used by the two implementations which are documented here <TODO> and these can be configured through the
+OET Helm chart.
