@@ -104,14 +104,6 @@ diagrams:  ## recreate PlantUML diagrams whose source has been modified
 	done
 	docker run --rm -v $(CURDIR):/data rlespinasse/drawio-export:v4.5.0 --format=svg --on-changes --remove-page-suffix docs/src/diagrams
 
-# Set the release tag in the values.yaml and the chart version in the umbrella chart.
-# Has to be done after version is set everywhere else because changes in values.yaml are considered
-# non-release related changes and so would need to be committed separately. Adding them last avoids
-# release change checks and allows to add them as part of the release commit.
-helm-post-set-release:
-	sed -i"" -e "s/^\([[:blank:]]*\)tag: .*/\1tag: $(VERSION)/" charts/ska-oso-oet/values.yaml
-	sed -i"" -e "13s/^\([[:blank:]]*\)version: .*/\1version: $(VERSION)/" charts/ska-oso-oet-umbrella/Chart.yaml
-
 TEST_REPO_SETUP_CMD = "cd /tmp/test_repo; git init; git add .; git -c user.name='Test' -c user.email='test@email.org' commit -am."
 
 # Copy scripts and set up a test git project in the OET container before tests are executed
