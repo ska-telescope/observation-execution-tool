@@ -90,7 +90,7 @@ spec:
     spec:
       containers:
       - name: ska-oso-oet-rest
-        image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{ .Values.rest.image.tag }}"
+        image: "{{ .Values.rest.image.registry }}/{{ .Values.rest.image.image }}:{{$.Values.rest.image.tag | default $.Chart.AppVersion}}"
         imagePullPolicy: {{ .Values.rest.image.pullPolicy }}
         command: ["python"]
         args: ["-m", "ska_oso_oet.main"]
