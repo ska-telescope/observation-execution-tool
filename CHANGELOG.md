@@ -4,6 +4,11 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+6.3.2
+*****
+
+* Properly fix issue where default image tag was not set to the chart version in the Helm chart
+
 6.3.1
 *****
 
