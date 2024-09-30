@@ -59,6 +59,7 @@ rest:
         name: ~
   skuid:
     url:
+  semantic_validation: true
 
 # Configure Ingress
 ingress:
