@@ -35,7 +35,7 @@ ADMIN_POSTGRES_PASSWORD ?= secretpassword
 
 
 K8S_CHART_PARAMS = --set ska-oso-oet.rest.oda.url=$(ODA_URL)
-K8S_CHART_PARAMS += --set ska-oso-oet.semantic_validation=true
+K8S_CHART_PARAMS += --set ska-oso-oet.semantic_validation=$(SEMANTIC_VALIDATION)
 
 # For the test, dev and integration environment, use the freshly built image in the GitLab registry
 ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'test|dev|integration')
