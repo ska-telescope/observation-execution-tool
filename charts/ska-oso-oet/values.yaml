@@ -5,6 +5,7 @@ minikube: true
 
 system: TM-mid
 telescope: SKA-mid
+semantic_validation: true
 subsystem: ska-oso-oet
 central_node: ska_mid/tm_central/central_node
 subarray: ska_mid/tm_subarray_node
@@ -59,7 +60,7 @@ rest:
         name: ~
   skuid:
     url:
-  semantic_validation: true
+ 
 
 # Configure Ingress
 ingress:

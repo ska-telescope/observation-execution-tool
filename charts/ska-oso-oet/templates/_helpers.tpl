@@ -35,6 +35,7 @@ heritage: {{ .Release.Service }}
 system: {{ .Values.system }}
 subsystem: {{ .Values.subsystem }}
 telescope: {{ .Values.telescope }}
+telescope: {{ .Values.semantic_validation }}
 {{- end }}
 
 {{/*

@@ -28,7 +28,7 @@ DOCS_SPHINXOPTS ?= -W --keep-going
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
 ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v6
-
+SEMANTIC_VALIDATION ?= true
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 # TODO BTN-2449 will extract this
 ADMIN_POSTGRES_PASSWORD ?= secretpassword
