@@ -26,7 +26,7 @@ rest:
   image:
     registry: registry.gitlab.com
     image: ska-telescope/oso/ska-oso-oet/ska-oso-oet
-    tag: 6.3.2-dev.cad29b60f
+    tag: 6.3.2-dev.ce37756bf
     pullPolicy: IfNotPresent
   resources:
     requests:

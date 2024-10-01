@@ -28,20 +28,21 @@ DOCS_SPHINXOPTS ?= -W --keep-going
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
 ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v6
-SEMANTIC_VALIDATION ?= true
+SEMANTIC_VALIDATION=true
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 # TODO BTN-2449 will extract this
 ADMIN_POSTGRES_PASSWORD ?= secretpassword
 
 
 K8S_CHART_PARAMS = --set ska-oso-oet.rest.oda.url=$(ODA_URL)
+K8S_CHART_PARAMS += --set ska-oso-oet.semantic_validation=true
 
 # For the test, dev and integration environment, use the freshly built image in the GitLab registry
 ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'test|dev|integration')
 ifneq ($(ENV_CHECK),)
 K8S_CHART_PARAMS += --set ska-oso-oet.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
 	--set ska-oso-oet.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-oet \
-	--set ska-oso-oet.rest.ingress.enabled=true
+	--set ska-oso-oet.rest.ingress.enabled=true 
 endif
 
 # For the staging environment, make k8s-install-chart-car will pull the chart from CAR so we do not need to
