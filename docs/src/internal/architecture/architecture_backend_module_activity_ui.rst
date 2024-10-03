@@ -16,7 +16,7 @@ an activity described by a Scheduling Block to be run.
 Primary Presentation
 ====================
 
-.. figure:: diagrams/export/backend_module_ui_primary_activity.svg
+.. figure:: ../../diagrams/export/backend_module_ui_primary_activity.svg
    :align: center
 
    Major classes responsible for the execution and management of activities.
@@ -85,7 +85,7 @@ ActivityService instance in response to a request from a client. This diagram sh
 is received by the FlaskWorker REST backend, how that triggers actions on independent ActivityWorker process
 hosting the ActivityService instance, and how the response is returned to the user
 
-.. figure:: diagrams/export/backend_module_ui_sequence_activity_api_over_rest.svg
+.. figure:: ../../diagrams/export/backend_module_ui_sequence_activity_api_over_rest.svg
    :align: center
 
 |br|

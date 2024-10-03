@@ -10,7 +10,7 @@ to the OET backend, and how the components of the backend are connected.
 Primary Presentation
 ====================
 
-.. figure:: diagrams/export/backend_candc_primary.svg
+.. figure:: ../../diagrams/export/backend_candc_primary.svg
    :align: center
 
 
@@ -112,7 +112,7 @@ Connectors
 Context
 =======
 
-.. figure:: diagrams/export/backend_candc_context.svg
+.. figure:: ../../diagrams/export/backend_candc_context.svg
    :align: center
 
 Variability Guide

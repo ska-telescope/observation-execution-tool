@@ -117,8 +117,8 @@ k8s-post-test:
 	kubectl -n $(KUBE_NAMESPACE) exec ska-oso-oet-rest-$(HELM_RELEASE)-0 -- rm -r /tmp/test_repo
 
 # The docs build fails unless the ska-oso-oet package is installed locally as importlib.metadata.version requires it.
-docs-pre-build:
-	poetry install --only-root
+#docs-pre-build:
+#	poetry install --only-root
 
 # install helm plugin from https://github.com/helm-unittest/helm-unittest.git
 k8s-chart-test:

@@ -41,7 +41,7 @@ and configured to access a remote OET deployment as detailed below:
 
 .. code-block:: console
 
-   $ pip install --upgrade ska_oso_oet_client
+   $ pip install --upgrade ska_oso_oet_client -i https://artefact.skao.int/repository/pypi-all/simple
 
 By default, the OET image has the CLI installed, meaning the CLI is accessible
 from inside the running OET pod.
@@ -552,5 +552,5 @@ You can also view the details of the script that was run by the activity:
 .. rubric:: Footnotes
 
 .. [#f2] Specifically, the cli tool acts as a REST client that interfaces with
-   the OET REST API described in :doc:`architecture_module_rest_api`.
+   the OET REST API described in :doc:`../internal/architecture/architecture_module_rest_api`.
 .. [#f1] For reference, the OET architecture refers to Python scripts as `Procedures`.
