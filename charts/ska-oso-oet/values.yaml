@@ -8,6 +8,7 @@ telescope: SKA-low
 subsystem: ska-oso-oet
 central_node: ska_low/tm_central/central_node
 subarray: ska_low/tm_subarray_node
+semantic_validation: true
 
 global:
   minikube: true
@@ -59,7 +60,6 @@ rest:
         name: ~
   skuid:
     url:
-  semantic_validation: true
 
 # Configure Ingress
 ingress:
