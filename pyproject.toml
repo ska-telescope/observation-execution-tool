@@ -38,6 +38,10 @@ priority = 'primary'
 #name = "gitlab-ska-db-oda"
 #url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
 
+[[tool.poetry.source]]
+name = "gitlab"
+url = 'https://gitlab.com/api/v4/projects/12884227/packages/pypi/simple'
+
 [tool.poetry.dependencies]
 python = "^3.10"
 pytango = "^9.5.1"
@@ -47,6 +51,7 @@ PyPubSub = "^4.0.3"
 requests = "^2.28.1"
 ska-ser-logging = "^0.4.1"
 ska-ser-skuid = "^3.3.3"
+ska-tmc-cdm = "12.1.0+dev.c09b2783d" 
 tblib = "^1.7.0"
 GitPython = "^3.1.27"
 waitress = "^2.1.2"
