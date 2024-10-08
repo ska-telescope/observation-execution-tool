@@ -24,9 +24,9 @@ rest:
   ingress:
     enabled: false
   image:
-    registry: registry.gitlab.com
-    image: ska-telescope/oso/ska-oso-oet/ska-oso-oet
-    tag: 6.3.2-dev.c4766f752 # Defaults to the chart appVersion if not set
+    registry: artefact.skao.int
+    image: ska-oso-oet
+    tag: ~ # Defaults to the chart appVersion if not set
     pullPolicy: IfNotPresent
   resources:
     requests:
