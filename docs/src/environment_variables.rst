@@ -43,3 +43,15 @@ The ODA offers a PostgreSQL or filesystem implementation. The OET can be configu
 either by setting ``ODA_BACKEND_TYPE`` to ``postgres`` or `filesystem``. There are further environment
 variables used by the two implementations which are documented here <TODO> and these can be configured through the
 OET Helm chart.
+
+
+---------------------
+Semantic Validation
+---------------------
+
+To turn semantic validation off/on in real-time user need to create environment variable into helm charts. 
+This will allow user to control semantic validation in real-time.
+
+By using an environment variable, user can easily change the behavior of their application without modifying the code. 
+This is particularly useful in different deployment environments (development, testing, production) where 
+user might want different validation behaviors.
