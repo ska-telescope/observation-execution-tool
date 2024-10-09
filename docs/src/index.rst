@@ -39,6 +39,8 @@ For instructions on developing the application, see the `README <https://gitlab.
 
     deployment/quickstart.rst
     deployment/environment_variables.rst
+    deployment/deployment_to_kubernetes.rst
+    deployment/persistent_environments.rst
 
 .. toctree::
     :maxdepth: 2

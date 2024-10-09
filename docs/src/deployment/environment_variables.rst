@@ -4,42 +4,50 @@
 Environment Variables
 *********************
 
----------
-Telescope
----------
+The following environment variables are used to configure the application.
 
-The SKA comprises two telescopes: SKA MID (Dishes) and SKA LOW (Antennas).
-The behaviour of code in the ska_oso_scripting module differs depending on
-whether it is running in an SKA MID environment (default) or an SKA LOW
-environment. For example, when configured for SKA MID, the code will reject
-CDM payloads intended for SKA LOW.
+Generally, they are set via a Kubernetes ConfigMap with values coming from the Helm values.yaml. See :doc:`deployment_to_kubernetes`
 
-The ska-oso-scripting code is configured for MID or LOW by setting the
-``SKA_TELESCOPE`` environment variable to either 'skamid' or 'skalow'.
-If no environment variable is specified, the code assumes it is controlling
-SKA MID.
+Required/optional means whether they are required by the application code or whether a default is set within the application.
+They may be listed as required here for the application, but have a default set within the Helm chart.
 
-The telescope setting is also exposed as a configurable value in the
-ska-oso-scripting Helm charts, with a default value also set to SKA MID. The
-ska-oso-scripting definitions in the skamid and skalow SKAMPI Helm charts set the
-appropriate value for their respective deployments.
+.. note::
+    There are some environment variables defined in the OET Helm chart that are not used directly by the OET application so are not listed here.
+    As the OET executes scripts in child process that will be using the ska-oso-scripting library, environment variables expected by the library need to be defined in the OET process
+    They are documented in the `RTD for ska-oso-scripting <https://developer.skao.int/projects/ska-oso-scripting/en/latest/?badge=latest>`_
 
-------------------
-Tango Device FQDNs
-------------------
 
-The SKA, and so by extension the OET, makes use of Tango Controls to control
-the telescope hardware. The Fully Qualified Domain Names (FQDNs) or prefixes
-of the Tango devices used to control the central node (telescope) and
-sub-arrays are set as environment variables ``CENTRALNODE_FQDN`` and
-``SUBARRAYNODE_FQDN_PREFIX`` respectively. These environment variables are set
-to the those defined in `values.yaml` when ska-oso-scripting/SKAMPI is deployed.
+.. list-table:: Environment variables used by ska-oso-oet
+   :widths: 23 40 30
+   :header-rows: 1
 
------------------------
-OSO Data Archive (ODA)
------------------------
-
-The ODA offers a PostgreSQL or filesystem implementation. The OET can be configured to use
-either by setting ``ODA_BACKEND_TYPE`` to ``postgres`` or `filesystem``. There are further environment
-variables used by the two implementations which are documented here <TODO> and these can be configured through the
-OET Helm chart.
+   * - Environment variable
+     - Description
+     - Required/optional
+   * - SKUID_URL
+     - The Kubernetes service address of a running SKUID service
+     - Required
+   * - ODA_BACKEND_TYPE
+     - Defines whether the ODA interfaces should connect to a Postgresql instance or use the filesystem.
+     - Optional - default: ``filesystem``
+   * - ODA_DATA_DIR
+     - The base filesystem location that the filesystem ODA will use to store and retrieve entities.
+     - Optional - default: ``/var/lib/oda``
+   * - POSTGRES_HOST
+     - The address of the PostgreSQL instance that the postgres ODA will connect to.
+     - Required if ``ODA_BACKEND_TYPE`` is ``postgres``
+   * - ADMIN_POSTGRES_USER
+     - The admin user of the PostgreSQL instance that the postgres ODA will connect to.
+     - Optional - default: ``postgres``
+   * - ADMIN_POSTGRES_PASSWORD
+     - The admin password of the PostgreSQL instance that the postgres ODA will connect to.
+     - Required if ``ODA_BACKEND_TYPE`` is ``postgres``
+   * - POSTGRES_PORT
+     - The port of the PostgreSQL instance that the postgres ODA will connect to.
+     - Optional - default: ``5432``
+   * - POSTGRES_DB_NAME
+     - The name of the database within a PostgreSQL instance that the postgres ODA will connect to.
+     - Optional - default: ``postgres``
+   * - POSTGRES_DB_NAME
+     - The name of the database within a PostgreSQL instance that the postgres ODA will connect to.
+     - Optional - default: ``postgres``
