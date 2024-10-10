@@ -4,10 +4,10 @@
 minikube: true
 
 system: TM-mid
-telescope: SKA-low
+telescope: SKA-mid
 subsystem: ska-oso-oet
-central_node: ska_low/tm_central/central_node
-subarray: ska_low/tm_subarray_node
+central_node: ska_mid/tm_central/central_node
+subarray: ska_mid/tm_subarray_node
 semantic_validation: false
 
 global:
