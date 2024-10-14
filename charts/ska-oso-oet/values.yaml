@@ -8,7 +8,7 @@ telescope: SKA-mid
 subsystem: ska-oso-oet
 central_node: ska_mid/tm_central/central_node
 subarray: ska_mid/tm_subarray_node
-semantic_validation: false
+validation_strictness: 2
 
 global:
   minikube: true
