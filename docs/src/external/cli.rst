@@ -1,11 +1,14 @@
 .. _cli:
 
-*********************
-OET command line tool
-*********************
+***************************
+OET Command Line Interface
+***************************
 
-The ``oet`` command can be used to control a remote OET deployment [#f2]_.
-The ``oet`` command has two sub-commands, ``procedure`` and ``activity``.
+The OET is a server side application that will be deployed to a Kubernetes environment as described in the previous section. There is an OET CLI which acts as a client for a given deployment of the
+OET which is defined in a separate `ska-oso-oet-client <https://gitlab.com/ska-telescope/oso/ska-oso-oet-client>`_ repository. This OET user
+guide covers using this CLI, as users will primarily interact with the OET from a terminal using the CLI client.
+
+Once the CLI is installed, the ``oet`` command can be used to control a remote OET deployment using two sub-commands, ``procedure`` and ``activity``.
 
 ``oet procedure`` commands are used to control individual observing scripts,
 which includes loading and starting and stopping script execution.
@@ -44,29 +47,41 @@ and configured to access a remote OET deployment as detailed below:
    $ pip install --upgrade ska_oso_oet_client -i https://artefact.skao.int/repository/pypi-all/simple
 
 By default, the OET image has the CLI installed, meaning the CLI is accessible
-from inside the running OET pod.
+from inside the running OET pod. If you have direct access to an OET pod, you can execute OET commands which will connect with the
+OET server running inside the same pod.
 
 Configuration
 =============
 
-The address of the remote OET backend can be specified at the command line
-via the ``server-url`` argument, or set session-wide by setting the
-``OET_URL`` environment variable, e.g.,
+The OET CLI is a client that can be configured to connect with any deployed instance of the OET via the URL of the instance's RESTful API.
+
+.. note::
+    The URL for a given deployment of the OET should be deducible following the `OSO pattern <https://confluence.skatelescope.org/display/SE/OSO+URLs>`_.
+    Generally, it will be ``<HOST>/<KUBE_NAMESPACE>/oet/api/v<OET MAJOR VERSION>``.
+
+The default URL the client will use is ``http://ska-oso-oet-rest:5000/ska-oso-oet/oet/api/v<OET MAJOR VERSION>``. This host is the default name of the Kubernetes Service
+deployed by the the ``ska-oso-oet`` Helm chart and ``5000`` is the port it exposes. By using this URL, the CLI assumes it is being used from a terminal inside of the cluster.
+
+The URL can be configured through a  ``server-url`` CLI argument, or set session-wide by setting the
+``OET_URL`` environment variable. This should be used to configure the CLI to access an OET deployment via an Ingress address, or a different Kubernetes Service or LoadBalancer.
 
 .. code-block:: console
 
   # provide the server URL when running the command, e.g.
-  $ oet --server-url=http://my-oet-deployment.com:5000/ska-oso-oet/oet/api/v1 procedure list
+  $ oet --server-url=<KUBE_HOST>/<KUBE_NAMESPACE>/oet/api/v<OET MAJOR VERSION> procedure list
 
   # alternatively, set the server URL for a session by defining an environment variable
-  $ export OET_URL=http://my-oet-deployment.com:5000/ska-oso-oet/oet/api/v1
+  $ export OET_URL=<KUBE_HOST>/<KUBE_NAMESPACE>/oet/api/v<OET MAJOR VERSION>
   $ oet procedure list
   $ oet activity describe
   $ oet procedure create ...
 
-By default, the client assumes it is operating within a Kubernetes environment
-and attempts to connect to a REST server using the default REST service name
-of http://ska-oso-oet-rest:5000/ska-oso-oet/oet/api/v1.
+.. note::
+    The integration and staging deployments defined in :doc:`../deployment/persistent_environments` are behind the SKAO AD authentication.
+    The CLI does not have AAA functionality currently, so it is not possible to access these OET deployments in the STFC cluster from a local environment outside of the cluster.
+
+    A workaround is to `deploy a Binderhub instance <https://developer.skao.int/en/latest/tools/binderhub.html>`_ and then access a terminal in this instance that is inside the cluster.
+    The service address of the OET can then be used (as opposed to the Ingress address) which will bypass the login.
 
 
 Commands
