@@ -16,7 +16,7 @@ Python processes that load a user script and run functions in that user script w
 Primary Presentation
 ====================
 
-.. figure:: diagrams/export/backend_module_script_execution_primary.svg
+.. figure:: ../../diagrams/export/backend_module_script_execution_primary.svg
    :align: center
 
    Major classes responsible for the execution and management of user scripts.
@@ -212,7 +212,7 @@ The sequence diagram below gives a high-level overview of how the
 :class:`~ska_oso_oet.procedure.application.ScriptExecutionService` controls objects in the domain module to
 meet requests to prepare, start, and stop user script execution.
 
-.. figure:: diagrams/export/backend_module_ui_sequence_ses.svg
+.. figure:: ../../diagrams/export/backend_module_ui_sequence_ses.svg
    :align: center
 
 |br|
@@ -222,7 +222,7 @@ ScriptExecutionService.prepare
 
 The diagram below gives more detail on how the domain layer handles a request to prepare a script for execution.
 
-.. figure:: diagrams/export/backend_module_ui_sequence_ses_prepare.svg
+.. figure:: ../../diagrams/export/backend_module_ui_sequence_ses_prepare.svg
    :align: center
 
 |br|
@@ -233,7 +233,7 @@ ScriptWorker
 The diagram below illustrates how a :class:`~ska_oso_oet.procedure.domain.ScriptWorker` is created and how it
 communicates startup success with the parent process.
 
-.. figure:: diagrams/export/backend_module_ui_sequence_scriptworker.svg
+.. figure:: ../../diagrams/export/backend_module_ui_sequence_scriptworker.svg
    :align: center
 
 |br|
@@ -245,7 +245,7 @@ The diagram below depicts the main :class:`~ska_oso_oet.procedure.domain.ScriptW
 the various messages from the parent :class:`~ska_oso_oet.procedure.domain.ProcessManager` are handled by child
 :class:`~ska_oso_oet.procedure.domain.ScriptWorker`.
 
-.. figure:: diagrams/export/backend_module_ui_sequence_scriptworker_main_loop.svg
+.. figure:: ../../diagrams/export/backend_module_ui_sequence_scriptworker_main_loop.svg
    :align: center
 
 |br|
@@ -253,7 +253,7 @@ the various messages from the parent :class:`~ska_oso_oet.procedure.domain.Proce
 Context Diagram
 ===============
 
-.. figure:: diagrams/export/backend_module_execution_context.svg
+.. figure:: ../../diagrams/export/backend_module_execution_context.svg
    :align: center
 
 
@@ -274,7 +274,7 @@ function if one is present. Currently the Procedure state moves to COMPLETE once
 run but this could be a temporary design decision if the need for running multiple functions/the same function multiple
 times arises.
 
-.. figure:: diagrams/export/backend_module_execution_procedure_state_flowchart.svg
+.. figure:: ../../diagrams/export/backend_module_execution_procedure_state_flowchart.svg
    :align: center
 
 

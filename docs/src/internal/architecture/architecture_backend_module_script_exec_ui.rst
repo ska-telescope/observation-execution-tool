@@ -16,7 +16,7 @@ its way back to the client.
 Primary Presentation
 ====================
 
-.. figure:: diagrams/export/backend_module_ui_primary_script_exec.svg
+.. figure:: ../../diagrams/export/backend_module_ui_primary_script_exec.svg
    :align: center
 
    Major classes involved in the user interface and remote control of the script execution API.
@@ -135,7 +135,7 @@ ScriptExecutionService instance in response to a request from a client. This dia
 received by the FlaskWorker REST backend, how that triggers actions on independent ScriptExecutionServiceWorker process
 hosting the ScriptExecutionService instance, and how the response is returned to the user.
 
-.. figure:: diagrams/export/backend_module_ui_sequence_scripting_api_over_rest.svg
+.. figure:: ../../diagrams/export/backend_module_ui_sequence_scripting_api_over_rest.svg
    :align: center
 
 |br|
@@ -149,7 +149,7 @@ The sequence diagram below illustrates how in-process pypubsub messages are comm
 an essential part of the communication between FlaskWorker and ScriptExecutionServiceWorker and forms the basis for how
 event messages emitted by scripts can be published to the outside world in an HTTP SSE stream.
 
-.. figure:: diagrams/export/backend_module_ui_sequence_interprocess_pubsub.svg
+.. figure:: ../../diagrams/export/backend_module_ui_sequence_interprocess_pubsub.svg
    :align: center
 
 |br|
@@ -157,7 +157,7 @@ event messages emitted by scripts can be published to the outside world in an HT
 Context Diagram
 ===============
 
-.. figure:: diagrams/export/backend_candc_context.svg
+.. figure:: ../../diagrams/export/backend_candc_context.svg
    :align: center
 
 

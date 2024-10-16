@@ -1,17 +1,20 @@
 .. _cli:
 
-*********************
-OET command line tool
-*********************
+***************************
+OET Command Line Interface
+***************************
 
-The ``oet`` command can be used to control a remote OET deployment [#f2]_.
-The ``oet`` command has two sub-commands, ``procedure`` and ``activity``.
+The OET is a server side application that will be deployed to a Kubernetes environment as described in the previous section. There is an OET CLI which acts as a client for a given deployment of the
+OET which is defined in a separate `ska-oso-oet-client <https://gitlab.com/ska-telescope/oso/ska-oso-oet-client>`_ repository. This OET user
+guide covers using this CLI, as users will primarily interact with the OET from a terminal using the CLI client.
+
+Once the CLI is installed, the ``oet`` command can be used to control a remote OET deployment using two sub-commands, ``procedure`` and ``activity``.
 
 ``oet procedure`` commands are used to control individual observing scripts,
 which includes loading and starting and stopping script execution.
 
 ``oet activity`` commands are used to execute more general activities on the
-telescope, for example running the allocate activity on SB with ID xxx.
+telescope, for example running the observe activity on SB with ID xxx.
 
 See `Procedure`_ and `Activity`_ sections for further details on commands available
 for each of the approaches.
@@ -41,32 +44,44 @@ and configured to access a remote OET deployment as detailed below:
 
 .. code-block:: console
 
-   $ pip install --upgrade ska_oso_oet_client
+   $ pip install --upgrade ska_oso_oet_client -i https://artefact.skao.int/repository/pypi-all/simple
 
 By default, the OET image has the CLI installed, meaning the CLI is accessible
-from inside the running OET pod.
+from inside the running OET pod. If you have direct access to an OET pod, you can execute OET commands which will connect with the
+OET server running inside the same pod.
 
 Configuration
 =============
 
-The address of the remote OET backend can be specified at the command line
-via the ``server-url`` argument, or set session-wide by setting the
-``OET_URL`` environment variable, e.g.,
+The OET CLI is a client that can be configured to connect with any deployed instance of the OET via the URL of the instance's RESTful API.
+
+.. note::
+    The URL for a given deployment of the OET should be deducible following the `OSO pattern <https://confluence.skatelescope.org/display/SE/OSO+URLs>`_.
+    Generally, it will be ``<HOST>/<KUBE_NAMESPACE>/oet/api/v<OET MAJOR VERSION>``.
+
+The default URL the client will use is ``http://ska-oso-oet-rest:5000/ska-oso-oet/oet/api/v<OET MAJOR VERSION>``. This host is the default name of the Kubernetes Service
+deployed by the the ``ska-oso-oet`` Helm chart and ``5000`` is the port it exposes. By using this URL, the CLI assumes it is being used from a terminal inside of the cluster.
+
+The URL can be configured through a  ``server-url`` CLI argument, or set session-wide by setting the
+``OET_URL`` environment variable. This should be used to configure the CLI to access an OET deployment via an Ingress address, or a different Kubernetes Service or LoadBalancer.
 
 .. code-block:: console
 
   # provide the server URL when running the command, e.g.
-  $ oet --server-url=http://my-oet-deployment.com:5000/ska-oso-oet/oet/api/v1 procedure list
+  $ oet --server-url=<KUBE_HOST>/<KUBE_NAMESPACE>/oet/api/v<OET MAJOR VERSION> procedure list
 
   # alternatively, set the server URL for a session by defining an environment variable
-  $ export OET_URL=http://my-oet-deployment.com:5000/ska-oso-oet/oet/api/v1
+  $ export OET_URL=<KUBE_HOST>/<KUBE_NAMESPACE>/oet/api/v<OET MAJOR VERSION>
   $ oet procedure list
   $ oet activity describe
   $ oet procedure create ...
 
-By default, the client assumes it is operating within a Kubernetes environment
-and attempts to connect to a REST server using the default REST service name
-of http://ska-oso-oet-rest:5000/ska-oso-oet/oet/api/v1.
+.. note::
+    The integration and staging deployments defined in :doc:`../deployment/persistent_environments` are behind the SKAO AD authentication.
+    The CLI does not have AAA functionality currently, so it is not possible to access these OET deployments in the STFC cluster from a local environment outside of the cluster.
+
+    A workaround is to `deploy a Binderhub instance <https://developer.skao.int/en/latest/tools/binderhub.html>`_ and then access a terminal in this instance that is inside the cluster.
+    The service address of the OET can then be used (as opposed to the Ingress address) which will bypass the login.
 
 
 Commands
@@ -340,36 +355,21 @@ Describing a script from git shows additional information on the repository:
 If the procedure failed, then the stack trace will also be displayed.
 
 
-Example session in a SKAMPI environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Example session in a deployed environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-From a shell, you can use the 'oet procedure' command to trigger remote execution
-of a full observation, e.g.,
+If you are working with a complete system such that the OET is able to communicate
+with TMC and the various devices are deployed (Dish, MCCS, CSP, SDP, etc.) the OET
+can be used from a shell to trigger remote execution of a full observation, e.g.
 
 .. code-block:: console
 
-  # create process for telescope start-up and execute it
-  oet procedure create file:///scripts/startup.py
-  oet procedure start
-
-  # create process for resource allocation script
-  oet procedure create file:///scripts/allocate_from_file_sb.py --subarray_id=3
-  oet procedure start scripts/example_sb.json
-
-  # create process for configure/scan script
-  oet procedure create file:///scripts/observe_sb.py --subarray_id=3
+  # create process for running observation, including allocation and configuration/scan
+  oet procedure create file:///scripts/allocate_and_observe_sb.py --subarray_id=3
   # run the script, specifying scheduling block JSON which defines
   # the configurations, and the order and number of scans
   oet procedure start scripts/example_sb.json
 
-  # create process for resource deallocation script
-  oet procedure create file:///scripts/deallocate.py --subarray_id=3
-  # run with no arguments, which requests deallocation of all resources
-  oet procedure start
-
-  # create process for telescope standby script
-  oet procedure create file:///scripts/standby.py
-  oet procedure start
 
 Activity
 --------
@@ -428,6 +428,16 @@ The commands available via ``oet activity`` are described below.
 |                |               |                                                         | created.                            |
 +----------------+---------------+---------------------------------------------------------+-------------------------------------+
 
+The activity name is given in the SBD and although this can be set to anything in the PDM,
+a typical observation was envisaged as having multiple activities, including ``allocate``
+(assign resources) and ``observe`` (configure and then run a scan). It is now assumed that only
+one script will be used and OSO Scripting, for example, now only contains a single script,
+``allocate_and_observe.py``. This could be given any activity name, with ``observe`` probably
+being the best choice.
+
+One reason for only wanting to run one activity per SBD is that currently each would create
+a separate Scheduling Block Instance (SBI) as the OET has no state management that allows it to
+link different activities taking place as part of the same SBD. This might change in the future.
 
 Examples
 ~~~~~~~~
@@ -441,11 +451,11 @@ activity.
 
 .. code-block:: console
 
-  $ oet activity run allocate sbd-123 --script-args='{"init": {"kwargs": {"foo": "bar"}}}'
+  $ oet activity run observe sbd-123 --script-args='{"init": {"kwargs": {"foo": "bar"}}}'
 
     ID  Activity    SB ID    Creation Time          Procedure ID  State
   ----  ----------  -------  -------------------  --------------  ---------
-     1  allocate    sbd-123  2023-01-06 13:56:47               1  REQUESTED
+     1  observe     sbd-123  2023-01-06 13:56:47               1  REQUESTED
 
 Note the use of keyword arguments for the script arguments. These will be
 passed as arguments when each function in the script is run. If the given
@@ -474,7 +484,7 @@ We can check the state of the activities currently present:
 
     ID  Activity    SB ID    Creation Time          Procedure ID  State
   ----  ----------  -------  -------------------  --------------  ---------
-     1  allocate    sbd-123  2023-01-06 13:56:47               1  COMPLETE
+     1  observe     sbd-123  2023-01-06 13:56:47               1  COMPLETE
      2  observe     sbd-123  2023-01-06 13:56:56               2  PREPARED
 
 
@@ -499,7 +509,7 @@ An ``oet activity describe`` command will give further detail on an activity.
 
     ID  Activity    SB ID      Procedure ID  State
   ----  ----------  -------  --------------  ---------
-     1  allocate    sbd-123               1  COMPLETE
+     1  observe     sbd-123               1  COMPLETE
 
   URI                                        Prepare Only
   -----------------------------------------  --------------
@@ -529,7 +539,7 @@ You can also view the details of the script that was run by the activity:
 
     ID  Script                URI
   ----  ---------------       -----------------------------------------
-     1  file://allocate.py    http://0.0.0.0:5000/ska-oso-oet/oet/api/v1/procedures/1
+     1  file://observe.py    http://0.0.0.0:5000/ska-oso-oet/oet/api/v1/procedures/1
 
   Time                        State
   --------------------------  -------
@@ -552,5 +562,5 @@ You can also view the details of the script that was run by the activity:
 .. rubric:: Footnotes
 
 .. [#f2] Specifically, the cli tool acts as a REST client that interfaces with
-   the OET REST API described in :doc:`architecture_module_rest_api`.
+   the OET REST API described in :doc:`../internal/architecture/architecture_module_rest_api`.
 .. [#f1] For reference, the OET architecture refers to Python scripts as `Procedures`.

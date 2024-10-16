@@ -116,15 +116,6 @@ Generally the API URL should be available at  `https://k8s.stfc.skao.int/$KUBE_N
 
 [![Documentation Status](https://readthedocs.org/projects/ska-telescope-ska-oso-oet/badge/?version=latest)](https://developer.skao.int/projects/ska-oso-oet/en/latest/?badge=latest)
 
-Documentation can be found in the ``docs`` folder. To build docs, install the 
-documentation specific requirements:
-
-```
-pip3 install sphinx sphinx-rtd-theme recommonmark
-```
-
-and build the documentation (will be built in docs/build folder) with 
-
-```
-make docs-build html
-```
+To build the html version of the documentation, start from the root directory and first install the dependency using 
+``poetry install --only docs`` and then type ``make docs-build html``. Read the documentation by pointing your browser
+at ``docs/build/html/index.html``.
