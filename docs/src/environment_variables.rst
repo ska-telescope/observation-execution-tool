@@ -49,8 +49,8 @@ OET Helm chart.
 Semantic Validation
 ---------------------
 
-To turn semantic validation off/on in real-time user need to set environment variable into helm charts. 
-This will allow user to control semantic validation in real-time.
+To turn semantic validation off/on in real-time user need to set environment variable ``VALIDATION_STRICTNESS`` 
+into helm charts. This will allow user to control semantic validation in real-time.
 
 By using an environment variable, user can easily change the behavior of their application without modifying the code. 
 This is particularly useful in different deployment environments (development, testing, production) where 
