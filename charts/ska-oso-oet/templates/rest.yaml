@@ -52,10 +52,10 @@ metadata:
   name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-scripts
   namespace: {{ .Release.Namespace }}
 binaryData:
-  hello_world.py: |-
-{{ .Files.Get "data/hello_world.py" | b64enc | indent 4 }}
-  hello_world_sb.py: |-
-{{ .Files.Get "data/hello_world_sb.py" | b64enc | indent 4 }}
+  hello_world_without_sb.py: |-
+{{ .Files.Get "data/hello_world_without_sb.py" | b64enc | indent 4 }}
+  hello_world_with_sb.py: |-
+{{ .Files.Get "data/hello_world_with_sb.py" | b64enc | indent 4 }}
   low_sb_example.json: |-
 {{ .Files.Get "data/low_sb_example.json" | b64enc | indent 4 }}
   mid_sb_example.json: |-
@@ -102,7 +102,7 @@ spec:
             containerPort: 5000
         volumeMounts:
           - name: ska-oso-oet-scripts-volume
-            mountPath: /tmp/oda
+            mountPath: /tmp/scripts
         resources:
 {{ toYaml .Values.rest.resources | indent 10 }}
         readinessProbe:
@@ -137,10 +137,10 @@ spec:
           configMap:
             name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-scripts
             items:
-              - key: hello_world.py
-                path: hello_world.py
-              - key: hello_world_sb.py
-                path: hello_world_sb.py
+              - key: hello_world_with_sb.py
+                path: hello_world_with_sb.py
+              - key: hello_world_without_sb.py
+                path: hello_world_without_sb.py
               - key: low_sb_example.json
                 path: low_sb_example.json
               - key: mid_sb_example.json

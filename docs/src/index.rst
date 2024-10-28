@@ -47,6 +47,7 @@ For instructions on developing the application, see the `README <https://gitlab.
     :hidden:
 
     external/cli.rst
+    external/how-to-run-test-script.rst
 
 
 .. toctree::

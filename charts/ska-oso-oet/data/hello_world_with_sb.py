@@ -27,14 +27,14 @@ def announce(msg: str):
     )
 
 
-def init(subarray_id: int):
+def init(subarray_id: int, init_arg=None):
     global main
     main = functools.partial(_main, subarray_id)
-    LOG.info(f"Script bound to sub-array {subarray_id}")
+    LOG.info(f"Script bound to sub-array {subarray_id} with init_arg {init_arg}")
 
 
 def _main(
-    subarray_id: int, sb_json: str, sbi_id: str = "sbi-default-123", raise_msg=None
+    subarray_id: int, sb_json: str, sbi_id: str = "sbi-default-123", raise_msg=None,  *args, **kwargs
 ):
     LOG.info(f"Running script in OS process {os.getpid()}")
 
