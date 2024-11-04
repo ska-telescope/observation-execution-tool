@@ -460,9 +460,10 @@ This how-to should have given you the basics of executing OET CLI commands to ru
 available on the OET filesystem.
 
 A next test would be to pull a script from Git instead of the filesystem. The commands are mostly the same, but rather than ``file://`` for the script prefix, ``git://`` should be
-used, and the extra args used to define the Git repo, branch and script location defined in :doc:`cli`` should be used. For example:
+used, and the extra args used to define the Git repo, branch and script location defined in :doc:`cli` should be used. For example:
 
 .. code-block:: console
+  
     $ oet procedure create git://scripts/allocate_and_observe_sb.py --git_repo=https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git --git_branch="test"
 
 After this, you should be ready to use the OET to execute real observing scripts pulled from ska-oso-scripting.
