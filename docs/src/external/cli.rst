@@ -152,64 +152,64 @@ the backend can be inspected with
 
 The commands available via ``oet procedure`` are described below.
 
-+----------------+------------+---------------------------------------------------------+-------------------------------------+
-| OET CLI action | Parameters | Default                                                 | Description                         |
-+================+============+=========================================================+=====================================+
-| create         | server-url | See `Configuration`_ section                            | **Prepare a new procedure**         |
-|                +------------+---------------------------------------------------------+                                     |
-|                | script-uri | None                                                    | Load the requested script and       |
-|                +------------+---------------------------------------------------------+ prepare it for execution.           |
-|                | args       | None                                                    |                                     |
-|                +------------+---------------------------------------------------------+ Arguments provided here are passed  |
-|                | kwargs     | \-\-subarray_id=1                                       | to the script init function, if     |
-|                |            | \-\-git_repo=                                           | defined                             |
++----------------+------------+--------------------------------------------------------------+-------------------------------------+
+| OET CLI action | Parameters | Default                                                      | Description                         |
++================+============+==============================================================+=====================================+
+| create         | server-url | See `Configuration`_ section                                 | **Prepare a new procedure**         |
+|                +------------+--------------------------------------------------------------+                                     |
+|                | script-uri | None                                                         | Load the requested script and       |
+|                +------------+--------------------------------------------------------------+ prepare it for execution.           |
+|                | args       | None                                                         |                                     |
+|                +------------+--------------------------------------------------------------+ Arguments provided here are passed  |
+|                | kwargs     | \-\-subarray_id=1                                            | to the script init function, if     |
+|                |            | \-\-git_repo=                                                | defined                             |
 |                |            | "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git" |                                     |
-|                |            | \-\-git_branch="master"                                 | OET maintains record of 10 newest   |
-|                |            | \-\-git_commit=None                                     | scripts which means creating 11th   |
-|                |            | \-\-create_env=False                                    | script will remove the oldest       |
-|                |            |                                                         | script from the record.             |
-+----------------+------------+---------------------------------------------------------+-------------------------------------+
-| list           | server-url | See `Configuration`_ section                            | **List procedures**                 |
-|                +------------+---------------------------------------------------------+                                     |
-|                | pid        | None                                                    | Return info on the collection of 10 |
-|                |            |                                                         | newest procedures, or info on the   |
-|                |            |                                                         | one specified by process ID (pid)   |
-+----------------+------------+---------------------------------------------------------+-------------------------------------+
-| start          | server-url | See `Configuration`_ section                            | **Start a Procedure Executing**     |
-|                +------------+---------------------------------------------------------+                                     |
-|                | pid        | None                                                    | Start a process executing           |
-|                +------------+---------------------------------------------------------+ the procedure specified by process  |
-|                | args       | None                                                    | ID (pid) or, if none is specified   |
-|                +------------+---------------------------------------------------------+ start the last one loaded.          |
-|                | kwargs     | None                                                    |                                     |
-|                |            |                                                         | Only one procedure can be executing |
-|                |            |                                                         | at any time.                        |
-|                +------------+---------------------------------------------------------+                                     |
-|                | listen     | True                                                    | listen flag is set to True by       |
-|                |            |                                                         | default which means that events are |
-|                |            |                                                         | shown on the command line unless    |
-|                |            |                                                         | is is explicitly set to False.      |
-+----------------+------------+---------------------------------------------------------+-------------------------------------+
-| stop           | server-url | See `Configuration`_ section                            | **Stop Procedure Execution**        |
-|                +------------+---------------------------------------------------------+                                     |
-|                | pid        | None                                                    | Stop a running process executing    |
-|                +------------+---------------------------------------------------------+ the procedure specified by process  |
-|                | run_abort  | True                                                    | ID (pid) or, if none is specified,  |
-|                |            |                                                         | stop the currently running process. |
-|                |            |                                                         |                                     |
-|                |            |                                                         | If run_abort flag is True, OET will |
-|                |            |                                                         | send Abort command to the SubArray  |
-|                |            |                                                         | as part of script termination.      |
-+----------------+------------+---------------------------------------------------------+-------------------------------------+
-| describe       | server-url | See `Configuration`_ section                            | **Investigate a procedure**         |
-|                +------------+---------------------------------------------------------+                                     |
-|                | pid        | None                                                    | Displays the call arguments, state  |
-|                |            |                                                         | history and, if the procedure       |
-|                |            |                                                         | failed, the stack trace of a        |
-|                |            |                                                         | specified process ID (pid). If no   |
-|                |            |                                                         | pid is specified describe the last  |
-|                |            |                                                         | process created.                    |
-+----------------+------------+---------------------------------------------------------+-------------------------------------+
+|                |            | \-\-git_branch="master"                                      | OET maintains record of 10 newest   |
+|                |            | \-\-git_commit=None                                          | scripts which means creating 11th   |
+|                |            | \-\-create_env=False                                         | script will remove the oldest       |
+|                |            |                                                              | script from the record.             |
++----------------+------------+--------------------------------------------------------------+-------------------------------------+
+| list           | server-url | See `Configuration`_ section                                 | **List procedures**                 |
+|                +------------+--------------------------------------------------------------+                                     |
+|                | pid        | None                                                         | Return info on the collection of 10 |
+|                |            |                                                              | newest procedures, or info on the   |
+|                |            |                                                              | one specified by process ID (pid)   |
++----------------+------------+--------------------------------------------------------------+-------------------------------------+
+| start          | server-url | See `Configuration`_ section                                 | **Start a Procedure Executing**     |
+|                +------------+--------------------------------------------------------------+                                     |
+|                | pid        | None                                                         | Start a process executing           |
+|                +------------+--------------------------------------------------------------+ the procedure specified by process  |
+|                | args       | None                                                         | ID (pid) or, if none is specified   |
+|                +------------+--------------------------------------------------------------+ start the last one loaded.          |
+|                | kwargs     | None                                                         |                                     |
+|                |            |                                                              | Only one procedure can be executing |
+|                |            |                                                              | at any time.                        |
+|                +------------+--------------------------------------------------------------+                                     |
+|                | listen     | True                                                         | listen flag is set to True by       |
+|                |            |                                                              | default which means that events are |
+|                |            |                                                              | shown on the command line unless    |
+|                |            |                                                              | is is explicitly set to False.      |
++----------------+------------+--------------------------------------------------------------+-------------------------------------+
+| stop           | server-url | See `Configuration`_ section                                 | **Stop Procedure Execution**        |
+|                +------------+--------------------------------------------------------------+                                     |
+|                | pid        | None                                                         | Stop a running process executing    |
+|                +------------+--------------------------------------------------------------+ the procedure specified by process  |
+|                | run_abort  | True                                                         | ID (pid) or, if none is specified,  |
+|                |            |                                                              | stop the currently running process. |
+|                |            |                                                              |                                     |
+|                |            |                                                              | If run_abort flag is True, OET will |
+|                |            |                                                              | send Abort command to the SubArray  |
+|                |            |                                                              | as part of script termination.      |
++----------------+------------+--------------------------------------------------------------+-------------------------------------+
+| describe       | server-url | See `Configuration`_ section                                 | **Investigate a procedure**         |
+|                +------------+--------------------------------------------------------------+                                     |
+|                | pid        | None                                                         | Displays the call arguments, state  |
+|                |            |                                                              | history and, if the procedure       |
+|                |            |                                                              | failed, the stack trace of a        |
+|                |            |                                                              | specified process ID (pid). If no   |
+|                |            |                                                              | pid is specified describe the last  |
+|                |            |                                                              | process created.                    |
++----------------+------------+--------------------------------------------------------------+-------------------------------------+
 
 In the table 'args' refers to parameters specified by position on the command line, 'kwargs' to
 those specified by name e.g. --myparam=12.
