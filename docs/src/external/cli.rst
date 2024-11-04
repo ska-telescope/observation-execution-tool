@@ -163,7 +163,7 @@ The commands available via ``oet procedure`` are described below.
 |                +------------+---------------------------------------------------------+ Arguments provided here are passed  |
 |                | kwargs     | \-\-subarray_id=1                                       | to the script init function, if     |
 |                |            | \-\-git_repo=                                           | defined                             |
-|                |            | "http://gitlab.com/ska-telescope/oso/ska-oso-scripting" |                                     |
+|                |            | "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git" |                                     |
 |                |            | \-\-git_branch="master"                                 | OET maintains record of 10 newest   |
 |                |            | \-\-git_commit=None                                     | scripts which means creating 11th   |
 |                |            | \-\-create_env=False                                    | script will remove the oldest       |
@@ -232,7 +232,7 @@ Create a new Procedure in the OET using a script from Git:
 
 .. code-block:: console
 
-  $ oet procedure create git://<path from repo root>.py --git_repo="http://<git repo>.git" --git_branch="test" --create_env=True
+  $ oet procedure create git://<path from repo root>.py --git_repo="https://<git repo>.git" --git_branch="test" --create_env=True
 
    ID   Script           Creation time        State
   ----  ---------------  -------------------  -------
