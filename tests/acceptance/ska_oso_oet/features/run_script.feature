@@ -5,11 +5,11 @@ Scenario Outline: User runs a script using OET
 
     Examples:
   | script                              | state    |
-  | file:///tmp/scripts/success.py      | COMPLETE |
-  | file:///tmp/scripts/fail.py         | FAILED   |
+  | file:///tmp/tests/scripts/success.py      | COMPLETE |
+  | file:///tmp/tests/scripts/fail.py         | FAILED   |
 
 
 Scenario: OET stays responsive when script is running
-    Given script file:///tmp/scripts/loop.py has been created
-    When script file:///tmp/scripts/loop.py is running
-    Then the oet list command response shows file:///tmp/scripts/loop.py is running
+    Given script file:///tmp/tests/scripts/loop.py has been created
+    When script file:///tmp/tests/scripts/loop.py is running
+    Then the oet list command response shows file:///tmp/tests/scripts/loop.py is running

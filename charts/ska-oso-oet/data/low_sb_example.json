@@ -4,58 +4,23 @@
   "telescope": "ska_low",
   "metadata": {
     "version": 1,
-    "created_by": "Liz Bartlett",
+    "created_by": "DefaultUser",
     "created_on": "2022-03-28T15:43:53.971548+00:00"
   },
   "activities": {
-    "allocate": {
+    "example_activity": {
       "kind": "filesystem",
-      "path": "/path/to/allocatescript.py",
+      "path": "file:///tmp/scripts/hello_world_with_sb.py",
       "function_args": {
         "init": {
-          "args": [
-            "posarg1",
-            "posarg2"
-          ],
+          "args": [],
           "kwargs": {
-            "argname": "argval"
+            "subarray_id": 1
           }
         },
         "main": {
-          "args": [
-            "posarg1",
-            "posarg2"
-          ],
-          "kwargs": {
-            "argname": "argval"
-          }
-        }
-      }
-    },
-    "observe": {
-      "kind": "git",
-      "path": "/relative/path/to/scriptinsiderepo.py",
-      "repo": "https://gitlab.com/script_repo/operational_scripts",
-      "branch": "main",
-      "commit": "d234c257dadd18b3edcd990b8194c6ad94fc278a",
-      "function_args": {
-        "init": {
-          "args": [
-            "posarg1",
-            "posarg2"
-          ],
-          "kwargs": {
-            "argname": "argval"
-          }
-        },
-        "main": {
-          "args": [
-            "posarg1",
-            "posarg2"
-          ],
-          "kwargs": {
-            "argname": "argval"
-          }
+          "args": [],
+          "kwargs": {}
         }
       }
     }

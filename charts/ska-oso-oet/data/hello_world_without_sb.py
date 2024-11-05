@@ -23,15 +23,15 @@ def announce(msg: str):
     pub.sendMessage(topics.user.script.announce, msg_src=threading.current_thread().name, msg=msg)
 
 
-def init(subarray_id: int):
+def init(subarray_id: int, init_arg=None):
     global main
     main = functools.partial(_main, subarray_id)
-    LOG.info(f'Script bound to sub-array {subarray_id}')
+    LOG.info(f'Script bound to sub-array {subarray_id} with init_arg {init_arg}')
 
 
-def _main(subarray_id: int, raise_msg=None):
-    LOG.info(f'Running script in OS process {os.getpid()}')
-    announce(f'Running script in OS process {os.getpid()}')
+def _main(subarray_id: int, raise_msg=None, *args, **kwargs):
+    LOG.info(f'Running script in OS process {os.getpid()} with args {args} and kwargs {kwargs}')
+    announce(f'Running script in OS process {os.getpid()} with args {args} and kwargs {kwargs}')
 
     for i in range(1, 10):
         LOG.info(f'pretending to execute scan {i}/10')
