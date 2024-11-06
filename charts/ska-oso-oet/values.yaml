@@ -54,7 +54,7 @@ rest:
       host: ~
       port: ~
       user: ~
-      password: secretpassword # TODO BTN-2449 will extract this
+      password: secretpassword # TODO BTN-2449 will extract this - set to localpassword for a local deployment
       db:
         name: ~
   skuid:
