@@ -4,6 +4,14 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+Unreleased
+***********
+
+6.3.3
+*****
+* Bump ODA minor version and scripting version in the dockerfile. Fixes the simpleeval dependency issue and is a temp fix for the issue where the PDM version from the site packages is used. 
+  It is a temp fix as it just brings the PDM versions in line, rather than fixing the underlying issue. 
+
 6.3.2
 *****
 

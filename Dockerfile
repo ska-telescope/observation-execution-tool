@@ -32,7 +32,7 @@ RUN mkdir -p /var/lib/oda && chown -R ${APP_USER} /var/lib/oda
 # default control scripts. This is done as root so that the default environment
 # is installed to system dist-packages.
 RUN python3 -m pip install \
-    --extra-index-url=https://artefact.skao.int/repository/pypi-internal/simple ska-oso-scripting==9.0.2
+    --extra-index-url=https://artefact.skao.int/repository/pypi-internal/simple ska-oso-scripting==9.1.0
 
 COPY --chown=$APP_USER:$APP_USER . .
 
