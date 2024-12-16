@@ -10,6 +10,6 @@ dependencies:
   version: 6.3.3
   repository: file://../ska-oso-oet
 - name: ska-db-oda-umbrella
-  version: 6.1.0
+  version: 7.0.0-rc.1
   repository: https://artefact.skao.int/repository/helm-internal
   condition: ska-db-oda.enabled
