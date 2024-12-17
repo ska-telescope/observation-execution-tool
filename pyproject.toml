@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ska-oso-oet"
-version = "6.3.3"
+version = "6.4.0rc1"
 description = "SKA Observation Execution Tool"
 authors = ["Team Buttons"]
 license = "BSD-3-Clause"
@@ -55,14 +55,13 @@ waitress = "^2.1.2"
 # version. The best compromise for compatibility with ska-oso-scripting, which
 # also depends on the OET and ODA, is implicitly depend on whatever version of
 # the PDM is pulled in by the ODA.
-ska-db-oda = "6.1.0" # Pinned to a specific version as 6.2.0 brings in breaking PDM v16
+ska-db-oda = "7.0.0-rc.1" # Pinned to a specific version as 6.2.0 brings in breaking PDM v16
 #ska-db-oda = { version="5.3.3+dev.cea0b078b", source="gitlab-ska-db-oda" }
 connexion = {extras = ["swagger-ui"], version = "^2.14.2"}
 # Having to pin some more versions that cause an issue with the default environment. Should be able
 # to remove once the OET <-> scripting circular dependency is broken
 prance = {version = "^23.6.21.0", extras = ["osv"]}
 jsonschema = "4.17.3"
-astropy = "^5.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.8.0"

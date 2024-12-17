@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 ***********
+* Update to OET v6.4.0-rc.1 with ODA v7.0.0-rc.1
 
 6.3.3
 *****
