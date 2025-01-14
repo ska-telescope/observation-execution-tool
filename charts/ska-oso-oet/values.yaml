@@ -58,7 +58,7 @@ rest:
       db:
         name: ~
   skuid:
-    url:
+    url: ~
 
 # Configure Ingress
 ingress:

@@ -27,7 +27,7 @@ DOCS_SPHINXOPTS ?= -W --keep-going
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
-ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v6
+ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v7
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 # TODO BTN-2449 will extract this
@@ -51,10 +51,14 @@ ifneq ($(ENV_CHECK),)
 K8S_CHART_PARAMS += --set ska-oso-oet.rest.ingress.enabled=true
 endif
 
+# CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline,
+# so these variables are set for a local deployment.
 # Set cluster_domain to minikube default (cluster.local) in local development
-# (CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline)
 ifeq ($(CI_ENVIRONMENT_SLUG),)
-K8S_CHART_PARAMS += --set global.cluster_domain="cluster.local"
+ADMIN_POSTGRES_PASSWORD=localpassword
+K8S_CHART_PARAMS += --set global.cluster_domain="cluster.local" \
+	--set ska-db-oda-umbrella.ska-db-oda.secretProvider.enabled=false \
+	--set ska-oso-oet.rest.oda.postgres.password=$(ADMIN_POSTGRES_PASSWORD)
 endif
 
 # The OET_URL is used by the OET client which runs inside the test pod during k8s-test. We set it explicitly here rather than rely on

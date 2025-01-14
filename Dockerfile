@@ -18,8 +18,9 @@ WORKDIR $APP_DIR
 
 ENV PATH="$PATH:$APP_DIR/.local/bin"
 
-RUN pip install poetry-plugin-export && \
+RUN pip install 'poetry<2.0.0' poetry-plugin-export && \
     poetry config warnings.export false
+
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     apt-get -y install --no-install-recommends git python3-venv && \
@@ -32,7 +33,7 @@ RUN mkdir -p /var/lib/oda && chown -R ${APP_USER} /var/lib/oda
 # default control scripts. This is done as root so that the default environment
 # is installed to system dist-packages.
 RUN python3 -m pip install \
-    --extra-index-url=https://artefact.skao.int/repository/pypi-internal/simple ska-oso-scripting==9.1.0
+    --extra-index-url=https://artefact.skao.int/repository/pypi-internal/simple ska-oso-scripting==10.2.0
 
 COPY --chown=$APP_USER:$APP_USER . .
 
