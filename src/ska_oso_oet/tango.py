@@ -9,9 +9,11 @@ asynchronously while listening for interrupt signals, while to the caller
 the execution appears synchronous.
 """
 from __future__ import annotations
+
 import logging
 import multiprocessing
 import os
+
 from ska_ser_skuid.client import SkuidClient
 
 LOGGER = logging.getLogger(__name__)
@@ -84,4 +86,3 @@ if "SKUID_URL" in os.environ:
     SCAN_ID_GENERATOR = RemoteScanIdGenerator(os.environ["SKUID_URL"])
 else:
     SCAN_ID_GENERATOR = LocalScanIdGenerator()
-
