@@ -41,7 +41,6 @@ autodoc_mock_imports = [
     "ska_oso_pdm",
     "ska_ser_skuid",
     "ska_ser_logging",
-    "tango",
     "tblib",
     "waitress",
     "werkzeug",
