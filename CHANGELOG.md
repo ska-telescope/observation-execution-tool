@@ -7,6 +7,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 * Updated Dockerfile to use poetry<2.0.0
+* Updated ODA version to v7.1.1 (Helm chart and python package)
+* Removed `tango` module and `pytango` dependency
+* Removed scan ID generators and scan ID management from OET's `procedure` module
+* Updated OET values.yaml and ConfigMap to include `VALIDATION_STRICTNESS` to manage OSD validation strictness
+* Removed cloned oso-scripting repo from OET Dockerfile
+* Updates ska-oso-scripting to version 10.4.0 for OET default environment
+* Changed the `abort.py` script to be pulled from `ska-oso-scripting` instead of containing a local copy
+* Added `SCRIPTS_LOCATION` environment variable for configuring location where static scripts are located
 
 6.4.0
 ******

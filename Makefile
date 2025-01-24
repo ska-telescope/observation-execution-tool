@@ -27,14 +27,16 @@ DOCS_SPHINXOPTS ?= -W --keep-going
 
 IMAGE_TO_TEST = $(CAR_OCI_REGISTRY_HOST)/$(strip $(OCI_IMAGE)):$(VERSION)
 
-ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v7
+SCRIPTS_LOCATION ?= /scripts
+OCI_BUILD_ADDITIONAL_ARGS = --build-arg SCRIPTS_LOCATION=$(SCRIPTS_LOCATION)
+K8S_CHART_PARAMS += --set ska-oso-oet.scripts_location=$(SCRIPTS_LOCATION)
 
 POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
 # TODO BTN-2449 will extract this
 ADMIN_POSTGRES_PASSWORD ?= secretpassword
 
-
-K8S_CHART_PARAMS = --set ska-oso-oet.rest.oda.url=$(ODA_URL)
+ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v7
+K8S_CHART_PARAMS += --set ska-oso-oet.rest.oda.url=$(ODA_URL)
 
 # For the test, dev and integration environment, use the freshly built image in the GitLab registry
 ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'test|dev|integration')

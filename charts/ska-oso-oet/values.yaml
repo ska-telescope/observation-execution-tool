@@ -9,6 +9,14 @@ subsystem: ska-oso-oet
 central_node: ska_mid/tm_central/central_node
 subarray: ska_mid/tm_subarray_node
 
+# Location within the running OET application that static observing scripts
+# (including abort.py script used directly by OET) are stored. Set in the
+# Makefile as this value is required both at image build time as well as within
+# the OET runtime environment.
+scripts_location: ~
+
+osd_validation_strictness: 2 # Set to 1 to disable OSD semantic validation
+
 global:
   minikube: true
   tango_host: databaseds-tango-base-test:10000

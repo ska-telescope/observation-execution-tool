@@ -37,3 +37,5 @@ data:
   {{ end }}
   # The scripts currently use the oda_helper to communicate with the ODA API, rather than a direct connection to the db.
   ODA_URL: {{ .Values.rest.oda.url }}
+  SCRIPTS_LOCATION: {{ .Values.scripts_location }}
+  VALIDATION_STRICTNESS: {{ .Values.osd_validation_strictness | quote }}
