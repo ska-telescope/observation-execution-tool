@@ -77,4 +77,4 @@ tests:
     asserts:
       - equal:
           path: data.VALIDATION_STRICTNESS
-          value: 1
+          value: "1"
