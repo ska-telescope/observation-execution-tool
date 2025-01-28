@@ -8,7 +8,6 @@
 CAR_OCI_REGISTRY_HOST ?= artefact.skao.int
 CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-oet
-RELEASE_NAME ?= test
 MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
 
 # Set sphinx documentation build to fail on warnings (as it is configured
@@ -31,11 +30,15 @@ SCRIPTS_LOCATION ?= /scripts
 OCI_BUILD_ADDITIONAL_ARGS = --build-arg SCRIPTS_LOCATION=$(SCRIPTS_LOCATION)
 K8S_CHART_PARAMS += --set ska-oso-oet.scripts_location=$(SCRIPTS_LOCATION)
 
-POSTGRES_HOST ?= $(RELEASE_NAME)-postgresql
+POSTGRES_HOST ?= $(HELM_RELEASE)-postgresql
 # TODO BTN-2449 will extract this
 ADMIN_POSTGRES_PASSWORD ?= secretpassword
 
-ODA_URL ?= http://ska-db-oda-rest-$(RELEASE_NAME):5000/$(KUBE_NAMESPACE)/oda/api/v7
+ODA_API_VERSION ?= $(shell helm dependency list ./charts/ska-oso-oet-umbrella/ | grep ska-db-oda | gawk -F'[[:space:]]+|[.]' '{print $$2}')
+ifeq ($(ODA_API_VERSION),)
+$(error could not set ODA_API_VERSION)
+endif
+ODA_URL ?= http://ska-db-oda-rest-$(HELM_RELEASE):5000/$(KUBE_NAMESPACE)/oda/api/v$(ODA_API_VERSION)
 K8S_CHART_PARAMS += --set ska-oso-oet.rest.oda.url=$(ODA_URL)
 
 # For the test, dev and integration environment, use the freshly built image in the GitLab registry
