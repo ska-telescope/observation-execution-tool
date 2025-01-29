@@ -40,7 +40,6 @@ priority = 'primary'
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pytango = "^9.5.1"
 Flask = "~2.2"
 jsonpickle = "^2.2.0"
 PyPubSub = "^4.0.3"
@@ -61,7 +60,9 @@ connexion = {extras = ["swagger-ui"], version = "^2.14.2"}
 # to remove once the OET <-> scripting circular dependency is broken
 prance = {version = "^23.6.21.0", extras = ["osv"]}
 jsonschema = "4.17.3"
-ska-db-oda = "^7.1.0"
+# NOTE: When updating ODA version, also update the ODA chart version in
+# charts/ska-oso-oet-umbrella/Chart.yaml
+ska-db-oda = "^7.1.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.8.0"

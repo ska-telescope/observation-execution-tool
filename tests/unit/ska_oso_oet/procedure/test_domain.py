@@ -220,31 +220,6 @@ def main():
     return FileSystemScript(f"file://{str(script_path)}")
 
 
-@pytest.fixture(name="script_that_increments_and_returns_scan_id")
-def fixture_script_that_increments_and_returns_scan_id(tmpdir):
-    """
-    Pytest fixture to return a path to a script with main() that increments
-    the scan ID and adds the value to a queue.
-    """
-    path = tmpdir.join("script_for_scan_id.py")
-
-    path.write(
-        """
-from ska_oso_oet.tango import SCAN_ID_GENERATOR
-
-Q = None
-
-def init(q):
-    global Q
-    Q = q
-
-def main():
-    Q.put(SCAN_ID_GENERATOR.next())
-"""
-    )
-    return FileSystemScript(f"file://{str(path)}")
-
-
 @pytest.fixture(name="manager")
 def fixture_manager():
     """
@@ -1203,31 +1178,3 @@ class TestModuleFactory:
         file_script = FileSystemScript("file://test/script.py")
         _ = ModuleFactory.get_module(file_script)
         mock_file_load.assert_called_once_with(file_script.script_uri)
-
-
-def test_scan_id_persists_between_executions(
-    manager,
-    script_that_increments_and_returns_scan_id,
-):
-    """
-    The scan ID should be shared and persisted between process executions.
-    """
-    queue = multiprocessing.Queue()
-    init_args = ProcedureInput(queue)
-
-    def run_script():
-        pid = manager.create(
-            script=script_that_increments_and_returns_scan_id,
-            init_args=init_args,
-        )
-        wait_for_state(manager, pid, ProcedureState.READY)
-        manager.run(pid, call="main", run_args=ProcedureInput())
-        wait_for_state(manager, pid, ProcedureState.COMPLETE)
-
-    run_script()
-    scan_id = queue.get(timeout=1)
-
-    run_script()
-    next_scan_id = queue.get(timeout=1)
-
-    assert next_scan_id == scan_id + 1

@@ -24,7 +24,6 @@ from ska_oso_oet import mptools
 from ska_oso_oet.mptools import EventMessage
 from ska_oso_oet.procedure.environment import Environment, EnvironmentManager
 from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
-from ska_oso_oet.tango import SCAN_ID_GENERATOR
 
 LOGGER = logging.getLogger(__name__)
 
@@ -209,7 +208,6 @@ class ScriptWorker(mptools.ProcWorker):
         event_q: mptools.MPQueue,
         work_q: mptools.MPQueue,
         *args,
-        scan_counter: Optional[multiprocessing.Value] = None,
         environment: Optional[Environment] = None,
         **kwargs,
     ):
@@ -230,7 +228,6 @@ class ScriptWorker(mptools.ProcWorker):
 
         self.name = name
 
-        self._scan_counter = scan_counter
         self._environment = environment
         self.work_q = work_q
 
@@ -482,9 +479,6 @@ class ScriptWorker(mptools.ProcWorker):
                         self.log(logging.WARN, "Unexpected message: %s", item)
                         return
 
-                    if self._scan_counter:
-                        SCAN_ID_GENERATOR.backing = self._scan_counter
-
                     if item.msg_type == "PUBSUB":
                         self._on_pubsub(item)
 
@@ -569,8 +563,6 @@ class ProcessManager:
         # maps Proc IDs to venv environment
         self.em = EnvironmentManager(mp_context)
         self.environments: Dict[int, Environment] = {}
-
-        self._scan_id = multiprocessing.Value("i", 1)
 
         self._state_updating = threading.RLock()
 
@@ -721,7 +713,6 @@ class ProcessManager:
             ScriptWorker,
             work_q,
             *init_args.args,
-            scan_counter=self._scan_id,
             environment=env,
             **init_args.kwargs,
         )
