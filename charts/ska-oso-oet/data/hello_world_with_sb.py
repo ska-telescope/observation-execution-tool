@@ -8,7 +8,7 @@ from pubsub import pub
 
 from ska_oso_pdm import SBDefinition
 
-from ska_oso_oet.event import topics
+from ska_oso_scripting.event import user_topics
 
 LOG = logging.getLogger(__name__)
 FORMAT = "%(asctime)-15s %(message)s"
@@ -23,7 +23,7 @@ def announce(msg: str):
     :param msg: message to announce
     """
     pub.sendMessage(
-        topics.user.script.announce, msg_src=threading.current_thread().name, msg=msg
+        user_topics.script.announce, msg_src=threading.current_thread().name, msg=msg
     )
 
 

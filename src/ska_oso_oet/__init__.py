@@ -8,7 +8,8 @@ from pkg_resources import resource_filename
 from pubsub import pub
 from tblib import pickling_support
 
-import ska_oso_oet.event.topics
+from ska_oso_oet.event import topics as oet_topics
+from ska_oso_scripting.event import lifecycle_topics, user_topics
 
 from .features import Features
 
@@ -17,7 +18,9 @@ from .features import Features
 pub.setTopicUnspecifiedFatal(True)
 
 # Load the topic tree definition
-pub.addTopicDefnProvider(ska_oso_oet.event.topics, pub.TOPIC_TREE_FROM_CLASS)
+pub.addTopicDefnProvider(oet_topics, pub.TOPIC_TREE_FROM_CLASS)
+pub.addTopicDefnProvider(lifecycle_topics, pub.TOPIC_TREE_FROM_CLASS)
+pub.addTopicDefnProvider(user_topics, pub.TOPIC_TREE_FROM_CLASS)
 
 pickling_support.install()
 

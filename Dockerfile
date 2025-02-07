@@ -30,12 +30,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 # Used by the FilesystemRepository implementation of the ODA
 RUN mkdir -p /var/lib/oda && chown -R ${APP_USER} /var/lib/oda
 
-# install ska-oso-scripting library to provide a default environment and set of
-# default control scripts. This is done as root so that the default environment
-# is installed to system dist-packages.
-RUN python3 -m pip install \
-    --extra-index-url=https://artefact.skao.int/repository/pypi-internal/simple ska-oso-scripting==10.4.0
-
 COPY --chown=$APP_USER:$APP_USER . .
 
 # Install runtime dependencies. Add --dev to export for images usable in an IDE

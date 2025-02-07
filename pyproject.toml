@@ -30,6 +30,11 @@ url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 priority = 'supplemental'
 
 [[tool.poetry.source]]
+name = 'ska-scripting-gitlab'
+url = 'https://gitlab.com/api/v4/projects/22057734/packages/pypi/simple'
+priority = "explicit"
+
+[[tool.poetry.source]]
 name = 'PyPI'
 priority = 'primary'
 
@@ -63,6 +68,8 @@ jsonschema = "4.17.3"
 # NOTE: When updating ODA version, also update the ODA chart version in
 # charts/ska-oso-oet-umbrella/Chart.yaml
 ska-db-oda = "^7.1.1"
+# TODO: Update this to a proper release when available
+ska-oso-scripting = {version = "10.4.0+dev.c25bef727", source = "ska-scripting-gitlab"}
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.8.0"
