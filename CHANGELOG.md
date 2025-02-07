@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+
+6.5.0 (RC currently)
+*********************
 * Updated Dockerfile to use poetry<2.0.0
 * Updated ODA version to v7.1.1 (Helm chart and python package)
 * Removed `tango` module and `pytango` dependency
