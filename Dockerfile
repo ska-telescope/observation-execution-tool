@@ -18,7 +18,7 @@ WORKDIR $APP_DIR
 
 ENV PATH="$PATH:$APP_DIR/.local/bin"
 
-RUN pip install poetry-plugin-export && \
+RUN pip install 'poetry<2.0.0' poetry-plugin-export && \
     poetry config warnings.export false
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
