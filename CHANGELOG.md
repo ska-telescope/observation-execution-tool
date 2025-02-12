@@ -4,6 +4,11 @@ Changelog
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+
+6.4.1
+******
+* Updated OET values.yaml and ConfigMap to include `VALIDATION_STRICTNESS` to manage OSD validation strictness
+
 6.4.0
 ******
 * Update to use ODA v7.1.0
