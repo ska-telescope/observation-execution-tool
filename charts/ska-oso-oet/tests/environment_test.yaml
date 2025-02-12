@@ -61,6 +61,15 @@ tests:
           value:
             http://ska-oso-oet-rest-RELEASE-NAME:5000/NAMESPACE/oet/api/v6
 
+  - it: should correctly set SCRIPTS_LOCATION environment variable
+    documentIndex: 0
+    set:
+      scripts_location: /scripts
+    asserts:
+      - equal:
+          path: data.SCRIPTS_LOCATION
+          value: /scripts
+
   - it: should correctly set VALIDATION_STRICTNESS environment variable
     documentIndex: 0
     set:

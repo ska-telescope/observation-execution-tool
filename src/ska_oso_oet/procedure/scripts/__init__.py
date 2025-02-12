@@ -7,3 +7,4 @@ in the OET image, it should be possible to replace this package with a
 reference to an abort observing script contained and maintained in
 ska-oso-scripting.
 """
+# Need good example in scripting to reference here...
