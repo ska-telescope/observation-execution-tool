@@ -17,6 +17,7 @@ Unreleased
 * Updates ska-oso-scripting to version 10.4.0 for OET default environment
 * Changed the `abort.py` script to be pulled from `ska-oso-scripting` instead of containing a local copy
 * Added `SCRIPTS_LOCATION` environment variable for configuring location where static scripts are located
+* Update to ODA v7.2.0 from 7.1.1, which updated the PDM dependency to 17.1.2
 
 6.4.1
 ******
