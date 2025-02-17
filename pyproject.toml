@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ska-oso-oet"
-version = "6.4.0"
+version = "6.5.0rc2"
 description = "SKA Observation Execution Tool"
 authors = ["Team Buttons"]
 license = "BSD-3-Clause"
@@ -67,7 +67,7 @@ prance = {version = "^23.6.21.0", extras = ["osv"]}
 jsonschema = "4.17.3"
 # NOTE: When updating ODA version, also update the ODA chart version in
 # charts/ska-oso-oet-umbrella/Chart.yaml
-ska-db-oda = "^7.1.1"
+ska-db-oda = "^7.2.0"
 # TODO: Update this to a proper release when available
 ska-oso-scripting = {version = "10.4.0+dev.c25bef727", source = "ska-scripting-gitlab"}
 
