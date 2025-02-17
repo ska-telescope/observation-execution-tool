@@ -2599,20 +2599,20 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-oso-scripting"
-version = "10.4.0+dev.c25bef727"
+version = "10.4.0+dev.c0497c8ad"
 description = "SKA OSO Scripting Library"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "ska_oso_scripting-10.4.0+dev.c25bef727-py3-none-any.whl", hash = "sha256:ba3064c6d697defe08108e4a6608c335c3f59803c4f2b99505d769e221ef2b11"},
-    {file = "ska_oso_scripting-10.4.0+dev.c25bef727.tar.gz", hash = "sha256:441690a5342d10153dfd794fad7e4682cc8a55f1bac93048dcc12156eb833363"},
+    {file = "ska_oso_scripting-10.4.0+dev.c0497c8ad-py3-none-any.whl", hash = "sha256:467283e59c3b1ebf89a1c5cd50c46b1578bc68e748f1fdddf883bd764675eb4c"},
+    {file = "ska_oso_scripting-10.4.0+dev.c0497c8ad.tar.gz", hash = "sha256:3ed3fd9901a433f6e511402a0b3f6dd93fa72a4a55d4647854e6a2451da3cd4d"},
 ]
 
 [package.dependencies]
 PyPubSub = ">=4.0.3,<5.0.0"
 pytango = ">=9.5.1,<10.0.0"
 ska-db-oda = ">=7.1.0,<8.0.0"
-ska-oso-pdm = ">=17.1.1,<18.0.0"
+ska-oso-pdm = ">=17.1.2,<18.0.0"
 ska-ser-log-transactions = ">=0.2.2,<0.3.0"
 ska-ser-logging = ">=0.4.1,<0.5.0"
 ska-ser-skuid = ">=3.2.1,<4.0.0"
@@ -3657,4 +3657,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "df856a4c1568049d10e487950905bf567786c14b54a20e7c2dfd2b79e59708ba"
+content-hash = "c8d9809806aa51a2ef4d09ef435848420b6d1a40816b18b0ff2f473a5e60a772"
