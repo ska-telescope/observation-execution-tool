@@ -6,10 +6,10 @@ import os.path
 
 from pkg_resources import resource_filename
 from pubsub import pub
+from ska_oso_scripting.event import lifecycle_topics, user_topics
 from tblib import pickling_support
 
 from ska_oso_oet.event import topics as oet_topics
-from ska_oso_scripting.event import lifecycle_topics, user_topics
 
 from .features import Features
 

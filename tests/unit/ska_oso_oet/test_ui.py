@@ -253,7 +253,7 @@ def test_sse_messages_returns_pubsub_messages(client):
     def publish():
         # sleep long enough for generator to start running
         time.sleep(0.1)
-        pub.sendMessage(topics.scan.lifecycle.start, msg_src="foo", sb_id="bar")
+        pub.sendMessage(topics.sb.lifecycle.allocated, msg_src="foo", sb_id="bar")
 
     t = threading.Thread(target=publish)
 
@@ -265,7 +265,7 @@ def test_sse_messages_returns_pubsub_messages(client):
 
     output = next(gen)
     assert output == Message(
-        dict(topic="scan.lifecycle.start", msg_src="foo", sb_id="bar")
+        dict(topic="sb.lifecycle.allocated", msg_src="foo", sb_id="bar")
     )
 
 
