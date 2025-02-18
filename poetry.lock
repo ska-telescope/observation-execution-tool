@@ -2555,13 +2555,13 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-oso-oet-client"
-version = "1.1.0"
+version = "1.1.1"
 description = "SKA Observation Execution Tool Client"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "ska_oso_oet_client-1.1.0-py3-none-any.whl", hash = "sha256:29b487db8a0331a6ee6be61539d244d7883322c813396f44dbaa271de10911c8"},
-    {file = "ska_oso_oet_client-1.1.0.tar.gz", hash = "sha256:d4ce948e541a23e9c8b026dcce1d40cffedd29014d5a75589abc178c5bdd0b9d"},
+    {file = "ska_oso_oet_client-1.1.1-py3-none-any.whl", hash = "sha256:6e6011c3340e9d007579e672e58f877d8fc02a9969f7749cb40ca3740501bbba"},
+    {file = "ska_oso_oet_client-1.1.1.tar.gz", hash = "sha256:66ce28907e2a10dee5f88704aa35e6ad551f87fda631f14cd9b5d7ba778a5ddb"},
 ]
 
 [package.dependencies]
@@ -3657,4 +3657,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "0b7788f33072fcbe08f791e46fc0c142d278e0d35e23c7feaa1a3c2898bb23b7"
+content-hash = "c0bb233e521b8083094532c6899aba1af0a94b8e9c1721358833b2812ed03968"
