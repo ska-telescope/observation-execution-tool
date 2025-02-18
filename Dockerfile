@@ -39,7 +39,7 @@ RUN poetry export --format requirements.txt --output poetry-requirements.txt --w
     pip install .
 
 # install the client into the image so it can be used in the default k8s installation
-RUN pip install ska-oso-oet-client==1.1.0
+RUN pip install ska-oso-oet-client==1.1.1
 
 # link default script location to a shorter path to make CLI interactions easier
 RUN ln -s /usr/local/lib/python3.10/dist-packages/scripts $SCRIPTS_LOCATION
