@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, patch
 import pubsub.pub
 import pytest
 
+from ska_oso_scripting.event import user_topics
 import ska_oso_oet.mptools as mptools
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import EventMessage, MPQueue
@@ -57,11 +58,11 @@ def fixture_pubsub_script(tmpdir):
         """
 import threading
 from pubsub import pub
-from ska_oso_oet.event import topics
+from ska_oso_scripting.event import user_topics
 
 def main(msg):
     pub.sendMessage(
-        topics.user.script.announce,
+        user_topics.script.announce,
         msg_src=threading.current_thread().name,
         msg=msg
     )
@@ -815,8 +816,8 @@ class TestProcessManagerScriptWorkerIntegration:
         wait_for_state(manager, pid, ProcedureState.READY)
 
         manager.run(pid, call="main", run_args=ProcedureInput(msg="foo"))
-        helper.wait_for_message_on_topic(topics.user.script.announce)
-        user_msgs = helper.messages_on_topic(topics.user.script.announce)
+        helper.wait_for_message_on_topic(user_topics.script.announce)
+        user_msgs = helper.messages_on_topic(user_topics.script.announce)
         assert len(user_msgs) == 1
 
 

@@ -2599,13 +2599,13 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-oso-scripting"
-version = "10.4.0+dev.c0497c8ad"
+version = "11.0.0"
 description = "SKA OSO Scripting Library"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "ska_oso_scripting-10.4.0+dev.c0497c8ad-py3-none-any.whl", hash = "sha256:467283e59c3b1ebf89a1c5cd50c46b1578bc68e748f1fdddf883bd764675eb4c"},
-    {file = "ska_oso_scripting-10.4.0+dev.c0497c8ad.tar.gz", hash = "sha256:3ed3fd9901a433f6e511402a0b3f6dd93fa72a4a55d4647854e6a2451da3cd4d"},
+    {file = "ska_oso_scripting-11.0.0-py3-none-any.whl", hash = "sha256:4c2784b83a8342126d29aeeae5018fb14489ec69b3d96a2026d77d14d230c71a"},
+    {file = "ska_oso_scripting-11.0.0.tar.gz", hash = "sha256:970b2e92b27507f92dbcae029a5fd162a2b5f2598b542df046e64e2fdc35b454"},
 ]
 
 [package.dependencies]
@@ -2621,8 +2621,8 @@ ska-tmc-cdm = ">=12.6.4,<13.0.0"
 
 [package.source]
 type = "legacy"
-url = "https://gitlab.com/api/v4/projects/22057734/packages/pypi/simple"
-reference = "ska-scripting-gitlab"
+url = "https://artefact.skao.int/repository/pypi-internal/simple"
+reference = "ska-nexus"
 
 [[package]]
 name = "ska-ost-osd"
@@ -3657,4 +3657,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "c8d9809806aa51a2ef4d09ef435848420b6d1a40816b18b0ff2f473a5e60a772"
+content-hash = "0b7788f33072fcbe08f791e46fc0c142d278e0d35e23c7feaa1a3c2898bb23b7"

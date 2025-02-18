@@ -68,8 +68,7 @@ jsonschema = "4.17.3"
 # NOTE: When updating ODA version, also update the ODA chart version in
 # charts/ska-oso-oet-umbrella/Chart.yaml
 ska-db-oda = "^7.2.0"
-# TODO: Update this to a proper release when available
-ska-oso-scripting = {version = "10.4.0+dev.c0497c8ad", source = "ska-scripting-gitlab"}
+ska-oso-scripting = "^11.0.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.8.0"

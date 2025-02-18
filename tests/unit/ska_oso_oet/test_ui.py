@@ -13,6 +13,7 @@ from unittest import mock
 import flask
 import pytest
 from pubsub import pub
+from ska_oso_scripting.event import user_topics
 
 import ska_oso_oet.utils.ui
 from ska_oso_oet import mptools
@@ -49,7 +50,13 @@ class PubSubHelper:
         pub.subscribe(self.respond, pub.ALL_TOPICS)
 
     def respond(self, topic=pub.AUTO_TOPIC, **msg_data):
-        topic_cls = self.get_topic_class(topics, topic.name)
+        base_topic = topic.name.split(".")[0]
+        if getattr(topics, base_topic, None):
+            topic_cls = self.get_topic_class(topics, topic.name)
+        elif getattr(user_topics, base_topic, None):
+            topic_cls = self.get_topic_class(user_topics, topic.name)
+        else:
+            raise RuntimeError(f"Topic not recognised: {topic.name}")
         self.messages.append((topic, msg_data))
 
         if topic_cls in self.spec:
@@ -72,6 +79,7 @@ class PubSubHelper:
         return self.messages[key]
 
     def get_topic_class(self, module, cls):
+        print(module)
         if not cls:
             return module
         s = cls.split(".")
