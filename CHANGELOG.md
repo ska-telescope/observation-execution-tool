@@ -19,7 +19,7 @@ Unreleased
 * Added `SCRIPTS_LOCATION` environment variable for configuring location where static scripts are located
 * Updated to ODA v7.2.0, which updated the PDM dependency to 17.1.2
 * Removed `user`, `scan` and `subarray` topics as they are now part of oso-scripting
-* Updated `ska-oso-oet-client` to patch v.1.1.1
+* Updated `ska-oso-oet-client` to patch v.1.1.2
 
 6.4.1
 ******
