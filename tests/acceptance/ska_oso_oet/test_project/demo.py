@@ -4,7 +4,6 @@ import threading
 
 from emoji import emojize
 from pubsub import pub
-
 from ska_oso_scripting.event import user_topics
 
 LOG = logging.getLogger(__name__)

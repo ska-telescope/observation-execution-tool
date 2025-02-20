@@ -318,7 +318,10 @@ class TestActivityService:
 
         assert summary == expected_summary
 
-        assert helper.topic_list == [topics.request.procedure.start]
+        assert helper.topic_list == [
+            topics.request.procedure.start,
+            topics.sb.lifecycle.started,
+        ]
 
         expected_start_cmd = StartProcessCommand(
             mock_pid,

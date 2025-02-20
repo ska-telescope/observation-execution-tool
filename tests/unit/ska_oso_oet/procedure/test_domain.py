@@ -11,8 +11,8 @@ from unittest.mock import MagicMock, patch
 
 import pubsub.pub
 import pytest
-
 from ska_oso_scripting.event import user_topics
+
 import ska_oso_oet.mptools as mptools
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import EventMessage, MPQueue

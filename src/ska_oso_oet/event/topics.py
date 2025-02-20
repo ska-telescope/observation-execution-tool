@@ -259,56 +259,42 @@ class sb:
         Topic for events related to Scheduling Block lifecycle
         """
 
-        class allocated:
+        class started:
             """
-            Emitted when resources have been allocated within SB execution
+            Emitted when an observation is started
             """
 
-            def msgDataSpec(msg_src, sb_id):
+            def msgDataSpec(msg_src, sbi_id):
                 """
                 - msg_src: component from which the request originated
-                - sb_id: Scheduling Block ID
+                - sbi_id: Scheduling Block Instance ID
                 """
 
-        class observation:
+        # TODO: Once Activity state management is implemented, send these messages
+        #  when activity execution has completed.
+        class finished:
             """
-            Topic for events related to executing an observation within an SB
+            Emitted when an observation is finished
             """
 
-            class started:
+            class succeeded:
                 """
-                Emitted when an observation is started
+                Emitted when an observation is finished successfully
                 """
 
-                def msgDataSpec(msg_src, sb_id):
+                def msgDataSpec(msg_src, sbi_id):
                     """
                     - msg_src: component from which the request originated
-                    - sb_id: Scheduling Block ID
+                    - sbi_id: Scheduling Block Instance ID
                     """
 
-            class finished:
+            class failed:
                 """
-                Emitted when an observation is finished
+                Emitted when an error was encountered during observation execution
                 """
 
-                class succeeded:
+                def msgDataSpec(msg_src, sbi_id):
                     """
-                    Emitted when an observation is finished successfully
+                    - msg_src: component from which the request originated
+                    - sbi_id: Scheduling Block Instance ID
                     """
-
-                    def msgDataSpec(msg_src, sb_id):
-                        """
-                        - msg_src: component from which the request originated
-                        - sb_id: Scheduling Block ID
-                        """
-
-                class failed:
-                    """
-                    Emitted when an error was encountered during observation execution
-                    """
-
-                    def msgDataSpec(msg_src, sb_id):
-                        """
-                        - msg_src: component from which the request originated
-                        - sb_id: Scheduling Block ID
-                        """
