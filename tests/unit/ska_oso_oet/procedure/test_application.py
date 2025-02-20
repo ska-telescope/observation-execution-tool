@@ -595,7 +595,6 @@ class TestSESHistory:
         # most recent stacktrace should also have been captured and recorded in history
         assert random_exc_string in summary.history.stacktrace
 
-    @pytest.mark.skip("Temp fail")
     def test_exceeding_history_limit_removes_oldest_deletable_state(self, ses, script):
         """
         Verify that SES removes the oldest deletable state and history when

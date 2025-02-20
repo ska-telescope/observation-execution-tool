@@ -79,7 +79,6 @@ class PubSubHelper:
         return self.messages[key]
 
     def get_topic_class(self, module, cls):
-        print(module)
         if not cls:
             return module
         s = cls.split(".")
