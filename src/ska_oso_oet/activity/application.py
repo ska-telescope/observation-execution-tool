@@ -194,6 +194,9 @@ class ActivityService:
                     request_id=request_id,
                     cmd=start_cmd,
                 )
+                pub.sendMessage(
+                    topics.sb.lifecycle.started, msg_src=None, sbi_id=activity.sbi_id
+                )
 
         return self._summarise(aid)
 

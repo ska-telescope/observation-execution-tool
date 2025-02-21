@@ -249,28 +249,6 @@ class activity:
                 """
 
 
-class user:
-    """
-    UNDOCUMENTED: created as parent without specification
-    """
-
-    class script:
-        """
-        UNDOCUMENTED: created as parent without specification
-        """
-
-        class announce:
-            """
-            UNDOCUMENTED: created without spec
-            """
-
-            def msgDataSpec(msg_src, msg):
-                """
-                - msg_src: component from which the request originated
-                - msg: user message
-                """
-
-
 class sb:
     """
     Root topic for events emitted relating to Scheduling Blocks
@@ -281,231 +259,42 @@ class sb:
         Topic for events related to Scheduling Block lifecycle
         """
 
-        class allocated:
-            """
-            Emitted when resources have been allocated within SB execution
-            """
-
-            def msgDataSpec(msg_src, sb_id):
-                """
-                - msg_src: component from which the request originated
-                - sb_id: Scheduling Block ID
-                """
-
-        class observation:
-            """
-            Topic for events related to executing an observation within an SB
-            """
-
-            class started:
-                """
-                Emitted when an observation is started
-                """
-
-                def msgDataSpec(msg_src, sb_id):
-                    """
-                    - msg_src: component from which the request originated
-                    - sb_id: Scheduling Block ID
-                    """
-
-            class finished:
-                """
-                Emitted when an observation is finished
-                """
-
-                class succeeded:
-                    """
-                    Emitted when an observation is finished successfully
-                    """
-
-                    def msgDataSpec(msg_src, sb_id):
-                        """
-                        - msg_src: component from which the request originated
-                        - sb_id: Scheduling Block ID
-                        """
-
-                class failed:
-                    """
-                    Emitted when an error was encountered during observation execution
-                    """
-
-                    def msgDataSpec(msg_src, sb_id):
-                        """
-                        - msg_src: component from which the request originated
-                        - sb_id: Scheduling Block ID
-                        """
-
-
-class subarray:
-    """
-    Root topic for events emitted relating to individual Subarray activites
-    """
-
-    class resources:
-        """
-        Topic for events relating to Subarray resources
-        """
-
-        class allocated:
-            """
-            Emitted when resources have been allocated to a subarray
-            """
-
-            def msgDataSpec(msg_src, subarray_id):
-                """
-                - msg_src: component from which the request originated
-                - sb_id: Subarray ID
-                """
-
-        class deallocated:
-            """
-            Emitted when resources have been deallocated from a subarray
-            """
-
-            def msgDataSpec(msg_src, subarray_id):
-                """
-                - msg_src: component from which the request originated
-                - sb_id: Subarray ID
-                """
-
-    class configured:
-        """
-        Emitted when subarray has been configured
-        """
-
-        def msgDataSpec(msg_src, subarray_id):
-            """
-            - msg_src: component from which the request originated
-            - sb_id: Subarray ID
-            """
-
-    class scan:
-        """
-        Topic for events emitted when a scan is run on subarray
-        """
-
         class started:
             """
-            Emitted when a scan is started
+            Emitted when an observation is started
             """
 
-            def msgDataSpec(msg_src, subarray_id):
+            def msgDataSpec(msg_src, sbi_id):
                 """
                 - msg_src: component from which the request originated
-                - sb_id: Subarray ID
+                - sbi_id: Scheduling Block Instance ID
                 """
 
+        # TODO: Once Activity state management is implemented, send these messages
+        #  when activity execution has completed.
         class finished:
             """
-            Emitted when a scan is finished
-            """
-
-            def msgDataSpec(msg_src, subarray_id):
-                """
-                - msg_src: component from which the request originated
-                - sb_id: Subarray ID
-                """
-
-    class fault:
-        """
-        Topic for events emitted when subarray cannot be reached
-        """
-
-        def msgDataSpec(msg_src, subarray_id, error):
-            """
-            - msg_src: component from which the request originated
-            - sb_id: Subarray ID
-            - error: Error response received from Subarray
-            """
-
-
-class scan:
-    """
-    Root topic for events emitted relating to Scans in the context of SB execution
-    """
-
-    class lifecycle:
-        """
-        Topic for events related to SB scan lifecycle
-        """
-
-        class configure:
-            """
-            Emitted when sub-array resources are configured for a scan
-            """
-
-            class started:
-                """
-                Emitted as scan configuration begins.
-                """
-
-                def msgDataSpec(msg_src, sb_id, scan_id):
-                    """
-                    - msg_src: component from which the request originated
-                    - sb_id: Scheduling Block ID
-                    - scan_id: Scan ID
-                    """
-
-            class complete:
-                """
-                Emitted as scan configuration completes successfully.
-                """
-
-                def msgDataSpec(msg_src, sb_id, scan_id):
-                    """
-                    - msg_src: component from which the request originated
-                    - sb_id: Scheduling Block ID
-                    - scan_id: Scan ID
-                    """
-
-            class failed:
-                """
-                Emitted if scan configuration fails.
-                """
-
-                def msgDataSpec(msg_src, sb_id, scan_id):
-                    """
-                    - msg_src: component from which the request originated
-                    - sb_id: Scheduling Block ID
-                    - scan_id: Scan ID
-                    """
-
-        class start:
-            """
-            Emitted when resources have been allocated within SB execution
-            """
-
-            def msgDataSpec(msg_src, sb_id):
-                """
-                - msg_src: component from which the request originated
-                - sb_id: Scheduling Block ID
-                - scan_id: Scan ID
-                """
-
-        class end:
-            """
-            Emitted when a scan finishes
+            Emitted when an observation is finished
             """
 
             class succeeded:
                 """
-                Emitted when a scan completes successfully
+                Emitted when an observation is finished successfully
                 """
 
-                def msgDataSpec(msg_src, sb_id, scan_id):
+                def msgDataSpec(msg_src, sbi_id):
                     """
                     - msg_src: component from which the request originated
-                    - sb_id: Scheduling Block ID
-                    - scan_id: Scan ID
+                    - sbi_id: Scheduling Block Instance ID
                     """
 
             class failed:
                 """
-                Emitted when an error was encountered during a scan
+                Emitted when an error was encountered during observation execution
                 """
 
-                def msgDataSpec(msg_src, sb_id, scan_id):
+                def msgDataSpec(msg_src, sbi_id):
                     """
                     - msg_src: component from which the request originated
-                    - sb_id: Scheduling Block ID
+                    - sbi_id: Scheduling Block Instance ID
                     """

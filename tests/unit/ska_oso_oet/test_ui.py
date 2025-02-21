@@ -13,6 +13,7 @@ from unittest import mock
 import flask
 import pytest
 from pubsub import pub
+from ska_oso_scripting.event import user_topics
 
 import ska_oso_oet.utils.ui
 from ska_oso_oet import mptools
@@ -49,7 +50,13 @@ class PubSubHelper:
         pub.subscribe(self.respond, pub.ALL_TOPICS)
 
     def respond(self, topic=pub.AUTO_TOPIC, **msg_data):
-        topic_cls = self.get_topic_class(topics, topic.name)
+        base_topic = topic.name.split(".")[0]
+        if getattr(topics, base_topic, None):
+            topic_cls = self.get_topic_class(topics, topic.name)
+        elif getattr(user_topics, base_topic, None):
+            topic_cls = self.get_topic_class(user_topics, topic.name)
+        else:
+            raise RuntimeError(f"Topic not recognised: {topic.name}")
         self.messages.append((topic, msg_data))
 
         if topic_cls in self.spec:
@@ -253,7 +260,7 @@ def test_sse_messages_returns_pubsub_messages(client):
     def publish():
         # sleep long enough for generator to start running
         time.sleep(0.1)
-        pub.sendMessage(topics.scan.lifecycle.start, msg_src="foo", sb_id="bar")
+        pub.sendMessage(topics.sb.lifecycle.started, msg_src="foo", sbi_id="bar")
 
     t = threading.Thread(target=publish)
 
@@ -265,7 +272,7 @@ def test_sse_messages_returns_pubsub_messages(client):
 
     output = next(gen)
     assert output == Message(
-        dict(topic="scan.lifecycle.start", msg_src="foo", sb_id="bar")
+        dict(topic="sb.lifecycle.started", msg_src="foo", sbi_id="bar")
     )
 
 

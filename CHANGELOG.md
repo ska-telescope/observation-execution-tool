@@ -10,14 +10,16 @@ Unreleased
 6.5.0 (RC currently)
 *********************
 * Updated Dockerfile to use poetry<2.0.0
-* Updated ODA version to v7.1.1 (Helm chart and python package)
 * Removed `tango` module and `pytango` dependency
 * Removed scan ID generators and scan ID management from OET's `procedure` module
 * Removed cloned oso-scripting repo from OET Dockerfile
-* Updates ska-oso-scripting to version 10.4.0 for OET default environment
+* Updated ska-oso-scripting to version 11.0.0 for OET default environment
+* Added ska-oso-scripting dependency to `pyproject.toml` instead of installing it in `Dockerfile`
 * Changed the `abort.py` script to be pulled from `ska-oso-scripting` instead of containing a local copy
 * Added `SCRIPTS_LOCATION` environment variable for configuring location where static scripts are located
-* Update to ODA v7.2.0 from 7.1.1, which updated the PDM dependency to 17.1.2
+* Updated to ODA v7.2.0, which updated the PDM dependency to 17.1.2
+* Removed `user`, `scan` and `subarray` topics as they are now part of oso-scripting
+* Updated `ska-oso-oet-client` to patch v.1.1.2
 
 6.4.1
 ******
