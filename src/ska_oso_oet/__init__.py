@@ -13,11 +13,9 @@ from ska_oso_oet.event import topics as oet_topics
 
 from .features import Features
 
-# Set pypubsub to throw an error if topic in sendMessage does not correspond
-# to a topic in the topic tree defined in ska_oso_oet.event.topics
-pub.setTopicUnspecifiedFatal(True)
+pub.setTopicUnspecifiedFatal(False)
 
-# Load the topic tree definition
+# Load the topic tree definitions
 pub.addTopicDefnProvider(oet_topics, pub.TOPIC_TREE_FROM_CLASS)
 pub.addTopicDefnProvider(lifecycle_topics, pub.TOPIC_TREE_FROM_CLASS)
 pub.addTopicDefnProvider(user_topics, pub.TOPIC_TREE_FROM_CLASS)
