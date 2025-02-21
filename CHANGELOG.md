@@ -7,8 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 
-6.5.0 (RC currently)
-*********************
+6.5.0
+*****
 * Updated Dockerfile to use poetry<2.0.0
 * Removed `tango` module and `pytango` dependency
 * Removed scan ID generators and scan ID management from OET's `procedure` module
