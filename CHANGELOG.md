@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+
+6.6.0
+**********
 * Update the Helm charts so that they have better defaults and require minimal changes in the makefile. See the docs
   Deployment > Configuration page.
 * Pull the ODA password from a k8s secret
