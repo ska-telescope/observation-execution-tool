@@ -47,10 +47,8 @@ ska-tango-base:
 
 ska-db-oda-umbrella:
   ska-db-oda:
-    secretProvider:
-      enabled: true # Set to false for a local deployment
-      rest:
-        enabled: true # The scripts currently use the oda_helper to communicate with the ODA API, rather than a direct connection to the db.
+    rest:
+      enabled: true # The scripts currently use the oda_helper to communicate with the ODA API, rather than a direct connection to the db.
   postgresql:
     enabled: true
   pgadmin4:

@@ -10,6 +10,8 @@ dependencies:
   version: 6.5.0
   repository: file://../ska-oso-oet
 - name: ska-db-oda-umbrella
-  version: 7.2.0
+  # If updating a major version here, also change majorVersion in the values.yaml
+  # Also remember to update the pyproject version.
+  version: 7.3.0
   repository: https://artefact.skao.int/repository/helm-internal
   condition: ska-db-oda.enabled

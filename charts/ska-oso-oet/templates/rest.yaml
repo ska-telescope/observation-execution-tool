@@ -94,6 +94,17 @@ spec:
         imagePullPolicy: {{ .Values.rest.image.pullPolicy }}
         command: ["python"]
         args: ["-m", "ska_oso_oet.main"]
+        env:
+          - name: ADMIN_POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                {{ if .Values.rest.oda.postgres.password.secret }}
+                name: {{ .Values.rest.oda.postgres.password.secret }}
+                key: {{ .Values.rest.oda.postgres.password.key }}
+                {{ else }}
+                name: ska-db-oda-umbrella-postgres-{{ $.Release.Name }}
+                key: ADMIN_POSTGRES_PASSWORD
+                {{ end }}
         envFrom:
           - configMapRef:
               name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}-environment

@@ -1,6 +1,5 @@
 {
   "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
-  "sbd_id": "sbd-mvp01-20200325-00001",
   "telescope": "ska_mid",
   "metadata": {
     "version": 1,
@@ -10,7 +9,7 @@
     "last_modified_by": "DefaultUser"
   },
   "activities": {
-    "example_activity": {
+    "observe": {
       "kind": "filesystem",
       "path": "file:///tmp/scripts/hello_world_with_sb.py",
       "function_args": {
@@ -397,7 +396,7 @@
         {
             "config_id": "csp config 1",
             "midcbf": {
-                "frequency_band": 1,
+                "frequency_band": "1",
                 "subbands": [
                     {
                         "frequency_slice_offset": {

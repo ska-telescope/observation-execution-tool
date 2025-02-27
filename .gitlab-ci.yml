@@ -48,6 +48,15 @@ test-chart-templates:
     reports:
       junit: build/reports/chart_template_tests.xml
 
+k8s-test:
+  id_tokens:
+    VAULT_ID_TOKEN:
+      aud: https://gitlab.com
+  secrets:
+    ADMIN_POSTGRES_PASSWORD:
+      vault: team-buttons/ska-db-oda/credentials/ADMIN_POSTGRES_PASSWORD@dev
+      file: false
+
 # The info script in the templates is for a generic tango environment. We overwrite it to give more useful information
 .info_script: &info_script
     - |-
