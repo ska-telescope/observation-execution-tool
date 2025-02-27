@@ -1,3 +1,16 @@
+"""
+This script will be loaded into the OET filesystem and can be used to verify the
+behaviour of the Procedure domain.
+
+From the OET CLI, execute
+    ``oet procedure create file:///tmp/scripts/hello_world_without_sb.py``
+
+Then get the PID and that the Procedure is READY with
+    ``oet procedure list``
+
+Then start the Procedure with
+    ``oet procedure start --pid=<PID>``
+"""
 import functools
 import logging
 import os

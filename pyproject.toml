@@ -67,7 +67,7 @@ prance = {version = "^23.6.21.0", extras = ["osv"]}
 jsonschema = "4.17.3"
 # NOTE: When updating ODA version, also update the ODA chart version in
 # charts/ska-oso-oet-umbrella/Chart.yaml
-ska-db-oda = "^7.2.0"
+ska-db-oda = "^7.3.0"
 ska-oso-scripting = "^11.0.0"
 
 [tool.poetry.group.dev.dependencies]

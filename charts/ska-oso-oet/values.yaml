@@ -58,21 +58,24 @@ rest:
     failureThreshold: 3
   oda:
     backendType: postgres
-    postgres: # The below values are used to set environment variables that are used in the ODA Repository. If they are not set then the defaults defined by the ODA will be used.
+    url: ~ # The default service address of the ODA deployed in the same namespace is used if this is not set.
+    majorVersion: 7 # Used in the default URL if the above value is not set. Should match the ODA chart version in the ska-oso-oet-umbrella chart.
+    postgres:
+      # The below values are used to set environment variables that are used in the ODA Repository.
+      # If they are not set then the defaults defined by the ODA will be used.
       host: ~
       port: ~
       user: ~
-      password: secretpassword # TODO BTN-2449 will extract this - set to localpassword for a local deployment
       db:
         name: ~
+      password:
+        # This is the resource name of a k8s secret and the key the password is stored under.
+        # If left as null the default secret deployed by the ODA umbrella will be used.
+        secret: ~
+        key: ~
   skuid:
-    url: ~
+    url: # Standard SKUID svc address is used if this is not set.
 
-# Configure Ingress
-ingress:
-  enabled: true
-  nginx: true
-  hostname: k8s.stfc.skao.int
 
 nodeSelector: {}
 

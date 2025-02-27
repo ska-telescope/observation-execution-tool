@@ -30,17 +30,6 @@ SCRIPTS_LOCATION ?= /scripts
 OCI_BUILD_ADDITIONAL_ARGS = --build-arg SCRIPTS_LOCATION=$(SCRIPTS_LOCATION)
 K8S_CHART_PARAMS += --set ska-oso-oet.scripts_location=$(SCRIPTS_LOCATION)
 
-POSTGRES_HOST ?= $(HELM_RELEASE)-postgresql
-# TODO BTN-2449 will extract this
-ADMIN_POSTGRES_PASSWORD ?= secretpassword
-
-ODA_API_VERSION ?= $(shell helm dependency list ./charts/ska-oso-oet-umbrella/ | grep ska-db-oda | gawk -F'[[:space:]]+|[.]' '{print $$2}')
-ifeq ($(ODA_API_VERSION),)
-$(error could not set ODA_API_VERSION)
-endif
-ODA_URL ?= http://ska-db-oda-rest-$(HELM_RELEASE):5000/$(KUBE_NAMESPACE)/oda/api/v$(ODA_API_VERSION)
-K8S_CHART_PARAMS += --set ska-oso-oet.rest.oda.url=$(ODA_URL)
-
 # For the test, dev and integration environment, use the freshly built image in the GitLab registry
 ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'test|dev|integration')
 ifneq ($(ENV_CHECK),)
@@ -60,10 +49,8 @@ endif
 # so these variables are set for a local deployment.
 # Set cluster_domain to minikube default (cluster.local) in local development
 ifeq ($(CI_ENVIRONMENT_SLUG),)
-ADMIN_POSTGRES_PASSWORD=localpassword
 K8S_CHART_PARAMS += --set global.cluster_domain="cluster.local" \
-	--set ska-db-oda-umbrella.ska-db-oda.secretProvider.enabled=false \
-	--set ska-oso-oet.rest.oda.postgres.password=$(ADMIN_POSTGRES_PASSWORD)
+	--set ska-db-oda-umbrella.vault.enabled=false
 endif
 
 # The OET_URL is used by the OET client which runs inside the test pod during k8s-test. We set it explicitly here rather than rely on
@@ -71,6 +58,7 @@ endif
 OET_URL ?= http://ska-oso-oet-rest-test:5000/$(KUBE_NAMESPACE)/oet/api/v$(MAJOR_VERSION)
 # Set the k8s test command run inside the testing pod to only run the acceptance
 # tests (no k8s pod deployment required for unit tests)
+POSTGRES_HOST ?= $(HELM_RELEASE)-postgresql
 K8S_TEST_TEST_COMMAND = OET_URL=$(OET_URL) POSTGRES_HOST=$(POSTGRES_HOST) ADMIN_POSTGRES_PASSWORD=$(ADMIN_POSTGRES_PASSWORD) KUBE_NAMESPACE=$(KUBE_NAMESPACE) pytest ./tests/acceptance | tee pytest.stdout
 
 # Set python-test make target to run unit tests and not the integration tests

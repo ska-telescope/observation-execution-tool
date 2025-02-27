@@ -1,6 +1,5 @@
 {
   "interface": "https://schema.skao.int/ska-oso-pdm-sbd/0.1",
-  "sbd_id": "sbi-mvp01-20200325-00002",
   "telescope": "ska_low",
   "metadata": {
     "version": 1,
@@ -8,7 +7,7 @@
     "created_on": "2022-03-28T15:43:53.971548+00:00"
   },
   "activities": {
-    "example_activity": {
+    "observe": {
       "kind": "filesystem",
       "path": "file:///tmp/scripts/hello_world_with_sb.py",
       "function_args": {
@@ -27,7 +26,8 @@
   },
   "targets": [
     {
-      "target_id": "target #1",
+      "target_id": "target-12345",
+      "name": "47 Tuc",
       "pointing_pattern": {
         "active": "SinglePointParameters",
         "parameters": [
@@ -38,37 +38,79 @@
           }
         ]
       },
+      "radial_velocity": {
+        "quantity": {
+          "value": 0.0,
+          "unit": "km / s"
+        },
+        "definition": "RADIO",
+        "reference_frame": "LSRK",
+        "redshift": 0.0
+      },
       "reference_coordinate": {
-        "kind": "horizontal",
-        "az": 180.0,
-        "el": 45.0,
-        "reference_frame": "ALTAZ",
-        "unit": ["deg"]
+        "kind": "equatorial",
+        "ra": "00:24:05.359",
+        "dec": "-72:04:53.20",
+        "epoch": 2000.0,
+        "reference_frame": "icrs",
+        "unit": [
+          "hourangle",
+          "deg"
+        ]
       }
     }
   ],
   "mccs_allocation": {
-    "subarray_beam_ids": ["beam A"],
-    "station_ids": [[1, 2]],
-    "channel_blocks": [1]
+    "mccs_allocation_id": "mccs-allocation-74519",
+    "selected_subarray_definition": "AA0.5",
+    "subarray_beams": [
+      {
+        "subarray_beam_id": 1,
+        "apertures": [
+          {
+            "station_id": 345,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 350,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 352,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          },
+          {
+            "station_id": 431,
+            "substation_id": 1,
+            "weighting_key": "uniform"
+          }
+        ]
+      }
+    ]
   },
-  "subarray_beam_configurations": [
+  "csp_configurations": [
     {
-      "subarray_beam_configuration_id": "beam A config 1",
-      "subarray_beam_id": "beam A",
-      "update_rate": 0.0,
-      "antenna_weights": [1.0, 1.0, 1.0],
-      "phase_centre": [0.0, 0.0],
-      "channels": [
-        [0, 8, 1, 1]
-      ]
-    }
-  ],
-  "target_beam_configurations": [
-    {
-      "target_beam_id": "target #1 with beam A config 1",
-      "target": "target #1",
-      "subarray_beam_configuration": "beam A config 1"
+      "config_id": "csp-configuration-12345",
+      "name": "csp config 1",
+      "lowcbf": {
+        "do_pst": false,
+        "correlation_spws": [
+          {
+            "spw_id": 1,
+            "logical_fsp_ids": [
+              0,
+              1
+            ],
+            "zoom_factor": 0,
+            "centre_frequency": 199.609375e6,
+            "number_of_channels": 96,
+            "integration_time_ms": 849
+          }
+        ]
+      }
     }
   ],
   "scan_definitions": [
