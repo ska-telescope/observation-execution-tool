@@ -7,12 +7,14 @@ import threading
 import time
 from typing import List
 
+import uvicorn
 import waitress
 from pubsub import pub
 from ska_ser_logging import configure_logging
 
 from ska_oso_oet import ui
 from ska_oso_oet.activity.application import ActivityCommand, ActivityService
+from ska_oso_oet.activity.fastapi import create_app
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import (
     EventMessage,
@@ -169,6 +171,43 @@ class FlaskWorker(EventBusWorker):
         time.sleep(0.2)
         self.server.close()
         self.server_thread.join(timeout=3)
+
+        # Call super.shutdown to disconnect from pypubsub
+        super().shutdown()
+
+
+class FastAPIWorker(EventBusWorker):
+    """ """
+
+    def startup(self) -> None:
+        # Call super.startup to enable pypubsub <-> event queue republishing
+        super().startup()
+
+        self.app = create_app()
+
+        # override default msg_src with our real process name
+        # app.config.update(msg_src=self.name)
+        # self.shutdown_event=threading.Event()
+
+        # # start Flask in a thread as app.run is a blocking call
+        # # self.flask can't be created in __init__ as we want this thread to belong to
+        # # the child process, not the spawning process
+        # # pylint: disable=attribute-defined-outside-init
+        self.server_thread = (  # pylint: disable=attribute-defined-outside-init
+            threading.Thread(
+                target=lambda: uvicorn.run(self.app, host="0.0.0.0", port=5001),
+            )
+        )
+        self.server_thread.start()
+        logging.info("OET listening for REST API requests at %s", API_PATH)
+
+    def shutdown(self) -> None:
+        # self.shutdown_event.set()
+        # # sleep to give the SSE blueprint chance to cooperatively shutdown
+        # # 0.2 secs = 2x SSE MPQueue blocking period
+        # time.sleep(0.2)
+        # self.server.close()
+        # self.server_thread.join(timeout=3)
 
         # Call super.shutdown to disconnect from pypubsub
         super().shutdown()
@@ -501,7 +540,8 @@ def main(mp_ctx: multiprocessing.context.BaseContext):
         main_ctx.Proc(
             "ActivityServiceWorker", ActivityServiceWorker, activity_q, mp_ctx
         )
-        main_ctx.Proc("FlaskWorker", FlaskWorker, flask_q)
+        # main_ctx.Proc("FlaskWorker", FlaskWorker, flask_q)
+        main_ctx.Proc("FastAPIWorker", FastAPIWorker, flask_q)
 
         # with all workers and queues set up, start processing messages
         main_loop(main_ctx, event_bus_queues)

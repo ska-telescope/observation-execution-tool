@@ -29,11 +29,11 @@ rest:
   domain: operations
   logLevel: INFO
   ingress:
-    enabled: false
+    enabled: true
   image:
     registry: artefact.skao.int
     image: ska-oso-oet
-    tag: ~ # Defaults to the chart appVersion if not set
+    tag: 6.6.0-dirty # Defaults to the chart appVersion if not set
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -71,7 +71,7 @@ rest:
       password:
         # This is the resource name of a k8s secret and the key the password is stored under.
         # If left as null the default secret deployed by the ODA umbrella will be used.
-        secret: ~
+        secret:
         key: ~
   skuid:
     url: # Standard SKUID svc address is used if this is not set.
