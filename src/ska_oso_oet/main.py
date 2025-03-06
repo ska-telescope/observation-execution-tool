@@ -6,7 +6,7 @@ import os
 import threading
 import time
 from typing import List
-
+from ska_oso_scripting.event import user_topics
 import uvicorn
 import waitress
 from pubsub import pub
@@ -526,11 +526,12 @@ def main(mp_ctx: multiprocessing.context.BaseContext):
         script_executor_q = main_ctx.MPQueue()
         activity_q = main_ctx.MPQueue()
         flask_q = main_ctx.MPQueue()
+        fastapi_q = main_ctx.MPQueue()
 
         # event bus messages received on the event_queue (the main queue that
         # child processes push to and which the while loop below listens to)
         # will be pushed onto the queues in this list
-        event_bus_queues = [script_executor_q, activity_q, flask_q]
+        event_bus_queues = [script_executor_q, activity_q, flask_q, fastapi_q]
 
         # create the OET components, which will run in child Python processes
         # and monitor the message queues here for event bus messages
@@ -540,8 +541,8 @@ def main(mp_ctx: multiprocessing.context.BaseContext):
         main_ctx.Proc(
             "ActivityServiceWorker", ActivityServiceWorker, activity_q, mp_ctx
         )
-        # main_ctx.Proc("FlaskWorker", FlaskWorker, flask_q)
-        main_ctx.Proc("FastAPIWorker", FastAPIWorker, flask_q)
+        main_ctx.Proc("FlaskWorker", FlaskWorker, flask_q)
+        main_ctx.Proc("FastAPIWorker", FastAPIWorker, fastapi_q)
 
         # with all workers and queues set up, start processing messages
         main_loop(main_ctx, event_bus_queues)
