@@ -1,16 +1,17 @@
-import dataclasses
+
 import multiprocessing
 import os
 import shutil
 import subprocess
 import venv
+
+from pydantic import BaseModel
 from typing import Dict
 
 from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 
 
-@dataclasses.dataclass
-class Environment:
+class Environment(BaseModel):
     env_id: str
     creating: multiprocessing.Event  # Set when environment is being created
     created: multiprocessing.Event  # Set when environment is ready to be used

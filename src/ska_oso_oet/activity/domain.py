@@ -4,8 +4,8 @@ domain layer. Classes and definitions contained in this domain layer define
 the high-level concepts used to describe and launch scheduling block
 activities.
 """
-import dataclasses
 import enum
+from pydantic import BaseModel
 from typing import Optional
 
 
@@ -21,8 +21,7 @@ class ActivityState(enum.Enum):
     TODO = enum.auto()
 
 
-@dataclasses.dataclass
-class Activity:
+class Activity(BaseModel):
     """
     Activity represents an action taken on a scheduling block.
 

@@ -5,7 +5,6 @@ interface, delegating to objects in the domain layer for business rules and
 actions.
 """
 import collections
-import dataclasses
 import logging
 import multiprocessing.context
 import os
@@ -14,6 +13,7 @@ import time
 from typing import Callable, Dict, List, Optional, Tuple
 
 from pubsub import pub
+from pydantic import BaseModel
 
 from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
@@ -21,7 +21,7 @@ from ska_oso_oet.procedure import domain
 from ska_oso_oet.procedure.domain import EventMessage, ProcedureState
 
 base_dir = os.getenv("SCRIPTS_LOCATION", "/scripts")
-ABORT_SCRIPT = domain.FileSystemScript("file://" + base_dir + "/abort.py")
+ABORT_SCRIPT = domain.FileSystemScript(str("file://" + base_dir + "/abort.py"))
 
 HISTORY_MAX_LENGTH = 10
 
@@ -35,8 +35,7 @@ DELETEABLE_STATES = [
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass
-class PrepareProcessCommand:
+class PrepareProcessCommand(BaseModel):
     """
     PrepareProcessCommand is input argument dataclass for the
     ScriptExecutionService prepare command. It holds all the information
@@ -47,8 +46,7 @@ class PrepareProcessCommand:
     init_args: domain.ProcedureInput
 
 
-@dataclasses.dataclass
-class StartProcessCommand:
+class StartProcessCommand(BaseModel):
     """
     StartProcessCommand is the input argument dataclass for the
     ScriptExecutionService start command. It holds the references required to
@@ -62,8 +60,7 @@ class StartProcessCommand:
     force_start: bool = False
 
 
-@dataclasses.dataclass
-class StopProcessCommand:
+class StopProcessCommand(BaseModel):
     """
     StopProcessCommand is the input argument dataclass for the
     ScriptExecutionService Stop command. It holds the references required to
@@ -75,8 +72,7 @@ class StopProcessCommand:
     run_abort: bool
 
 
-@dataclasses.dataclass
-class ProcedureHistory:
+class ProcedureHistory(BaseModel):
     """
     ProcedureHistory is a non-functional dataclass holding execution history of
     a Procedure spanning all transactions.
@@ -117,8 +113,8 @@ class ProcedureHistory:
         )
 
 
-@dataclasses.dataclass
-class ArgCapture:
+
+class ArgCapture(BaseModel):
     """
     ArgCapture is a struct to record function call and time of invocation.
     """
@@ -128,8 +124,8 @@ class ArgCapture:
     time: float = None
 
 
-@dataclasses.dataclass
-class ProcedureSummary:
+
+class ProcedureSummary(BaseModel):
     """
     ProcedureSummary is a brief representation of a runtime Procedure. It
     captures essential information required to describe a Procedure and to

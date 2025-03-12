@@ -1,16 +1,15 @@
 """
 Static helper functions for cloning and working with a Git repository
 """
-import dataclasses
 import os
+from pydantic import BaseModel
 from typing import Optional
 from urllib.parse import urlparse
 
 from git import Git, Repo
 
 
-@dataclasses.dataclass
-class GitArgs:
+class GitArgs(BaseModel):
     """
     GitArgs captures information required to identify scripts
     located in git repositories.

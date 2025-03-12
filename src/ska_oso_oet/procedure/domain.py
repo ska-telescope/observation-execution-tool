@@ -3,7 +3,6 @@ The ska_oso_oet.procedure.domain module holds domain entities from the script
 execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
-import dataclasses
 import enum
 import errno
 import importlib.machinery
@@ -16,9 +15,10 @@ import subprocess
 import sys
 import threading
 import types
-from typing import Callable, Dict, List, Optional, Type
 
+from typing import Callable, Dict, List, Optional, Type
 from pubsub import pub
+from pydantic import BaseModel
 
 from ska_oso_oet import mptools
 from ska_oso_oet.mptools import EventMessage
@@ -91,8 +91,7 @@ class LifecycleMessage(EventMessage):
         super().__init__(msg_src, "LIFECYCLE", new_state)
 
 
-@dataclasses.dataclass
-class ExecutableScript:
+class ExecutableScript(BaseModel):
     """
     Base class for all executable scripts.
 
@@ -106,12 +105,11 @@ class ExecutableScript:
     """
 
 
-@dataclasses.dataclass
+
 class FileSystemScript(ExecutableScript):
     """
     Represents a script stored on the file system.
     """
-
     script_uri: str
 
     def __post_init__(self):
@@ -127,7 +125,6 @@ class FileSystemScript(ExecutableScript):
         return "file://"
 
 
-@dataclasses.dataclass
 class GitScript(FileSystemScript):
     """
     Represents a script in a git repository.
@@ -143,7 +140,6 @@ class GitScript(FileSystemScript):
         return "git://"
 
 
-@dataclasses.dataclass
 class ProcedureInput:
     """
     ProcedureInput is a non-functional dataclass holding the arguments passed

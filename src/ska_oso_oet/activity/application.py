@@ -4,7 +4,6 @@ to OET 'activities' that belong in the application layer. This application
 layer holds the application interface, delegating to objects in the domain
 layer for business rules and actions.
 """
-import dataclasses
 import itertools
 import logging
 import os
@@ -14,6 +13,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 from pubsub import pub
+from pydantic import BaseModel
 from ska_db_oda.persistence.unitofwork.filesystemunitofwork import FilesystemUnitOfWork
 from ska_db_oda.persistence.unitofwork.postgresunitofwork import PostgresUnitOfWork
 from ska_oso_pdm import SBDefinition
@@ -38,8 +38,8 @@ from ska_oso_oet.procedure.application import (
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass
-class ActivityCommand:
+
+class ActivityCommand(BaseModel):
     """ """
 
     activity_name: str
@@ -49,8 +49,7 @@ class ActivityCommand:
     script_args: Dict[str, domain.ProcedureInput]
 
 
-@dataclasses.dataclass
-class ActivitySummary:
+class ActivitySummary(BaseModel):
     id: int  # pylint: disable=invalid-name
     pid: int
     sbd_id: str
