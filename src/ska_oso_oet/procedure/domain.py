@@ -4,7 +4,6 @@ execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
 import abc
-import dataclasses
 import enum
 import errno
 import importlib.machinery
@@ -157,16 +156,17 @@ class GitScript(ExecutableScript):
         return "git://"
 
 
-@dataclasses.dataclass
-class ProcedureInput:
+class ProcedureInput(BaseModel):
     """
     ProcedureInput is a non-functional dataclass holding the arguments passed
     to a script method.
     """
 
+    args: tuple
+    kwargs: dict
+
     def __init__(self, *args, **kwargs):
-        self.args: tuple = args
-        self.kwargs: dict = kwargs
+        super().__init__(args=args, kwargs=kwargs)
 
     def __add__(self, other):
         if other.args:

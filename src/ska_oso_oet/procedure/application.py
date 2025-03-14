@@ -5,7 +5,6 @@ interface, delegating to objects in the domain layer for business rules and
 actions.
 """
 import collections
-import dataclasses
 import logging
 import multiprocessing.context
 import os
@@ -14,7 +13,7 @@ import time
 from typing import Callable, Dict, List, Optional, Tuple
 
 from pubsub import pub
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
@@ -91,9 +90,11 @@ class StopProcessCommand(BaseModel):
     process_uid: int
     run_abort: bool
 
+    def __init__(self, process_uid: int, run_abort: bool):
+        super().__init__(process_uid=process_uid, run_abort=run_abort)
 
-@dataclasses.dataclass
-class ProcedureHistory:
+
+class ProcedureHistory(BaseModel):
     """
     ProcedureHistory is a non-functional dataclass holding execution history of
     a Procedure spanning all transactions.
@@ -105,15 +106,20 @@ class ProcedureHistory:
         stacktrace from process
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    process_states: Optional[List[Tuple[domain.ProcedureState, float]]] = (None,)
+    stacktrace: Optional[any] = (None,)
+
     def __init__(
         self,
         process_states: Optional[List[Tuple[domain.ProcedureState, float]]] = None,
-        stacktrace=None,
+        stacktrace: Optional[any] = None,
     ):
         if process_states is None:
             process_states = []
-        self.process_states = process_states
-        self.stacktrace = stacktrace
+
+        super().__init__(process_states=process_states, stacktrace=stacktrace)
 
     def __eq__(self, other):
         if not isinstance(other, ProcedureHistory):
@@ -152,7 +158,7 @@ class ProcedureSummary(BaseModel):
     """
 
     id: int  # pylint: disable=invalid-name
-    script: domain.ExecutableScript | None
+    script: domain.GitScript | domain.FileSystemScript | None
     script_args: List[ArgCapture] | None
     history: ProcedureHistory | None
     state: domain.ProcedureState | None

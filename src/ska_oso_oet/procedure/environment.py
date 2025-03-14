@@ -14,8 +14,8 @@ class Environment(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     env_id: str
-    creating: any # multiprocessing.Event  - Set when environment is being created
-    created: any # multiprocessing.Event  -  Set when environment is ready to be used
+    creating: any  # multiprocessing.Event  - Set when environment is being created
+    created: any  # multiprocessing.Event  -  Set when environment is ready to be used
     location: str
     site_packages: str
 
@@ -32,7 +32,7 @@ class Environment(BaseModel):
             creating=creating,
             created=created,
             location=location,
-            site_packages=site_packages
+            site_packages=site_packages,
         )
 
 
