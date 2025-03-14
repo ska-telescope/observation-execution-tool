@@ -4,6 +4,7 @@ execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
 import abc
+import dataclasses
 import enum
 import errno
 import importlib.machinery
@@ -16,10 +17,10 @@ import subprocess
 import sys
 import threading
 import types
-
 from typing import Callable, Dict, List, Optional, Type
+
 from pubsub import pub
-from pydantic import BaseModel, model_validator, dataclasses
+from pydantic import BaseModel, model_validator
 
 from ska_oso_oet import mptools
 from ska_oso_oet.mptools import EventMessage
@@ -114,15 +115,15 @@ class ExecutableScript(BaseModel, abc.ABC):
         return self
 
 
-
 class FileSystemScript(ExecutableScript):
     """
     Represents a script stored on the file system.
     """
+
     script_uri: str
 
     def __init__(self, script_uri: str):
-        super(FileSystemScript,self).__init__(script_uri=script_uri)
+        super(FileSystemScript, self).__init__(script_uri=script_uri)
 
     @staticmethod
     def get_type():
@@ -142,9 +143,10 @@ class GitScript(ExecutableScript):
     git_args: GitArgs
     create_env: Optional[bool] = False
 
-
     def __init__(self, script_uri: str, git_args: GitArgs, create_env: bool = False):
-        super(GitScript,self).__init__(script_uri=script_uri, git_args=git_args, create_env=create_env)
+        super(GitScript, self).__init__(
+            script_uri=script_uri, git_args=git_args, create_env=create_env
+        )
 
     @staticmethod
     def get_type():
@@ -153,6 +155,7 @@ class GitScript(ExecutableScript):
     @staticmethod
     def get_prefix():
         return "git://"
+
 
 @dataclasses.dataclass
 class ProcedureInput:

@@ -248,8 +248,9 @@ class TestExecutableScript:
     def test_filesystem_script_raises_error_on_incorrect_prefix(self):
         with pytest.raises(ValueError) as e:
             _ = FileSystemScript("incorrectprefix://script.py")
-        assert "Incorrect prefix for FileSystemScript: incorrectprefix://script" in str(e)
-
+        assert "Incorrect prefix for FileSystemScript: incorrectprefix://script" in str(
+            e
+        )
 
     def test_git_script_raises_error_on_incorrect_prefix(self):
         with pytest.raises(ValueError) as e:

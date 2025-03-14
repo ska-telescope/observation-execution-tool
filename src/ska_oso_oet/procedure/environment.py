@@ -1,12 +1,11 @@
-
 import multiprocessing
 import os
 import shutil
 import subprocess
 import venv
+from typing import Dict
 
 from pydantic import BaseModel
-from typing import Dict
 
 from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 

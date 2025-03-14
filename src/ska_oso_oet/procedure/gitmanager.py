@@ -2,11 +2,11 @@
 Static helper functions for cloning and working with a Git repository
 """
 import os
-from pydantic import BaseModel, model_validator
 from typing import Optional
 from urllib.parse import urlparse
 
 from git import Git, Repo
+from pydantic import BaseModel, model_validator
 
 
 class GitArgs(BaseModel):
@@ -21,11 +21,15 @@ class GitArgs(BaseModel):
     git_branch: Optional[str] = None
     git_commit: Optional[str] = None
 
-    def __init__(self,
-                 git_repo: str = "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git",
-                 git_branch: str = None,
-                 git_commit: str = None):
-        super(GitArgs,self).__init__(git_repo=git_repo, git_branch=git_branch, git_commit=git_commit)
+    def __init__(
+        self,
+        git_repo: str = "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git",
+        git_branch: str = None,
+        git_commit: str = None,
+    ):
+        super(GitArgs, self).__init__(
+            git_repo=git_repo, git_branch=git_branch, git_commit=git_commit
+        )
 
     @model_validator(mode="after")
     def post_init(self):
@@ -33,6 +37,7 @@ class GitArgs(BaseModel):
         # might just give a commit hash from a feature branch
         if self.git_branch is None and self.git_commit is None:
             self.git_branch = "master"
+        return self
 
 
 class GitManager:

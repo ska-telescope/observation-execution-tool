@@ -38,7 +38,6 @@ from ska_oso_oet.procedure.application import (
 LOGGER = logging.getLogger(__name__)
 
 
-
 class ActivityCommand(BaseModel):
     """ """
 
@@ -47,6 +46,22 @@ class ActivityCommand(BaseModel):
     prepare_only: bool
     create_env: bool
     script_args: Dict[str, domain.ProcedureInput]
+
+    def __init__(
+        self,
+        activity_name: str,
+        sbd_id: str,
+        prepare_only: bool,
+        create_env: bool,
+        script_args: Dict[str, domain.ProcedureInput],
+    ):
+        super(ActivityCommand, self).__init__(
+            activity_name=activity_name,
+            sbd_id=sbd_id,
+            prepare_only=prepare_only,
+            create_env=create_env,
+            script_args=script_args,
+        )
 
 
 class ActivitySummary(BaseModel):
@@ -58,6 +73,28 @@ class ActivitySummary(BaseModel):
     script_args: Dict[str, domain.ProcedureInput]
     activity_states: List[Tuple[ActivityState, float]]
     sbi_id: str
+
+    def __init__(
+        self,
+        id: int,  # pylint: disable=invalid-name
+        pid: int,
+        sbd_id: str,
+        activity_name: str,
+        prepare_only: bool,
+        script_args: Dict[str, domain.ProcedureInput],
+        activity_states: List[Tuple[ActivityState, float]] | None,
+        sbi_id: str,
+    ):
+        super(ActivitySummary, self).__init__(
+            id=id,
+            pid=pid,
+            sbd_id=sbd_id,
+            activity_name=activity_name,
+            prepare_only=prepare_only,
+            script_args=script_args,
+            activity_states=activity_states,
+            sbi_id=sbi_id,
+        )
 
 
 class ActivityService:

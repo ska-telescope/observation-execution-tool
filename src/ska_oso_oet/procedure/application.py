@@ -5,6 +5,7 @@ interface, delegating to objects in the domain layer for business rules and
 actions.
 """
 import collections
+import dataclasses
 import logging
 import multiprocessing.context
 import os
@@ -45,6 +46,11 @@ class PrepareProcessCommand(BaseModel):
     script: domain.ExecutableScript
     init_args: domain.ProcedureInput
 
+    def __init__(
+        self, script: domain.ExecutableScript, init_args: domain.ProcedureInput
+    ):
+        super(PrepareProcessCommand, self).__init__(script=script, init_args=init_args)
+
 
 class StartProcessCommand(BaseModel):
     """
@@ -59,6 +65,20 @@ class StartProcessCommand(BaseModel):
     run_args: domain.ProcedureInput
     force_start: bool = False
 
+    def __init__(
+        self,
+        process_uid: int,
+        fn_name: str,
+        run_args: domain.ProcedureInput,
+        force_start: bool = False,
+    ):
+        super(StartProcessCommand, self).__init__(
+            process_uid=process_uid,
+            fn_name=fn_name,
+            run_args=run_args,
+            force_start=force_start,
+        )
+
 
 class StopProcessCommand(BaseModel):
     """
@@ -72,7 +92,8 @@ class StopProcessCommand(BaseModel):
     run_abort: bool
 
 
-class ProcedureHistory(BaseModel):
+@dataclasses.dataclass
+class ProcedureHistory:
     """
     ProcedureHistory is a non-functional dataclass holding execution history of
     a Procedure spanning all transactions.
@@ -113,7 +134,6 @@ class ProcedureHistory(BaseModel):
         )
 
 
-
 class ArgCapture(BaseModel):
     """
     ArgCapture is a struct to record function call and time of invocation.
@@ -124,7 +144,6 @@ class ArgCapture(BaseModel):
     time: float = None
 
 
-
 class ProcedureSummary(BaseModel):
     """
     ProcedureSummary is a brief representation of a runtime Procedure. It
@@ -133,10 +152,26 @@ class ProcedureSummary(BaseModel):
     """
 
     id: int  # pylint: disable=invalid-name
-    script: domain.ExecutableScript
-    script_args: List[ArgCapture]
-    history: ProcedureHistory
-    state: domain.ProcedureState
+    script: domain.ExecutableScript | None
+    script_args: List[ArgCapture] | None
+    history: ProcedureHistory | None
+    state: domain.ProcedureState | None
+
+    def __init__(
+        self,
+        id: int,
+        script: domain.ExecutableScript | None,
+        script_args: List[ArgCapture] | None,
+        history: ProcedureHistory | None,
+        state: domain.ProcedureState | None,
+    ):
+        super(ProcedureSummary, self).__init__(
+            id=id,
+            script=script,
+            script_args=script_args,
+            history=history,
+            state=state,
+        )
 
 
 class ScriptExecutionService:

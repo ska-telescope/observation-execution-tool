@@ -5,8 +5,9 @@ the high-level concepts used to describe and launch scheduling block
 activities.
 """
 import enum
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
 
 
 class ActivityState(enum.Enum):
