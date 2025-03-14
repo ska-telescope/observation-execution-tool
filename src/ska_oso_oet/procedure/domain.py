@@ -3,6 +3,7 @@ The ska_oso_oet.procedure.domain module holds domain entities from the script
 execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
+import abc
 import enum
 import errno
 import importlib.machinery
@@ -18,7 +19,7 @@ import types
 
 from typing import Callable, Dict, List, Optional, Type
 from pubsub import pub
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator, dataclasses
 
 from ska_oso_oet import mptools
 from ska_oso_oet.mptools import EventMessage
@@ -91,7 +92,7 @@ class LifecycleMessage(EventMessage):
         super().__init__(msg_src, "LIFECYCLE", new_state)
 
 
-class ExecutableScript(BaseModel):
+class ExecutableScript(BaseModel, abc.ABC):
     """
     Base class for all executable scripts.
 
@@ -104,6 +105,14 @@ class ExecutableScript(BaseModel):
     - etc.
     """
 
+    @model_validator(mode="after")
+    def validate_prefix(self):
+        if not self.script_uri.startswith(self.get_prefix()):
+            raise ValueError(
+                f"Incorrect prefix for {self.__class__.__name__}: {self.script_uri}"
+            )
+        return self
+
 
 
 class FileSystemScript(ExecutableScript):
@@ -112,34 +121,40 @@ class FileSystemScript(ExecutableScript):
     """
     script_uri: str
 
-    def __post_init__(self):
-        if not self.script_uri.startswith(self.get_prefix()):
-            raise ValueError(
-                f"Incorrect prefix for {self.__class__.__name__}: {self.script_uri}"
-            )
+    def __init__(self, script_uri: str):
+        super(FileSystemScript,self).__init__(script_uri=script_uri)
 
-    def get_type(self):
+    @staticmethod
+    def get_type():
         return "filesystem"
 
-    def get_prefix(self):
+    @staticmethod
+    def get_prefix():
         return "file://"
 
 
-class GitScript(FileSystemScript):
+class GitScript(ExecutableScript):
     """
     Represents a script in a git repository.
     """
 
+    script_uri: str
     git_args: GitArgs
     create_env: Optional[bool] = False
 
-    def get_type(self):
+
+    def __init__(self, script_uri: str, git_args: GitArgs, create_env: bool = False):
+        super(GitScript,self).__init__(script_uri=script_uri, git_args=git_args, create_env=create_env)
+
+    @staticmethod
+    def get_type():
         return "git"
 
-    def get_prefix(self):
+    @staticmethod
+    def get_prefix():
         return "git://"
 
-
+@dataclasses.dataclass
 class ProcedureInput:
     """
     ProcedureInput is a non-functional dataclass holding the arguments passed
