@@ -56,6 +56,8 @@ autodoc_mock_imports = [
     "tblib",
     "waitress",
     "werkzeug",
+    "uvicorn",
+    "fastapi"
 ]
 
 autodoc_default_options = {
