@@ -1,3 +1,4 @@
+# pylint: disable=attribute-defined-outside-init
 import logging
 import logging.config
 import logging.handlers
@@ -7,6 +8,7 @@ import threading
 import time
 from typing import List
 
+import uvicorn
 import waitress
 from pubsub import pub
 from ska_ser_logging import configure_logging
@@ -14,6 +16,7 @@ from ska_ser_logging import configure_logging
 from ska_oso_oet import ui
 from ska_oso_oet.activity.application import ActivityCommand, ActivityService
 from ska_oso_oet.event import topics
+from ska_oso_oet.fastapi import create_app
 from ska_oso_oet.mptools import (
     EventMessage,
     MainContext,
@@ -151,13 +154,10 @@ class FlaskWorker(EventBusWorker):
         # start Flask in a thread as app.run is a blocking call
         # self.flask can't be created in __init__ as we want this thread to belong to
         # the child process, not the spawning process
-        # pylint: disable=attribute-defined-outside-init
         self.server = waitress.create_server(app, host="0.0.0.0", port=5000)
 
-        self.server_thread = (  # pylint: disable=attribute-defined-outside-init
-            threading.Thread(
-                target=self.server.run,
-            )
+        self.server_thread = threading.Thread(
+            target=self.server.run,
         )
         self.server_thread.start()
         logging.info("OET listening for REST API requests at %s", API_PATH)
@@ -168,6 +168,42 @@ class FlaskWorker(EventBusWorker):
         # 0.2 secs = 2x SSE MPQueue blocking period
         time.sleep(0.2)
         self.server.close()
+        self.server_thread.join(timeout=3)
+
+        # Call super.shutdown to disconnect from pypubsub
+        super().shutdown()
+
+
+class FastAPIWorker(EventBusWorker):
+    """
+    TODO
+    """
+
+    def startup(self) -> None:
+        # Call super.startup to enable pypubsub <-> event queue republishing
+        super().startup()
+
+        self.app = create_app()
+        self.config = uvicorn.Config(app=self.app, host="0.0.0.0", port=5001)
+        self.server = uvicorn.Server(config=self.config)
+
+        # override default msg_src with our real process name
+        self.app.state.msg_src = self.name
+        # TODO remove this comment. Initially I tried to use the fastapi lifespan and life span state but the shutdown
+        #  event needs to be set before the connections are closed, where the lifespan event is after
+        # Another option here could be to use a global and inject it in Depends()
+        self.app.state.sse_shutdown_event = threading.Event()
+
+        # # start FastAPI in a thread as app.run is a blocking call
+        # # Can't be created in __init__ as we want this thread to belong to
+        # # the child process, not the spawning process
+        self.server_thread = threading.Thread(target=self.server.run)
+        self.server_thread.start()
+        logging.info("OET listening for REST API requests at %s", API_PATH)
+
+    def shutdown(self) -> None:
+        self.app.state.sse_shutdown_event.set()
+        self.server.should_exit = True
         self.server_thread.join(timeout=3)
 
         # Call super.shutdown to disconnect from pypubsub
@@ -317,10 +353,8 @@ class ScriptExecutionServiceWorker(EventBusWorker):
 
         # self.ses can't be created in __init__ as we want the service to belong to
         # the child process, not the spawning process
-        self.ses = (  # pylint: disable=attribute-defined-outside-init
-            ScriptExecutionService(
-                mp_context=self._mp_context, on_pubsub=[self.event_q.put]
-            )
+        self.ses = ScriptExecutionService(
+            mp_context=self._mp_context, on_pubsub=[self.event_q.put]
         )
 
         # wire up topics to the corresponding SES methods
@@ -366,9 +400,7 @@ class ActivityServiceWorker(EventBusWorker):
 
         # self.activity_service can't be created in __init__ as we want the service to belong to
         # the child process, not the spawning process
-        self.activity_service = (  # pylint: disable=attribute-defined-outside-init
-            ActivityService()
-        )
+        self.activity_service = ActivityService()
 
         # wire up topics to the corresponding ActivityService methods
         pub.subscribe(self.list, topics.request.activity.list)
@@ -487,11 +519,12 @@ def main(mp_ctx: multiprocessing.context.BaseContext):
         script_executor_q = main_ctx.MPQueue()
         activity_q = main_ctx.MPQueue()
         flask_q = main_ctx.MPQueue()
+        fastapi_q = main_ctx.MPQueue()
 
         # event bus messages received on the event_queue (the main queue that
         # child processes push to and which the while loop below listens to)
         # will be pushed onto the queues in this list
-        event_bus_queues = [script_executor_q, activity_q, flask_q]
+        event_bus_queues = [script_executor_q, activity_q, flask_q, fastapi_q]
 
         # create the OET components, which will run in child Python processes
         # and monitor the message queues here for event bus messages
@@ -502,6 +535,7 @@ def main(mp_ctx: multiprocessing.context.BaseContext):
             "ActivityServiceWorker", ActivityServiceWorker, activity_q, mp_ctx
         )
         main_ctx.Proc("FlaskWorker", FlaskWorker, flask_q)
+        main_ctx.Proc("FastAPIWorker", FastAPIWorker, fastapi_q)
 
         # with all workers and queues set up, start processing messages
         main_loop(main_ctx, event_bus_queues)
