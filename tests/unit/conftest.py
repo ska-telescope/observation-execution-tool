@@ -4,8 +4,10 @@ import threading
 from importlib.metadata import version
 
 import pytest
+from fastapi.testclient import TestClient
 
 from ska_oso_oet import ui
+from ska_oso_oet.fastapi import create_app
 
 OET_MAJOR_VERSION = version("ska-oso-oet").split(".")[0]
 # Default as it uses the default namespace. When deployed to a different namespace the first part will change to that namespace.
@@ -34,6 +36,17 @@ def fixture_client():
     with app.app_context():
         with app.test_client() as client:
             yield client
+
+
+@pytest.fixture()
+def fastapi_client() -> TestClient:
+    """
+    Create a test client from the app instance, without running a live server
+    """
+    app = create_app()
+    app.state.msg_src = "unit tests"
+    app.state.sse_shutdown_event = threading.Event()
+    return TestClient(app, raise_server_exceptions=False)
 
 
 @pytest.fixture(

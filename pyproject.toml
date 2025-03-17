@@ -69,6 +69,7 @@ jsonschema = "4.17.3"
 # charts/ska-oso-oet-umbrella/Chart.yaml
 ska-db-oda = "^7.3.0"
 ska-oso-scripting = "^11.0.0"
+fastapi = "^0.111.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.8.0"
