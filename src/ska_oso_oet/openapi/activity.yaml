@@ -20,7 +20,7 @@
     post:
       tags:
         - Activity APIs
-      summary: "Prepare a new activity"
+      summary: "Prepare a new activity" # TODO move docs
       description: "Loads the script from the SBDefinition for the given activity and prepares it for execution. Response is an ActivitySummary."
       operationId: "ska_oso_oet.activity.ui.run_activity"
       requestBody:

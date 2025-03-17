@@ -2,39 +2,19 @@
 The ska_oso_oet.procedure.ui package contains code that belong to the OET
 procedure UI layer. This consists of the Procedure REST resources.
 """
-import flask
+from fastapi import APIRouter, HTTPException
 
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure import application, domain
-from ska_oso_oet.ui import API_PATH
 from ska_oso_oet.utils.ui import (
-    call_and_respond,
+    call_and_respond_fastapi,
     convert_request_dict_to_procedure_input,
 )
 
-
-def _get_summary_or_404(pid):
-    """
-    Get a ProcedureSummary, raising a Flask 404 if not found.
-
-    :param pid: ID of Procedure
-    :return: ProcedureSummary
-    """
-    summaries = call_and_respond(
-        topics.request.procedure.list, topics.procedure.pool.list, pids=[pid]
-    )
-
-    if not summaries:
-        description = {
-            "type": "ResourceNotFound",
-            "Message": f"No information available for PID={pid}",
-        }
-
-        flask.abort(404, description=description)
-    else:
-        return summaries[0]
+procedures_router = APIRouter(prefix="/procedures")
 
 
+@procedures_router.get("/")
 def get_procedures():
     """
     List all Procedures.
@@ -45,14 +25,13 @@ def get_procedures():
     :return: list of Procedure JSON representations
     """
 
-    summaries = call_and_respond(
+    summaries = call_and_respond_fastapi(
         topics.request.procedure.list, topics.procedure.pool.list, pids=None
     )
-    return flask.jsonify(
-        {"procedures": [make_public_procedure_summary(s) for s in summaries]}
-    )
+    return {"procedures": [_make_public_procedure_summary(s) for s in summaries]}
 
 
+@procedures_router.get("/{procedure_id}")
 def get_procedure(procedure_id: int):
     """
     Get a Procedure.
@@ -64,10 +43,11 @@ def get_procedure(procedure_id: int):
     :return: Procedure JSON
     """
     summary = _get_summary_or_404(procedure_id)
-    return flask.jsonify({"procedure": make_public_procedure_summary(summary)})
+    return {"procedure": _make_public_procedure_summary(summary)}
 
 
-def create_procedure():
+@procedures_router.post("/", status_code=201)
+def create_procedure(request_body: dict):
     """
     Create a new Procedure.
 
@@ -76,10 +56,7 @@ def create_procedure():
 
     :return: JSON summary of created Procedure
     """
-    if not flask.request.json or "script" not in flask.request.json:
-        description = {"type": "Malformed Request", "Message": "Script missing"}
-        flask.abort(400, description=description)
-    script_dict = flask.request.json["script"]
+    script_dict = request_body["script"]
 
     if (
         not isinstance(script_dict, dict)
@@ -90,20 +67,20 @@ def create_procedure():
             "type": "Malformed Request",
             "Message": "Malformed script in request",
         }
-        flask.abort(400, description=description)
+        raise HTTPException(400, detail=description)
     script_type = script_dict.get("script_type")
     script_uri = script_dict.get("script_uri")
     script = _get_script(script_type, script_uri, script_dict)
 
-    if "script_args" in flask.request.json and not isinstance(
-        flask.request.json["script_args"], dict
+    if "script_args" in request_body and not isinstance(
+        request_body["script_args"], dict
     ):
         description = {
             "type": "Malformed Request",
             "Message": "Malformed script_args in request",
         }
-        flask.abort(400, description=description)
-    script_args = flask.request.json.get("script_args", {})
+        raise HTTPException(400, detail=description)
+    script_args = request_body.get("script_args", {})
 
     init_dict = script_args.get("init", {})
 
@@ -112,16 +89,17 @@ def create_procedure():
         script=script, init_args=procedure_input
     )
 
-    summary = call_and_respond(
+    summary = call_and_respond_fastapi(
         topics.request.procedure.create,
         topics.procedure.lifecycle.created,
         cmd=prepare_cmd,
     )
 
-    return flask.jsonify({"procedure": make_public_procedure_summary(summary)}), 201
+    return {"procedure": _make_public_procedure_summary(summary)}
 
 
-def update_procedure(procedure_id: int):
+@procedures_router.put("/{procedure_id}")
+def update_procedure(procedure_id: int, request_body: dict):
     """
     Update a Procedure resource using the desired Procedure state described in
     the PUT JSON payload.
@@ -131,33 +109,24 @@ def update_procedure(procedure_id: int):
     """
     summary = _get_summary_or_404(procedure_id)
 
-    if not flask.request.is_json:
-        description = {
-            "type": "Empty Response",
-            "Message": "No JSON available in response",
-        }
-        flask.abort(400, description=description)
-
-    if "script_args" in flask.request.json and not isinstance(
-        flask.request.json["script_args"], dict
+    if "script_args" in request_body and not isinstance(
+        request_body["script_args"], dict
     ):
         description = {
             "type": "Malformed Response",
             "Message": "Malformed script_args in response",
         }
-        flask.abort(400, description=description)
-    script_args = flask.request.json.get("script_args", {})
+        raise HTTPException(400, detail=description)
+    script_args = request_body.get("script_args", {})
 
     old_state = summary.state
-    new_state = domain.ProcedureState[
-        flask.request.json.get("state", summary.state.name)
-    ]
+    new_state = domain.ProcedureState[request_body.get("state", summary.state.name)]
 
     if new_state is domain.ProcedureState.STOPPED:
         if old_state is domain.ProcedureState.RUNNING:
-            run_abort = flask.request.json.get("abort")
+            run_abort = request_body.get("abort")
             cmd = application.StopProcessCommand(procedure_id, run_abort=run_abort)
-            result = call_and_respond(
+            result = call_and_respond_fastapi(
                 topics.request.procedure.stop,
                 topics.procedure.lifecycle.stopped,
                 cmd=cmd,
@@ -168,11 +137,11 @@ def update_procedure(procedure_id: int):
             msg = f"Successfully stopped script with ID {procedure_id}"
             if result:
                 msg += " and aborted subarray activity"
-            return flask.jsonify({"abort_message": msg})
+            return {"abort_message": msg}
 
         else:
             msg = f"Cannot stop script with ID {procedure_id}: Script is not running"
-            return flask.jsonify({"abort_message": msg})
+            return {"abort_message": msg}
 
     elif (
         old_state is domain.ProcedureState.READY
@@ -184,14 +153,14 @@ def update_procedure(procedure_id: int):
             procedure_id, fn_name="main", run_args=procedure_input
         )
 
-        summary = call_and_respond(
+        summary = call_and_respond_fastapi(
             topics.request.procedure.start, topics.procedure.lifecycle.started, cmd=cmd
         )
 
-    return flask.jsonify({"procedure": make_public_procedure_summary(summary)})
+    return {"procedure": _make_public_procedure_summary(summary)}
 
 
-def make_public_procedure_summary(procedure: application.ProcedureSummary):
+def _make_public_procedure_summary(procedure: application.ProcedureSummary):
     """
     Convert a ProcedureSummary into JSON ready for client consumption.
 
@@ -226,11 +195,12 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
         "stacktrace": procedure.history.stacktrace,
     }
     return {
-        "uri": flask.url_for(
-            f"{API_PATH}.ska_oso_oet_procedure_ui_get_procedure",
-            procedure_id=procedure.id,
-            _external=True,
-        ),
+        "uri": f"http://localhost:5000/ska-oso-oet/oet/api/v1/procedures/{procedure.id}",
+        #     flask.url_for(
+        #     f"{API_PATH}.ska_oso_oet_procedure_ui_get_procedure",
+        #     procedure_id=procedure.id,
+        #     _external=True,
+        # ),
         "script": script,
         "script_args": script_args,
         "history": procedure_history,
@@ -257,11 +227,33 @@ def _get_script(script_type, script_uri, script_dict):
                 "type": "Malformed Request",
                 "Message": f"Script type {script_type} not supported",
             }
-            flask.abort(400, description=description)
+            raise HTTPException(400, detail=description)
     except ValueError as err:
         # The initialisation of the script class will throw a ValueError if the prefix is incorrect
         description = {
             "type": err.__class__.__name__,
             "Message": str(err),
         }
-        flask.abort(400, description=description)
+        raise HTTPException(400, detail=description)
+
+
+def _get_summary_or_404(pid):
+    """
+    Get a ProcedureSummary, raising a 404 if not found.
+
+    :param pid: ID of Procedure
+    :return: ProcedureSummary
+    """
+    summaries = call_and_respond_fastapi(
+        topics.request.procedure.list, topics.procedure.pool.list, pids=[pid]
+    )
+
+    if not summaries:
+        description = {
+            "type": "ResourceNotFound",
+            "Message": f"No information available for PID={pid}",
+        }
+
+        raise HTTPException(404, detail=description)
+    else:
+        return summaries[0]

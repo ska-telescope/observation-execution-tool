@@ -2,26 +2,82 @@ import logging
 import multiprocessing
 from os import getenv
 from threading import Event
+from typing import Union, Optional
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import StreamingResponse
 from pubsub import pub
-
+import jsonpickle
 from ska_oso_oet.event import topics
 from ska_oso_oet.mptools import MPQueue
 from ska_oso_oet.procedure.application import PrepareProcessCommand
 from ska_oso_oet.procedure.domain import FileSystemScript, ProcedureInput
-from ska_oso_oet.ui import Message
 from ska_oso_oet.utils.ui import call_and_respond_fastapi
 
 KUBE_NAMESPACE = getenv("KUBE_NAMESPACE", "ska-oso-oet")
 API_PREFIX = f"/{KUBE_NAMESPACE}/oet/fastapi"
 
-router = APIRouter()
+sse_router = APIRouter()
 LOGGER = logging.getLogger(__name__)
 
+class Message:
+    """
+    Data that is published as a server-sent event.
+    """
 
-@router.get("/")
+    def __init__(
+        self,
+        data: Union[str, dict],
+        type: Optional[str] = None,  # pylint: disable=redefined-builtin
+        id: Optional[  # pylint: disable=redefined-builtin
+            Union[float, int, str]
+        ] = None,
+        retry: Optional[int] = None,
+    ):
+        """
+        Create a server-sent event.
+
+        :param data: The event data.
+        :param type: An optional event type.
+        :param id: An optional event ID.
+        :param retry: An optional integer, to specify the reconnect time for
+            disconnected clients of this stream.
+        """
+        self.data = data
+        self.type = type
+        self.id = id
+        self.retry = retry
+
+    def __str__(self):
+        """
+        Serialize this object to a string, according to the `server-sent events
+        specification <https://www.w3.org/TR/eventsource/>`_.
+        """
+        if isinstance(self.data, dict):
+            data = jsonpickle.dumps(self.data)
+        else:
+            data = self.data
+        lines = ["data:{value}".format(value=line) for line in data.splitlines()]
+        if self.type:
+            lines.insert(0, "event:{value}".format(value=self.type))
+        if self.id:
+            lines.append("id:{value}".format(value=self.id))
+        if self.retry:
+            lines.append("retry:{value}".format(value=self.retry))
+        return "\n".join(lines) + "\n\n"
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, self.__class__)
+            and self.data == other.data
+            and self.type == other.type
+            and self.id == other.id
+            and self.retry == other.retry
+        )
+
+
+
+@sse_router.get("/")
 async def root():
     LOGGER.debug("Got FastAPI request, sending message")
     script = FileSystemScript("file:///tmp/scripts/hello_world_without_sb.py")
@@ -65,17 +121,17 @@ def messages(shutdown_event: Event):  # -> Generator[Message, None, None]:
             yield str(msg)
 
 
-@router.get("/stream")
+@sse_router.get("/stream")
 async def stream(request: Request):
     shutdown_event = request.app.state.sse_shutdown_event
     return StreamingResponse(messages(shutdown_event), media_type="text/event-stream")
 
-
-def create_app():
-    app = FastAPI(
-        openapi_url=f"{API_PREFIX}/openapi.json",
-        docs_url=f"{API_PREFIX}/ui",
-    )
-    app.include_router(router, prefix=API_PREFIX)
-    # TODO need CORS middleware, amongst other things
-    return app
+#
+# def create_app():
+#     app = FastAPI(
+#         openapi_url=f"{API_PREFIX}/openapi.json",
+#         docs_url=f"{API_PREFIX}/ui",
+#     )
+#     app.include_router(sse_router, prefix=API_PREFIX)
+#     # TODO need CORS middleware, amongst other things
+#     return app

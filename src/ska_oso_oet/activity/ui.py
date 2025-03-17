@@ -3,19 +3,21 @@ The ska_oso_oet.activity.ui module contains code that belongs to the activity
 UI/presentation layer. This layer is the means by which external users or
 systems would interact with activities.
 """
-import flask
+from fastapi import APIRouter, HTTPException, Response
 
 from ska_oso_oet.activity.application import ActivityCommand, ActivitySummary
 from ska_oso_oet.event import topics
-from ska_oso_oet.ui import API_PATH
 from ska_oso_oet.utils.ui import (
-    call_and_respond,
+    call_and_respond_fastapi,
     convert_request_dict_to_procedure_input,
 )
 
+activities_router = APIRouter(prefix="/activities")
 
+
+@activities_router.get("/{activity_id}")
 def get_activity(activity_id):
-    summaries = call_and_respond(
+    summaries = call_and_respond_fastapi(
         topics.request.activity.list,
         topics.activity.pool.list,
         activity_ids=[activity_id],
@@ -27,29 +29,22 @@ def get_activity(activity_id):
             "Message": f"No information available for ID={activity_id}",
         }
 
-        flask.abort(404, description=description)
+        raise HTTPException(404, detail=description)
     else:
-        return (
-            flask.jsonify({"activity": make_public_activity_summary(summaries[0])}),
-            200,
-        )
+        return {"activity": _make_public_activity_summary(summaries[0])}
 
 
+@activities_router.get("/")
 def get_activities():
-    summaries = call_and_respond(
+    summaries = call_and_respond_fastapi(
         topics.request.activity.list, topics.activity.pool.list
     )
 
-    return (
-        flask.jsonify(
-            {"activities": [make_public_activity_summary(s) for s in summaries]}
-        ),
-        200,
-    )
+    return {"activities": [_make_public_activity_summary(s) for s in summaries]}
 
 
-def run_activity():
-    request_body = flask.request.json
+@activities_router.post("/", status_code=201)
+def run_activity(request_body: dict):
     script_args = {
         fn: convert_request_dict_to_procedure_input(fn_args)
         for (fn, fn_args) in request_body.get("script_args", {}).items()
@@ -62,14 +57,14 @@ def run_activity():
         request_body.get("create_env", False),
         script_args,
     )
-    summary = call_and_respond(
+    summary = call_and_respond_fastapi(
         topics.request.activity.run, topics.activity.lifecycle.running, cmd=cmd
     )
 
-    return flask.jsonify({"activity": make_public_activity_summary(summary)}), 201
+    return {"activity": _make_public_activity_summary(summary)}
 
 
-def make_public_activity_summary(
+def _make_public_activity_summary(
     activity: ActivitySummary,
 ):
     """
@@ -89,11 +84,12 @@ def make_public_activity_summary(
         for fn in activity.script_args.keys()
     }
     return {
-        "uri": flask.url_for(
-            f"{API_PATH}.ska_oso_oet_activity_ui_get_activity",
-            activity_id=activity.id,
-            _external=True,
-        ),
+        "uri": f"http://localhost:5000/ska-oso-oet/oet/api/v1/activities/{activity.id}",
+        # flask.url_for(
+        #     f"{API_PATH}.ska_oso_oet_activity_ui_get_activity",
+        #     activity_id=activity.id,
+        #     _external=True,
+        # ),
         "activity_name": activity.activity_name,
         "sbd_id": activity.sbd_id,
         "procedure_id": activity.pid,
