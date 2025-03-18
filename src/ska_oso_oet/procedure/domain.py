@@ -115,7 +115,7 @@ class ExecutableScript(BaseModel, abc.ABC):
         return self
 
     @model_serializer(mode="wrap")
-    def _serialize(
+    def _serialize_executable_script(
         self, default_serializer: SerializerFunctionWrapHandler
     ) -> dict[str, Any]:
         dumped = default_serializer(self)

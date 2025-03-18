@@ -10,10 +10,11 @@ import multiprocessing.context
 import os
 import threading
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from pubsub import pub
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_serializer
+from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
 from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
@@ -139,6 +140,15 @@ class ProcedureHistory(BaseModel):
             p_history, self.stacktrace
         )
 
+    @model_serializer
+    def _serialize_procedure_history(self) -> dict[str, Any]:
+        process_states = [(state[0].name, state[1]) for state in self.process_states]
+
+        return {
+            "process_states": process_states,
+            "stacktrace": self.stacktrace,
+        }
+
 
 class ArgCapture(BaseModel):
     """
@@ -173,7 +183,7 @@ class ProcedureSummary(BaseModel):
         state: domain.ProcedureState | None,
         uri: str | None = None,
     ):
-        super(ProcedureSummary, self).__init__(
+        super().__init__(
             id=id,
             uri=uri,
             script=script,
@@ -181,6 +191,22 @@ class ProcedureSummary(BaseModel):
             history=history,
             state=state,
         )
+
+    @model_serializer(mode="wrap")
+    def _serialize_procedure_summary(
+        self, default_serializer: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+        script_args = {
+            args.fn: {"args": args.fn_args.args, "kwargs": args.fn_args.kwargs}
+            for args in self.script_args
+        }
+        state = self.state.name
+        dumped = default_serializer(self)
+
+        dumped["script_args"] = script_args
+        dumped["state"] = state
+
+        return dumped
 
 
 class ScriptExecutionService:
