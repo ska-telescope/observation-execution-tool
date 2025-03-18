@@ -16,10 +16,11 @@ import subprocess
 import sys
 import threading
 import types
-from typing import Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type
 
 from pubsub import pub
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_serializer, model_validator
+from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
 from ska_oso_oet import mptools
 from ska_oso_oet.mptools import EventMessage
@@ -112,6 +113,14 @@ class ExecutableScript(BaseModel, abc.ABC):
                 f"Incorrect prefix for {self.__class__.__name__}: {self.script_uri}"
             )
         return self
+
+    @model_serializer(mode="wrap")
+    def _serialize(
+        self, default_serializer: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+        dumped = default_serializer(self)
+        dumped.update({"script_type": self.get_type()})
+        return dumped
 
 
 class FileSystemScript(ExecutableScript):
