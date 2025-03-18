@@ -158,6 +158,7 @@ class ProcedureSummary(BaseModel):
     """
 
     id: int  # pylint: disable=invalid-name
+    uri: Optional[str] = None
     script: domain.GitScript | domain.FileSystemScript | None
     script_args: List[ArgCapture] | None
     history: ProcedureHistory | None
@@ -170,9 +171,11 @@ class ProcedureSummary(BaseModel):
         script_args: List[ArgCapture] | None,
         history: ProcedureHistory | None,
         state: domain.ProcedureState | None,
+        uri: str | None = None,
     ):
         super(ProcedureSummary, self).__init__(
             id=id,
+            uri=uri,
             script=script,
             script_args=script_args,
             history=history,
