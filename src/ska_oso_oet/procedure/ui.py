@@ -201,41 +201,13 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
     :param procedure: Procedure to convert
     :return: safe JSON representation
     """
-    script_args = {
-        args.fn: {"args": args.fn_args.args, "kwargs": args.fn_args.kwargs}
-        for args in procedure.script_args
-    }
-
-    script = {
-        "script_type": procedure.script.get_type(),
-        "script_uri": procedure.script.script_uri,
-    }
-
-    if isinstance(procedure.script, domain.GitScript):
-        git_args = {
-            "git_repo": procedure.script.git_args.git_repo,
-            "git_branch": procedure.script.git_args.git_branch,
-            "git_commit": procedure.script.git_args.git_commit,
-        }
-        script["git_args"] = git_args
-
-    procedure_history = {
-        "process_states": [
-            (state[0].name, state[1]) for state in procedure.history.process_states
-        ],
-        "stacktrace": procedure.history.stacktrace,
-    }
-    return {
-        "uri": flask.url_for(
+    procedure.uri = flask.url_for(
             f"{API_PATH}.ska_oso_oet_procedure_ui_get_procedure",
             procedure_id=procedure.id,
             _external=True,
-        ),
-        "script": script,
-        "script_args": script_args,
-        "history": procedure_history,
-        "state": procedure.state.name,
-    }
+        )
+
+    return procedure.model_dump(exclude={'id'})
 
 
 def _get_script(script_type, script_uri, script_dict):
