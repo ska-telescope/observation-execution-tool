@@ -10,10 +10,11 @@ import os
 import tempfile
 import time
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pubsub import pub
-from pydantic import BaseModel
+from pydantic import BaseModel, model_serializer, Field
+from pydantic_core.core_schema import SerializerFunctionWrapHandler
 from ska_db_oda.persistence.unitofwork.filesystemunitofwork import FilesystemUnitOfWork
 from ska_db_oda.persistence.unitofwork.postgresunitofwork import PostgresUnitOfWork
 from ska_oso_pdm import SBDefinition
@@ -66,13 +67,16 @@ class ActivityCommand(BaseModel):
 
 class ActivitySummary(BaseModel):
     id: int  # pylint: disable=invalid-name
-    pid: int
+    pid: int = Field(alias="procedure_id"),
+    uri: Optional[str] = None
     sbd_id: str
     activity_name: str
     prepare_only: bool
     script_args: Dict[str, domain.ProcedureInput]
     activity_states: List[Tuple[ActivityState, float]]
+    state: Optional[str] = None
     sbi_id: str
+
 
     def __init__(
         self,
@@ -84,17 +88,48 @@ class ActivitySummary(BaseModel):
         script_args: Dict[str, domain.ProcedureInput],
         activity_states: List[Tuple[ActivityState, float]] | None,
         sbi_id: str,
+        uri: str | None = None,
+        state: str | None = None,
     ):
         super(ActivitySummary, self).__init__(
             id=id,
             pid=pid,
+            uri=uri,
             sbd_id=sbd_id,
             activity_name=activity_name,
             prepare_only=prepare_only,
             script_args=script_args,
             activity_states=activity_states,
+            state = state,
             sbi_id=sbi_id,
         )
+
+    @model_serializer(mode="wrap")
+    def _serialize_activity_summary(
+            self, default_serializer: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+
+        script_args = {
+            fn: {
+                "args": self.script_args[fn].args,
+                "kwargs": self.script_args[fn].kwargs,
+            }
+            for fn in self.script_args.keys()
+        }
+        activity_states = [
+        (state_enum.name, timestamp)
+        for (state_enum, timestamp) in self.activity_states
+        ]
+        state = max(
+            states_to_time := dict(self.activity_states), key=states_to_time.get
+        ).name
+
+        dumped = default_serializer(self)
+        dumped["state"] = state
+        dumped["activity_states"] = activity_states
+        dumped["script_args"] = script_args
+
+        return dumped
 
 
 class ActivityService:
