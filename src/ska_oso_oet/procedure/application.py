@@ -142,7 +142,10 @@ class ProcedureHistory(BaseModel):
 
     @model_serializer
     def _serialize_procedure_history(self) -> dict[str, Any]:
-        process_states = [(state[0].name, state[1]) for state in self.process_states]
+        process_states = [
+            (state[0].name, state[1])  # pylint: disable=unsubscriptable-object
+            for state in self.process_states
+        ]
 
         return {
             "process_states": process_states,
@@ -176,7 +179,7 @@ class ProcedureSummary(BaseModel):
 
     def __init__(
         self,
-        id: int,
+        id: int,  # pylint: disable=redefined-builtin
         script: domain.ExecutableScript | None,
         script_args: List[ArgCapture] | None,
         history: ProcedureHistory | None,

@@ -80,7 +80,7 @@ class ActivitySummary(BaseModel):
 
     def __init__(
         self,
-        id: int,  # pylint: disable=invalid-name
+        id: int,  # pylint: disable=redefined-builtin
         pid: int,
         sbd_id: str,
         activity_name: str,
@@ -94,7 +94,7 @@ class ActivitySummary(BaseModel):
         super(ActivitySummary, self).__init__(
             id=id,
             pid=pid,
-            procedure_id = pid,
+            procedure_id=pid,
             uri=uri,
             sbd_id=sbd_id,
             activity_name=activity_name,
