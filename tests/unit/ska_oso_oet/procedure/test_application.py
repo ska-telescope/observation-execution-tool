@@ -469,7 +469,7 @@ class TestScriptExecutionService:
             id=process_pid,
             script=FileSystemScript("file://a"),
             script_args=[init_args],
-            history=mock.MagicMock(),
+            history=ProcedureHistory(),
             state=ProcedureState.IDLE,
         )
         expected = [process_summary]
@@ -492,7 +492,7 @@ class TestScriptExecutionService:
             id=1,
             script=FileSystemScript("file://a"),
             script_args=[init_args],
-            history=mock.MagicMock(),
+            history=ProcedureHistory(),
             state=ProcedureState.IDLE,
         )
 

@@ -202,12 +202,12 @@ def make_public_procedure_summary(procedure: application.ProcedureSummary):
     :return: safe JSON representation
     """
     procedure.uri = flask.url_for(
-            f"{API_PATH}.ska_oso_oet_procedure_ui_get_procedure",
-            procedure_id=procedure.id,
-            _external=True,
-        )
+        f"{API_PATH}.ska_oso_oet_procedure_ui_get_procedure",
+        procedure_id=procedure.id,
+        _external=True,
+    )
 
-    return procedure.model_dump(exclude={'id'})
+    return procedure.model_dump(exclude={"id"})
 
 
 def _get_script(script_type, script_uri, script_dict):

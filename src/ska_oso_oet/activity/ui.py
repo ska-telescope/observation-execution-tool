@@ -82,9 +82,9 @@ def make_public_activity_summary(
     :return: safe JSON representation
     """
     activity.uri = flask.url_for(
-            f"{API_PATH}.ska_oso_oet_activity_ui_get_activity",
-            activity_id=activity.id,
-            _external=True,
-        )
+        f"{API_PATH}.ska_oso_oet_activity_ui_get_activity",
+        activity_id=activity.id,
+        _external=True,
+    )
 
-    return activity.model_dump(exclude={'id'}, by_alias=True)
+    return activity.model_dump(exclude={"id"}, by_alias=True)
