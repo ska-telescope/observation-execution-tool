@@ -72,7 +72,7 @@ class StartProcessCommand(BaseModel):
         run_args: domain.ProcedureInput,
         force_start: bool = False,
     ):
-        super(StartProcessCommand, self).__init__(
+        super().__init__(
             process_uid=process_uid,
             fn_name=fn_name,
             run_args=run_args,

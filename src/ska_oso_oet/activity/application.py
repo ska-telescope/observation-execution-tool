@@ -91,7 +91,7 @@ class ActivitySummary(BaseModel):
         uri: str | None = None,
         state: str | None = None,
     ):
-        super(ActivitySummary, self).__init__(
+        super().__init__(
             id=id,
             pid=pid,
             procedure_id=pid,

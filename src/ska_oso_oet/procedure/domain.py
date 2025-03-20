@@ -131,7 +131,7 @@ class FileSystemScript(ExecutableScript):
     script_uri: str
 
     def __init__(self, script_uri: str):
-        super(FileSystemScript, self).__init__(script_uri=script_uri)
+        super().__init__(script_uri=script_uri)
 
     @staticmethod
     def get_type():
@@ -152,7 +152,7 @@ class GitScript(ExecutableScript):
     create_env: Optional[bool] = False
 
     def __init__(self, script_uri: str, git_args: GitArgs, create_env: bool = False):
-        super(GitScript, self).__init__(
+        super().__init__(
             script_uri=script_uri, git_args=git_args, create_env=create_env
         )
 
