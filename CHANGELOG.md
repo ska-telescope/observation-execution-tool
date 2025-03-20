@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+* Updating to use Pydantic BaseModels throughout the OET
 
 6.6.0
 **********
