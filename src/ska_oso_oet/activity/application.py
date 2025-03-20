@@ -68,6 +68,7 @@ class ActivityCommand(BaseModel):
 class ActivitySummary(BaseModel):
     id: int  # pylint: disable=invalid-name
     pid: int = (Field(alias="procedure_id"),)
+    procedure_id: int
     uri: Optional[str] = None
     sbd_id: str
     activity_name: str
@@ -93,6 +94,7 @@ class ActivitySummary(BaseModel):
         super(ActivitySummary, self).__init__(
             id=id,
             pid=pid,
+            procedure_id = pid,
             uri=uri,
             sbd_id=sbd_id,
             activity_name=activity_name,
