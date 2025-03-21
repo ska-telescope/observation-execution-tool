@@ -81,30 +81,10 @@ def make_public_activity_summary(
     :param activity: ActivitySummary to convert
     :return: safe JSON representation
     """
-    script_args = {
-        fn: {
-            "args": activity.script_args[fn].args,
-            "kwargs": activity.script_args[fn].kwargs,
-        }
-        for fn in activity.script_args.keys()
-    }
-    return {
-        "uri": flask.url_for(
-            f"{API_PATH}.ska_oso_oet_activity_ui_get_activity",
-            activity_id=activity.id,
-            _external=True,
-        ),
-        "activity_name": activity.activity_name,
-        "sbd_id": activity.sbd_id,
-        "procedure_id": activity.pid,
-        "prepare_only": activity.prepare_only,
-        "script_args": script_args,
-        "activity_states": [
-            (state_enum.name, timestamp)
-            for (state_enum, timestamp) in activity.activity_states
-        ],
-        "state": max(
-            states_to_time := dict(activity.activity_states), key=states_to_time.get
-        ).name,
-        "sbi_id": activity.sbi_id,
-    }
+    activity.uri = flask.url_for(
+        f"{API_PATH}.ska_oso_oet_activity_ui_get_activity",
+        activity_id=activity.id,
+        _external=True,
+    )
+
+    return activity.model_dump(exclude={"id"}, by_alias=True)

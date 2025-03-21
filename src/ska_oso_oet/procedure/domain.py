@@ -3,7 +3,7 @@ The ska_oso_oet.procedure.domain module holds domain entities from the script
 execution domain. Entities in this domain are things like scripts,
 OS processes, process supervisors, signal handlers, etc.
 """
-import dataclasses
+import abc
 import enum
 import errno
 import importlib.machinery
@@ -16,9 +16,11 @@ import subprocess
 import sys
 import threading
 import types
-from typing import Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type
 
 from pubsub import pub
+from pydantic import BaseModel, model_serializer, model_validator
+from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
 from ska_oso_oet import mptools
 from ska_oso_oet.mptools import EventMessage
@@ -91,8 +93,7 @@ class LifecycleMessage(EventMessage):
         super().__init__(msg_src, "LIFECYCLE", new_state)
 
 
-@dataclasses.dataclass
-class ExecutableScript:
+class ExecutableScript(BaseModel, abc.ABC):
     """
     Base class for all executable scripts.
 
@@ -105,8 +106,23 @@ class ExecutableScript:
     - etc.
     """
 
+    @model_validator(mode="after")
+    def validate_prefix(self):
+        if not self.script_uri.startswith(self.get_prefix()):
+            raise ValueError(
+                f"Incorrect prefix for {self.__class__.__name__}: {self.script_uri}"
+            )
+        return self
 
-@dataclasses.dataclass
+    @model_serializer(mode="wrap")
+    def _serialize_executable_script(
+        self, default_serializer: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+        dumped = default_serializer(self)
+        dumped.update({"script_type": self.get_type()})
+        return dumped
+
+
 class FileSystemScript(ExecutableScript):
     """
     Represents a script stored on the file system.
@@ -114,45 +130,52 @@ class FileSystemScript(ExecutableScript):
 
     script_uri: str
 
-    def __post_init__(self):
-        if not self.script_uri.startswith(self.get_prefix()):
-            raise ValueError(
-                f"Incorrect prefix for {self.__class__.__name__}: {self.script_uri}"
-            )
+    def __init__(self, script_uri: str):
+        super().__init__(script_uri=script_uri)
 
-    def get_type(self):
+    @staticmethod
+    def get_type():
         return "filesystem"
 
-    def get_prefix(self):
+    @staticmethod
+    def get_prefix():
         return "file://"
 
 
-@dataclasses.dataclass
-class GitScript(FileSystemScript):
+class GitScript(ExecutableScript):
     """
     Represents a script in a git repository.
     """
 
+    script_uri: str
     git_args: GitArgs
     create_env: Optional[bool] = False
 
-    def get_type(self):
+    def __init__(self, script_uri: str, git_args: GitArgs, create_env: bool = False):
+        super().__init__(
+            script_uri=script_uri, git_args=git_args, create_env=create_env
+        )
+
+    @staticmethod
+    def get_type():
         return "git"
 
-    def get_prefix(self):
+    @staticmethod
+    def get_prefix():
         return "git://"
 
 
-@dataclasses.dataclass
-class ProcedureInput:
+class ProcedureInput(BaseModel):
     """
     ProcedureInput is a non-functional dataclass holding the arguments passed
     to a script method.
     """
 
+    args: tuple
+    kwargs: dict
+
     def __init__(self, *args, **kwargs):
-        self.args: tuple = args
-        self.kwargs: dict = kwargs
+        super().__init__(args=args, kwargs=kwargs)
 
     def __add__(self, other):
         if other.args:

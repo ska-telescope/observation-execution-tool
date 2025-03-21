@@ -1,4 +1,3 @@
-import dataclasses
 import multiprocessing
 import os
 import shutil
@@ -6,16 +5,35 @@ import subprocess
 import venv
 from typing import Dict
 
+from pydantic import BaseModel, ConfigDict
+
 from ska_oso_oet.procedure.gitmanager import GitArgs, GitManager
 
 
-@dataclasses.dataclass
-class Environment:
+class Environment(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     env_id: str
-    creating: multiprocessing.Event  # Set when environment is being created
-    created: multiprocessing.Event  # Set when environment is ready to be used
+    creating: any  # multiprocessing.Event  - Set when environment is being created
+    created: any  # multiprocessing.Event  -  Set when environment is ready to be used
     location: str
     site_packages: str
+
+    def __init__(
+        self,
+        env_id: str,
+        creating: any,
+        created: any,
+        location: str,
+        site_packages: str,
+    ):
+        super().__init__(
+            env_id=env_id,
+            creating=creating,
+            created=created,
+            location=location,
+            site_packages=site_packages,
+        )
 
 
 class EnvironmentManager:

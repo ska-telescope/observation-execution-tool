@@ -5,15 +5,16 @@ interface, delegating to objects in the domain layer for business rules and
 actions.
 """
 import collections
-import dataclasses
 import logging
 import multiprocessing.context
 import os
 import threading
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from pubsub import pub
+from pydantic import BaseModel, ConfigDict, model_serializer
+from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
 from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
@@ -21,7 +22,7 @@ from ska_oso_oet.procedure import domain
 from ska_oso_oet.procedure.domain import EventMessage, ProcedureState
 
 base_dir = os.getenv("SCRIPTS_LOCATION", "/scripts")
-ABORT_SCRIPT = domain.FileSystemScript("file://" + base_dir + "/abort.py")
+ABORT_SCRIPT = domain.FileSystemScript(str("file://" + base_dir + "/abort.py"))
 
 HISTORY_MAX_LENGTH = 10
 
@@ -35,8 +36,7 @@ DELETEABLE_STATES = [
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass
-class PrepareProcessCommand:
+class PrepareProcessCommand(BaseModel):
     """
     PrepareProcessCommand is input argument dataclass for the
     ScriptExecutionService prepare command. It holds all the information
@@ -46,9 +46,13 @@ class PrepareProcessCommand:
     script: domain.ExecutableScript
     init_args: domain.ProcedureInput
 
+    def __init__(
+        self, script: domain.ExecutableScript, init_args: domain.ProcedureInput
+    ):
+        super(PrepareProcessCommand, self).__init__(script=script, init_args=init_args)
 
-@dataclasses.dataclass
-class StartProcessCommand:
+
+class StartProcessCommand(BaseModel):
     """
     StartProcessCommand is the input argument dataclass for the
     ScriptExecutionService start command. It holds the references required to
@@ -61,9 +65,22 @@ class StartProcessCommand:
     run_args: domain.ProcedureInput
     force_start: bool = False
 
+    def __init__(
+        self,
+        process_uid: int,
+        fn_name: str,
+        run_args: domain.ProcedureInput,
+        force_start: bool = False,
+    ):
+        super().__init__(
+            process_uid=process_uid,
+            fn_name=fn_name,
+            run_args=run_args,
+            force_start=force_start,
+        )
 
-@dataclasses.dataclass
-class StopProcessCommand:
+
+class StopProcessCommand(BaseModel):
     """
     StopProcessCommand is the input argument dataclass for the
     ScriptExecutionService Stop command. It holds the references required to
@@ -74,9 +91,11 @@ class StopProcessCommand:
     process_uid: int
     run_abort: bool
 
+    def __init__(self, process_uid: int, run_abort: bool):
+        super().__init__(process_uid=process_uid, run_abort=run_abort)
 
-@dataclasses.dataclass
-class ProcedureHistory:
+
+class ProcedureHistory(BaseModel):
     """
     ProcedureHistory is a non-functional dataclass holding execution history of
     a Procedure spanning all transactions.
@@ -88,15 +107,20 @@ class ProcedureHistory:
         stacktrace from process
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    process_states: Optional[List[Tuple[domain.ProcedureState, float]]] = (None,)
+    stacktrace: Optional[any] = (None,)
+
     def __init__(
         self,
         process_states: Optional[List[Tuple[domain.ProcedureState, float]]] = None,
-        stacktrace=None,
+        stacktrace: Optional[any] = None,
     ):
         if process_states is None:
             process_states = []
-        self.process_states = process_states
-        self.stacktrace = stacktrace
+
+        super().__init__(process_states=process_states, stacktrace=stacktrace)
 
     def __eq__(self, other):
         if not isinstance(other, ProcedureHistory):
@@ -116,9 +140,20 @@ class ProcedureHistory:
             p_history, self.stacktrace
         )
 
+    @model_serializer
+    def _serialize_procedure_history(self) -> dict[str, Any]:
+        process_states = [
+            (state[0].name, state[1])  # pylint: disable=unsubscriptable-object
+            for state in self.process_states
+        ]
 
-@dataclasses.dataclass
-class ArgCapture:
+        return {
+            "process_states": process_states,
+            "stacktrace": self.stacktrace,
+        }
+
+
+class ArgCapture(BaseModel):
     """
     ArgCapture is a struct to record function call and time of invocation.
     """
@@ -128,8 +163,7 @@ class ArgCapture:
     time: float = None
 
 
-@dataclasses.dataclass
-class ProcedureSummary:
+class ProcedureSummary(BaseModel):
     """
     ProcedureSummary is a brief representation of a runtime Procedure. It
     captures essential information required to describe a Procedure and to
@@ -137,10 +171,45 @@ class ProcedureSummary:
     """
 
     id: int  # pylint: disable=invalid-name
-    script: domain.ExecutableScript
-    script_args: List[ArgCapture]
-    history: ProcedureHistory
-    state: domain.ProcedureState
+    uri: Optional[str] = None
+    script: domain.GitScript | domain.FileSystemScript | None
+    script_args: List[ArgCapture] | None
+    history: ProcedureHistory | None
+    state: domain.ProcedureState | None
+
+    def __init__(
+        self,
+        id: int,  # pylint: disable=redefined-builtin
+        script: domain.ExecutableScript | None,
+        script_args: List[ArgCapture] | None,
+        history: ProcedureHistory | None,
+        state: domain.ProcedureState | None,
+        uri: str | None = None,
+    ):
+        super().__init__(
+            id=id,
+            uri=uri,
+            script=script,
+            script_args=script_args,
+            history=history,
+            state=state,
+        )
+
+    @model_serializer(mode="wrap")
+    def _serialize_procedure_summary(
+        self, default_serializer: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+        script_args = {
+            args.fn: {"args": args.fn_args.args, "kwargs": args.fn_args.kwargs}
+            for args in self.script_args
+        }
+        state = self.state.name
+        dumped = default_serializer(self)
+
+        dumped["script_args"] = script_args
+        dumped["state"] = state
+
+        return dumped
 
 
 class ScriptExecutionService:

@@ -1,16 +1,15 @@
 """
 Static helper functions for cloning and working with a Git repository
 """
-import dataclasses
 import os
 from typing import Optional
 from urllib.parse import urlparse
 
 from git import Git, Repo
+from pydantic import BaseModel, model_validator
 
 
-@dataclasses.dataclass
-class GitArgs:
+class GitArgs(BaseModel):
     """
     GitArgs captures information required to identify scripts
     located in git repositories.
@@ -22,11 +21,23 @@ class GitArgs:
     git_branch: Optional[str] = None
     git_commit: Optional[str] = None
 
-    def __post_init__(self):
+    def __init__(
+        self,
+        git_repo: str = "https://gitlab.com/ska-telescope/oso/ska-oso-scripting.git",
+        git_branch: str = None,
+        git_commit: str = None,
+    ):
+        super(GitArgs, self).__init__(
+            git_repo=git_repo, git_branch=git_branch, git_commit=git_commit
+        )
+
+    @model_validator(mode="after")
+    def post_init(self):
         # We only want to set the default branch if the commit isn't set, as the user
         # might just give a commit hash from a feature branch
         if self.git_branch is None and self.git_commit is None:
             self.git_branch = "master"
+        return self
 
 
 class GitManager:

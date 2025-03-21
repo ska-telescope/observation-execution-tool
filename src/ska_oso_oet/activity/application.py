@@ -4,16 +4,17 @@ to OET 'activities' that belong in the application layer. This application
 layer holds the application interface, delegating to objects in the domain
 layer for business rules and actions.
 """
-import dataclasses
 import itertools
 import logging
 import os
 import tempfile
 import time
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pubsub import pub
+from pydantic import BaseModel, Field, model_serializer
+from pydantic_core.core_schema import SerializerFunctionWrapHandler
 from ska_db_oda.persistence.unitofwork.filesystemunitofwork import FilesystemUnitOfWork
 from ska_db_oda.persistence.unitofwork.postgresunitofwork import PostgresUnitOfWork
 from ska_oso_pdm import SBDefinition
@@ -38,8 +39,7 @@ from ska_oso_oet.procedure.application import (
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass
-class ActivityCommand:
+class ActivityCommand(BaseModel):
     """ """
 
     activity_name: str
@@ -48,17 +48,88 @@ class ActivityCommand:
     create_env: bool
     script_args: Dict[str, domain.ProcedureInput]
 
+    def __init__(
+        self,
+        activity_name: str,
+        sbd_id: str,
+        prepare_only: bool,
+        create_env: bool,
+        script_args: Dict[str, domain.ProcedureInput],
+    ):
+        super(ActivityCommand, self).__init__(
+            activity_name=activity_name,
+            sbd_id=sbd_id,
+            prepare_only=prepare_only,
+            create_env=create_env,
+            script_args=script_args,
+        )
 
-@dataclasses.dataclass
-class ActivitySummary:
+
+class ActivitySummary(BaseModel):
     id: int  # pylint: disable=invalid-name
-    pid: int
+    pid: int = (Field(alias="procedure_id"),)
+    procedure_id: int
+    uri: Optional[str] = None
     sbd_id: str
     activity_name: str
     prepare_only: bool
     script_args: Dict[str, domain.ProcedureInput]
     activity_states: List[Tuple[ActivityState, float]]
+    state: Optional[str] = None
     sbi_id: str
+
+    def __init__(
+        self,
+        id: int,  # pylint: disable=redefined-builtin
+        pid: int,
+        sbd_id: str,
+        activity_name: str,
+        prepare_only: bool,
+        script_args: Dict[str, domain.ProcedureInput],
+        activity_states: List[Tuple[ActivityState, float]] | None,
+        sbi_id: str,
+        uri: str | None = None,
+        state: str | None = None,
+    ):
+        super().__init__(
+            id=id,
+            pid=pid,
+            procedure_id=pid,
+            uri=uri,
+            sbd_id=sbd_id,
+            activity_name=activity_name,
+            prepare_only=prepare_only,
+            script_args=script_args,
+            activity_states=activity_states,
+            state=state,
+            sbi_id=sbi_id,
+        )
+
+    @model_serializer(mode="wrap")
+    def _serialize_activity_summary(
+        self, default_serializer: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+        script_args = {
+            fn: {
+                "args": self.script_args[fn].args,
+                "kwargs": self.script_args[fn].kwargs,
+            }
+            for fn in self.script_args.keys()
+        }
+        activity_states = [
+            (state_enum.name, timestamp)
+            for (state_enum, timestamp) in self.activity_states
+        ]
+        state = max(
+            states_to_time := dict(self.activity_states), key=states_to_time.get
+        ).name
+
+        dumped = default_serializer(self)
+        dumped["state"] = state
+        dumped["activity_states"] = activity_states
+        dumped["script_args"] = script_args
+
+        return dumped
 
 
 class ActivityService:

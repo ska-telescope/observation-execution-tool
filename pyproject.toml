@@ -69,6 +69,7 @@ jsonschema = "4.17.3"
 # charts/ska-oso-oet-umbrella/Chart.yaml
 ska-db-oda = "^7.3.0"
 ska-oso-scripting = "^11.0.0"
+pydantic = "^2.10.6"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.8.0"
@@ -97,6 +98,7 @@ recommonmark = "^0.7.1"
 # required to resolve the following import issue:
 # Could not import extension sphinxcontrib.openapi (exception: cannot import name 'error_string' from 'docutils.io'
 mistune = "^2"
+pydantic = "^2.10.6"
 
 [tool.poetry.scripts]
 oet = "ska_oso_oet_client.main:main"
