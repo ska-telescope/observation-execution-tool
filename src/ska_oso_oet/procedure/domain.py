@@ -16,10 +16,10 @@ import subprocess
 import sys
 import threading
 import types
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Literal, Optional, Type
 
 from pubsub import pub
-from pydantic import BaseModel, model_serializer, model_validator
+from pydantic import BaseModel, Field, model_serializer, model_validator
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
 from ska_oso_oet import mptools
@@ -66,22 +66,22 @@ def script_signal_handler(
     raise exception_class()
 
 
-class ProcedureState(enum.Enum):
+class ProcedureState(str, enum.Enum):
     """
     Represents the script execution state.
     """
 
-    UNKNOWN = enum.auto()
-    IDLE = enum.auto()
-    CREATING = enum.auto()
-    PREP_ENV = enum.auto()
-    LOADING = enum.auto()
-    INITIALISING = enum.auto()
-    READY = enum.auto()
-    RUNNING = enum.auto()
-    COMPLETE = enum.auto()
-    STOPPED = enum.auto()
-    FAILED = enum.auto()
+    UNKNOWN = "UNKNOWN"
+    IDLE = "IDLE"
+    CREATING = "CREATING"
+    PREP_ENV = "PREP_ENV"
+    LOADING = "LOADING"
+    INITIALISING = "INITIALISING"
+    READY = "READY"
+    RUNNING = "RUNNING"
+    COMPLETE = "COMPLETE"
+    STOPPED = "STOPPED"
+    FAILED = "FAILED"
 
 
 class LifecycleMessage(EventMessage):
@@ -129,9 +129,7 @@ class FileSystemScript(ExecutableScript):
     """
 
     script_uri: str
-
-    def __init__(self, script_uri: str):
-        super().__init__(script_uri=script_uri)
+    script_type: Literal["filesystem"] = "filesystem"
 
     @staticmethod
     def get_type():
@@ -148,13 +146,9 @@ class GitScript(ExecutableScript):
     """
 
     script_uri: str
-    git_args: GitArgs
-    create_env: Optional[bool] = False
-
-    def __init__(self, script_uri: str, git_args: GitArgs, create_env: bool = False):
-        super().__init__(
-            script_uri=script_uri, git_args=git_args, create_env=create_env
-        )
+    git_args: GitArgs = Field(default=GitArgs())
+    create_env: bool = False
+    script_type: Literal["git"] = "git"
 
     @staticmethod
     def get_type():
@@ -171,8 +165,8 @@ class ProcedureInput(BaseModel):
     to a script method.
     """
 
-    args: tuple
-    kwargs: dict
+    args: list = Field(default_factory=list)
+    kwargs: dict = Field(default_factory=dict)
 
     def __init__(self, *args, **kwargs):
         super().__init__(args=args, kwargs=kwargs)
@@ -181,7 +175,7 @@ class ProcedureInput(BaseModel):
         if other.args:
             raise NotImplementedError("Combining positional arguments not supported")
 
-        combined_kwargs = self.kwargs.copy()
+        combined_kwargs = self.kwargs.copy()  # pylint: disable=no-member
         combined_kwargs.update(other.kwargs)
 
         return ProcedureInput(*self.args, **combined_kwargs)
@@ -195,7 +189,9 @@ class ProcedureInput(BaseModel):
 
     def __repr__(self):
         args = ", ".join((str(a) for a in self.args))
-        kwargs = ", ".join(["{!s}={!r}".format(k, v) for k, v in self.kwargs.items()])
+        kwargs = ", ".join(
+            ["{!s}={!r}".format(k, v) for k, v in self.kwargs.items()]
+        )  # pylint: disable=no-member
         return "<ProcedureInput({})>".format(", ".join((args, kwargs)))
 
 
