@@ -7,7 +7,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from ska_oso_oet import ui
-from ska_oso_oet.fastapi import create_app
 
 OET_MAJOR_VERSION = version("ska-oso-oet").split(".")[0]
 # Default as it uses the default namespace. When deployed to a different namespace the first part will change to that namespace.
@@ -28,6 +27,20 @@ def fixture_client():
     Test fixture that returns an OET Flask application instance
     """
 
+    app = ui.create_fastapi_app()
+    app.state.msg_src = "unit tests"
+    app.state.sse_shutdown_event = threading.Event()
+    # raise_server_exceptions can be useful for debugging, but for the tests we want to
+    # see how the server handles the exceptions and wraps it into a response
+    return TestClient(app, raise_server_exceptions=False)
+
+
+@pytest.fixture(name="flask_client")
+def fixture_flask_client():
+    """
+    Test fixture that returns an OET Flask application instance
+    """
+
     app = ui.create_app()
     app.config.update(TESTING=True)
     app.config.update(msg_src="unit tests")
@@ -36,17 +49,6 @@ def fixture_client():
     with app.app_context():
         with app.test_client() as client:
             yield client
-
-
-@pytest.fixture()
-def fastapi_client() -> TestClient:
-    """
-    Create a test client from the app instance, without running a live server
-    """
-    app = create_app()
-    app.state.msg_src = "unit tests"
-    app.state.sse_shutdown_event = threading.Event()
-    return TestClient(app, raise_server_exceptions=False)
 
 
 @pytest.fixture(

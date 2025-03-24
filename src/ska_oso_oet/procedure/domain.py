@@ -190,8 +190,11 @@ class ProcedureInput(BaseModel):
     def __repr__(self):
         args = ", ".join((str(a) for a in self.args))
         kwargs = ", ".join(
-            ["{!s}={!r}".format(k, v) for k, v in self.kwargs.items()]
-        )  # pylint: disable=no-member
+            [
+                "{!s}={!r}".format(k, v)
+                for k, v in self.kwargs.items()  # pylint: disable=no-member
+            ]
+        )
         return "<ProcedureInput({})>".format(", ".join((args, kwargs)))
 
 

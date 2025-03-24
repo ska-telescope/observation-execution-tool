@@ -35,6 +35,7 @@ from ska_oso_oet.procedure.application import (
     ProcedureSummary,
     StartProcessCommand,
 )
+from ska_oso_oet.utils.ui import API_PATH
 
 LOGGER = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ class ActivitySummary(BaseModel):
     @computed_field
     @property
     def uri(self) -> str:
-        return f"http://localhost/ska-oso-oet/oet/api/v6/activities/{self.id}"
+        return f"http://localhost{API_PATH}/activities/{self.id}"
 
     def __init__(
         self,

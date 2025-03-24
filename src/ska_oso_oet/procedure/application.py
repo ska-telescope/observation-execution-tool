@@ -20,6 +20,7 @@ from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure import domain
 from ska_oso_oet.procedure.domain import EventMessage, ProcedureState
+from ska_oso_oet.utils.ui import API_PATH
 
 base_dir = os.getenv("SCRIPTS_LOCATION", "/scripts")
 ABORT_SCRIPT = domain.FileSystemScript(script_uri=f"file://{base_dir}/abort.py")
@@ -183,7 +184,7 @@ class ProcedureSummary(BaseModel):
     @computed_field
     @property
     def uri(self) -> str:
-        return f"http://localhost/ska-oso-oet/oet/api/v6/procedures/{self.id}"
+        return f"http://localhost{API_PATH}/procedures/{self.id}"
 
     def __init__(
         self,

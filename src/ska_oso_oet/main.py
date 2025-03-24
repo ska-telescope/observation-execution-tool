@@ -16,7 +16,6 @@ from ska_ser_logging import configure_logging
 from ska_oso_oet import ui
 from ska_oso_oet.activity.application import ActivityCommand, ActivityService
 from ska_oso_oet.event import topics
-from ska_oso_oet.fastapi import create_app
 from ska_oso_oet.mptools import (
     EventMessage,
     MainContext,
@@ -32,7 +31,7 @@ from ska_oso_oet.procedure.application import (
     StartProcessCommand,
     StopProcessCommand,
 )
-from ska_oso_oet.ui import API_PATH
+from ska_oso_oet.utils.ui import API_PATH
 
 
 class EventBusWorker(QueueProcWorker):
@@ -176,22 +175,23 @@ class FlaskWorker(EventBusWorker):
 
 class FastAPIWorker(EventBusWorker):
     """
-    TODO
+    FastAPIWorker is an EventBusWorker that runs a FastAPI app.
+
+    By extending EventBusWorker, FastAPI functions can use pypubsub to subscribe
+    to and publish messages, and these messages will put on the main queue to
+    be broadcast to other EventBusWorkers.
     """
 
     def startup(self) -> None:
         # Call super.startup to enable pypubsub <-> event queue republishing
         super().startup()
 
-        self.app = create_app()
+        self.app = ui.create_fastapi_app()
         self.config = uvicorn.Config(app=self.app, host="0.0.0.0", port=5001)
         self.server = uvicorn.Server(config=self.config)
 
         # override default msg_src with our real process name
         self.app.state.msg_src = self.name
-        # TODO remove this comment. Initially I tried to use the fastapi lifespan and life span state but the shutdown
-        #  event needs to be set before the connections are closed, where the lifespan event is after
-        # Another option here could be to use a global and inject it in Depends()
         self.app.state.sse_shutdown_event = threading.Event()
 
         # # start FastAPI in a thread as app.run is a blocking call
@@ -516,6 +516,7 @@ def main(mp_ctx: multiprocessing.context.BaseContext):
         # script_executor_q is the message queue for messages from the ScriptExecutionServiceWorker
         # activity_q is the message queue for messages from the ActivityServiceWorker
         # flask_q is the queue for messages intended for the FlaskWorker process
+        # fastapi_q is the queue for messages intended for the FastAPIWorker process
         script_executor_q = main_ctx.MPQueue()
         activity_q = main_ctx.MPQueue()
         flask_q = main_ctx.MPQueue()

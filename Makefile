@@ -55,7 +55,7 @@ endif
 
 # The OET_URL is used by the OET client which runs inside the test pod during k8s-test. We set it explicitly here rather than rely on
 # the default in the client, to ensure we are pointing at this instance of the OET
-OET_URL ?= http://ska-oso-oet-rest-test:5000/$(KUBE_NAMESPACE)/oet/api/v$(MAJOR_VERSION)
+OET_URL ?= http://ska-oso-oet-rest-test:5001/$(KUBE_NAMESPACE)/oet/api/v$(MAJOR_VERSION)
 # Set the k8s test command run inside the testing pod to only run the acceptance
 # tests (no k8s pod deployment required for unit tests)
 POSTGRES_HOST ?= $(HELM_RELEASE)-postgresql

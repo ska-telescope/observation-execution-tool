@@ -17,20 +17,21 @@ spec:
   rules:
     - http:
         paths:
-          - path: /{{ .Release.Namespace }}/oet/fastapi/*
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
-                port:
-                  number: 5001
-          - path: /{{ .Release.Namespace }}/oet/api.*
+          - path: /{{ .Release.Namespace }}/oet/api/v6/stream
             pathType: Prefix
             backend:
               service:
                 name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
                 port:
                   number: 5000
+          - path: /{{ .Release.Namespace }}/oet/api.*
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+                port:
+                  number: 5001
+
 {{ end }}
 ---
 apiVersion: v1

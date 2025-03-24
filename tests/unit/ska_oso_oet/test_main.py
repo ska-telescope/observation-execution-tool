@@ -13,7 +13,7 @@ from ska_oso_oet.event import topics
 from ska_oso_oet.main import (
     ActivityServiceWorker,
     EventBusWorker,
-    FlaskWorker,
+    FastAPIWorker,
     ScriptExecutionServiceWorker,
     main_loop,
 )
@@ -197,7 +197,7 @@ class TestScriptExecutionWorker:
         SES.prepare should be called when 'request.procedure.create' message is received
         """
         cmd = application.PrepareProcessCommand(
-            script=domain.FileSystemScript("file:///hi"),
+            script=domain.FileSystemScript(script_uri="file:///hi"),
             init_args=domain.ProcedureInput(),
         )
         with mock.patch(
@@ -590,23 +590,23 @@ def set_event(event, *args, **kwargs):
     event.set()
 
 
-def test_flaskworker_server_lifecycle(mp_fixture, caplog, mocker):
+def test_fastapiworker_server_lifecycle(mp_fixture, caplog, mocker):
     """
-    Verify that the FlaskWorker starts and shuts down the Waitress server.
+    Verify that the FastAPIWorker starts and shuts down the uvicorn server.
     """
 
-    with mock.patch("waitress.create_server") as m_server:
+    with mock.patch("uvicorn.Server") as m_server:
         _proc_worker_wrapper_helper(
             mp_fixture,
             caplog,
-            FlaskWorker,
+            FastAPIWorker,
             args=(MPQueue(ctx=mp_fixture),),
             expect_shutdown_evt=True,
         )
 
         mock_app_instance = m_server.return_value
         mock_app_instance.run.assert_called_once()
-        mock_app_instance.close.assert_called_once()
+        assert mock_app_instance.should_exit
 
 
 def test_main_loop_ends_when_shutdown_event_is_set(mp_fixture):

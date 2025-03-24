@@ -57,7 +57,9 @@ autodoc_mock_imports = [
     "waitress",
     "werkzeug",
     "uvicorn",
-    "fastapi"
+    "fastapi",
+    "pydantic",
+    "pydantic_core"
 ]
 
 autodoc_default_options = {

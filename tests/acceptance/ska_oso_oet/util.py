@@ -13,7 +13,7 @@ KUBE_NAMESPACE = getenv("KUBE_NAMESPACE", "ska-oso-oet")
 OET_MAJOR_VERSION = version("ska-oso-oet").split(".")[0]
 OET_URL = getenv(
     "OET_URL",
-    f"http://ska-oso-oet-rest-test:5000/{KUBE_NAMESPACE}/oet/api/v{OET_MAJOR_VERSION}",
+    f"http://ska-oso-oet-rest-test:5001/{KUBE_NAMESPACE}/oet/api/v{OET_MAJOR_VERSION}",
 )
 
 PROCEDURE_ADAPTER = ProcedureAdapter(f"{OET_URL}/procedures")
