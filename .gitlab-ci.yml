@@ -19,9 +19,9 @@ variables:
 
 stages:
   - build
-  - lint
   - test
   - deploy # this is the name of the dev environment stage in the ST template
+  - lint
   - cleanup
   - publish
   - integration

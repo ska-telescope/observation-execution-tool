@@ -103,7 +103,7 @@ def activity_ends_in_expected_state(state):
 def sbi_exists_in_oda(sbd_id):
     url = adapter.server_url
     response = requests.get(url, timeout=5)
-    activities_json = response.json()["activities"]
+    activities_json = response.json()
     assert activities_json[-1]["sbi_id"]
     sbi_id = activities_json[-1]["sbi_id"]
 

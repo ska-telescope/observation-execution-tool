@@ -45,7 +45,7 @@ def fixture_script(tmpdir):
     """
     script_path = tmpdir.join("script.py")
     script_path.write("def main(*args, **kwargs):\n\tpass")
-    return FileSystemScript(f"file://{str(script_path)}")
+    return FileSystemScript(script_uri=f"file://{str(script_path)}")
 
 
 @pytest.fixture(name="pubsub_script")
@@ -68,7 +68,7 @@ def main(msg):
     )
 """
     )
-    return FileSystemScript(f"file://{str(script_path)}")
+    return FileSystemScript(script_uri=f"file://{str(script_path)}")
 
 
 @pytest.fixture(name="git_script")
@@ -78,7 +78,9 @@ def fixture_git_script(tmpdir):
     """
     script_path = tmpdir.join("git_script.py")
     script_path.write("def main(*args, **kwargs):\n\tpass")
-    return GitScript(f"git://{str(script_path)}", git_args=GitArgs(), create_env=True)
+    return GitScript(
+        script_uri=f"git://{str(script_path)}", git_args=GitArgs(), create_env=True
+    )
 
 
 @pytest.fixture(name="git_script_branch")
@@ -89,7 +91,7 @@ def fixture_git_script_branch(tmpdir):
     script_path = tmpdir.join("git_script_branch.py")
     script_path.write("def main(*args, **kwargs):\n\tpass")
     return GitScript(
-        f"git://{str(script_path)}",
+        script_uri=f"git://{str(script_path)}",
         git_args=GitArgs(git_branch="git-test-branch"),
         create_env=True,
     )
@@ -110,7 +112,9 @@ def main(site_package):
     assert site_package in sys.path
 """
     )
-    return GitScript(f"git://{str(script_path)}", git_args=GitArgs(), create_env=True)
+    return GitScript(
+        script_uri=f"git://{str(script_path)}", git_args=GitArgs(), create_env=True
+    )
 
 
 @pytest.fixture(name="barrier_script")
@@ -137,7 +141,7 @@ def main():
     RESUME.wait()
 """
     )
-    return FileSystemScript(f"file://{str(script_path)}")
+    return FileSystemScript(script_uri=f"file://{str(script_path)}")
 
 
 @pytest.fixture(name="init_hang_script")
@@ -154,7 +158,7 @@ def init(init_running):
         pass
 """
     )
-    return FileSystemScript(f"file://{str(script_path)}")
+    return FileSystemScript(script_uri=f"file://{str(script_path)}")
 
 
 @pytest.fixture(name="main_hang_script")
@@ -177,7 +181,7 @@ def main():
         pass
 """
     )
-    return FileSystemScript(f"file://{str(script_path)}")
+    return FileSystemScript(script_uri=f"file://{str(script_path)}")
 
 
 @pytest.fixture(name="fail_script")
@@ -192,7 +196,7 @@ def main(msg):
     raise Exception(msg)
 """
     )
-    return FileSystemScript(f"file://{str(script_path)}")
+    return FileSystemScript(script_uri=f"file://{str(script_path)}")
 
 
 @pytest.fixture(name="abort_script")
@@ -218,7 +222,7 @@ def main():
     Q.put('foo')
 """
     )
-    return FileSystemScript(f"file://{str(script_path)}")
+    return FileSystemScript(script_uri=f"file://{str(script_path)}")
 
 
 @pytest.fixture(name="manager")
@@ -234,12 +238,12 @@ def fixture_manager():
 
 class TestExecutableScript:
     def test_filesystem_script_object_creation(self):
-        script = FileSystemScript("file://script.py")
+        script = FileSystemScript(script_uri="file://script.py")
         assert isinstance(script, FileSystemScript)
         assert script.script_uri == "file://script.py"
 
     def test_git_script_object_creation(self):
-        script = GitScript("git://script.py", git_args=GitArgs())
+        script = GitScript(script_uri="git://script.py", git_args=GitArgs())
         assert isinstance(script, GitScript)
         assert script.script_uri == "git://script.py"
         assert script.git_args == GitArgs()
@@ -247,14 +251,14 @@ class TestExecutableScript:
 
     def test_filesystem_script_raises_error_on_incorrect_prefix(self):
         with pytest.raises(ValueError) as e:
-            _ = FileSystemScript("incorrectprefix://script.py")
+            _ = FileSystemScript(script_uri="incorrectprefix://script.py")
         assert "Incorrect prefix for FileSystemScript: incorrectprefix://script" in str(
             e
         )
 
     def test_git_script_raises_error_on_incorrect_prefix(self):
         with pytest.raises(ValueError) as e:
-            _ = GitScript("incorrectprefix://script.py", git_args=GitArgs())
+            _ = GitScript(script_uri="incorrectprefix://script.py", git_args=GitArgs())
         assert "Incorrect prefix for GitScript: incorrectprefix://script" in str(e)
 
 
@@ -314,7 +318,7 @@ class TestProcedureInput:
         keyword/value attributes.
         """
         procedure_input = ProcedureInput(1, 2, 3, a=1, b=2)
-        assert procedure_input.args == (1, 2, 3)
+        assert procedure_input.args == [1, 2, 3]
         assert procedure_input.kwargs == dict(a=1, b=2)
 
     def test_procedure_input_equality(self):
@@ -334,7 +338,7 @@ class TestProcedureInput:
 
         pi3 = pi1 + pi2
 
-        assert pi3.args == (1, 2, 3)
+        assert pi3.args == [1, 2, 3]
         assert pi3.kwargs == dict(a=1, b=2, c=3)
 
     def test_procedure_input_addition_overwrite(self):
@@ -343,7 +347,7 @@ class TestProcedureInput:
 
         pi3 = pi1 + pi2
 
-        assert pi3.args == (1, 2, 3)
+        assert pi3.args == [1, 2, 3]
         assert pi3.kwargs == dict(a=2, b=2, c=3)
 
     def test_procedure_input_addition_arg_error(self):
@@ -432,7 +436,7 @@ class TestScriptWorkerPubSub:
     def test_on_load(self, mock_module_fn, mp, caplog):
         """ """
         mock_module_fn.side_effect = MagicMock()
-        script = GitScript("git://test.py", GitArgs())
+        script = GitScript(script_uri="git://test.py", git_args=GitArgs())
         evt = EventMessage("test", "LOAD", script)
 
         work_q = MPQueue(ctx=mp)
@@ -450,7 +454,7 @@ class TestScriptWorkerPubSub:
         self, mock_env_fn, mock_load_fn, mock_run_fn, caplog
     ):
         mp = multiprocessing.get_context()
-        script = GitScript("git://test.py", GitArgs())
+        script = GitScript(script_uri="git://test.py", git_args=GitArgs())
         env_evt = EventMessage("test", "ENV", script)
         load_evt = EventMessage("test", "LOAD", script)
         run_evt = EventMessage("test", "RUN", ("init", None))
@@ -1167,7 +1171,7 @@ class TestModuleFactory:
     def test_get_module_calls_git_load_function(self, mock_git_load):
         mock_git_load.side_effect = [MagicMock(importlib.machinery.SourceFileLoader)]
 
-        git_script = GitScript("git://test/script.py", GitArgs())
+        git_script = GitScript(script_uri="git://test/script.py", git_args=GitArgs())
         _ = ModuleFactory.get_module(git_script)
         mock_git_load.assert_called_once_with(git_script)
 
@@ -1175,6 +1179,6 @@ class TestModuleFactory:
     def test_get_module_calls_file_load_function(self, mock_file_load):
         mock_file_load.side_effect = [MagicMock(importlib.machinery.SourceFileLoader)]
 
-        file_script = FileSystemScript("file://test/script.py")
+        file_script = FileSystemScript(script_uri="file://test/script.py")
         _ = ModuleFactory.get_module(file_script)
         mock_file_load.assert_called_once_with(file_script.script_uri)

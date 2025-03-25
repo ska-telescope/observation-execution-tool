@@ -43,6 +43,10 @@ priority = 'primary'
 #name = "gitlab-ska-db-oda"
 #url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
 
+#[[tool.poetry.source]]
+#name = "gitlab.ska-oso-oet-client"
+#url = "https://gitlab.com/api/v4/projects/39372522/packages/pypi/simple"
+
 [tool.poetry.dependencies]
 python = "^3.10"
 Flask = "~2.2"
@@ -69,6 +73,7 @@ jsonschema = "4.17.3"
 # charts/ska-oso-oet-umbrella/Chart.yaml
 ska-db-oda = "^7.3.0"
 ska-oso-scripting = "^11.0.0"
+fastapi = "^0.111.0"
 pydantic = "^2.10.6"
 
 [tool.poetry.group.dev.dependencies]
@@ -86,7 +91,7 @@ pytest-env = "^0.6.2"
 pytest-json-report = "^1.5.0"
 pytest-mock = "^3.9.0"
 requests-mock = "^1.10.0"
-ska-oso-oet-client = "^1.1.1"
+ska-oso-oet-client = "^1.2.0"
 
 [tool.poetry.group.docs]
 optional = true
@@ -98,7 +103,6 @@ recommonmark = "^0.7.1"
 # required to resolve the following import issue:
 # Could not import extension sphinxcontrib.openapi (exception: cannot import name 'error_string' from 'docutils.io'
 mistune = "^2"
-pydantic = "^2.10.6"
 
 [tool.poetry.scripts]
 oet = "ska_oso_oet_client.main:main"

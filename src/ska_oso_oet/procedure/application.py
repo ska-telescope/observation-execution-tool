@@ -13,16 +13,17 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from pubsub import pub
-from pydantic import BaseModel, ConfigDict, model_serializer
+from pydantic import BaseModel, ConfigDict, computed_field, model_serializer
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
 from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure import domain
 from ska_oso_oet.procedure.domain import EventMessage, ProcedureState
+from ska_oso_oet.utils.ui import API_PATH
 
 base_dir = os.getenv("SCRIPTS_LOCATION", "/scripts")
-ABORT_SCRIPT = domain.FileSystemScript(str("file://" + base_dir + "/abort.py"))
+ABORT_SCRIPT = domain.FileSystemScript(script_uri=f"file://{base_dir}/abort.py")
 
 HISTORY_MAX_LENGTH = 10
 
@@ -163,6 +164,10 @@ class ArgCapture(BaseModel):
     time: float = None
 
 
+class AbortSummary(BaseModel):
+    abort_message: str
+
+
 class ProcedureSummary(BaseModel):
     """
     ProcedureSummary is a brief representation of a runtime Procedure. It
@@ -171,11 +176,15 @@ class ProcedureSummary(BaseModel):
     """
 
     id: int  # pylint: disable=invalid-name
-    uri: Optional[str] = None
     script: domain.GitScript | domain.FileSystemScript | None
     script_args: List[ArgCapture] | None
     history: ProcedureHistory | None
     state: domain.ProcedureState | None
+
+    @computed_field
+    @property
+    def uri(self) -> str:
+        return f"http://localhost{API_PATH}/procedures/{self.id}"
 
     def __init__(
         self,

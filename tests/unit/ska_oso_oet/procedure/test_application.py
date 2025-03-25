@@ -61,7 +61,7 @@ def main(secs):
     time.sleep(secs)
 """
     )
-    return FileSystemScript(f"file://{str(script_path)}")
+    return FileSystemScript(script_uri=f"file://{str(script_path)}")
 
 
 @pytest.fixture(name="ses")
@@ -467,7 +467,7 @@ class TestScriptExecutionService:
         )
         process_summary = ProcedureSummary(
             id=process_pid,
-            script=FileSystemScript("file://a"),
+            script=FileSystemScript(script_uri="file://a"),
             script_args=[init_args],
             history=ProcedureHistory(),
             state=ProcedureState.IDLE,
@@ -490,7 +490,7 @@ class TestScriptExecutionService:
         init_args = ArgCapture(fn="init", fn_args=ProcedureInput(), time=1)
         process_summary = ProcedureSummary(
             id=1,
-            script=FileSystemScript("file://a"),
+            script=FileSystemScript(script_uri="file://a"),
             script_args=[init_args],
             history=ProcedureHistory(),
             state=ProcedureState.IDLE,
@@ -508,7 +508,7 @@ class TestSESHistory:
         """
         Verify that arguments to prepare() are captured and stored.
         """
-        script = FileSystemScript("file://test.py")
+        script = FileSystemScript(script_uri="file://test.py")
         init_args = ProcedureInput(5, 6, 7, kw3="c", kw4="d")
         now = time.time()
         pid = 567
@@ -536,7 +536,7 @@ class TestSESHistory:
         run_args = ProcedureInput(5, 6, 7, kw3="c", kw4="d")
 
         # must create process for history entries to be present
-        script = FileSystemScript("file://test.py")
+        script = FileSystemScript(script_uri="file://test.py")
         cmd = PrepareProcessCommand(script=script, init_args=ProcedureInput())
         with patch.object(ProcessManager, "create", return_value=pid):
             with patch.object(ScriptExecutionService, "_summarise"):

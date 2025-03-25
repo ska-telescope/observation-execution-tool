@@ -17,13 +17,21 @@ spec:
   rules:
     - http:
         paths:
-          - path: /{{ .Release.Namespace }}/oet/api.*
+          - path: /{{ .Release.Namespace }}/oet/api/v6/stream
             pathType: Prefix
             backend:
               service:
                 name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
                 port:
                   number: 5000
+          - path: /{{ .Release.Namespace }}/oet/api.*
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
+                port:
+                  number: 5001
+
 {{ end }}
 ---
 apiVersion: v1
@@ -41,6 +49,8 @@ spec:
   ports:
   - name: oet-backend
     port: 5000
+  - name: oet-fastapi
+    port: 5001
   clusterIP: None
   selector:
     app: {{ template "ska-oso-oet.name" . }}
@@ -111,6 +121,8 @@ spec:
         ports:
           - name: oet-backend
             containerPort: 5000
+          - name: oet-fastapi
+            containerPort: 5001
         volumeMounts:
           - name: ska-oso-oet-scripts-volume
             mountPath: /tmp/scripts

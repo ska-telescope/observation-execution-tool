@@ -4,6 +4,7 @@ import threading
 from importlib.metadata import version
 
 import pytest
+from fastapi.testclient import TestClient
 
 from ska_oso_oet import ui
 
@@ -22,6 +23,20 @@ def fixture_base_url():
 
 @pytest.fixture(name="client")
 def fixture_client():
+    """
+    Test fixture that returns an OET Flask application instance
+    """
+
+    app = ui.create_fastapi_app()
+    app.state.msg_src = "unit tests"
+    app.state.sse_shutdown_event = threading.Event()
+    # raise_server_exceptions can be useful for debugging, but for the tests we want to
+    # see how the server handles the exceptions and wraps it into a response
+    return TestClient(app, raise_server_exceptions=False)
+
+
+@pytest.fixture(name="flask_client")
+def fixture_flask_client():
     """
     Test fixture that returns an OET Flask application instance
     """

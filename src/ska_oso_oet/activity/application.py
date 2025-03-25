@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from pubsub import pub
-from pydantic import BaseModel, Field, model_serializer
+from pydantic import BaseModel, Field, computed_field, model_serializer
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
 from ska_db_oda.persistence.unitofwork.filesystemunitofwork import FilesystemUnitOfWork
 from ska_db_oda.persistence.unitofwork.postgresunitofwork import PostgresUnitOfWork
@@ -35,6 +35,7 @@ from ska_oso_oet.procedure.application import (
     ProcedureSummary,
     StartProcessCommand,
 )
+from ska_oso_oet.utils.ui import API_PATH
 
 LOGGER = logging.getLogger(__name__)
 
@@ -69,7 +70,6 @@ class ActivitySummary(BaseModel):
     id: int  # pylint: disable=invalid-name
     pid: int = (Field(alias="procedure_id"),)
     procedure_id: int
-    uri: Optional[str] = None
     sbd_id: str
     activity_name: str
     prepare_only: bool
@@ -77,6 +77,11 @@ class ActivitySummary(BaseModel):
     activity_states: List[Tuple[ActivityState, float]]
     state: Optional[str] = None
     sbi_id: str
+
+    @computed_field
+    @property
+    def uri(self) -> str:
+        return f"http://localhost{API_PATH}/activities/{self.id}"
 
     def __init__(
         self,

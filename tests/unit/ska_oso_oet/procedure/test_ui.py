@@ -3,7 +3,6 @@ Unit tests for the ska_oso_oet.procedure.ui package.
 """
 import copy
 from http import HTTPStatus
-from unittest import mock
 
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.application import (
@@ -21,7 +20,6 @@ from ska_oso_oet.procedure.domain import (
     ProcedureState,
 )
 from ska_oso_oet.procedure.gitmanager import GitArgs
-from ska_oso_oet.procedure.ui import make_public_procedure_summary
 from tests.unit.conftest import PROCEDURES_ENDPOINT
 
 from ..test_ui import PubSubHelper
@@ -35,7 +33,7 @@ CREATE_JSON = dict(
 # object expected to be returned when creating the Procedure defined above
 CREATE_SUMMARY = ProcedureSummary(
     id=1,
-    script=FileSystemScript("file:///test.py"),
+    script=FileSystemScript(script_uri="file:///test.py"),
     script_args=[
         ArgCapture(fn="init", fn_args=ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1)
     ],
@@ -68,7 +66,7 @@ CREATE_GIT_JSON = dict(
 CREATE_GIT_SUMMARY = ProcedureSummary(
     id=1,
     script=GitScript(
-        "git:///test.py",
+        script_uri="git:///test.py",
         git_args=GitArgs(git_repo="http://foo.git", git_branch="main"),
         create_env=True,
     ),
@@ -101,7 +99,7 @@ RUN_JSON = dict(
 # object expected to be returned when the procedure is executed
 RUN_SUMMARY = ProcedureSummary(
     id=1,
-    script=FileSystemScript("file:///test.py"),
+    script=FileSystemScript(script_uri="file:///test.py"),
     script_args=[
         ArgCapture(
             fn="init", fn_args=ProcedureInput(1, 2, 3, kw1="a", kw2="b"), time=1
@@ -142,11 +140,9 @@ def test_get_procedures_returns_expected_summaries(client):
 
     response = client.get(PROCEDURES_ENDPOINT)
     assert response.status_code == 200
-    response_json = response.get_json()
-    assert "procedures" in response_json
-    procedures_json = response_json["procedures"]
-    assert len(procedures_json) == 1
-    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedures_json[0])
+    response_json = response.json()
+    assert len(response_json) == 1
+    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, response_json[0])
 
 
 def test_get_procedure_by_id(client):
@@ -163,10 +159,8 @@ def test_get_procedure_by_id(client):
     response = client.get(f"{PROCEDURES_ENDPOINT}/{CREATE_SUMMARY.id}")
     assert response.status_code == HTTPStatus.OK
 
-    response_json = response.get_json()
-    assert "procedure" in response_json
-    procedure_json = response_json["procedure"]
-    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedure_json)
+    response_json = response.json()
+    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, response_json)
 
 
 def test_get_procedure_gives_404_for_invalid_id(client):
@@ -185,11 +179,9 @@ def test_get_procedure_gives_404_for_invalid_id(client):
     response = client.get(f"{PROCEDURES_ENDPOINT}/1")
     assert response.status_code == HTTPStatus.NOT_FOUND
 
-    response_json = response.get_json()
+    response_json = response.json()
     assert response_json == {
-        "error": "404 Not Found",
-        "type": "ResourceNotFound",
-        "Message": "No information available for PID=1",
+        "detail": "No information available for PID=1",
     }
 
 
@@ -221,11 +213,9 @@ def test_successful_post_to_procedures_endpoint_returns_summary_in_response(clie
     _ = PubSubHelper(spec)
 
     response = client.post(PROCEDURES_ENDPOINT, json=CREATE_JSON)
-    response_json = response.get_json()
+    response_json = response.json()
 
-    assert "procedure" in response_json
-    procedure_json = response_json["procedure"]
-    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, procedure_json)
+    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, response_json)
 
 
 def test_successful_post_to_procedures_endpoint_returns_git_summary_in_response(client):
@@ -241,11 +231,9 @@ def test_successful_post_to_procedures_endpoint_returns_git_summary_in_response(
     _ = PubSubHelper(spec)
 
     response = client.post(PROCEDURES_ENDPOINT, json=CREATE_GIT_JSON)
-    response_json = response.get_json()
+    response_json = response.json()
 
-    assert "procedure" in response_json
-    procedure_json = response_json["procedure"]
-    assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, procedure_json)
+    assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, response_json)
 
 
 def test_successful_post_to_procedures_endpoint_returns_git_summary_in_response_with_default_git_args(
@@ -265,11 +253,9 @@ def test_successful_post_to_procedures_endpoint_returns_git_summary_in_response_
     _ = PubSubHelper(spec)
 
     response = client.post(PROCEDURES_ENDPOINT, json=request_json)
-    response_json = response.get_json()
+    response_json = response.json()
 
-    assert "procedure" in response_json
-    procedure_json = response_json["procedure"]
-    assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, procedure_json)
+    assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, response_json)
 
 
 def test_post_to_procedures_endpoint_requires_script_uri_json_parameter(client):
@@ -280,13 +266,18 @@ def test_post_to_procedures_endpoint_requires_script_uri_json_parameter(client):
     malformed = copy.deepcopy(CREATE_JSON)
     del malformed["script"]["script_uri"]
     response = client.post(PROCEDURES_ENDPOINT, json=malformed)
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    response_json = response.get_json()
+    response_json = response.json()
     assert response_json == {
-        "error": "400 Bad Request",
-        "type": "Malformed Request",
-        "Message": "Malformed script in request",
+        "detail": [
+            {
+                "input": {"script_type": "filesystem"},
+                "loc": ["body", "script", "filesystem", "script_uri"],
+                "msg": "Field required",
+                "type": "missing",
+            }
+        ]
     }
 
 
@@ -298,14 +289,13 @@ def test_post_to_procedures_endpoint_unknown_script_type(client):
     malformed = copy.deepcopy(CREATE_JSON)
     malformed["script"]["script_type"] = "foo"
     response = client.post(PROCEDURES_ENDPOINT, json=malformed)
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    response_json = response.get_json()
-    assert response_json == {
-        "error": "400 Bad Request",
-        "type": "Malformed Request",
-        "Message": "Script type foo not supported",
-    }
+    assert (
+        "Input tag 'foo' found using 'script_type' does not match any of the expected"
+        " tags: 'filesystem', 'git'"
+        in response.text
+    )
 
 
 def test_post_to_procedures_endpoint_requires_script_arg_be_a_dict(client):
@@ -315,12 +305,9 @@ def test_post_to_procedures_endpoint_requires_script_arg_be_a_dict(client):
     malformed = copy.deepcopy(CREATE_JSON)
     malformed["script_args"] = "junk"
     response = client.post(PROCEDURES_ENDPOINT, json=malformed)
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    response_json = response.get_json()
-    assert response_json == openapi_validation_error(
-        "'junk' is not of type 'object' - 'script_args'"
-    )
+    assert "Input should be a valid dictionary or object to extract" in response.text
 
 
 def test_post_to_procedures_endpoint_sends_init_arguments(client):
@@ -407,7 +394,7 @@ def test_post_to_procedures_endpoint_sends_default_git_arguments(client):
     # now verify arguments were extracted from JSON and passed into command
     expected_cmd = PrepareProcessCommand(
         script=GitScript(
-            CREATE_GIT_SUMMARY.script.script_uri,  # pylint: disable=no-member
+            script_uri=CREATE_GIT_SUMMARY.script.script_uri,
             git_args=GitArgs(),
             create_env=True,
         ),
@@ -430,13 +417,11 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
     helper = PubSubHelper(spec)
 
     response = client.put(f"{PROCEDURES_ENDPOINT}/123", json=RUN_JSON)
-    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.status_code == HTTPStatus.NOT_FOUND, response.text
 
-    response_json = response.get_json()
+    response_json = response.json()
     assert response_json == {
-        "error": "404 Not Found",
-        "type": "ResourceNotFound",
-        "Message": "No information available for PID=123",
+        "detail": "No information available for PID=123",
     }
 
     # verify message sequence and topics
@@ -460,12 +445,14 @@ def test_put_procedure_returns_error_if_no_json_supplied(client):
     helper = PubSubHelper(spec)
 
     response = client.put(RUN_ENDPOINT)
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    response_json = response.get_json()
-    assert response_json == openapi_validation_error("None is not of type 'object'")
+    assert (
+        """[{"type":"missing","loc":["body"],"msg":"Field required","input":null}]"""
+        in response.text
+    )
 
-    # The Connexion validation will fail before the update_procedure call is made, so no messages will be sent to topics
+    # The Pydantic validation will fail before the update_procedure call is made, so no messages will be sent to topics
     assert helper.topic_list == []
 
 
@@ -492,11 +479,11 @@ def test_put_procedure_calls_run_on_execution_service(client):
     helper = PubSubHelper(spec)
 
     response = client.put(RUN_ENDPOINT, json=RUN_JSON)
-    response_json = response.get_json()
+    assert response.status_code == HTTPStatus.OK
+    response_json = response.json()
 
     # verify RUNNING ProcedureSummary is contained in response JSON
-    assert "procedure" in response_json
-    assert_json_equal_to_procedure_summary(RUN_SUMMARY, response_json["procedure"])
+    assert_json_equal_to_procedure_summary(RUN_SUMMARY, response_json)
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -538,7 +525,8 @@ def test_put_procedure_calls_stop_and_executes_abort_script(client):
     helper = PubSubHelper(spec)
 
     response = client.put(RUN_ENDPOINT, json=ABORT_JSON)
-    response_json = response.get_json()
+    assert response.status_code == HTTPStatus.OK, response.text
+    response_json = response.json()
 
     # verify message sequence and topics
     assert helper.topic_list == [
@@ -582,7 +570,8 @@ def test_put_procedure_calls_stop_on_execution_service(client):
     helper = PubSubHelper(spec)
 
     response = client.put(RUN_ENDPOINT, json=dict(state="STOPPED", abort=False))
-    response_json = response.get_json()
+    assert response.status_code == HTTPStatus.OK, response.text
+    response_json = response.json()
 
     # verify message topic and order
     assert helper.topic_list == [
@@ -649,10 +638,10 @@ def test_put_procedure_returns_procedure_summary(client):
     del json["state"]
 
     response = client.put(RUN_ENDPOINT, json=json)
-    response_json = response.get_json()
+    assert response.status_code == HTTPStatus.OK, response.text
+    response_json = response.json()
 
-    assert "procedure" in response_json
-    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, response_json["procedure"])
+    assert_json_equal_to_procedure_summary(CREATE_SUMMARY, response_json)
 
 
 def test_stopping_a_non_running_procedure_returns_appropriate_error_message(client):
@@ -667,7 +656,8 @@ def test_stopping_a_non_running_procedure_returns_appropriate_error_message(clie
     helper = PubSubHelper(spec)
 
     response = client.put(RUN_ENDPOINT, json=dict(state="STOPPED", abort=False))
-    response_json = response.get_json()
+    assert response.status_code == HTTPStatus.OK, response.text
+    response_json = response.json()
 
     # verify message topic and order
     assert helper.topic_list == [
@@ -696,30 +686,9 @@ def test_giving_non_dict_script_args_returns_error_code(client):
     json.update(script_args=["foo"])
 
     response = client.put(RUN_ENDPOINT, json=json)
-    assert response.status_code == 400
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    response_json = response.get_json()
-    assert response_json == openapi_validation_error(
-        "['foo'] is not of type 'object' - 'script_args'"
-    )
-
-
-def test_make_public_summary():
-    with mock.patch("flask.url_for") as mock_url_fn:
-        mock_url_fn.return_value = (
-            f"http://localhost/{PROCEDURES_ENDPOINT}/{CREATE_SUMMARY.id}"
-        )
-        summary_json = make_public_procedure_summary(CREATE_SUMMARY)
-        assert_json_equal_to_procedure_summary(CREATE_SUMMARY, summary_json)
-
-
-def test_make_public_summary_git_args():
-    with mock.patch("flask.url_for") as mock_url_fn:
-        mock_url_fn.return_value = (
-            f"http://localhost/{PROCEDURES_ENDPOINT}/{CREATE_GIT_SUMMARY.id}"
-        )
-        summary_json = make_public_procedure_summary(CREATE_GIT_SUMMARY)
-        assert_json_equal_to_procedure_summary(CREATE_GIT_SUMMARY, summary_json)
+    assert "Input should be a valid dictionary or object to extract" in response.text
 
 
 def test_get_procedures_with_no_procedures_present_returns_empty_list(client):
@@ -735,9 +704,8 @@ def test_get_procedures_with_no_procedures_present_returns_empty_list(client):
     _ = PubSubHelper(spec)
 
     response = client.get(PROCEDURES_ENDPOINT)
-    response_json = response.get_json()
-    assert "procedures" in response_json
-    assert response_json["procedures"] == []
+    response_json = response.json()
+    assert response_json == []
 
 
 def assert_json_equal_to_procedure_summary(
@@ -770,7 +738,7 @@ def assert_json_equal_to_procedure_summary(
     for args in summary.script_args:
         i: ProcedureInput = args.fn_args
         arg_dict = summary_json["script_args"][args.fn]
-        assert i.args == tuple(arg_dict["args"])
+        assert i.args == arg_dict["args"]
         assert i.kwargs == arg_dict["kwargs"]
     assert summary_json["state"] == summary.state.name
     assert summary_json["history"]["stacktrace"] == summary.history.stacktrace

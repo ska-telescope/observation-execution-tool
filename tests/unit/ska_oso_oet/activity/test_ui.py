@@ -53,9 +53,8 @@ def test_get_activities_with_no_activities_present_returns_empty_list(client):
     _ = PubSubHelper(spec)
 
     response = client.get(ACTIVITIES_ENDPOINT)
-    response_json = response.get_json()
-    assert "activities" in response_json
-    assert response_json["activities"] == []
+
+    assert response.json() == []
 
 
 def test_get_activities_returns_expected_summaries(client):
@@ -71,11 +70,9 @@ def test_get_activities_returns_expected_summaries(client):
 
     response = client.get(ACTIVITIES_ENDPOINT)
     assert response.status_code == 200
-    response_json = response.get_json()
-    assert "activities" in response_json
-    activities_json = response_json["activities"]
-    assert len(activities_json) == 1
-    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, activities_json[0])
+    response_json = response.json()
+    assert len(response_json) == 1
+    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, response_json[0])
 
 
 def test_get_activity_by_id(client):
@@ -92,10 +89,8 @@ def test_get_activity_by_id(client):
     response = client.get(f"{ACTIVITIES_ENDPOINT}/{ACTIVITY_SUMMARY.id}")
     assert response.status_code == HTTPStatus.OK
 
-    response_json = response.get_json()
-    assert "activity" in response_json
-    activity_json = response_json["activity"]
-    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, activity_json)
+    response_json = response.json()
+    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, response_json)
 
 
 def test_get_activity_gives_404_for_invalid_id(client):
@@ -112,9 +107,8 @@ def test_get_activity_gives_404_for_invalid_id(client):
     response = client.get(f"{ACTIVITIES_ENDPOINT}/1")
     assert response.status_code == HTTPStatus.NOT_FOUND
 
-    response_json = response.get_json()
+    response_json = response.json()["detail"]  # TODO
     assert response_json == {
-        "error": "404 Not Found",
         "type": "ResourceNotFound",
         "Message": "No information available for ID=1",
     }
@@ -148,7 +142,7 @@ def test_successful_post_to_activities_endpoint_returns_summary_in_response(clie
     helper = PubSubHelper(spec)
 
     response = client.post(ACTIVITIES_ENDPOINT, json=ACTIVITY_REQUEST)
-    response_json = response.get_json()
+    response_json = response.json()
 
     cmd: ActivityCommand = helper.messages_on_topic(topics.request.activity.run)[0][
         "cmd"
@@ -156,6 +150,4 @@ def test_successful_post_to_activities_endpoint_returns_summary_in_response(clie
 
     assert cmd.script_args == {"main": ProcedureInput(1, subarray_id="42")}
 
-    assert "activity" in response_json
-    procedure_json = response_json["activity"]
-    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, procedure_json)
+    assert_json_equal_to_activity_summary(ACTIVITY_SUMMARY, response_json)

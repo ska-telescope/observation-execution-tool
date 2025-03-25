@@ -14,7 +14,7 @@ data:
   KUBE_NAMESPACE: {{ .Release.Namespace }}
   TANGO_HOST: {{ if .Values.global.tango_host -}} {{ .Values.global.tango_host }} {{- else -}} databaseds-tango-base-{{ .Release.Name }}:10000 {{- end }}
   # This env variable is used by the OET CLI which is also included in the application. It is not required by the server itself
-  OET_URL: http://{{ template "ska-oso-oet.name" . }}-rest-{{ .Release.Name }}:5000/{{ .Release.Namespace }}/oet/api/v{{ template "ska-oso-oet.major-version" . }}
+  OET_URL: http://{{ template "ska-oso-oet.name" . }}-rest-{{ .Release.Name }}:5001/{{ .Release.Namespace }}/oet/api/v{{ template "ska-oso-oet.major-version" . }}
   {{ if .Values.rest.skuid.url }}
   SKUID_URL: {{ .Values.rest.skuid.url }}
   {{ else }}

@@ -56,6 +56,10 @@ autodoc_mock_imports = [
     "tblib",
     "waitress",
     "werkzeug",
+    "uvicorn",
+    "fastapi",
+    "pydantic",
+    "pydantic_core"
 ]
 
 autodoc_default_options = {

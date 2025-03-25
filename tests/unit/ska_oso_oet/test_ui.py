@@ -168,10 +168,8 @@ def test_call_and_respond_aborts_with_timeout_when_no_response_received(
     # 504 and timeout error message
     assert response.status_code == 504
 
-    response_json = response.get_json()
-    assert response_json["error"] == "504 Gateway Timeout"
-    assert response_json["Message"].startswith("Timeout waiting for msg ")
-    assert response_json["type"] == "Timeout Error"
+    response_json = response.json()
+    assert response_json["detail"].startswith("Timeout waiting for msg ")
 
 
 def test_call_and_respond_ignores_responses_when_request_id_differs():
@@ -212,7 +210,7 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
     assert result == "ok"
 
 
-def test_sse_string_messages_are_streamed_correctly(client):
+def test_sse_string_messages_are_streamed_correctly(flask_client):
     """
     Verify that simple Messages are streamed as SSE events correctly.
     """
@@ -222,7 +220,7 @@ def test_sse_string_messages_are_streamed_correctly(client):
         "ska_oso_oet.ui.ServerSentEventsBlueprint.messages"
     ) as mock_messages:
         mock_messages.return_value = [msg]
-        response = client.get(f"/{DEFAULT_API_PATH}/stream")
+        response = flask_client.get(f"/{DEFAULT_API_PATH}/stream")
 
         assert isinstance(response, flask.Response)
         assert response.mimetype == "text/event-stream"
@@ -232,7 +230,7 @@ def test_sse_string_messages_are_streamed_correctly(client):
         assert output == "\nevent:message\ndata:foo\n\n"
 
 
-def test_sse_complex_messages_are_streamed_correctly(client):
+def test_sse_complex_messages_are_streamed_correctly(flask_client):
     """
     Verify that Messages containing structured data are streamed correctly.
     """
@@ -242,7 +240,7 @@ def test_sse_complex_messages_are_streamed_correctly(client):
         "ska_oso_oet.ui.ServerSentEventsBlueprint.messages"
     ) as mock_messages:
         mock_messages.return_value = [msg]
-        response = client.get(f"/{DEFAULT_API_PATH}/stream")
+        response = flask_client.get(f"/{DEFAULT_API_PATH}/stream")
 
         assert isinstance(response, flask.Response)
         assert response.mimetype == "text/event-stream"
@@ -252,7 +250,7 @@ def test_sse_complex_messages_are_streamed_correctly(client):
         assert output == '\nevent:message\ndata:{"foo": "bar"}\nid:123\n\n'
 
 
-def test_sse_messages_returns_pubsub_messages(client):
+def test_sse_messages_returns_pubsub_messages(flask_client):
     """
     Test that pypubsub messages are returned by SSE blueprint's messages method.
     """
@@ -264,7 +262,7 @@ def test_sse_messages_returns_pubsub_messages(client):
 
     t = threading.Thread(target=publish)
 
-    bp = client.application.blueprints["sse"]
+    bp = flask_client.application.blueprints["sse"]
     gen = bp.messages()
     assert isinstance(gen, types.GeneratorType)
 
