@@ -50,7 +50,6 @@ priority = 'primary'
 [tool.poetry.dependencies]
 python = "^3.10"
 Flask = "~2.2"
-jsonpickle = "^2.2.0"
 PyPubSub = "^4.0.3"
 requests = "^2.28.1"
 ska-ser-logging = "^0.4.1"
@@ -84,14 +83,15 @@ isort = "^5.12.0"
 mock = "^4.0.3"
 pylint = "^2.15.3"
 pylint-junit = "^0.3.2"
-pytest = "^7.1.3"
-pytest-bdd = "^6.0.1"
+pytest = "^8.3.5"
+pytest-bdd = "^8.1.0"
 pytest-cov = "^4.0.0"
 pytest-env = "^0.6.2"
 pytest-json-report = "^1.5.0"
 pytest-mock = "^3.9.0"
 requests-mock = "^1.10.0"
 ska-oso-oet-client = "^1.2.0"
+pytest-asyncio = "^0.26.0"
 
 [tool.poetry.group.docs]
 optional = true

@@ -735,6 +735,17 @@ async = ["asgiref (>=3.2)"]
 dotenv = ["python-dotenv"]
 
 [[package]]
+name = "gherkin-official"
+version = "29.0.0"
+description = "Gherkin parser (official, by Cucumber team)"
+optional = false
+python-versions = "*"
+files = [
+    {file = "gherkin_official-29.0.0-py3-none-any.whl", hash = "sha256:26967b0d537a302119066742669e0e8b663e632769330be675457ae993e1d1bc"},
+    {file = "gherkin_official-29.0.0.tar.gz", hash = "sha256:dbea32561158f02280d7579d179b019160d072ce083197625e2f80a6776bb9eb"},
+]
+
+[[package]]
 name = "gitdb"
 version = "4.0.12"
 description = "Git Object Database"
@@ -985,22 +996,6 @@ MarkupSafe = ">=2.0"
 
 [package.extras]
 i18n = ["Babel (>=2.7)"]
-
-[[package]]
-name = "jsonpickle"
-version = "2.2.0"
-description = "Python library for serializing any arbitrary object graph into JSON"
-optional = false
-python-versions = ">=2.7"
-files = [
-    {file = "jsonpickle-2.2.0-py2.py3-none-any.whl", hash = "sha256:de7f2613818aa4f234138ca11243d6359ff83ae528b2185efdd474f62bcf9ae1"},
-    {file = "jsonpickle-2.2.0.tar.gz", hash = "sha256:7b272918b0554182e53dc340ddd62d9b7f902fec7e7b05620c04f3ccef479a0e"},
-]
-
-[package.extras]
-docs = ["jaraco.packaging (>=3.2)", "rst.linker (>=1.9)", "sphinx"]
-testing = ["ecdsa", "enum34", "feedparser", "jsonlib", "numpy", "pandas", "pymongo", "pytest (>=3.5,!=3.7.3)", "pytest-black-multipy", "pytest-checkdocs (>=1.2.3)", "pytest-cov", "pytest-flake8 (<1.1.0)", "pytest-flake8 (>=1.1.1)", "scikit-learn", "sqlalchemy"]
-testing-libs = ["simplejson", "ujson", "yajl"]
 
 [[package]]
 name = "jsonschema"
@@ -2010,13 +2005,13 @@ tests = ["gevent (>=20.0)", "pytest", "pytest-asyncio", "pytest-cov", "pytest-fo
 
 [[package]]
 name = "pytest"
-version = "7.4.4"
+version = "8.3.5"
 description = "pytest: simple powerful testing with Python"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pytest-7.4.4-py3-none-any.whl", hash = "sha256:b090cdf5ed60bf4c45261be03239c2c1c22df034fbffe691abe93cd80cea01d8"},
-    {file = "pytest-7.4.4.tar.gz", hash = "sha256:2cf0005922c6ace4a3e2ec8b4080eb0d9753fdc93107415332f50ce9e7994280"},
+    {file = "pytest-8.3.5-py3-none-any.whl", hash = "sha256:c69214aa47deac29fad6c2a4f590b9c4a9fdb16a403176fe154b79c0b4d4d820"},
+    {file = "pytest-8.3.5.tar.gz", hash = "sha256:f4efe70cc14e511565ac476b57c279e12a855b11f48f212af1080ef2263d3845"},
 ]
 
 [package.dependencies]
@@ -2024,28 +2019,48 @@ colorama = {version = "*", markers = "sys_platform == \"win32\""}
 exceptiongroup = {version = ">=1.0.0rc8", markers = "python_version < \"3.11\""}
 iniconfig = "*"
 packaging = "*"
-pluggy = ">=0.12,<2.0"
-tomli = {version = ">=1.0.0", markers = "python_version < \"3.11\""}
+pluggy = ">=1.5,<2"
+tomli = {version = ">=1", markers = "python_version < \"3.11\""}
 
 [package.extras]
-testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
+dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
-name = "pytest-bdd"
-version = "6.1.1"
-description = "BDD for pytest"
+name = "pytest-asyncio"
+version = "0.26.0"
+description = "Pytest support for asyncio"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.9"
 files = [
-    {file = "pytest_bdd-6.1.1-py3-none-any.whl", hash = "sha256:57eba5878d77036f356a85fb1d108cb061d8af4fb4d032b1a424fa9abe9e498b"},
-    {file = "pytest_bdd-6.1.1.tar.gz", hash = "sha256:138af3592bcce5d4684b0d690777cf199b39ce45d423ca28086047ffe6111010"},
+    {file = "pytest_asyncio-0.26.0-py3-none-any.whl", hash = "sha256:7b51ed894f4fbea1340262bdae5135797ebbe21d8638978e35d31c6d19f72fb0"},
+    {file = "pytest_asyncio-0.26.0.tar.gz", hash = "sha256:c4df2a697648241ff39e7f0e4a73050b03f123f760673956cf0d72a4990e312f"},
 ]
 
 [package.dependencies]
+pytest = ">=8.2,<9"
+
+[package.extras]
+docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1)"]
+testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
+
+[[package]]
+name = "pytest-bdd"
+version = "8.1.0"
+description = "BDD for pytest"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "pytest_bdd-8.1.0-py3-none-any.whl", hash = "sha256:2124051e71a05ad7db15296e39013593f72ebf96796e1b023a40e5453c47e5fb"},
+    {file = "pytest_bdd-8.1.0.tar.gz", hash = "sha256:ef0896c5cd58816dc49810e8ff1d632f4a12019fb3e49959b2d349ffc1c9bfb5"},
+]
+
+[package.dependencies]
+gherkin-official = ">=29.0.0,<30.0.0"
 Mako = "*"
+packaging = "*"
 parse = "*"
 parse-type = "*"
-pytest = ">=6.2.0"
+pytest = ">=7.0.0"
 typing-extensions = "*"
 
 [[package]]
@@ -2446,13 +2461,13 @@ files = [
 
 [[package]]
 name = "setuptools"
-version = "78.0.2"
+version = "78.1.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "setuptools-78.0.2-py3-none-any.whl", hash = "sha256:4a612c80e1f1d71b80e4906ce730152e8dec23df439f82731d9d0b608d7b700d"},
-    {file = "setuptools-78.0.2.tar.gz", hash = "sha256:137525e6afb9022f019d6e884a319017f9bf879a0d8783985d32cbc8683cab93"},
+    {file = "setuptools-78.1.0-py3-none-any.whl", hash = "sha256:3e386e96793c8702ae83d17b853fb93d3e09ef82ec62722e61da5cd22376dcd8"},
+    {file = "setuptools-78.1.0.tar.gz", hash = "sha256:18fd474d4a82a5f83dac888df697af65afa82dec7323d09c3e37d1f14288da54"},
 ]
 
 [package.extras]
@@ -3243,13 +3258,13 @@ typing-extensions = ">=3.7.4.3"
 
 [[package]]
 name = "typing-extensions"
-version = "4.12.2"
+version = "4.13.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "typing_extensions-4.12.2-py3-none-any.whl", hash = "sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d"},
-    {file = "typing_extensions-4.12.2.tar.gz", hash = "sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8"},
+    {file = "typing_extensions-4.13.0-py3-none-any.whl", hash = "sha256:c8dd92cc0d6425a97c18fbb9d1954e5ff92c1ca881a309c45f06ebc0b79058e5"},
+    {file = "typing_extensions-4.13.0.tar.gz", hash = "sha256:0a4ac55a5820789d87e297727d229866c9650f6521b64206413c4fbada24d95b"},
 ]
 
 [[package]]
@@ -3652,4 +3667,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "fdfea8e556379ab6cf166b7f337563e4a70ed391d25beee981d966752db4e24a"
+content-hash = "6adef9961499d6debd6b990ae6040ecfb25091025fae9f65e49c8eef82a1e86b"

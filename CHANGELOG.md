@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Unreleased
 **********
 * Updating to use Pydantic BaseModels throughout the OET
-* Update the REST server to use FastAPI rather than Flask - see the Swagger UI for the use of the types
+* Update the REST server to use FastAPI rather than Flask, including the SSE /stream endpoint - see the Swagger UI for the use of the types
 * [BREAKING] The GET responses previously returned an object like {"activity": <ActivitySummary>}, and similar for the Procedure endpoints.
   Now they return the ActivitySummary without the nested object
 * [BREAKING] API validation errors against the Pydantic models now return the FastAPI default 422 UNPROCESSABLE ENTITY code rather than 400 BAD REQUEST
