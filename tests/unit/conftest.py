@@ -5,6 +5,7 @@ from importlib.metadata import version
 
 import pytest
 from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
 
 from ska_oso_oet import ui
 
@@ -33,6 +34,14 @@ def fixture_client():
     # raise_server_exceptions can be useful for debugging, but for the tests we want to
     # see how the server handles the exceptions and wraps it into a response
     return TestClient(app, raise_server_exceptions=False)
+
+
+@pytest.fixture(name="async_client")
+def fixture_async_client():
+    app = ui.create_fastapi_app()
+    app.state.msg_src = "unit tests"
+    app.state.sse_shutdown_event = threading.Event()
+    return AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost")
 
 
 @pytest.fixture(name="flask_client")

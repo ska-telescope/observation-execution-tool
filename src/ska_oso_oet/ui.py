@@ -3,18 +3,19 @@ The ska_oso_oet.ui package contains code that present the OET interface to the
 outside world. In practical terms, this means the OET application's REST
 interface
 """
+import json
 import multiprocessing
 import os
 from http import HTTPStatus
+from threading import Event
 from typing import Any, Dict, Generator, Optional, Union
 
-import flask
-import jsonpickle
 import prance
 from connexion import App
-from fastapi import FastAPI, HTTPException, Request
-from flask import Blueprint, current_app, stream_with_context
+from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pubsub import pub
+from pydantic import BaseModel
 from werkzeug.exceptions import GatewayTimeout
 
 from ska_oso_oet.activity.ui import activities_router
@@ -22,34 +23,24 @@ from ska_oso_oet.mptools import MPQueue
 from ska_oso_oet.procedure.ui import procedures_router
 from ska_oso_oet.utils.ui import API_PATH
 
+sse_router = APIRouter(tags=["Server Sent Events"])
 
-class Message:
+
+def serialize(obj):
+    if isinstance(obj, BaseModel):
+        return obj.model_dump()
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
+
+class Message(BaseModel):
     """
     Data that is published as a server-sent event.
     """
 
-    def __init__(
-        self,
-        data: Union[str, dict],
-        type: Optional[str] = None,  # pylint: disable=redefined-builtin
-        id: Optional[  # pylint: disable=redefined-builtin
-            Union[float, int, str]
-        ] = None,
-        retry: Optional[int] = None,
-    ):
-        """
-        Create a server-sent event.
-
-        :param data: The event data.
-        :param type: An optional event type.
-        :param id: An optional event ID.
-        :param retry: An optional integer, to specify the reconnect time for
-            disconnected clients of this stream.
-        """
-        self.data = data
-        self.type = type
-        self.id = id
-        self.retry = retry
+    data: Union[str, dict]
+    type: Optional[str] = None  # pylint: disable=redefined-builtin
+    id: Optional[Union[float, int, str]] = None  # pylint: disable=redefined-builtin
+    retry: Optional[int] = None
 
     def __str__(self):
         """
@@ -57,7 +48,7 @@ class Message:
         specification <https://www.w3.org/TR/eventsource/>`_.
         """
         if isinstance(self.data, dict):
-            data = jsonpickle.dumps(self.data)
+            data = json.dumps(self.data, default=serialize)
         else:
             data = self.data
         lines = ["data:{value}".format(value=line) for line in data.splitlines()]
@@ -69,62 +60,57 @@ class Message:
             lines.append("retry:{value}".format(value=self.retry))
         return "\n".join(lines) + "\n\n"
 
-    def __eq__(self, other):
-        return (
-            isinstance(other, self.__class__)
-            and self.data == other.data
-            and self.type == other.type
-            and self.id == other.id
-            and self.retry == other.retry
-        )
 
-
-class ServerSentEventsBlueprint(Blueprint):
+def messages(shutdown_event: Event) -> Generator[Message, None, None]:
     """
-    A :class:`flask.Blueprint` subclass that knows how to subscribe to pypubsub
-    topics and stream pubsub events as server-sent events.
+    A generator of Message objects created from received pubsub events
     """
+    mp_context = multiprocessing.get_context()
+    q = MPQueue(ctx=mp_context)
 
-    def __init__(self, *args, mp_context=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if mp_context is None:
-            mp_context = multiprocessing.get_context()
-        self._mp_context = mp_context
+    def add_to_q(topic: pub.Topic = pub.AUTO_TOPIC, **kwargs):
+        kwargs["topic"] = topic.name
+        if "request_id" in kwargs:
+            request_id = kwargs["request_id"]
+            del kwargs["request_id"]
+            msg = Message(data=kwargs, id=request_id)
+        else:
+            msg = Message(data=kwargs)
 
-    def messages(self) -> Generator[Message, None, None]:
-        """
-        A generator of Message objects created from received pubsub events
-        """
-        q = MPQueue(ctx=self._mp_context)
+        q.put(msg)
 
-        def add_to_q(topic: pub.Topic = pub.AUTO_TOPIC, **kwargs):
-            kwargs["topic"] = topic.name
-            other = {}
-            if "request_id" in kwargs:
-                other["id"] = kwargs["request_id"]
-                del kwargs["request_id"]
+    pub.subscribe(add_to_q, pub.ALL_TOPICS)
 
-            msg = Message(kwargs, **other)
-            q.put(msg)
+    while not shutdown_event.is_set():
+        msg = q.safe_get(timeout=0.1)
+        if msg is not None:
+            yield msg
 
-        pub.subscribe(add_to_q, pub.ALL_TOPICS)
 
-        shutdown_event = current_app.config["shutdown_event"]
-        while not shutdown_event.is_set():
-            msg = q.safe_get(timeout=0.1)
-            if msg is not None:
-                yield msg
+@sse_router.get(
+    "/stream",
+    description=(
+        "Opens an SSE stream of messages that are published to the OET topics. All new"
+        " messages will be streamed until the connection is closed. Messages will not"
+        " appear in the SwaggerUI - open the request url in a separate browser tab"
+        " instead."
+    ),
+    response_description=(
+        "A stream of messages with the text/event-stream MIME type - see"
+        " https://html.spec.whatwg.org/multipage/server-sent-events.html#the-eventsource-interface"
+    ),
+)
+async def stream(request: Request):
+    shutdown_event = request.app.state.sse_shutdown_event
 
-    def stream(self) -> flask.Response:
-        @stream_with_context
-        def generator():
-            # must immediately yield to return 200 OK response to client,
-            # otherwise response is only sent on first event
-            yield "\n"
-            for message in self.messages():
-                yield str(message)
+    def generator():
+        # must immediately yield to return 200 OK response to client,
+        # otherwise response is only sent on first event
+        yield "\n"
+        for message in messages(shutdown_event):
+            yield str(message)
 
-        return current_app.response_class(generator(), mimetype="text/event-stream")
+    return StreamingResponse(generator(), media_type="text/event-stream")
 
 
 def get_openapi_spec() -> Dict[str, Any]:
@@ -145,10 +131,6 @@ def create_app(open_api_spec=None):
     connexion = App(__name__, specification_dir="openapi/")
 
     connexion.app.config.update(msg_src=__name__)
-    # TODO: Due to the limitation of Swagger Open API, we kept the same earlier blueprint approach for Stream API and couldn't include it in the open API spec, we can plan this work when full SSE support is available in OPEN API 3.0 or any latest version.
-    sse = ServerSentEventsBlueprint("sse", __name__)
-    sse.add_url_rule(rule="", endpoint="stream", view_func=sse.stream)
-    connexion.app.register_blueprint(sse, url_prefix=f"{API_PATH}/stream")
 
     return connexion.app
 
@@ -166,12 +148,13 @@ async def timeout_handler(_: Request, err: GatewayTimeout) -> HTTPException:
 
 def create_fastapi_app():
     app = FastAPI(
+        title="Observation Execution Tool API",
         openapi_url=f"{API_PATH}/openapi.json",
         docs_url=f"{API_PATH}/ui",
     )
     app.include_router(activities_router, prefix=API_PATH)
     app.include_router(procedures_router, prefix=API_PATH)
-    # app.include_router(sse_router, prefix=API_PATH)
+    app.include_router(sse_router, prefix=API_PATH)
 
     app.exception_handler(GatewayTimeout)(timeout_handler)
 

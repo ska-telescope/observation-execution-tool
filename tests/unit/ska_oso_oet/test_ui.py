@@ -12,7 +12,9 @@ from unittest import mock
 
 import flask
 import pytest
+from httpx import Response
 from pubsub import pub
+from pydantic import ValidationError
 from ska_oso_scripting.event import user_topics
 
 import ska_oso_oet.utils.ui
@@ -20,6 +22,7 @@ from ska_oso_oet import mptools
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure.domain import ProcedureState
 from ska_oso_oet.ui import Message
+from ska_oso_oet.ui import messages as sse_messages
 from tests.unit.conftest import DEFAULT_API_PATH, PROCEDURES_ENDPOINT
 
 
@@ -210,49 +213,55 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
     assert result == "ok"
 
 
-def test_sse_string_messages_are_streamed_correctly(flask_client):
+def mock_message_encode(data, encoding):
+    return bytes(str(data), encoding=encoding)
+
+
+@pytest.mark.asyncio
+@mock.patch("ska_oso_oet.ui.messages")
+@mock.patch.object(Message, "encode", new=mock_message_encode, create=True)
+async def test_sse_string_messages_are_streamed_correctly(mock_messages, async_client):
     """
     Verify that simple Messages are streamed as SSE events correctly.
     """
-    msg = Message("foo", type="message")
+    msg = Message(data="foo", type="message")
+    mock_messages.return_value = [msg]
 
-    with mock.patch(
-        "ska_oso_oet.ui.ServerSentEventsBlueprint.messages"
-    ) as mock_messages:
-        mock_messages.return_value = [msg]
-        response = flask_client.get(f"/{DEFAULT_API_PATH}/stream")
+    async with async_client:
+        response = await async_client.get(f"/{DEFAULT_API_PATH}/stream")
 
-        assert isinstance(response, flask.Response)
-        assert response.mimetype == "text/event-stream"
+        assert isinstance(response, Response)
         assert response.status_code == 200
-        assert response.is_streamed
-        output = response.get_data(as_text=True)
-        assert output == "\nevent:message\ndata:foo\n\n"
+        assert response.headers["content-type"] == "text/event-stream; charset=utf-8"
+
+        mock_messages.assert_called()
+        assert response.text == "\nevent:message\ndata:foo\n\n"
 
 
-def test_sse_complex_messages_are_streamed_correctly(flask_client):
+@pytest.mark.asyncio
+@mock.patch("ska_oso_oet.ui.messages")
+@mock.patch.object(Message, "encode", new=mock_message_encode, create=True)
+async def test_sse_complex_messages_are_streamed_correctly(mock_messages, async_client):
     """
     Verify that Messages containing structured data are streamed correctly.
     """
-    msg = Message({"foo": "bar"}, type="message", id=123)
+    msg = Message(data={"foo": "bar"}, type="message", id=123)
+    mock_messages.return_value = [msg]
 
-    with mock.patch(
-        "ska_oso_oet.ui.ServerSentEventsBlueprint.messages"
-    ) as mock_messages:
-        mock_messages.return_value = [msg]
-        response = flask_client.get(f"/{DEFAULT_API_PATH}/stream")
+    async with async_client:
+        response = await async_client.get(f"/{DEFAULT_API_PATH}/stream")
 
-        assert isinstance(response, flask.Response)
-        assert response.mimetype == "text/event-stream"
+        assert isinstance(response, Response)
         assert response.status_code == 200
-        assert response.is_streamed
-        output = response.get_data(as_text=True)
-        assert output == '\nevent:message\ndata:{"foo": "bar"}\nid:123\n\n'
+        assert response.headers["content-type"] == "text/event-stream; charset=utf-8"
+
+        mock_messages.assert_called()
+        assert response.text == '\nevent:message\ndata:{"foo": "bar"}\nid:123\n\n'
 
 
-def test_sse_messages_returns_pubsub_messages(flask_client):
+def test_sse_messages_returns_pubsub_messages():
     """
-    Test that pypubsub messages are returned by SSE blueprint's messages method.
+    Test that pypubsub messages are returned by SSE messages method.
     """
 
     def publish():
@@ -262,54 +271,30 @@ def test_sse_messages_returns_pubsub_messages(flask_client):
 
     t = threading.Thread(target=publish)
 
-    bp = flask_client.application.blueprints["sse"]
-    gen = bp.messages()
+    gen = sse_messages(shutdown_event=threading.Event())
     assert isinstance(gen, types.GeneratorType)
 
     t.start()
 
     output = next(gen)
     assert output == Message(
-        dict(topic="sb.lifecycle.started", msg_src="foo", sbi_id="bar")
+        data=dict(topic="sb.lifecycle.started", msg_src="foo", sbi_id="bar")
     )
-
-
-def test_message_input_eq_works_as_expected():
-    """
-    Verify message equality
-    """
-    m1 = Message({"foo": "bar"})
-    m2 = Message({"foo": "bar"})
-    m3 = Message({"foo": "bar"}, type="message")
-    assert m1 == m2
-    assert m1 != m3
-    assert m1 != object()
 
 
 def test_message_str():
     """
     Verify that the str string for a Message is correctly formatted.
     """
-    message = Message("foo", type="message", id=123, retry=100)
+    message = Message(data="foo", type="message", id=123, retry=100)
     assert str(message) == "event:message\ndata:foo\nid:123\nretry:100\n\n"
-
-
-def test_message_input_accepts_expected_constructor_values():
-    """
-    Verify that message constructor accepts expected inputs.
-    """
-    message = Message("foo", type="message", id=123, retry=100)
-    assert message.data == "foo"
-    assert message.type == "message"
-    assert message.id == 123
-    assert message.retry == 100
 
 
 def test_message_with_multiline_data():
     """
     Verify that message works with multiline data.
     """
-    message = Message("foo\nbar")
+    message = Message(data="foo\nbar")
     assert message.data == "foo\nbar"
     assert message.type is None
     assert message.id is None
@@ -321,15 +306,15 @@ def test_message_raise_exception_on_empty():
     """
     Verify that empty message() raise exception
     """
-    with pytest.raises(TypeError):
-        Message()  # pylint: disable=no-value-for-parameter
+    with pytest.raises(ValidationError):
+        Message()
 
 
 def test_message_with_simple_data():
     """
     Verify that message works with simple data.
     """
-    message = Message("foo")
+    message = Message(data="foo")
     assert message.data == "foo"
     assert message.type is None
     assert message.id is None
