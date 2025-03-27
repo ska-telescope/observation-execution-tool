@@ -99,6 +99,7 @@ python src/ska_oso_oet/main.py
 http://{hostname}:{port}/ska-oso-oet/oet/api/v<OET major version>/ui
 ```
 
+
 # Deployments from CICD
 
 ## Deploying to non-production environments

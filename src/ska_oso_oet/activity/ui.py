@@ -10,7 +10,7 @@ from ska_oso_oet.activity.application import ActivityCommand, ActivitySummary
 from ska_oso_oet.event import topics
 from ska_oso_oet.utils.ui import (
     ScriptArgs,
-    call_and_respond_fastapi,
+    call_and_respond,
     convert_request_to_procedure_input,
 )
 
@@ -31,7 +31,7 @@ class ActivityPostRequest(BaseModel):
     description="Return the a summary of the Activity with given activity_id.",
 )
 def get_activity(activity_id: int) -> ActivitySummary:
-    summaries = call_and_respond_fastapi(
+    summaries = call_and_respond(
         topics.request.activity.list,
         topics.activity.pool.list,
         activity_ids=[activity_id],
@@ -54,7 +54,7 @@ def get_activity(activity_id: int) -> ActivitySummary:
     description="Return a list of all the Activity summaries.",
 )
 def get_activities() -> list[ActivitySummary]:
-    summaries = call_and_respond_fastapi(
+    summaries = call_and_respond(
         topics.request.activity.list, topics.activity.pool.list
     )
 
@@ -84,7 +84,7 @@ def run_activity(request_body: ActivityPostRequest) -> ActivitySummary:
         request_body.create_env,
         script_args,
     )
-    summary = call_and_respond_fastapi(
+    summary = call_and_respond(
         topics.request.activity.run, topics.activity.lifecycle.running, cmd=cmd
     )
 

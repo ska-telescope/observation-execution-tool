@@ -11,7 +11,7 @@ from ska_oso_oet.event import topics
 from ska_oso_oet.procedure import application, domain
 from ska_oso_oet.utils.ui import (
     ScriptArgs,
-    call_and_respond_fastapi,
+    call_and_respond,
     convert_request_to_procedure_input,
 )
 
@@ -43,7 +43,7 @@ class ProcedurePutRequest(BaseModel):
     description="Returns a list of all prepared and running procedures.",
 )
 def get_procedures() -> list[application.ProcedureSummary]:
-    summaries = call_and_respond_fastapi(
+    summaries = call_and_respond(
         topics.request.procedure.list, topics.procedure.pool.list, pids=None
     )
     return summaries
@@ -75,7 +75,7 @@ def create_procedure(
         script=request_body.script,
         init_args=convert_request_to_procedure_input(procedure_input),
     )
-    summary = call_and_respond_fastapi(
+    summary = call_and_respond(
         topics.request.procedure.create,
         topics.procedure.lifecycle.created,
         cmd=prepare_cmd,
@@ -106,7 +106,7 @@ def update_procedure(
         if old_state is domain.ProcedureState.RUNNING:
             run_abort = request_body.abort
             cmd = application.StopProcessCommand(procedure_id, run_abort=run_abort)
-            result = call_and_respond_fastapi(
+            result = call_and_respond(
                 topics.request.procedure.stop,
                 topics.procedure.lifecycle.stopped,
                 cmd=cmd,
@@ -134,7 +134,7 @@ def update_procedure(
             run_args=convert_request_to_procedure_input(procedure_input),
         )
 
-        summary = call_and_respond_fastapi(
+        summary = call_and_respond(
             topics.request.procedure.start, topics.procedure.lifecycle.started, cmd=cmd
         )
 
@@ -148,7 +148,7 @@ def _get_summary_or_404(pid: int) -> application.ProcedureSummary:
     :param pid: ID of Procedure
     :return: ProcedureSummary
     """
-    summaries = call_and_respond_fastapi(
+    summaries = call_and_respond(
         topics.request.procedure.list, topics.procedure.pool.list, pids=[pid]
     )
 

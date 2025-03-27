@@ -433,7 +433,7 @@ def test_put_procedure_returns_404_if_procedure_not_found(client):
 
 def test_put_procedure_returns_error_if_no_json_supplied(client):
     """
-    Verify that a PUT request requires a JSON payload. This will be validated against the OpenAPI spec, so the response is dictated by connexion
+    Verify that a PUT request requires a JSON payload. This will be validated against the Pydantic models
     """
     # The procedure is retrieved before the JSON is examined, hence we need to
     # prime the pubsub messages
@@ -673,7 +673,7 @@ def test_stopping_a_non_running_procedure_returns_appropriate_error_message(clie
 
 def test_giving_non_dict_script_args_returns_error_code(client):
     """
-    script_args JSON parameter must match the OpenAPI spec, otherwise HTTP 400 is raised by Connexion.
+    script_args JSON parameter must match the Pydantic model, otherwise HTTP 422 is raised by FasyAPI.
     """
     spec = {
         topics.request.procedure.list: [
@@ -746,15 +746,3 @@ def assert_json_equal_to_procedure_summary(
         assert state[0].name == summary_json["history"]["process_states"][i][0]
         assert state[1] == summary_json["history"]["process_states"][i][1]
         assert isinstance(summary_json["history"]["process_states"][i][1], float)
-
-
-def openapi_validation_error(detail: str):
-    """
-    This is the validation error message in the format that Connexion defines
-    """
-    return {
-        "title": "Bad Request",
-        "status": 400,
-        "type": "about:blank",
-        "detail": detail,
-    }

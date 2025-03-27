@@ -42,11 +42,7 @@ import sphinx.ext.autodoc
 
 autodoc_mock_imports = [
     "astropy",
-    "connexion",
-    "flask",
     "git",
-    "jsonpickle",
-    "prance",
     "pubsub",
     "ska_db_oda",
     "ska_oso_pdm",
@@ -54,7 +50,6 @@ autodoc_mock_imports = [
     "ska_ser_skuid",
     "ska_ser_logging",
     "tblib",
-    "waitress",
     "werkzeug",
     "uvicorn",
     "fastapi",

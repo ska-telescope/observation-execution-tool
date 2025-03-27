@@ -2366,13 +2366,13 @@ jupyter = ["ipywidgets (>=7.5.1,<9)"]
 
 [[package]]
 name = "rich-toolkit"
-version = "0.13.2"
+version = "0.14.0"
 description = "Rich toolkit for building command-line applications"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "rich_toolkit-0.13.2-py3-none-any.whl", hash = "sha256:f3f6c583e5283298a2f7dbd3c65aca18b7f818ad96174113ab5bec0b0e35ed61"},
-    {file = "rich_toolkit-0.13.2.tar.gz", hash = "sha256:fea92557530de7c28f121cbed572ad93d9e0ddc60c3ca643f1b831f2f56b95d3"},
+    {file = "rich_toolkit-0.14.0-py3-none-any.whl", hash = "sha256:75ff4b3e70e27e9cb145164bfe8d8e56758162fa3f87594067f4d85630b98bf9"},
+    {file = "rich_toolkit-0.14.0.tar.gz", hash = "sha256:569c61522e0e24fc4e9a58191fd97b64aa4e1376856666bae6122a7362bbf32d"},
 ]
 
 [package.dependencies]
@@ -2537,13 +2537,13 @@ reference = "ska-nexus"
 
 [[package]]
 name = "ska-db-oda"
-version = "7.3.1"
+version = "7.3.2"
 description = "SKA Database OSO Data Archive"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "ska_db_oda-7.3.1-py3-none-any.whl", hash = "sha256:7bd215a7f16392e14ecb98180d3fbe11b5701ad5c3429cb2a614aa5e9bfad39e"},
-    {file = "ska_db_oda-7.3.1.tar.gz", hash = "sha256:248e882706092f76eace5cfbc6229be993141db10954d78edef4309e56e26e77"},
+    {file = "ska_db_oda-7.3.2-py3-none-any.whl", hash = "sha256:11d74160d98624e1d6654761cf0c48af0cc548f96f189991abf4b3dab8f03037"},
+    {file = "ska_db_oda-7.3.2.tar.gz", hash = "sha256:f2060de4387b528b974c36287d0c7c44f4a1d58dd9c9dfa2203a1910b12cd213"},
 ]
 
 [package.dependencies]
@@ -3373,21 +3373,6 @@ docs = ["Sphinx (>=4.1.2,<4.2.0)", "sphinx-rtd-theme (>=0.5.2,<0.6.0)", "sphinxc
 test = ["aiohttp (>=3.10.5)", "flake8 (>=5.0,<6.0)", "mypy (>=0.800)", "psutil", "pyOpenSSL (>=23.0.0,<23.1.0)", "pycodestyle (>=2.9.0,<2.10.0)"]
 
 [[package]]
-name = "waitress"
-version = "2.1.2"
-description = "Waitress WSGI server"
-optional = false
-python-versions = ">=3.7.0"
-files = [
-    {file = "waitress-2.1.2-py3-none-any.whl", hash = "sha256:7500c9625927c8ec60f54377d590f67b30c8e70ef4b8894214ac6e4cad233d2a"},
-    {file = "waitress-2.1.2.tar.gz", hash = "sha256:780a4082c5fbc0fde6a2fcfe5e26e6efc1e8f425730863c04085769781f51eba"},
-]
-
-[package.extras]
-docs = ["Sphinx (>=1.8.1)", "docutils", "pylons-sphinx-themes (>=1.0.9)"]
-testing = ["coverage (>=5.0)", "pytest", "pytest-cover"]
-
-[[package]]
 name = "watchfiles"
 version = "1.0.4"
 description = "Simple, modern and high performance file watching and code reload in python."
@@ -3667,4 +3652,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "925f99daab403a49edd2b784fc2702b3e5b87248b4d9ce4e890be370e0ee5a76"
+content-hash = "008d6b05799e8a3d1b3957a779905978bc5101edd51b11add7b94a660eeeb52c"

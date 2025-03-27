@@ -10,7 +10,6 @@ import types
 from typing import List
 from unittest import mock
 
-import flask
 import pytest
 from httpx import Response
 from pubsub import pub
@@ -175,7 +174,7 @@ def test_call_and_respond_aborts_with_timeout_when_no_response_received(
     assert response_json["detail"].startswith("Timeout waiting for msg ")
 
 
-def test_call_and_respond_ignores_responses_when_request_id_differs():
+def test_call_and_respond_ignores_responses_when_request_id_differs(client):
     """
     Verify that the messages with different request IDs are ignored.
     """
@@ -197,18 +196,14 @@ def test_call_and_respond_ignores_responses_when_request_id_differs():
 
     t = threading.Thread(target=publish)
 
-    app = flask.Flask("test")
-    with app.app_context():
-        app.config = dict(msg_src="mock")
+    # this sets the request ID to match to 'bar'
+    with mock.patch("time.time_ns") as mock_time:
+        mock_time.return_value = 456
 
-        # this sets the request ID to match to 'bar'
-        with mock.patch("time.time_ns") as mock_time:
-            mock_time.return_value = 456
-
-            t.start()
-            result = ska_oso_oet.utils.ui.call_and_respond(
-                topics.request.procedure.list, topics.procedure.pool.list
-            )
+        t.start()
+        result = ska_oso_oet.utils.ui.call_and_respond(
+            topics.request.procedure.list, topics.procedure.pool.list
+        )
 
     assert result == "ok"
 
@@ -261,7 +256,7 @@ async def test_sse_complex_messages_are_streamed_correctly(mock_messages, async_
 
 def test_sse_messages_returns_pubsub_messages():
     """
-    Test that pypubsub messages are returned by SSE messages method.
+    Test that pypubsub messages are returned by SSE blueprint's messages method.
     """
 
     def publish():

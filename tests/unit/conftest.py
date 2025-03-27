@@ -25,7 +25,7 @@ def fixture_base_url():
 @pytest.fixture(name="client")
 def fixture_client():
     """
-    Test fixture that returns an OET Flask application instance
+    Test fixture that returns an OET FastAPI test client with the OET application
     """
 
     app = ui.create_fastapi_app()
@@ -42,22 +42,6 @@ def fixture_async_client():
     app.state.msg_src = "unit tests"
     app.state.sse_shutdown_event = threading.Event()
     return AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost")
-
-
-@pytest.fixture(name="flask_client")
-def fixture_flask_client():
-    """
-    Test fixture that returns an OET Flask application instance
-    """
-
-    app = ui.create_app()
-    app.config.update(TESTING=True)
-    app.config.update(msg_src="unit tests")
-    app.config.update(shutdown_event=threading.Event())
-    # must create app_context for current_app to resolve correctly in SSE blueprint
-    with app.app_context():
-        with app.test_client() as client:
-            yield client
 
 
 @pytest.fixture(
