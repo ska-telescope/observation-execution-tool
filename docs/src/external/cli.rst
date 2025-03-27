@@ -116,7 +116,7 @@ A 'listen' command will give the real time delivery of oet events published by s
   $ oet listen
 
   event: request.procedure.list
-  data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056049.4846392, 'pids': None}
+  data: args=() kwargs={'msg_src': 'FastAPIWorker', 'request_id': 1604056049.4846392, 'pids': None}
 
   event: procedure.pool.list
   data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056049.4846392, 'result': []}
@@ -125,7 +125,7 @@ A 'listen' command will give the real time delivery of oet events published by s
   data: args=() kwargs={'msg_src': 'ActivityWorker', 'request_id': 1604056078.4847652, 'result': []}
 
   event: request.procedure.create
-  data: args=() kwargs={'msg_src': 'FlaskWorker', 'request_id': 1604056247.0666442, 'cmd': PrepareProcessCommand(script_uri='file://scripts/eventbus.py', init_args=<ProcedureInput(, subarray_id=1)>)}
+  data: args=() kwargs={'msg_src': 'FastAPIWorker', 'request_id': 1604056247.0666442, 'cmd': PrepareProcessCommand(script_uri='file://scripts/eventbus.py', init_args=<ProcedureInput(, subarray_id=1)>)}
 
   event: procedure.lifecycle.created
   data: args=() kwargs={'msg_src': 'SESWorker', 'request_id': 1604056247.0666442, 'result': ProcedureSummary(id=1, script_uri='file://scripts/eventbus.py', script_args={'init': <ProcedureInput(, subarray_id=1)>, 'run': <ProcedureInput(, )>}, history=<ProcessHistory(process_states=[(ProcedureState.READY, 1604056247.713874)], stacktrace=None)>, state=<ProcedureState.READY: 1>)}

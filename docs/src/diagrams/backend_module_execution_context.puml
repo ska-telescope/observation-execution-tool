@@ -17,7 +17,7 @@ package ska_oso_oet {
             list(...)
         }
 
-        class FlaskWorker {
+        class FastAPIWorker {
         }
     }
 
@@ -29,8 +29,8 @@ package ska_oso_oet {
     }
 
 
-    RestClientUI - FlaskWorker : Sends user request\n >
-    FlaskWorker -- ScriptExecutionServiceWorker : relays\nrequest\n >
+    RestClientUI - FastAPIWorker : Sends user request\n >
+    FastAPIWorker -- ScriptExecutionServiceWorker : relays\nrequest\n >
     ScriptExecutionServiceWorker -- ScriptExecutionService : invokes\ncommands\n >
 }
 

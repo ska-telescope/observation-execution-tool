@@ -7,14 +7,14 @@ mainframe **Activity API over REST**
 autonumber
 
 participant cli as "CLI :\nRestClientUI" #lightgreen
-participant FlaskWorker as "REST backend :\nFlaskWorker" #lightblue
+participant FastAPIWorker as "REST backend :\nFastAPIWorker" #lightblue
 participant ActivityWorker
 participant ActivityService
 participant ODA as "ODA :\nObservation Data Archive" #lightblue
 participant ScriptExecutionServiceWorker as "SESWorker :\nScriptExecutionServiceWorker"
 participant ScriptExecutionService as "Script Execution API :\nScriptExecutionService"
 
-cli -> FlaskWorker: HTTP POST to /api/v1/activities
+cli -> FastAPIWorker: HTTP POST to /api/v1/activities
 note right
 The User executes an OET CLI command at
 the terminal. The OET CLI uses HTTP POST
@@ -23,9 +23,9 @@ request (activity name, scheduling block ID,
 etc.) to the REST backend.
 end note
 
-FlaskWorker -> ActivityWorker: send message request.activity.run
+FastAPIWorker -> ActivityWorker: send message request.activity.run
 note right
-""FlaskWorker"" creates a ""ActivityCommand""
+""FastAPIWorker"" creates a ""ActivityCommand""
 encapsulating the request details and announces
 the event on the //Run Activity requested// request
 topic. It will then wait for a response on the //Activity//
@@ -129,11 +129,11 @@ end note
 
 ActivityService -> ActivityWorker: ActivitySummary
 
-ActivityWorker -> FlaskWorker: message activity.lifecycle.running
+ActivityWorker -> FastAPIWorker: message activity.lifecycle.running
 
-cli <- FlaskWorker: HTTP OK + ActivitySummary JSON
+cli <- FastAPIWorker: HTTP OK + ActivitySummary JSON
 note right
-The FlaskWorker will block the client side until it
+The FastAPIWorker will block the client side until it
 receives a message on activity.lifecycle.running
 topic from the ActivityWorker indicating that the
 preparation on the activity has been started.

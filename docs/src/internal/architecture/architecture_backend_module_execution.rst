@@ -34,13 +34,6 @@ Elements and their properties
 
    * - Component
      - Description
-   * - EmbeddedStringScript
-     - *NOT IMPLEMENTED YET*
-       |br|
-       |br|
-       EmbeddedStringScript holds a complete Python script as a string. This class has been identified as possibly being
-       useful as it allows a SchedulingBlock to directly specify and inject the code to be run, but has not been
-       implemented.
    * - :class:`~ska_oso_oet.procedure.environment.Environment`
      - Environment is a dataclass that holds the information required to identify a Python virtual environment and its
        location on disk. In addition, it holds synchronisation primitives to avoid race conditions between multiple

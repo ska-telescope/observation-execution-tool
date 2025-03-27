@@ -33,7 +33,7 @@ package ska_oso_oet {
             list(...)
         }
 
-        class FlaskWorker
+        class FastAPIWorker
 
         class EventBusWorker {
             main_loop(...)
@@ -42,7 +42,7 @@ package ska_oso_oet {
         }
 
         ScriptExecutionServiceWorker -up-|> EventBusWorker
-        FlaskWorker -up-|> EventBusWorker
+        FastAPIWorker -up-|> EventBusWorker
         EventBusWorker -right[dotted]- mptools: uses
         EventBusWorker -right[dotted]- pypubsub: uses
     }
@@ -114,31 +114,19 @@ package ska_oso_oet {
             PrepareProcessCommand -[hidden]- StartProcessCommand
             StartProcessCommand -[hidden]- StopProcessCommand
         }
-        FlaskWorker *-- app
+        FastAPIWorker *-- app
         ScriptExecutionServiceWorker --> ScriptExecutionService
     }
 
 }
 
 
-package flask {
-    class Flask
-    class Blueprint
-
-    Flask -down[hidden]- Blueprint
-}
-
-app -|> Flask
-ProcedureAPI -|> Blueprint
-ServerSentEventsBlueprint --|> Blueprint
-
 package pypubsub {
 }
 
 'main -down[hidden]--> application
 'restserver -left[hidden]--> application
-'restserver -right[hidden]--> flask
-'FlaskWorker -down[hidden]--> restserver
+'FastAPIWorker -down[hidden]--> restserver
 ScriptExecutionService -down[hidden]- ProcedureSummary
 ScriptExecutionService -down[hidden]- PrepareProcessCommand
 PrepareProcessCommand -right[hidden]- ProcedureSummary

@@ -25,7 +25,7 @@ package ska_oso_oet {
             list(...)
         }
 
-        class FlaskWorker {
+        class FastAPIWorker {
         }
 
         class EventBusWorker {
@@ -35,7 +35,7 @@ package ska_oso_oet {
         class main_func <<function>>
 
         ScriptExecutionServiceWorker -up-|> EventBusWorker
-        FlaskWorker -up-|> EventBusWorker
+        FastAPIWorker -up-|> EventBusWorker
         ActivityWorker -up-|> EventBusWorker
     }
 
@@ -45,16 +45,15 @@ package ska_oso_oet {
 
         note as app_note
         create_app function will
-        create a Flask application
+        create a FastAPI application
         using ProcedureAPI, ActivityAPI
-        and ServerSentEventsBlueprint
-        blueprints.
+        and SSE API routers.
         end note
 
         app_note -left- create_app
     }
 
-    FlaskWorker *-- create_app
+    FastAPIWorker *-- create_app
 
     package procedure {
 
@@ -86,16 +85,6 @@ package ska_oso_oet {
         ActivityWorker --> ActivityService
     }
 }
-
-package flask {
-    class Flask
-    class Blueprint
-}
-
-create_app --|> Flask
-ServerSentEventsBlueprint --|> Blueprint
-ActivityAPI --|> Blueprint
-ProcedureAPI --|> Blueprint
 
 EventBusWorker -[dotted]- mptools: uses
 

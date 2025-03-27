@@ -34,10 +34,18 @@ Elements and their properties
 
    * - Component
      - Description
+   * - :class:`~ska_oso_oet.activity.ui`
+     - Contains the Python functions that implement the Activity resources on the OET REST API. These HTTP resources
+       are accessed and modified to control SBDefinition. As the resources are accessed, the API
+       implementation publishes an equivalent request event, which triggers the ScriptExecutionServiceWorker to take the
+       appropriate action to satisfy that request. API also converts the response back to a suitable HTML response.
+       |br|
+       |br|
+       The REST API is documented separately in :doc:`architecture_module_rest_api`.
    * - :class:`~ska_oso_oet.activity.domain.ActivityState`
      - ActivityState is an enumeration defining the states that an Activity (a concept linking Scheduling Blocks
        to Procedures) can be in. State machine for activities has not yet been completely defined and currently
-       Activity can only be in state ``REQUESTED``.
+       Activity can only be in state ``TODO``.
    * - :class:`~ska_oso_oet.activity.application.ActivityService`
      - ActivityService provides the high-level API for the activity domain, presenting methods that
        'run a script referenced by activity *X* of scheduling block *Y*'. The ActivityService completes user requests
@@ -62,9 +70,9 @@ Elements and their properties
      - For a the OET REST deployment, ActivityServiceWorker is the client sending requests to the ActivityService.
        |br|
        |br|
-       ActivityWorker responds to requests received by the FlaskWorker, relaying the request to the
+       ActivityWorker responds to requests received by the FastAPIWorker, relaying the request to the
        :class:`~ska_oso_oet.activity.application.ActivityService`
-       and publishing the response as an event that can be received by the FlaskWorker and returned to the user in the
+       and publishing the response as an event that can be received by the FastAPIWorker and returned to the user in the
        appropriate format.
 
 
@@ -82,7 +90,7 @@ Activity API invocation via HTTP REST
 
 The sequence diagram below illustrates how the components above interact to invoke a call on an remote
 ActivityService instance in response to a request from a client. This diagram shows how the user request
-is received by the FlaskWorker REST backend, how that triggers actions on independent ActivityWorker process
+is received by the FastAPIWorker REST backend, how that triggers actions on independent ActivityWorker process
 hosting the ActivityService instance, and how the response is returned to the user
 
 .. figure:: ../../diagrams/export/backend_module_ui_sequence_activity_api_over_rest.svg
@@ -94,7 +102,7 @@ Inter-process publish-subscribe
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Activity domain uses the same publish-subscribe system as Procedure domain for both communication between
-FlaskWorker and ActivityServiceWorker and for the ActivityService to communicate with the ScriptExecutionServiceWorker.
+FastAPIWorker and ActivityServiceWorker and for the ActivityService to communicate with the ScriptExecutionServiceWorker.
 For a diagram illustrating the flow of in-process pypubsub messages, see the :ref:`Inter-process publish-subscribe section <architecture_backend_module_script_exec_ui_pubsub>`
 in the script execution API documentation.
 

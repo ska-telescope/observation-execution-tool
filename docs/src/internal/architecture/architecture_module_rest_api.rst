@@ -9,6 +9,10 @@ Module View: REST API
 OET REST API presents REST resources that can be used to manage the lifecycle of Python scripts running on a remote
 server and to inspect their status.
 
+The SwaggerUI for the integration deployment is available at https://k8s.stfc.skao.int/integration-ska-oso-oet/oet/api/v6/ui/
+
+and the OpenAPI json at https://k8s.stfc.skao.int/integration-ska-oso-oet/oet/api/v6/openapi.json
+
 2. Resources
 ============
 A ‘Procedure’ represents a Python script to run, or that is running, on the backend. The REST API operates on
@@ -520,13 +524,13 @@ example shows two events, #1 request to available procedures #2 get the details 
     Server: Werkzeug/1.0.1 Python/3.7.3
     Date: Mon, 02 Nov 2020 06:57:40 GMT
 
-    data:{"msg_src": "FlaskWorker", "pids": null, "topic": "request.procedure.list"}
+    data:{"msg_src": "FastAPIWorker", "pids": null, "topic": "request.procedure.list"}
     id:1605017762.46912
 
     data:{"msg_src": "SESWorker", "result": [], "topic": "procedure.pool.list"}
     id:1605017762.46912
 
-    data:{"msg_src": "FlaskWorker", "cmd": {"py/object": "oet.procedure.application.application.PrepareProcessCommand", "script_uri": "file://scripts/eventbus.py", "init_args": {"py/object": "oet.procedure.domain.ProcedureInput", "args": {"py/tuple": []}, "kwargs": {"subarray_id": 1}}}, "topic": "request.procedure.create"}
+    data:{"msg_src": "FastAPIWorker", "cmd": {"py/object": "oet.procedure.application.application.PrepareProcessCommand", "script_uri": "file://scripts/eventbus.py", "init_args": {"py/object": "oet.procedure.domain.ProcedureInput", "args": {"py/tuple": []}, "kwargs": {"subarray_id": 1}}}, "topic": "request.procedure.create"}
     id:1605017784.1536236
 
     data:{"msg_src": "SESWorker", "result": {"py/object": "oet.procedure.application.application.ProcedureSummary", "id": 1, "script_uri": "file://scripts/eventbus.py", "script_args": {"init": {"py/object": "oet.procedure.domain.ProcedureInput", "args": {"py/tuple": []}, "kwargs": {"subarray_id": 1}}, "run": {"py/object": "oet.procedure.domain.ProcedureInput", "args": {"py/tuple": []}, "kwargs": {}}}, "history": {"py/object": "oet.procedure.domain.ProcedureHistory", "process_states": {"py/reduce": [{"py/type": "collections.OrderedDict"}, {"py/tuple": []}, null, null, {"py/tuple": [{"py/tuple": [{"py/reduce": [{"py/type": "oet.procedure.domain.ProcedureState"}, {"py/tuple": [1]}]}, 1605017786.0569353]}]}]}, "stacktrace": null}, "state": {"py/id": 5}}, "topic": "procedure.lifecycle.created"}
