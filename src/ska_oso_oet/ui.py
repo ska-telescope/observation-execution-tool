@@ -23,7 +23,7 @@ from ska_oso_oet.mptools import MPQueue
 from ska_oso_oet.procedure.ui import procedures_router
 from ska_oso_oet.utils.ui import API_PATH
 
-sse_router = APIRouter()
+sse_router = APIRouter(tags=["Server Sent Events"])
 
 
 def serialize(obj):
@@ -81,15 +81,25 @@ def messages(shutdown_event: Event) -> Generator[Message, None, None]:
 
     pub.subscribe(add_to_q, pub.ALL_TOPICS)
 
-    # shutdown_event = current_app.config["shutdown_event"]
-    # while not shutdown_event.is_set():
     while not shutdown_event.is_set():
         msg = q.safe_get(timeout=0.1)
         if msg is not None:
             yield msg
 
 
-@sse_router.get("/stream")
+@sse_router.get(
+    "/stream",
+    description=(
+        "Opens an SSE stream of messages that are published to the OET topics. All new"
+        " messages will be streamed until the connection is closed. Messages will not"
+        " appear in the SwaggerUI - open the request url in a separate browser tab"
+        " instead."
+    ),
+    response_description=(
+        "A stream of messages with the text/event-stream MIME type - see"
+        " https://html.spec.whatwg.org/multipage/server-sent-events.html#the-eventsource-interface"
+    ),
+)
 async def stream(request: Request):
     shutdown_event = request.app.state.sse_shutdown_event
 
