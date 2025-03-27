@@ -4,11 +4,12 @@ UI/presentation layer. This layer is the means by which external users or
 systems would interact with activities.
 """
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ska_oso_oet.activity.application import ActivityCommand, ActivitySummary
 from ska_oso_oet.event import topics
 from ska_oso_oet.utils.ui import (
+    ProcedureInput,
     ScriptArgs,
     call_and_respond,
     convert_request_to_procedure_input,
@@ -19,8 +20,11 @@ activities_router = APIRouter(prefix="/activities", tags=["Activities"])
 
 class ActivityPostRequest(BaseModel):
     sbd_id: str
-    activity_name: str
-    script_args: ScriptArgs
+    activity_name: str = Field(examples=["observe"])
+    script_args: ScriptArgs = Field(
+        default=ScriptArgs(init=ProcedureInput(args=[], kwargs={})),
+        examples=[ScriptArgs(init=ProcedureInput(kwargs={"subarray_id": 1}))],
+    )
     prepare_only: bool = False
     create_env: bool = False
 

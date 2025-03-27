@@ -9,7 +9,9 @@ from pydantic import BaseModel, Field
 
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure import application, domain
+from ska_oso_oet.procedure.domain import FileSystemScript
 from ska_oso_oet.utils.ui import (
+    ProcedureInput,
     ScriptArgs,
     call_and_respond,
     convert_request_to_procedure_input,
@@ -25,15 +27,24 @@ Script = Annotated[
 
 
 class ProcedurePostRequest(BaseModel):
-    script: Script
-    script_args: ScriptArgs
+    script: Script = Field(
+        examples=[
+            FileSystemScript(script_uri="file:///tmp/scripts/hello_world_without_sb.py")
+        ]
+    )
+    script_args: ScriptArgs = Field(
+        default=ScriptArgs(init=ProcedureInput(args=[], kwargs={})),
+        examples=[ScriptArgs(init=ProcedureInput(kwargs={"subarray_id": 1}))],
+    )
 
 
 class ProcedurePutRequest(BaseModel):
-    script_args: Optional[ScriptArgs] = None
-    state: Optional[
-        domain.ProcedureState
-    ] = None  # Optional as no state in the request should be treated as a no-op
+    script_args: ScriptArgs = Field(
+        default=[ScriptArgs(init=ProcedureInput(args=[], kwargs={}))]
+    )
+    state: Optional[domain.ProcedureState] = Field(
+        default=None, examples=[domain.ProcedureState.RUNNING]
+    )  # Optional as no state in the request should be treated as a no-op
     abort: bool = False
 
 
