@@ -32,7 +32,11 @@ class ActivityPostRequest(BaseModel):
 @activities_router.get(
     "/{activity_id}",
     response_model=ActivitySummary,
-    description="Return the a summary of the Activity with given activity_id.",
+    summary="Get the Activity with the given activity_id",
+    description=(
+        "Returns a summary of the Activity if it exists "
+        "within the OET, with details of its state and related Procedure"
+    ),
 )
 def get_activity(activity_id: int) -> ActivitySummary:
     summaries = call_and_respond(
@@ -55,7 +59,8 @@ def get_activity(activity_id: int) -> ActivitySummary:
 @activities_router.get(
     "/",
     response_model=list[ActivitySummary],
-    description="Return a list of all the Activity summaries.",
+    summary="Get all Activities",
+    description="Returns a list of all the Activity summaries.",
 )
 def get_activities() -> list[ActivitySummary]:
     summaries = call_and_respond(
@@ -69,9 +74,11 @@ def get_activities() -> list[ActivitySummary]:
     "/",
     status_code=201,
     response_model=ActivitySummary,
+    summary="Create a new Activity and start its execution",
     description=(
-        "Loads the script from the SBDefinition for the given Activity and prepares it"
-        " for execution and then executes (unless prepare_only=True)."
+        "Loads the SBDefinition from the ODA and the script from Git or the filesystem"
+        " for the given Activity. It is prepare forexecution as an associated Procedure"
+        " and then executed (unless prepare_only=True)."
     ),
 )
 def run_activity(request_body: ActivityPostRequest) -> ActivitySummary:

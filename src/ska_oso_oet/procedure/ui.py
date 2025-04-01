@@ -51,7 +51,8 @@ class ProcedurePutRequest(BaseModel):
 @procedures_router.get(
     "/",
     response_model=list[application.ProcedureSummary],
-    description="Returns a list of all prepared and running procedures.",
+    summary="Get all Procedures",
+    description="Returns a list of all prepared and running Procedures.",
 )
 def get_procedures() -> list[application.ProcedureSummary]:
     summaries = call_and_respond(
@@ -63,7 +64,11 @@ def get_procedures() -> list[application.ProcedureSummary]:
 @procedures_router.get(
     "/{procedure_id}",
     response_model=application.ProcedureSummary,
-    description="Returns a summary of the Procedure with the given procedure_id.",
+    summary="Get the Procedure with the given procedure_id",
+    description=(
+        "Returns a summary of the Procedure if it exists "
+        "within the OET, with details of its state and arguments."
+    ),
 )
 def get_procedure(procedure_id: int) -> application.ProcedureSummary:
     summary = _get_summary_or_404(procedure_id)
@@ -74,8 +79,10 @@ def get_procedure(procedure_id: int) -> application.ProcedureSummary:
     "/",
     status_code=201,
     response_model=application.ProcedureSummary,
+    summary="Create a new Procedure and prepare it for execution",
     description=(
-        "Loads the requested script as a Procedure and prepares it for execution."
+        "Loads the requested script as a Procedure and prepares it for execution in a"
+        " subprocess."
     ),
 )
 def create_procedure(
@@ -98,11 +105,11 @@ def create_procedure(
 @procedures_router.put(
     "/{procedure_id}",
     response_model=application.ProcedureSummary | application.AbortSummary,
+    summary="Update the Procedure with the given procedure_id",
     description=(
-        "Updates the Procedure with the given procedure_id by setting to the desired"
-        " state in the request. This can be used to start execution by setting the"
-        " Procedure state attribute to RUNNING or stop execution by setting state to"
-        " STOPPED."
+        "Updates the Procedure by setting to the desiredstate in the request. "
+        "This can be used to start execution by setting the Procedure state "
+        "attribute to RUNNING or stop execution by setting state to STOPPED."
     ),
 )
 def update_procedure(
