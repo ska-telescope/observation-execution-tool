@@ -108,7 +108,8 @@ TEST_REPO_SETUP_CMD = "cd /tmp/tests/test_repo; git init; git add .; git -c user
 
 # Copy scripts and set up a test git project in the OET container before tests are executed
 k8s-pre-test:
-	kubectl exec -it ska-oso-oet-rest-$(HELM_RELEASE)-0 -n $(KUBE_NAMESPACE) -- mkdir /tmp/tests
+	kubectl exec -it ska-oso-oet-rest-$(HELM_RELEASE)-0 -n $(KUBE_NAMESPACE) -- rm -fr /tmp/tests
+	kubectl exec -it ska-oso-oet-rest-$(HELM_RELEASE)-0 -n $(KUBE_NAMESPACE) -- mkdir -p /tmp/tests
 	kubectl cp tests/acceptance/ska_oso_oet/scripts/ $(KUBE_NAMESPACE)/ska-oso-oet-rest-$(HELM_RELEASE)-0:/tmp/tests/scripts
 	kubectl cp tests/acceptance/ska_oso_oet/test_project/ $(KUBE_NAMESPACE)/ska-oso-oet-rest-$(HELM_RELEASE)-0:/tmp/tests/test_repo
 	kubectl -n $(KUBE_NAMESPACE) exec ska-oso-oet-rest-$(HELM_RELEASE)-0 -- bash -c $(TEST_REPO_SETUP_CMD)
