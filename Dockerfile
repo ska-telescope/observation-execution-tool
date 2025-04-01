@@ -9,7 +9,7 @@ ENV APP_DIR="/app"
 
 ARG CAR_PYPI_REPOSITORY_URL=https://artefact.skao.int/repository/pypi-internal
 ARG SCRIPTS_LOCATION=/scripts
-ENV PIP_INDEX_URL ${CAR_PYPI_REPOSITORY_URL}/simple
+ENV PIP_INDEX_URL=${CAR_PYPI_REPOSITORY_URL}/simple
 
 USER root
 
