@@ -12,7 +12,8 @@ Unreleased
   Now they return the ActivitySummary without the nested object
 * [BREAKING] API validation errors against the Pydantic models now return the FastAPI default 422 UNPROCESSABLE ENTITY code rather than 400 BAD REQUEST
 * [BREAKING] The error responses now just contain a single "detail" field rather than a "Message" and "type"
-* Update the default OET client installed in the image to v1.2.0
+* Update the default OET client installed in the image to v1.2.1
+* Remove Flask, Connexion and prance dependencies and all usage in the code. FlaskWorker is now completely replaced by the FastAPIWorker
 
 6.6.0
 **********

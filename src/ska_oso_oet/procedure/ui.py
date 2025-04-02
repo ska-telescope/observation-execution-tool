@@ -9,9 +9,11 @@ from pydantic import BaseModel, Field
 
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure import application, domain
+from ska_oso_oet.procedure.domain import FileSystemScript
 from ska_oso_oet.utils.ui import (
+    ProcedureInput,
     ScriptArgs,
-    call_and_respond_fastapi,
+    call_and_respond,
     convert_request_to_procedure_input,
 )
 
@@ -25,25 +27,35 @@ Script = Annotated[
 
 
 class ProcedurePostRequest(BaseModel):
-    script: Script
-    script_args: ScriptArgs
+    script: Script = Field(
+        examples=[
+            FileSystemScript(script_uri="file:///tmp/scripts/hello_world_without_sb.py")
+        ]
+    )
+    script_args: ScriptArgs = Field(
+        default=ScriptArgs(init=ProcedureInput(args=[], kwargs={})),
+        examples=[ScriptArgs(init=ProcedureInput(kwargs={"subarray_id": 1}))],
+    )
 
 
 class ProcedurePutRequest(BaseModel):
-    script_args: Optional[ScriptArgs] = None
-    state: Optional[
-        domain.ProcedureState
-    ] = None  # Optional as no state in the request should be treated as a no-op
+    script_args: ScriptArgs = Field(
+        default=[ScriptArgs(init=ProcedureInput(args=[], kwargs={}))]
+    )
+    state: Optional[domain.ProcedureState] = Field(
+        default=None, examples=[domain.ProcedureState.RUNNING]
+    )  # Optional as no state in the request should be treated as a no-op
     abort: bool = False
 
 
 @procedures_router.get(
     "/",
     response_model=list[application.ProcedureSummary],
-    description="Returns a list of all prepared and running procedures.",
+    summary="Get all Procedures",
+    description="Returns a list of all prepared and running Procedures.",
 )
 def get_procedures() -> list[application.ProcedureSummary]:
-    summaries = call_and_respond_fastapi(
+    summaries = call_and_respond(
         topics.request.procedure.list, topics.procedure.pool.list, pids=None
     )
     return summaries
@@ -52,7 +64,11 @@ def get_procedures() -> list[application.ProcedureSummary]:
 @procedures_router.get(
     "/{procedure_id}",
     response_model=application.ProcedureSummary,
-    description="Returns a summary of the Procedure with the given procedure_id.",
+    summary="Get the Procedure with the given procedure_id",
+    description=(
+        "Returns a summary of the Procedure if it exists "
+        "within the OET, with details of its state and arguments."
+    ),
 )
 def get_procedure(procedure_id: int) -> application.ProcedureSummary:
     summary = _get_summary_or_404(procedure_id)
@@ -63,8 +79,10 @@ def get_procedure(procedure_id: int) -> application.ProcedureSummary:
     "/",
     status_code=201,
     response_model=application.ProcedureSummary,
+    summary="Create a new Procedure and prepare it for execution",
     description=(
-        "Loads the requested script as a Procedure and prepares it for execution."
+        "Loads the requested script as a Procedure and prepares it for execution in a"
+        " subprocess."
     ),
 )
 def create_procedure(
@@ -75,7 +93,7 @@ def create_procedure(
         script=request_body.script,
         init_args=convert_request_to_procedure_input(procedure_input),
     )
-    summary = call_and_respond_fastapi(
+    summary = call_and_respond(
         topics.request.procedure.create,
         topics.procedure.lifecycle.created,
         cmd=prepare_cmd,
@@ -87,11 +105,11 @@ def create_procedure(
 @procedures_router.put(
     "/{procedure_id}",
     response_model=application.ProcedureSummary | application.AbortSummary,
+    summary="Update the Procedure with the given procedure_id",
     description=(
-        "Updates the Procedure with the given procedure_id by setting to the desired"
-        " state in the request. This can be used to start execution by setting the"
-        " Procedure state attribute to RUNNING or stop execution by setting state to"
-        " STOPPED."
+        "Updates the Procedure by setting to the desiredstate in the request. "
+        "This can be used to start execution by setting the Procedure state "
+        "attribute to RUNNING or stop execution by setting state to STOPPED."
     ),
 )
 def update_procedure(
@@ -106,7 +124,7 @@ def update_procedure(
         if old_state is domain.ProcedureState.RUNNING:
             run_abort = request_body.abort
             cmd = application.StopProcessCommand(procedure_id, run_abort=run_abort)
-            result = call_and_respond_fastapi(
+            result = call_and_respond(
                 topics.request.procedure.stop,
                 topics.procedure.lifecycle.stopped,
                 cmd=cmd,
@@ -134,7 +152,7 @@ def update_procedure(
             run_args=convert_request_to_procedure_input(procedure_input),
         )
 
-        summary = call_and_respond_fastapi(
+        summary = call_and_respond(
             topics.request.procedure.start, topics.procedure.lifecycle.started, cmd=cmd
         )
 
@@ -148,7 +166,7 @@ def _get_summary_or_404(pid: int) -> application.ProcedureSummary:
     :param pid: ID of Procedure
     :return: ProcedureSummary
     """
-    summaries = call_and_respond_fastapi(
+    summaries = call_and_respond(
         topics.request.procedure.list, topics.procedure.pool.list, pids=[pid]
     )
 

@@ -9,7 +9,7 @@ package ska_oso_oet {
             run(...)
         }
 
-        class FlaskWorker
+        class FastAPIWorker
 
         class EventBusWorker {
             main_loop(...)
@@ -18,7 +18,7 @@ package ska_oso_oet {
         }
 
         ActivityWorker -up-|> EventBusWorker
-        FlaskWorker -up-|> EventBusWorker
+        FastAPIWorker -up-|> EventBusWorker
     }
 
     package ui <<Rectangle>> {
@@ -67,7 +67,7 @@ package ska_oso_oet {
             }
         }
 
-        FlaskWorker *-- app
+        FastAPIWorker *-- app
         ActivityWorker *-- ActivityService
     }
 
@@ -85,23 +85,12 @@ package ska_oso_oet {
     }
 }
 
-package flask {
-    class Flask
-    class Blueprint
-
-    Flask -down[hidden]- Blueprint
-}
-
-app -|> Flask
-ActivityAPI -|> Blueprint
-
 activity_ui -down[hidden]- application
 application -down[hidden]- activity_domain
 
 'main -down[hidden]--> application
 'restserver -left[hidden]--> application
-'restserver -right[hidden]--> flask
-'FlaskWorker -down[hidden]--> restserver
+'FastAPIWorker -down[hidden]--> restserver
 ActivitySummary -right[hidden]- ActivityCommand
 ActivityService -down[hidden]- ActivitySummary
 

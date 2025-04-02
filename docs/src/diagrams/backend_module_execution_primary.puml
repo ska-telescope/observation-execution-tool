@@ -28,7 +28,7 @@ package ska_oso_oet {
             on_pubsub(evt: EventMessage)
         }
 
-        class FlaskWorker {
+        class FastAPIWorker {
         }
 
         class EventBusWorker {
@@ -38,7 +38,7 @@ package ska_oso_oet {
         }
 
         ScriptExecutionServiceWorker -up-> EventBusWorker
-        FlaskWorker -up-> EventBusWorker
+        FastAPIWorker -up-> EventBusWorker
     }
 
     package ui <<Rectangle>> {
@@ -98,17 +98,15 @@ package ska_oso_oet {
             PrepareProcessCommand -up[hidden]- StartProcessCommand
             StartProcessCommand -up[hidden]- StopProcessCommand
         }
-        FlaskWorker *-- app
+        FastAPIWorker *-- app
         ScriptExecutionServiceWorker *-- ScriptExecutionService
 
         package domain <<Rectangle>> {
             abstract class ExecutableScript
             class GitScript
             class FilesystemScript
-            class EmbeddedStringScript
             GitScript --> ExecutableScript
             FilesystemScript --> ExecutableScript
-            EmbeddedStringScript --> ExecutableScript
 
             enum ProcedureState {
                 UNKNOWN
@@ -134,14 +132,6 @@ package ska_oso_oet {
 
 }
 
-package flask {
-    class Flask
-    class Blueprint
-}
-
-app -|> Flask
-ProcedureAPI -|> Blueprint
-Blueprint -up[hidden]- Flask
 
 PrepareProcessCommand -right[hidden] StartProcessCommand
 StartProcessCommand -right[hidden] StopProcessCommand

@@ -7,16 +7,16 @@ mainframe **Scripting API over REST**
 autonumber
 
 participant cli as "CLI :\nRestClientUI" #lightgreen
-participant FlaskWorker as "REST backend :\nFlaskWorker" #lightblue
+participant FastAPIWorker as "REST backend :\nFastAPIWorker" #lightblue
 participant call_and_respond as "call_and_respond :\nfunction" #lightblue
 participant queue as "queue :\nQueue" #lightblue
 participant Callback as "callback :\nfunction" #lightblue
-participant fw_pubsub as "FlaskWorker pubsub :\npypubsub" #lightblue
+participant fw_pubsub as "FastAPIWorker pubsub :\npypubsub" #lightblue
 participant ses_pubsub as "SESWorker pubsub :\npypubsub"
 participant ScriptExecutionServiceWorker as "SESWorker :\nScriptExecutionServiceWorker"
 participant ScriptExecutionService as "Script Execution API :\nScriptExecutionService"
 
-cli -> FlaskWorker: HTTP POST
+cli -> FastAPIWorker: HTTP POST
 note right
 The User executes an OET CLI command at
 the terminal. The OET CLI uses HTTP POST
@@ -25,9 +25,9 @@ request (script location, script arguments,
 etc.) to the REST backend.
 end note
 
-FlaskWorker -> call_and_respond: call_and_respond(...)
+FastAPIWorker -> call_and_respond: call_and_respond(...)
 note right
-""FlaskWorker"" creates a ""PrepareProcessCommand""
+""FastAPIWorker"" creates a ""PrepareProcessCommand""
 encapsulating the request details and invokes the
  ""call_and_respond"" helper function to announce
 the event on the //Create Procedure requested// request
@@ -151,13 +151,13 @@ end note
 end opt
 
 alt response indicates success
-FlaskWorker <-- call_and_respond: event payload
+FastAPIWorker <-- call_and_respond: event payload
 note right
 If the response event indicates success, the event
 payload is extracted and returned to the calling function.
 end note
 
-cli <-- FlaskWorker: HTTP OK + ProcedureSummary JSON
+cli <-- FastAPIWorker: HTTP OK + ProcedureSummary JSON
 note right
 A JSON representation of the ""ProcedureSummary"" object
 in the response is created and returned to the user.

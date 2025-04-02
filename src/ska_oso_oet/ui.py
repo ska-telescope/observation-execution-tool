@@ -5,13 +5,10 @@ interface
 """
 import json
 import multiprocessing
-import os
 from http import HTTPStatus
 from threading import Event
-from typing import Any, Dict, Generator, Optional, Union
+from typing import Generator, Optional, Union
 
-import prance
-from connexion import App
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pubsub import pub
@@ -111,28 +108,6 @@ async def stream(request: Request):
             yield str(message)
 
     return StreamingResponse(generator(), media_type="text/event-stream")
-
-
-def get_openapi_spec() -> Dict[str, Any]:
-    "Parses and Returns OpenAPI spec"
-    cwd, _ = os.path.split(__file__)
-    path = os.path.join(cwd, "./openapi/oet-openapi-v1.yaml")
-    parser = prance.ResolvingParser(path, lazy=True, strict=True)
-    parser.parse()
-    spec = parser.specification
-    return spec
-
-
-def create_app(open_api_spec=None):
-    "Returns Flask App using Connexion"
-    if open_api_spec is None:
-        open_api_spec = get_openapi_spec()
-
-    connexion = App(__name__, specification_dir="openapi/")
-
-    connexion.app.config.update(msg_src=__name__)
-
-    return connexion.app
 
 
 async def timeout_handler(_: Request, err: GatewayTimeout) -> HTTPException:

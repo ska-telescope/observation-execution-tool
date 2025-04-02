@@ -104,10 +104,8 @@ package ska_oso_oet {
             abstract class ExecutableScript
             class GitScript
             class FilesystemScript
-            class EmbeddedStringScript
             GitScript --|> ExecutableScript
             FilesystemScript --|> ExecutableScript
-            EmbeddedStringScript --|> ExecutableScript
 
             enum ProcedureState {
                 UNKNOWN

@@ -26,13 +26,13 @@ Components
 
    * - Component
      - Description
-   * - :class:`~ska_oso_oet.main.FlaskWorker`
-     - FlaskWorker is a Flask application that presents a RESTful OET API, functioning as a REST adapter for the
-       ScriptExecutionService. Scripts can be created, controlled, and terminated via the REST API. The FlaskWorker
+   * - :class:`~ska_oso_oet.main.FastAPIWorker`
+     - FastAPIWorker is a FastAPI application that presents a RESTful OET API, functioning as a REST adapter for the
+       ScriptExecutionService. Scripts can be created, controlled, and terminated via the REST API. The FastAPIWorker
        presents a REST resource for each script process created and managed by the ProcessManager.
        |br|
        |br|
-       FlaskWorker also presents a Server-Sent Event (SSE) data stream, republishing each event seen on the OET event
+       FastAPIWorker also presents a Server-Sent Event (SSE) data stream, republishing each event seen on the OET event
        bus as an SSE event. This SSE stream gives remote clients visibility of actions taken by the OET backend and
        events announced by scripting libraries and user scripts.
    * - :func:`~ska_oso_oet.main.main`
@@ -47,11 +47,8 @@ Components
        |br|
        |br|
        The main component is the parent OS process of all other OET backend component processes.
-   * - OET Web UI
-     - **NOT IMPLEMENTED YET**
-       |br|
-       |br|
-       The OET Web UI is a web interface for the OET that can be used to submit SBs for execution. This interface is
+   * - OET Web UI (ska-oso-oet-ui)
+     - The OET Web UI is a web interface for the OET that can be used to submit SBs for execution. This interface is
        intended to operate from the perspective of SB execution rather than generic script execution, thus providing a
        more user-friendly interface than the OET CLI that an operator or tester could use until the OST is available.
    * - OST
@@ -60,17 +57,12 @@ Components
        |br|
        The SKA Online Scheduling Tool (OST) instructs the OET which SB should be executed next, taking into account
        aspects such as telescope resource availability, observing conditions, source visibility, science priority, etc.
-   * - :class:`~ska_oso_oet.procedure.application.restclient.RestClientUI`
-     - RestClientUI provides a command-line interface for invoke actions on the OET backend. The CLI is a general interface
-       whose operations (currently) focus on the script execution perspective (load script, abort script, etc.) rather
-       than the telescope-domain use cases (assign resources to subarray, execute SB, etc.).
-       |br|
-       |br|
-       In addition to controlling script execution, the CLI can be used to inspect the status of scripts that have run
-       or are running.
+   * - OET CLI (ska-oso-oet-client)
+     - The OET CLI provides a command-line interface for invoke actions on the OET backend. The CLI is a general interface
+       with operations that act on both the Procedure and Activity domains to execute and monitor SBDefinition and scripts.
    * - :class:`~ska_oso_oet.main.ScriptExecutionServiceWorker`
-     - ScriptExecutionServiceWorker responds to requests received by the FlaskWorker, relaying the request to the
-       ScriptExecutionService and publishing the response as an event that can be received by the FlaskWorker and
+     - ScriptExecutionServiceWorker responds to requests received by the FastAPIWorker, relaying the request to the
+       ScriptExecutionService and publishing the response as an event that can be received by the FastAPIWorker and
        returned to the user in the appropriate format.
    * - :class:`~ska_oso_oet.procedure.application.ScriptExecutionService`
      - ScriptExecutionService present the high-level API for script execution. The ScriptExecutionService orchestrates

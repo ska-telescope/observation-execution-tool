@@ -23,7 +23,7 @@ spec:
               service:
                 name: {{ template "ska-oso-oet.name" . }}-{{ .Values.rest.component }}-{{ .Release.Name }}
                 port:
-                  number: 5001
+                  number: 5000
 
 {{ end }}
 ---
@@ -42,8 +42,6 @@ spec:
   ports:
   - name: oet-backend
     port: 5000
-  - name: oet-fastapi
-    port: 5001
   clusterIP: None
   selector:
     app: {{ template "ska-oso-oet.name" . }}
@@ -114,8 +112,6 @@ spec:
         ports:
           - name: oet-backend
             containerPort: 5000
-          - name: oet-fastapi
-            containerPort: 5001
         volumeMounts:
           - name: ska-oso-oet-scripts-volume
             mountPath: /tmp/scripts

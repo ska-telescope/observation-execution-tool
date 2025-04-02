@@ -48,14 +48,17 @@ endif
 # CI_ENVIRONMENT_SLUG should only be defined when running on the CI/CD pipeline,
 # so these variables are set for a local deployment.
 # Set cluster_domain to minikube default (cluster.local) in local development
+# Also set REST tag to add -dirty as appropriate, which is likely in dev environment
 ifeq ($(CI_ENVIRONMENT_SLUG),)
 K8S_CHART_PARAMS += --set global.cluster_domain="cluster.local" \
-	--set ska-db-oda-umbrella.vault.enabled=false
+	--set ska-db-oda-umbrella.vault.enabled=false \
+	--set ska-oso-oet.rest.image.tag=$(VERSION)
+ADMIN_POSTGRES_PASSWORD ?= localpassword
 endif
 
 # The OET_URL is used by the OET client which runs inside the test pod during k8s-test. We set it explicitly here rather than rely on
 # the default in the client, to ensure we are pointing at this instance of the OET
-OET_URL ?= http://ska-oso-oet-rest-test:5001/$(KUBE_NAMESPACE)/oet/api/v$(MAJOR_VERSION)
+OET_URL ?= http://ska-oso-oet-rest-test:5000/$(KUBE_NAMESPACE)/oet/api/v$(MAJOR_VERSION)
 # Set the k8s test command run inside the testing pod to only run the acceptance
 # tests (no k8s pod deployment required for unit tests)
 POSTGRES_HOST ?= $(HELM_RELEASE)-postgresql
@@ -105,7 +108,8 @@ TEST_REPO_SETUP_CMD = "cd /tmp/tests/test_repo; git init; git add .; git -c user
 
 # Copy scripts and set up a test git project in the OET container before tests are executed
 k8s-pre-test:
-	kubectl exec -it ska-oso-oet-rest-$(HELM_RELEASE)-0 -n $(KUBE_NAMESPACE) -- mkdir /tmp/tests
+	kubectl exec -it ska-oso-oet-rest-$(HELM_RELEASE)-0 -n $(KUBE_NAMESPACE) -- rm -fr /tmp/tests
+	kubectl exec -it ska-oso-oet-rest-$(HELM_RELEASE)-0 -n $(KUBE_NAMESPACE) -- mkdir -p /tmp/tests
 	kubectl cp tests/acceptance/ska_oso_oet/scripts/ $(KUBE_NAMESPACE)/ska-oso-oet-rest-$(HELM_RELEASE)-0:/tmp/tests/scripts
 	kubectl cp tests/acceptance/ska_oso_oet/test_project/ $(KUBE_NAMESPACE)/ska-oso-oet-rest-$(HELM_RELEASE)-0:/tmp/tests/test_repo
 	kubectl -n $(KUBE_NAMESPACE) exec ska-oso-oet-rest-$(HELM_RELEASE)-0 -- bash -c $(TEST_REPO_SETUP_CMD)

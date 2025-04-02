@@ -70,34 +70,9 @@ non-interactive session run
 make diagrams
 ```
 
-## OpenAPI Implementation
-The OpenAPI Specification (OAS) defines a standard, language-agnostic interface to HTTP APIs which allows both humans and computers to discover and understand the capabilities of the service without access to source code, documentation, or through network traffic inspection.
+## SwaggerUI
 
-Version used: 3.0.0
-
-[OpenAPI Specification User Guide](https://spec.openapis.org/oas/v3.0.0)
-
-To access the Swagger UI for a Kubernetes deployment, follow the instructions above then the UI should be available at `http://<KUBE_HOST>/<KUBE_NAMESPACE>/ska-oso-oet/ui/`
-
-For accessing Swagger UI on local development environment follow below steps:
-
-Pre-requisite:
-- Run ODA Application server : [Refer this ODA Installation link](https://gitlab.com/ska-telescope/db/ska-db-oda/-/blob/main/README.md?ref_type=heads) 
-
-- Export ODA Server URL as an Environment variable ODA_URL
-```
-export ODA_URL=<oda_server_url>
-```
-
-- Start the OET REST API server:
-```
-python src/ska_oso_oet/main.py
-```
-
-- Access Swagger UI On a browser using below link:
-```
-http://{hostname}:{port}/ska-oso-oet/oet/api/v<OET major version>/ui
-```
+To access the Swagger UI for a Kubernetes deployment, follow the instructions above then the UI should be available at `http://<KUBE_HOST>/<KUBE_NAMESPACE>/oet/api/v<MAJOR_VERSION>/ui/`
 
 # Deployments from CICD
 
