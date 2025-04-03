@@ -11,14 +11,14 @@ Integration
 The integration environment deploys the **latest main branch version** of the application, and is triggered by every
 commit to the main branch. It should always be available at
 
-https://k8s.stfc.skao.int/integration-ska-oso-oet/oet/api/v6/ui/
+https://k8s.stfc.skao.int/integration-ska-oso-oet/oet/api/v7/ui/
 
 Staging
 --------
 
 The staging environment deploys the **latest released version** of the application and pulls the version from CAR. It should always be available at
 
-https://k8s.stfc.skao.int/staging-ska-oso-oet/oet/api/v6/ui/
+https://k8s.stfc.skao.int/staging-ska-oso-oet/oet/api/v7/ui/
 
 ska-oso-integration
 ---------------------
