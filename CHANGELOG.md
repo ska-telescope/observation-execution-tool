@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 Unreleased
 **********
+
+7.0.0
+*******
 * Updating to use Pydantic BaseModels throughout the OET
 * Update the REST server to use FastAPI rather than Flask, including the SSE /stream endpoint - see the Swagger UI for the use of the types
 * [BREAKING] The GET responses previously returned an object like {"activity": <ActivitySummary>}, and similar for the Procedure endpoints.
