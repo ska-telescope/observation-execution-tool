@@ -3,6 +3,7 @@ import os
 import pytest
 import requests
 from ska_oso_pdm.sb_definition import SBDefinition
+from unit.conftest import token
 
 from .util import OET_URL, ScriptExecutionEnvironment
 
@@ -15,7 +16,11 @@ def setup():
     """
     oet_procedures_rest_uri = f"{OET_URL}/procedures"
     try:
-        resp = requests.get(oet_procedures_rest_uri, timeout=1.0)
+        resp = requests.get(
+            oet_procedures_rest_uri,
+            timeout=1.0,
+            headers={"Authorization": f"Bearer {token}"},
+        )
     except requests.exceptions.ConnectionError as e:
         raise IOError(
             f"OET REST service not available at {oet_procedures_rest_uri}"
