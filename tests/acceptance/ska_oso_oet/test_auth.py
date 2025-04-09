@@ -1,12 +1,13 @@
 from functools import partial
 
 import requests
-from acceptance.ska_oso_oet.util import OET_URL
 from pytest_bdd import given, parsers, scenario, then, when
 from ska_aaa_authhelpers import Role
 from ska_aaa_authhelpers.test_helpers import mint_test_token
 
 from ska_oso_oet.auth import AUDIENCE, Scopes
+
+from .util import OET_URL
 
 
 @scenario(

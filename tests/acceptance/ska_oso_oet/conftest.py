@@ -3,8 +3,8 @@ import os
 import pytest
 import requests
 from ska_oso_pdm.sb_definition import SBDefinition
-from unit.conftest import token
 
+from ...unit.conftest import token
 from .util import OET_URL, ScriptExecutionEnvironment
 
 

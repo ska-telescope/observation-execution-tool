@@ -47,6 +47,7 @@ autodoc_mock_imports = [
     "ska_db_oda",
     "ska_oso_pdm",
     "ska_oso_scripting",
+    "ska_aaa_authhelpers",
     "ska_ser_skuid",
     "ska_ser_logging",
     "tblib",
