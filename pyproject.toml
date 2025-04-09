@@ -35,13 +35,18 @@ url = 'https://gitlab.com/api/v4/projects/22057734/packages/pypi/simple'
 priority = "explicit"
 
 [[tool.poetry.source]]
+name = 'gitlab-ska-aaa-authhelpers'
+url = 'https://gitlab.com/api/v4/projects/66554695/packages/pypi/simple'
+priority = "explicit"
+
+[[tool.poetry.source]]
 name = 'PyPI'
 priority = 'primary'
 
 # Uncomment this and the dependency below to use an unreleased ODA version
-#[[tool.poetry.source]]
-#name = "gitlab-ska-db-oda"
-#url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
+[[tool.poetry.source]]
+name = "gitlab-ska-db-oda"
+url = "https://gitlab.com/api/v4/projects/27507143/packages/pypi/simple"
 
 #[[tool.poetry.source]]
 #name = "gitlab.ska-oso-oet-client"
@@ -52,19 +57,20 @@ python = "^3.10"
 PyPubSub = "^4.0.3"
 ska-ser-logging = "^0.4.1"
 ska-ser-skuid = "^3.3.3"
+ska-aaa-authhelpers = { version="0.1.0+dev.cb1af0425", source="gitlab-ska-aaa-authhelpers" }
 tblib = "^1.7.0"
 GitPython = "^3.1.27"
 # The OET depends on the PDM as we need access to SBD activities, etc., but the
-# data model is evolving so fast moving that we don't want to pin to a specific
+# data model is evolving so fast moving that we don't want to pin configure_loggingto a specific
 # version. The best compromise for compatibility with ska-oso-scripting, which
 # also depends on the OET and ODA, is implicitly depend on whatever version of
 # the PDM is pulled in by the ODA.
-#ska-db-oda = { version="5.3.3+dev.cea0b078b", source="gitlab-ska-db-oda" }
+ska-db-oda = { version="7.3.3+dev.c3e5e6575", source="gitlab-ska-db-oda" }
 # NOTE: When updating ODA version, also update the ODA chart version in
 # charts/ska-oso-oet-umbrella/Chart.yaml
-ska-db-oda = "^7.3.0"
+#ska-db-oda = "^7.3.0"
 ska-oso-scripting = "^11.0.0"
-fastapi = "^0.111.0"
+fastapi = {extras = ["standard"], version = "^0.115.8"}
 pydantic = "^2.10.6"
 
 [tool.poetry.group.dev.dependencies]
@@ -85,6 +91,7 @@ requests-mock = "^1.10.0"
 ska-oso-oet-client = "^1.2.1"
 requests = "^2.28.1"
 pytest-asyncio = "^0.26.0"
+httpx = "^0.28.1"
 
 [tool.poetry.group.docs]
 optional = true
