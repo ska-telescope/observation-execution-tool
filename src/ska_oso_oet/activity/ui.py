@@ -3,10 +3,19 @@ The ska_oso_oet.activity.ui module contains code that belongs to the activity
 UI/presentation layer. This layer is the means by which external users or
 systems would interact with activities.
 """
+from typing import Annotated
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+from ska_aaa_authhelpers import AuthContext, AuthFailError, Role
 
 from ska_oso_oet.activity.application import ActivityCommand, ActivitySummary
+from ska_oso_oet.auth import (
+    Permissions,
+    Scopes,
+    auth_allowed_to_execute_activity,
+    auth_allowed_to_read,
+)
 from ska_oso_oet.event import topics
 from ska_oso_oet.utils.ui import (
     ProcedureInput,
@@ -38,7 +47,22 @@ class ActivityPostRequest(BaseModel):
         "within the OET, with details of its state and related Procedure"
     ),
 )
-def get_activity(activity_id: int) -> ActivitySummary:
+def get_activity(
+    activity_id: int,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={
+                Role.SW_ENGINEER,
+                Role.MID_TELESCOPE_OPERATOR,
+                Role.LOW_TELESCOPE_OPERATOR,
+            },
+            scopes={Scopes.ACTIVITY_READ},
+        ),
+    ],
+) -> ActivitySummary:
+    if not auth_allowed_to_read(auth):
+        raise AuthFailError("Role does not allow the reading of Activities")
     summaries = call_and_respond(
         topics.request.activity.list,
         topics.activity.pool.list,
@@ -62,7 +86,21 @@ def get_activity(activity_id: int) -> ActivitySummary:
     summary="Get all Activities",
     description="Returns a list of all the Activity summaries.",
 )
-def get_activities() -> list[ActivitySummary]:
+def get_activities(
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={
+                Role.SW_ENGINEER,
+                Role.MID_TELESCOPE_OPERATOR,
+                Role.LOW_TELESCOPE_OPERATOR,
+            },
+            scopes={Scopes.ACTIVITY_READ},
+        ),
+    ]
+) -> list[ActivitySummary]:
+    if not auth_allowed_to_read(auth):
+        raise AuthFailError("Role does not allow the reading of Activities")
     summaries = call_and_respond(
         topics.request.activity.list, topics.activity.pool.list
     )
@@ -81,7 +119,22 @@ def get_activities() -> list[ActivitySummary]:
         " and then executed (unless prepare_only=True)."
     ),
 )
-def run_activity(request_body: ActivityPostRequest) -> ActivitySummary:
+def run_activity(
+    request_body: ActivityPostRequest,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={
+                Role.SW_ENGINEER,
+                Role.MID_TELESCOPE_OPERATOR,
+                Role.LOW_TELESCOPE_OPERATOR,
+            },
+            scopes={Scopes.ACTIVITY_READ},
+        ),
+    ],
+) -> ActivitySummary:
+    if not auth_allowed_to_execute_activity(auth):
+        raise AuthFailError("Role does not allow the execution of Activities")
     script_args = {
         fn: convert_request_to_procedure_input(fn_args)
         for (fn, fn_args) in request_body.script_args

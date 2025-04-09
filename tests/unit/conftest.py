@@ -6,14 +6,26 @@ from importlib.metadata import version
 import pytest
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
+from ska_aaa_authhelpers.test_helpers import mint_test_token, monkeypatch_pubkeys
 
 from ska_oso_oet import ui
+from ska_oso_oet.auth import AUDIENCE, Scopes
+
+token = mint_test_token(
+    audience=AUDIENCE,
+    scopes={Scopes.ACTIVITY_READ, Scopes.ACTIVITY_EXECUTE, Scopes.PROCEDURE_EXECUTE},
+)
 
 OET_MAJOR_VERSION = version("ska-oso-oet").split(".")[0]
 # Default as it uses the default namespace. When deployed to a different namespace the first part will change to that namespace.
 DEFAULT_API_PATH = f"ska-oso-oet/oet/api/v{OET_MAJOR_VERSION}"
 PROCEDURES_ENDPOINT = f"{DEFAULT_API_PATH}/procedures"
 ACTIVITIES_ENDPOINT = f"{DEFAULT_API_PATH}/activities"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def patch_pubkeys():
+    monkeypatch_pubkeys()
 
 
 @pytest.fixture(name="base_url")
@@ -33,7 +45,9 @@ def fixture_client():
     app.state.sse_shutdown_event = threading.Event()
     # raise_server_exceptions can be useful for debugging, but for the tests we want to
     # see how the server handles the exceptions and wraps it into a response
-    return TestClient(app, raise_server_exceptions=False)
+    return TestClient(
+        app, raise_server_exceptions=False, headers={"Authorization": f"Bearer {token}"}
+    )
 
 
 @pytest.fixture(name="async_client")

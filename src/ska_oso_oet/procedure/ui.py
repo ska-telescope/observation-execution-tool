@@ -6,7 +6,14 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+from ska_aaa_authhelpers import AuthContext, AuthFailError, Role
 
+from ska_oso_oet.auth import (
+    Permissions,
+    Scopes,
+    auth_allowed_to_execute_procedure,
+    auth_allowed_to_read,
+)
 from ska_oso_oet.event import topics
 from ska_oso_oet.procedure import application, domain
 from ska_oso_oet.procedure.domain import FileSystemScript
@@ -19,6 +26,7 @@ from ska_oso_oet.utils.ui import (
 
 procedures_router = APIRouter(prefix="/procedures", tags=["Procedures"])
 
+# TODO set the role based on the env? Is that enough or also need to check the SB?
 
 Script = Annotated[
     domain.FileSystemScript | domain.GitScript,
@@ -54,7 +62,21 @@ class ProcedurePutRequest(BaseModel):
     summary="Get all Procedures",
     description="Returns a list of all prepared and running Procedures.",
 )
-def get_procedures() -> list[application.ProcedureSummary]:
+def get_procedures(
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={
+                Role.SW_ENGINEER,
+                Role.MID_TELESCOPE_OPERATOR,
+                Role.LOW_TELESCOPE_OPERATOR,
+            },
+            scopes={Scopes.ACTIVITY_READ},
+        ),
+    ]
+) -> list[application.ProcedureSummary]:
+    if not auth_allowed_to_read(auth):
+        raise AuthFailError("Role does not allow the reading of Procedures")
     summaries = call_and_respond(
         topics.request.procedure.list, topics.procedure.pool.list, pids=None
     )
@@ -70,7 +92,22 @@ def get_procedures() -> list[application.ProcedureSummary]:
         "within the OET, with details of its state and arguments."
     ),
 )
-def get_procedure(procedure_id: int) -> application.ProcedureSummary:
+def get_procedure(
+    procedure_id: int,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={
+                Role.SW_ENGINEER,
+                Role.MID_TELESCOPE_OPERATOR,
+                Role.LOW_TELESCOPE_OPERATOR,
+            },
+            scopes={Scopes.ACTIVITY_READ},
+        ),
+    ],
+) -> application.ProcedureSummary:
+    if not auth_allowed_to_read(auth):
+        raise AuthFailError("Role does not allow the reading of Procedures")
     summary = _get_summary_or_404(procedure_id)
     return summary
 
@@ -87,7 +124,20 @@ def get_procedure(procedure_id: int) -> application.ProcedureSummary:
 )
 def create_procedure(
     request_body: ProcedurePostRequest,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={
+                Role.SW_ENGINEER,
+                Role.MID_TELESCOPE_OPERATOR,
+                Role.LOW_TELESCOPE_OPERATOR,
+            },
+            scopes={Scopes.PROCEDURE_EXECUTE},
+        ),
+    ],
 ) -> application.ProcedureSummary:
+    if not auth_allowed_to_execute_procedure(auth):
+        raise AuthFailError("Role does not allow the execution of Procedures")
     procedure_input = request_body.script_args.init
     prepare_cmd = application.PrepareProcessCommand(
         script=request_body.script,
@@ -113,8 +163,22 @@ def create_procedure(
     ),
 )
 def update_procedure(
-    procedure_id: int, request_body: ProcedurePutRequest
+    procedure_id: int,
+    request_body: ProcedurePutRequest,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={
+                Role.SW_ENGINEER,
+                Role.MID_TELESCOPE_OPERATOR,
+                Role.LOW_TELESCOPE_OPERATOR,
+            },
+            scopes={Scopes.PROCEDURE_EXECUTE},
+        ),
+    ],
 ) -> application.ProcedureSummary | application.AbortSummary:
+    if not auth_allowed_to_execute_procedure(auth):
+        raise AuthFailError("Role does not allow the execution of Procedures")
     summary = _get_summary_or_404(procedure_id)
 
     old_state = summary.state

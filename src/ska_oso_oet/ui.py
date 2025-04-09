@@ -7,15 +7,17 @@ import json
 import multiprocessing
 from http import HTTPStatus
 from threading import Event
-from typing import Generator, Optional, Union
+from typing import Annotated, Generator, Optional, Union
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pubsub import pub
 from pydantic import BaseModel
+from ska_aaa_authhelpers import AuthContext, AuthFailError, Role, watchdog
 from werkzeug.exceptions import GatewayTimeout
 
 from ska_oso_oet.activity.ui import activities_router
+from ska_oso_oet.auth import Permissions, Scopes, auth_allowed_to_read
 from ska_oso_oet.mptools import MPQueue
 from ska_oso_oet.procedure.ui import procedures_router
 from ska_oso_oet.utils.ui import API_PATH
@@ -97,7 +99,22 @@ def messages(shutdown_event: Event) -> Generator[Message, None, None]:
         " https://html.spec.whatwg.org/multipage/server-sent-events.html#the-eventsource-interface"
     ),
 )
-async def stream(request: Request):
+async def stream(
+    request: Request,
+    auth: Annotated[
+        AuthContext,
+        Permissions(
+            roles={
+                Role.SW_ENGINEER,
+                Role.MID_TELESCOPE_OPERATOR,
+                Role.LOW_TELESCOPE_OPERATOR,
+            },
+            scopes={Scopes.ACTIVITY_READ},
+        ),
+    ],
+):
+    if not auth_allowed_to_read(auth):
+        raise AuthFailError("Role does not allow the streaming of events")
     shutdown_event = request.app.state.sse_shutdown_event
 
     def generator():
@@ -126,6 +143,7 @@ def create_fastapi_app():
         title="Observation Execution Tool API",
         openapi_url=f"{API_PATH}/openapi.json",
         docs_url=f"{API_PATH}/ui",
+        lifespan=watchdog(),
     )
     app.include_router(activities_router, prefix=API_PATH)
     app.include_router(procedures_router, prefix=API_PATH)

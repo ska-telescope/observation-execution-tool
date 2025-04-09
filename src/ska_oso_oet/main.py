@@ -9,6 +9,7 @@ from typing import List
 
 import uvicorn
 from pubsub import pub
+from ska_aaa_authhelpers import AuditLogFilter
 from ska_ser_logging import configure_logging
 
 from ska_oso_oet import ui
@@ -522,6 +523,6 @@ def main_loop(main_ctx: MainContext, event_bus_queues: List[MPQueue]):
 
 
 if __name__ == "__main__":
-    configure_logging(os.getenv("LOG_LEVEL", "INFO"))
+    configure_logging(level=os.getenv("LOG_LEVEL", "INFO"), tags_filter=AuditLogFilter)
     mp = multiprocessing.get_context("fork")
     main(mp)
