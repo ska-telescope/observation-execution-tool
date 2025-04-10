@@ -1,13 +1,10 @@
+import os
 from functools import partial
+from unittest import mock
 
-import pytest
 from ska_aaa_authhelpers import AuthContext, Role
 
-from ska_oso_oet.auth import (
-    auth_allowed_to_execute_activity,
-    auth_allowed_to_execute_procedure,
-    auth_allowed_to_read,
-)
+from ska_oso_oet.auth import operator_role_for_telescope
 
 TestAuthContext = partial(
     AuthContext,
@@ -20,42 +17,9 @@ TestAuthContext = partial(
 )
 
 
-@pytest.mark.parametrize(
-    ("auth", "expected"),
-    (
-        (TestAuthContext(roles={Role.SW_ENGINEER}), True),
-        (TestAuthContext(roles={Role.LOW_TELESCOPE_OPERATOR}), True),
-        (TestAuthContext(roles={Role.MID_TELESCOPE_OPERATOR}), True),
-        (TestAuthContext(roles={Role.ANY}), False),
-    ),
-)
-def test_auth_allowed_to_read(auth, expected):
-    assert auth_allowed_to_read(auth) == expected
+def test_correct_operator_role_set_from_telescope_env():
+    with mock.patch.dict(os.environ, {"SKA_TELESCOPE": "SKA-mid"}):
+        assert operator_role_for_telescope() is Role.MID_TELESCOPE_OPERATOR
 
-
-@pytest.mark.parametrize(
-    ("auth", "expected"),
-    (
-        (TestAuthContext(roles={Role.SW_ENGINEER}), True),
-        (TestAuthContext(roles={Role.LOW_TELESCOPE_OPERATOR}), True),
-        (TestAuthContext(roles={Role.MID_TELESCOPE_OPERATOR}), True),
-        (TestAuthContext(roles={Role.ANY}), False),
-    ),
-)
-def test_auth_allowed_to_execute_activity(auth, expected):
-    assert (
-        auth_allowed_to_execute_activity(auth) == expected
-    )  # TODO this needs to check sbd
-
-
-@pytest.mark.parametrize(
-    ("auth", "expected"),
-    (
-        (TestAuthContext(roles={Role.SW_ENGINEER}), True),
-        (TestAuthContext(roles={Role.LOW_TELESCOPE_OPERATOR}), True),
-        (TestAuthContext(roles={Role.MID_TELESCOPE_OPERATOR}), True),
-        (TestAuthContext(roles={Role.ANY}), False),
-    ),
-)
-def test_auth_allowed_to_execute_procedure(auth, expected):
-    assert auth_allowed_to_execute_procedure(auth) == expected
+    with mock.patch.dict(os.environ, {"SKA_TELESCOPE": "SKA-low"}):
+        assert operator_role_for_telescope() is Role.LOW_TELESCOPE_OPERATOR

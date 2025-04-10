@@ -3,6 +3,7 @@ The ska_oso_oet.ui package contains code that present the OET interface to the
 outside world. In practical terms, this means the OET application's REST
 interface
 """
+# pylint: disable=unused-argument
 import json
 import multiprocessing
 from http import HTTPStatus
@@ -13,11 +14,11 @@ from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pubsub import pub
 from pydantic import BaseModel
-from ska_aaa_authhelpers import AuthContext, AuthFailError, Role, watchdog
+from ska_aaa_authhelpers import AuthContext, Role, watchdog
 from werkzeug.exceptions import GatewayTimeout
 
 from ska_oso_oet.activity.ui import activities_router
-from ska_oso_oet.auth import Permissions, Scopes, auth_allowed_to_read
+from ska_oso_oet.auth import OPERATOR_ROLE_FOR_TELESCOPE, Permissions, Scopes
 from ska_oso_oet.mptools import MPQueue
 from ska_oso_oet.procedure.ui import procedures_router
 from ska_oso_oet.utils.ui import API_PATH
@@ -104,17 +105,11 @@ async def stream(
     auth: Annotated[
         AuthContext,
         Permissions(
-            roles={
-                Role.SW_ENGINEER,
-                Role.MID_TELESCOPE_OPERATOR,
-                Role.LOW_TELESCOPE_OPERATOR,
-            },
+            roles={Role.SW_ENGINEER, OPERATOR_ROLE_FOR_TELESCOPE},
             scopes={Scopes.ACTIVITY_READ},
         ),
     ],
 ):
-    if not auth_allowed_to_read(auth):
-        raise AuthFailError("Role does not allow the streaming of events")
     shutdown_event = request.app.state.sse_shutdown_event
 
     def generator():

@@ -19,7 +19,7 @@ def test_activity_with_script_requiring_sb():
 
 
 @given(
-    "an OET deployment",
+    "a Mid OET deployment",
 )
 def new_test_harness():
     # The setup fixture already confirms this

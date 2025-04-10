@@ -1,8 +1,12 @@
 from enum import Enum
 from functools import partial
 
-from ska_aaa_authhelpers import AuthContext, Requires, Role
+from ska_aaa_authhelpers import Requires, Role
 from ska_aaa_authhelpers.test_helpers import TEST_ISSUER, TEST_PUBLIC_KEYS
+from ska_oso_scripting.functions.environment import (
+    is_ska_low_environment,
+    is_ska_mid_environment,
+)
 
 AUDIENCE = "TODO"
 
@@ -22,40 +26,16 @@ class Scopes(str, Enum):
     PROCEDURE_EXECUTE = "procedure:execute"
 
 
-def auth_allowed_to_read(auth: AuthContext) -> bool:
-    ALLOWED_ROLES = {
-        Role.SW_ENGINEER,
-        Role.LOW_TELESCOPE_OPERATOR,
-        Role.MID_TELESCOPE_OPERATOR,
-    }
+def operator_role_for_telescope():
+    if is_ska_low_environment():
+        return Role.LOW_TELESCOPE_OPERATOR
+    if is_ska_mid_environment():
+        return Role.MID_TELESCOPE_OPERATOR
 
-    if ALLOWED_ROLES.intersection(auth.roles):
-        return True
-
-    return False
-
-
-def auth_allowed_to_execute_procedure(auth: AuthContext) -> bool:
-    ALLOWED_ROLES = {
-        Role.SW_ENGINEER,
-        Role.LOW_TELESCOPE_OPERATOR,
-        Role.MID_TELESCOPE_OPERATOR,
-    }
-
-    if ALLOWED_ROLES.intersection(auth.roles):
-        return True
-
-    return False
+    # Currently this will never be reached as is_ska_mid_environment is the negation of is_ska_low_environment
+    raise ValueError(
+        "SKA_TELESCOPE environment variable must be set to 'SKA-mid' or 'SKA-low'"
+    )
 
 
-def auth_allowed_to_execute_activity(auth: AuthContext) -> bool:
-    ALLOWED_ROLES = {
-        Role.SW_ENGINEER,
-        Role.LOW_TELESCOPE_OPERATOR,
-        Role.MID_TELESCOPE_OPERATOR,
-    }
-
-    if ALLOWED_ROLES.intersection(auth.roles):
-        return True
-
-    return False
+OPERATOR_ROLE_FOR_TELESCOPE = operator_role_for_telescope()

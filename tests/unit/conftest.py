@@ -55,7 +55,11 @@ def fixture_async_client():
     app = ui.create_fastapi_app()
     app.state.msg_src = "unit tests"
     app.state.sse_shutdown_event = threading.Event()
-    return AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost")
+    return AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://localhost",
+        headers={"Authorization": f"Bearer {token}"},
+    )
 
 
 @pytest.fixture(
