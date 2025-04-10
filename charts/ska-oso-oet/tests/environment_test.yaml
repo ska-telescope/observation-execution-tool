@@ -59,7 +59,7 @@ tests:
       - equal:
           path: data.OET_URL
           value:
-            http://ska-oso-oet-rest-RELEASE-NAME:5000/NAMESPACE/oet/api/v7
+            http://ska-oso-oet-rest-RELEASE-NAME:5000/NAMESPACE/oet/api/v8
 
   - it: should correctly set SCRIPTS_LOCATION environment variable
     documentIndex: 0
