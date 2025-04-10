@@ -10,6 +10,8 @@ CAR_OCI_REGISTRY_USERNAME ?= ska-telescope
 PROJECT_NAME = ska-oso-oet
 MAJOR_VERSION=$(shell cut -d'.' -f1 <<< $(VERSION))
 
+PIPELINE_TEST_DEPLOYMENT ?= false
+
 # Set sphinx documentation build to fail on warnings (as it is configured
 # in .readthedocs.yaml as well)
 DOCS_SPHINXOPTS ?= -W --keep-going
@@ -35,7 +37,8 @@ ENV_CHECK := $(shell echo $(CI_ENVIRONMENT_SLUG) | egrep 'test|dev|integration')
 ifneq ($(ENV_CHECK),)
 K8S_CHART_PARAMS += --set ska-oso-oet.rest.image.tag=$(VERSION)-dev.c$(CI_COMMIT_SHORT_SHA) \
 	--set ska-oso-oet.rest.image.registry=$(CI_REGISTRY)/ska-telescope/oso/ska-oso-oet \
-	--set ska-oso-oet.rest.ingress.enabled=true
+	--set ska-oso-oet.rest.ingress.enabled=true \
+	--set ska-oso-oet.pipeline_test_deployment=$(PIPELINE_TEST_DEPLOYMENT)
 endif
 
 # For the staging environment, make k8s-install-chart-car will pull the chart from CAR so we do not need to

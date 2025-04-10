@@ -16,6 +16,14 @@ tests:
       - isAPIVersion:
           of: v1
 
+  - it: should set PIPELINE_TESTS_DEPLOYMENT to false.
+    asserts:
+      - equal:
+          path: data.PIPELINE_TESTS_DEPLOYMENT
+          value:
+            "false"
+
+
   - it: should have the correct tango host configuration.
     documentIndex: 0
     set:

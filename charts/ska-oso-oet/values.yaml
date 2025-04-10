@@ -9,6 +9,10 @@ subsystem: ska-oso-oet
 central_node: ska_mid/tm_central/central_node
 subarray: ska_mid/tm_subarray_node
 
+# A permanent deployment should never set this to true, as it will
+# cause the authentication to use test public keys.
+pipeline_test_deployment: false
+
 # Location within the running OET application that static observing scripts
 # (including abort.py script used directly by OET) are stored. Set in the
 # Makefile as this value is required both at image build time as well as within

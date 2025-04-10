@@ -49,6 +49,8 @@ test-chart-templates:
       junit: build/reports/chart_template_tests.xml
 
 k8s-test:
+  variables:
+    PIPELINE_TEST_DEPLOYMENT: true
   id_tokens:
     VAULT_ID_TOKEN:
       aud: https://gitlab.com
