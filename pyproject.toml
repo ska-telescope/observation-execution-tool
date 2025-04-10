@@ -63,7 +63,7 @@ GitPython = "^3.1.27"
 # NOTE: When updating ODA version, also update the ODA chart version in
 # charts/ska-oso-oet-umbrella/Chart.yaml
 ska-db-oda = "^7.3.0"
-ska-oso-scripting = "^11.0.0"
+ska-oso-scripting = "11.0.0rc1"
 fastapi = "^0.111.0"
 pydantic = "^2.10.6"
 
